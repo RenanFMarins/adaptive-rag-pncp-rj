@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Período** | 14/09/2026 a 23/10/2026 |
-| **Formato** | Equipes de 4 a 6 pessoas |
+| **Formato** | Equipe |
 | **Encontros** | Segunda, quarta e sexta · 4 horas |
 | **Apresentações** | Toda sexta-feira · Demo Day em 23/10 com banca externa |
 | **Entrega** | Repositório GitHub próprio da equipe |
