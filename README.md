@@ -803,12 +803,12 @@ http://127.0.0.1:8000/docs
 
 **Time 03 — Contratações Públicas do Estado do Rio de Janeiro**
 
-- Luiz Felipe Antunes
-- Ana Karina
-- Luciano Oliveira
-- Marcio da Costa
-- Ester da Silva
-- Alisson Lima
-- Renan Freitas
+- Luiz Felipe Antunes.
+- Ana Karina.
+- Luciano Oliveira.
+- Marcio da Costa.
+- Ester da Silva.
+- Alisson Lima.
+- Renan Freitas.
 
 **Gerente / Coordenador:** Luiz Felipe Antunes
