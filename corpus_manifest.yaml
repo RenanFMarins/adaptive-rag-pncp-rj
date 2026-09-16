@@ -1,10 +1,35 @@
-#Bloco Normativo
-
 scenario_id: contratacoes-rj
-version: "2026-09-16"
+version: "2026-09-16"              # data do congelamento do corpus
 description: "Contratações públicas do Estado do RJ, ano-base 2025"
 
 bases:
+
+  - base_id: contratos_estruturado
+    natureza: estruturada            # normativa | estruturada | conversacional | agregada
+    fonte: "PNCP - API de consulta v3"
+    acesso:
+      tipo: rest_api                 # rest_api | http_pdf | arquivo_local | sintetico
+      endpoint: "https://pncp.gov.br/api/consulta/v1/contratos"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+      consulta: "https://pncp.gov.br/app/contratos"
+      params:
+        dataInicial: "2025-01-01"
+        dataFinal: "2025-12-31"
+        uf: "RJ"
+      paginacao: { campo: "pagina", tamanho: 50 }
+      rate_limit_seg: 1.0
+    selecao_deterministica: true     # mesmo manifesto ⇒ mesmo corpus
+    criterio_selecao: "Contratos e contratações registrados no PNCP, com UF=RJ e período fechado de 01/01/2025 a 31/12/2025."
+    volume_alvo: 1200                # registros esperados; divergência grande = investigar
+    formato: json
+    licenca: "Dados abertos gov.br - atribuição"
+    sensitivity_default: publico     # publico | interno | restrito
+    campo_vigencia: "dataVigenciaFim"
+    chunking_sugerido: "1 contrato = 1 chunk, serializado em linguagem natural"
+    metadados_extras: [orgao, modalidade, valor, municipio, ano, numeroControlePNCP]
+
+
   - base_id: editais_normativo
     natureza: normativa
     fonte: "Planalto (Lei 14.133/2021) + decretos estaduais RJ + editais de órgãos do RJ no PNCP"
@@ -25,12 +50,57 @@ bases:
         - "https://pncp.gov.br/pncp-api/v1/orgaos/39563911000162/compras/2026/181/arquivos/1"
       rate_limit_seg: 2.0
     selecao_deterministica: true      # lista fixa de URLs + sha256 no inventário
+    criterio_selecao: "Lei 14.133/2021, decretos estaduais e editais de licitação relacionados às contratações públicas do Estado do Rio de Janeiro, considerando o ano-base 2025."
     volume_alvo: 20
     formato: [pdf, html]
     licenca: "Domínio público"
     sensitivity_default: publico
     campo_vigencia: "data_publicacao"
     chunking_sugerido: "Split por artigo/cláusula, com overlap; preservar hierarquia (Art., §, inciso)"
-    metadados_extras: [numero_edital, orgao, data_publicacao, artigo, objeto]
+    metadados_extras: [numero_edital, numero_norma, orgao, data_publicacao, artigo, objeto, ano]
 
-  # As outras bases (estruturada, conversacional, agregada) são preenchidas pelos respectivos responsáveis
+
+  - base_id: atas_conversacional
+    natureza: conversacional
+    fonte: "PNCP + base sintética fornecida"
+    acesso:
+      tipo: sintetico
+      fontes:
+        - "https://pncp.gov.br/app/atas"
+        - "Base sintética fornecida no desafio"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+    selecao_deterministica: true
+    criterio_selecao: "Atas de registro de preços relacionadas às contratações públicas do Estado do Rio de Janeiro e trilhas de e-mails de compras presentes na base sintética fornecida no desafio."
+    volume_alvo: 20
+    formato: txt
+    licenca: "Dados públicos oficiais e base sintética fornecida no desafio"
+    sensitivity_default: publico
+    campo_vigencia: "data"
+    chunking_sugerido: "Split por mensagem ou evento, preservando a ordem temporal e o contexto"
+    metadados_extras: [tipo_documento, data, remetente, destinatario, assunto, processo, orgao, objeto]
+
+
+  - base_id: pca_agregada
+    natureza: agregada
+    fonte: "PNCP"
+    acesso:
+      tipo: rest_api
+      endpoint: "https://pncp.gov.br/api/consulta"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+      consulta_pca: "https://pncp.gov.br/app/pca"
+      params:
+        uf: "RJ"
+        ano: "2025"
+      paginacao: { campo: "pagina", tamanho: 50 }
+      rate_limit_seg: 1.0
+    selecao_deterministica: true
+    criterio_selecao: "Plano de Contratações Anual e valores homologados por item relacionados às contratações públicas do Estado do Rio de Janeiro, considerando o ano-base 2025."
+    volume_alvo: "A definir após a primeira coleta"
+    formato: json
+    licenca: "Dados abertos gov.br - atribuição"
+    sensitivity_default: publico
+    campo_vigencia: "ano"
+    chunking_sugerido: "1 item de planejamento ou item homologado = 1 unidade de recuperação"
+    metadados_extras: [orgao, cnpj_orgao, objeto, item, descricao_item, valor_estimado, valor_homologado, ano, ano_exercicio, numero_pca, numeroControlePNCP]
