@@ -82,7 +82,7 @@ conforme a divisão atual da equipe.
 **Responsáveis:**
 
 - Ana Karina
-- Ester Neves
+- Ester Silva
 
 A Base Normativa será responsável pelos documentos jurídicos e normativos
 relacionados às contratações públicas.
@@ -104,6 +104,26 @@ Os documentos poderão passar por:
 4. enriquecimento de metadados;
 5. geração de embeddings;
 6. indexação.
+
+**Identificador:** `editais_normativo` · **Acesso:** `http_pdf` (lista fixa de URLs)
+
+**Formato:** PDF e HTML convertido em texto.
+
+**Uso esperado:** consultar regras e exigências legais, localizar cláusulas de
+editais, responder perguntas sobre procedimentos, prazos e obrigações.
+
+**Estratégia de chunking:** divisão por artigo, capítulo ou cláusula, com
+overlap; cada chunk preserva a hierarquia (ex.: Art. 75, § 1º).
+
+**Metadados:** `source_file`, `doc_type`, `base_id`, `chunk_id`, `sensitivity`,
+`numero_edital`, `orgao`, `data_publicacao`, `artigo`, `objeto`.
+
+**Vigência:** quando houver versões diferentes do mesmo decreto ou edital
+retificado, a resposta cita a data de cada trecho.
+
+**Divisão entre as responsáveis:**
+- Ester: coleta (lista de URLs, download e hash em `src/fetch_corpus.py`)
+- Ana Karina: processamento (extração de texto, chunking e metadados em `src/ingest.py`)
 
 ---
 
