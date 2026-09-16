@@ -1,0 +1,36 @@
+#Bloco Normativo
+
+scenario_id: contratacoes-rj
+version: "2026-09-16"
+description: "Contratações públicas do Estado do RJ, ano-base 2025"
+
+bases:
+  - base_id: editais_normativo
+    natureza: normativa
+    fonte: "Planalto (Lei 14.133/2021) + decretos estaduais RJ + editais de órgãos do RJ no PNCP"
+    acesso:
+      tipo: http_pdf
+      urls:
+        - "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm"
+        - "https://redelog.rj.gov.br/redelog/legislacao-licitacoes/"
+        - "https://www.ioerj.com.br/"
+        - "https://pncp.gov.br/app/editais"
+        - "https://www.casacivil.rj.gov.br/"
+        - "https://www.prefeitura.rj.gov.br/licitacoes"
+        - "https://www.rj.gov.br/web/licitacoes"
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2026/3524/arquivos/2"
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2026/1163/arquivos/1"
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/00348003000110/compras/2026/990/arquivos/1"
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/30134050000122/compras/2027/2/arquivos/1"
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/39563911000162/compras/2026/181/arquivos/1"
+      rate_limit_seg: 2.0
+    selecao_deterministica: true      # lista fixa de URLs + sha256 no inventário
+    volume_alvo: 20
+    formato: [pdf, html]
+    licenca: "Domínio público"
+    sensitivity_default: publico
+    campo_vigencia: "data_publicacao"
+    chunking_sugerido: "Split por artigo/cláusula, com overlap; preservar hierarquia (Art., §, inciso)"
+    metadados_extras: [numero_edital, orgao, data_publicacao, artigo, objeto]
+
+  # As outras bases (estruturada, conversacional, agregada) são preenchidas pelos respectivos responsáveis
