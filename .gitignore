@@ -1,12 +1,62 @@
+# ==============================
 # Environment variables
+# ==============================
 .env
+.env.*
+!.env.example
 
-# Python / Cache
+
+# ==============================
+# Python virtual environments
+# ==============================
+.venv/
+venv/
+env/
+
+
+# ==============================
+# Python cache
+# ==============================
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 
-# Data and logs
+
+# ==============================
+# Test / coverage cache
+# ==============================
+.pytest_cache/
+.coverage
+htmlcov/
+
+
+# ==============================
+# SQLite local database
+# ==============================
+app.db
+*.db
+*.sqlite
+*.sqlite3
+
+
+# ==============================
+# Project generated data
+# ==============================
 data/raw/
 index/
+indexes/
 logs/
+
+
+# ==============================
+# IDE / Editor
+# ==============================
+.vscode/
+.idea/
+
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db
