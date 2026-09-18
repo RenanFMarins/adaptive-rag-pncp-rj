@@ -154,4 +154,266 @@ A IA foi utilizada principalmente para:
 - separar as responsabilidades dos módulos;
 - discutir a divisão das tarefas entre os integrantes da equipe;
 ---
-teste
+
+## Encontro 2 - 2026-09-18
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Hoje concentrei meu trabalho na implementação da primeira etapa técnica sob minha responsabilidade no projeto: a **Base Agregada**, com foco inicial na coleta e preservação dos dados provenientes do **Portal Nacional de Contratações Públicas (PNCP)**.
+
+A partir da arquitetura definida no encontro anterioriniciando pela seguinte etapa:
+
+PNCP → Coleta → Controle de sincronização → Detecção de alterações → RAW → SQLite.
+
+### Estruturação da Base Agregada
+
+Dentro da divisão de responsabilidades da equipe, fiquei responsável pela **base de natureza agregada**.
+
+Foi definido que essa base trabalhará inicialmente com informações relacionadas ao:
+
+- Plano de Contratações Anual — PCA;
+- valores e indicadores provenientes das contratações públicas;
+- dados quantitativos que posteriormente poderão ser utilizados em operações como média, soma, contagem, agrupamentos e comparação de valores.
+
+Antes de implementar cálculos e agregações, decidi priorizar a construção de uma camada de ingestão confiável, capaz de preservar integralmente os dados recebidos da fonte.
+
+### Análise da API do PNCP
+
+Analisei a especificação OpenAPI do PNCP para entender a estrutura dos endpoints e das respostas.
+
+Para esta primeira etapa, o escopo foi reduzido apenas para o recurso de **PCA**, utilizando como referência o endpoint de atualização:
+
+`/api/consulta/v1/pca/atualizacao`
+
+A configuração dessa fonte foi centralizada no arquivo:
+
+`corpus_manifest.yaml`
+
+Foram definidos inicialmente:
+
+- `resource_type: pca`;
+- endpoint do PCA;
+- caminho dos registros dentro da resposta: `data`;
+- identificador do registro: `idPcaPncp`.
+
+### Implementação da camada RAW
+
+Foi implementado o fluxo de ingestão para que cada registro recebido do PNCP seja armazenado preservando o payload original.
+
+A arquitetura implementada ficou organizada da seguinte forma:
+
+PNCP API  
+↓  
+PCA Collector  
+↓  
+Ingestion Run  
+↓  
+Sync Checkpoint  
+↓  
+Hash SHA-256  
+↓  
+Change Detector  
+↓  
+NEW / UPDATED / UNCHANGED  
+↓  
+RAW  
+↓  
+SQLite
+
+O projeto utiliza **SQLite**, portanto a implementação foi adaptada ao banco já existente no repositório.
+
+A camada RAW foi pensada como uma área de preservação dos dados originais. Sua responsabilidade é manter exatamente aquilo que foi recebido da fonte, permitindo que as etapas seguintes sejam refeitas sem necessidade de consultar novamente o PNCP.
+
+### Controle das execuções de ingestão
+
+Foi implementado o conceito de `ingestion_run`, responsável por registrar cada execução da coleta.
+
+A execução permite acompanhar informações como:
+
+- início e fim da coleta;
+- status da execução;
+- quantidade de páginas processadas;
+- quantidade de registros recebidos;
+- quantidade de registros novos;
+- quantidade de registros atualizados;
+- quantidade de registros sem alteração;
+- quantidade de falhas.
+
+Isso permite auditar posteriormente como determinada versão dos dados chegou ao sistema.
+
+### Checkpoint de sincronização
+
+Também foi implementado o controle de `sync_checkpoint`.
+
+O checkpoint registra até qual ponto a fonte foi sincronizada com sucesso.
+
+Uma regra importante definida foi:
+
+**o checkpoint só pode avançar quando toda a execução terminar com sucesso.**
+
+
+### Detecção de alterações
+
+Foi implementado um mecanismo de hash utilizando **SHA-256**.
+
+O objeto completo recebido da API é serializado de forma determinística e utilizado para gerar o hash.
+
+Com isso, cada registro pode ser classificado em três estados:
+
+- `NEW`: o registro ainda não existia;
+- `UPDATED`: o registro já existia, mas o conteúdo foi alterado;
+- `UNCHANGED`: o registro já existe e o conteúdo permanece igual.
+
+No caso de `UNCHANGED`, uma nova cópia RAW não precisa ser criada.
+
+No caso de `UPDATED`, uma nova versão é preservada sem substituir a versão anterior.
+
+### Preservação do payload
+
+Outro ponto importante da implementação foi garantir que o conteúdo recebido da API seja armazenado integralmente.
+
+A regra definida foi:
+
+**RAW = representação original recebida da fonte.**
+
+Por exemplo, se um PCA possuir uma coleção `itens`, essa coleção permanece dentro do payload original.
+
+Posteriormente será criada uma camada de normalização responsável por transformar esse conteúdo em entidades como:
+
+- órgão;
+- unidade administrativa;
+- PCA;
+- item do PCA.
+
+### Paginação
+
+Foi implementada a coleta página a página da resposta do PNCP.
+
+O `PCACollector` utiliza o envelope paginado da API e processa os objetos presentes dentro de `data`.
+
+Cada registro utiliza `idPcaPncp` como identificador externo para permitir comparação entre diferentes execuções.
+
+### Observabilidade
+
+Também foi implementada observabilidade estruturada para a ingestão.
+
+Os logs registram informações como:
+
+- `run_id`;
+- `stage`;
+- `resource_type`;
+- página processada;
+- quantidade de registros;
+- contadores de `NEW`, `UPDATED` e `UNCHANGED`;
+- tempo de resposta das requisições HTTP.
+
+Os logs foram integrados à estrutura de observabilidade já existente no projeto, evitando a criação de um segundo sistema de logging.
+
+### Integração com a arquitetura existente
+
+Durante a implementação, procurei reutilizar a estrutura já existente no repositório.
+
+Foram utilizados e adaptados principalmente os seguintes arquivos:
+
+- `schema.py`;
+- `fetch_corpus.py`;
+- `ingest.py`;
+- `obs.py`;
+- `corpus_manifest.yaml`.
+
+O `fetch_corpus.py` foi preservado como ponto de entrada do processo de coleta, evitando a criação de outro fluxo paralelo.
+
+### Testes realizados
+
+Foram implementados testes offline para validar a camada de ingestão.
+
+Entre os cenários testados estão:
+
+- PCA paginado utilizando o envelope `data`;
+- preservação integral do payload recebido;
+- validação do `idPcaPncp`;
+- geração determinística do SHA-256;
+- classificação `NEW`;
+- classificação `UPDATED`;
+- classificação `UNCHANGED`;
+- versionamento dos registros RAW;
+- checkpoint atualizado somente após sucesso;
+- comportamento em falhas HTTP;
+- comportamento em falhas de transporte.
+
+### Limitação encontrada
+
+A consulta real ao endpoint do PNCP não foi concluída durante a sessão porque a documentação/OpenAPI oficial apresentou timeout.
+
+Por esse motivo, a lógica da aplicação foi validada utilizando testes offline e respostas simuladas compatíveis com a estrutura esperada da API.
+
+O endpoint foi mantido isolado no `corpus_manifest.yaml`, permitindo que sua configuração seja alterada sem modificar a implementação caso seja identificada alguma variação na rota oficial.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT  como apoio durante o desenvolvimento.
+
+O ChatGPT foi utilizado principalmente para:
+
+- organizar o desenvolvimento da Base Agregada em etapas menores;
+- discutir a arquitetura da camada RAW;
+- analisar a relação entre coleta, RAW, normalização e processamento futuro;
+- definir estratégias de versionamento e detecção de alterações;
+- discutir o funcionamento de checkpoint e retomada;
+- estruturar a futura utilização de eventos e Observer;
+- analisar a modelagem inicial dos dados.
+
+As sugestões geradas pelas ferramentas de IA foram revisadas e adaptadas antes de serem incorporadas ao projeto.
+
+### Resultado do encontro
+
+Ao final do encontro, foi concluída a primeira versão da camada:
+
+**PNCP → RAW.**
+
+O sistema já possui a estrutura necessária para:
+
+- iniciar uma execução de ingestão;
+- consultar uma fonte PNCP paginada;
+- identificar cada PCA através de `idPcaPncp`;
+- preservar o payload original;
+- gerar hash do conteúdo;
+- identificar registros novos, atualizados ou inalterados;
+- manter histórico das alterações;
+- registrar métricas da execução;
+- controlar checkpoint;
+- evitar avanço do checkpoint em caso de falha;
+- registrar logs estruturados.
+
+Essa etapa cria a base necessária para que os dados possam ser processados nas próximas fases sem perder a informação original recebida da fonte.
+
+### Próximos passos
+
+O próximo passo será finalizar a validação da camada RAW utilizando uma consulta real ao PNCP quando o serviço estiver disponível.
+
+Também será revisado o armazenamento dos metadados da resposta da API, como:
+
+- página de origem;
+- posição do registro dentro da página;
+- metadados do envelope paginado;
+- parâmetros utilizados na consulta.
+
+Após a conclusão dessa validação, o planejamento é iniciar a próxima etapa da arquitetura:
+
+RAW  
+↓  
+eventos / observação  
+↓  
+processamento  
+↓  
+normalização
+
+Nessa etapa será estudada a implementação de um mecanismo de eventos para que novos registros ou atualizações na camada RAW possam disparar automaticamente os próximos processamentos.
+
+Posteriormente será iniciada a normalização específica do PCA, distribuindo as informações RAW para estruturas como:
+
+- órgão;
+- unidade administrativa;
+- PCA;
+- item do PCA.
+
