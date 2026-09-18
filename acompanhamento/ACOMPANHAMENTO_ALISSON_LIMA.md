@@ -157,7 +157,7 @@ configuração do ambiente e versionamento foram acompanhadas e validadas durant
 o desenvolvimento.
 
 ---
-## Encontro 1 - 2026-09-18
+## Encontro 2 - 2026-09-18
 ### Relato individual - Alisson Lima de Souza (4h)
 
 ## Atividades realizadas hoje
