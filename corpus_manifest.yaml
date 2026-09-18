@@ -1,0 +1,23 @@
+version: 1
+sources:
+  - id: pncp_pca_rj
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: agregada
+    resource_type: pca
+    endpoint: /api/consulta/v1/pca/atualizacao
+    params:
+      dataInicial: "2025-01-01"
+      dataFinal: "2025-12-31"
+      uf: RJ
+    pagination:
+      page_param: pagina
+      page_size_param: tamanhoPagina
+      page_size: 50
+      max_pages: 24
+    request:
+      timeout_seconds: 30
+      rate_limit_seconds: 0.2
+    item_path: data
+    key_fields:
+      - idPcaPncp

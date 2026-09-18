@@ -1,0 +1,192 @@
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from src.ingest import RawRepository, ingest_records
+from app.core.database.repositories.raw_repository import (
+    RawRepository as AssetRepository,
+)
+from app.core.database.repositories.run_repository import RunRepository
+from app.core.database import initialize_database
+from src.schema import CollectedRecord
+
+
+class RawIngestionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.database_url = f"sqlite:///{Path(self.temp_dir.name) / 'raw.db'}"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_new_unchanged_and_updated_preserve_raw_fields(self):
+        repository = RawRepository(self.database_url)
+        first = CollectedRecord(
+            "pncp",
+            {"valorUnitario": 6.25, "descricaoItem": "Arroz tipo 1"},
+            "url",
+            "1",
+            1,
+        )
+        result_one = ingest_records(
+            repository, "pncp", ("descricaoItem",), [first]
+        )
+        result_two = ingest_records(
+            repository, "pncp", ("descricaoItem",), [first]
+        )
+        changed = CollectedRecord(
+            "pncp",
+            {"valorUnitario": 7.0, "descricaoItem": "Arroz tipo 1"},
+            "url",
+            "1",
+            1,
+        )
+        result_three = ingest_records(
+            repository, "pncp", ("descricaoItem",), [changed]
+        )
+
+        self.assertEqual(result_one.new, 1)
+        self.assertEqual(result_two.unchanged, 1)
+        self.assertEqual(result_three.updated, 1)
+        rows = repository.connection.execute(
+            "SELECT payload FROM raw_asset ORDER BY created_at"
+        ).fetchall()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(json.loads(rows[0]["payload"])["valorUnitario"], 6.25)
+        self.assertEqual(
+            json.loads(rows[1]["payload"])["descricaoItem"], "Arroz tipo 1"
+        )
+        versions = repository.connection.execute(
+            "SELECT id, payload_hash, previous_version_id "
+            "FROM raw_asset ORDER BY rowid"
+        ).fetchall()
+        self.assertIsNone(versions[0]["previous_version_id"])
+        self.assertEqual(versions[1]["previous_version_id"], versions[0]["id"])
+        repository.close()
+
+    def test_raw_repository_is_append_only(self):
+        connection = initialize_database(self.database_url)
+        runs = RunRepository(connection)
+        assets = AssetRepository(connection)
+        run_id = runs.start_run("pncp", "records")
+        first = CollectedRecord("pncp", {"id": "1", "valor": 1}, "url", "1", 1)
+        second = CollectedRecord(
+            "pncp", {"id": "1", "valor": 2}, "url", "1", 1
+        )
+
+        first_id = assets.insert_raw(run_id, first, "1", "hash-a")
+        second_id = assets.insert_raw(run_id, second, "1", "hash-b")
+        rows = connection.execute(
+            "SELECT id, previous_version_id FROM raw_asset ORDER BY rowid"
+        ).fetchall()
+
+        self.assertEqual((first_id, second_id), (rows[0]["id"], rows[1]["id"]))
+        self.assertEqual(rows[1]["previous_version_id"], first_id)
+        self.assertEqual(
+            assets.find_latest("pncp", "records", "1")["id"], second_id
+        )
+        connection.close()
+
+    def test_run_repository_fail_run_records_error_and_counts(self):
+        connection = initialize_database(self.database_url)
+        runs = RunRepository(connection)
+        run_id = runs.start_run("pncp", "records")
+        counts = {
+            "records_seen": 3,
+            "NEW": 1,
+            "UPDATED": 1,
+            "UNCHANGED": 1,
+            "FAILED": 0,
+        }
+
+        runs.fail_run(run_id, counts, pages_processed=2, error="timeout")
+        row = connection.execute(
+            "SELECT status, pages_processed, records_received, "
+            "records_inserted, records_updated, records_unchanged, "
+            "error_message FROM ingestion_run WHERE id = ?",
+            (run_id,),
+        ).fetchone()
+
+        self.assertEqual(
+            tuple(row), ("FAILED", 2, 3, 1, 1, 1, "timeout")
+        )
+        connection.close()
+
+    def test_schema_is_sqlite_and_run_is_auditable(self):
+        repository = RawRepository(self.database_url)
+        result = ingest_records(
+            repository,
+            "pncp",
+            ("id",),
+            [
+                CollectedRecord(
+                    "pncp",
+                    {"id": "1", "campoPNCP": "original"},
+                    "url",
+                    "1",
+                    1,
+                )
+            ],
+        )
+        tables = {
+            row[0]
+            for row in repository.connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        self.assertEqual(
+            tables,
+            {"ingestion_run", "sync_checkpoint", "raw_asset"},
+        )
+        run = repository.connection.execute(
+            "SELECT status, records_received FROM ingestion_run WHERE id = ?",
+            (result.run_id,),
+        ).fetchone()
+        self.assertEqual((run[0], run[1]), ("SUCCESS", 1))
+        checkpoint = repository.connection.execute(
+            "SELECT source, resource_type, last_page, status "
+            "FROM sync_checkpoint"
+        ).fetchone()
+        self.assertEqual(
+            tuple(checkpoint), ("pncp", "records", 1, "SUCCESS")
+        )
+        asset = repository.connection.execute(
+            "SELECT processing_status, ingestion_run_id, payload "
+            "FROM raw_asset"
+        ).fetchone()
+        self.assertEqual(asset["processing_status"], "RAW")
+        self.assertEqual(asset["ingestion_run_id"], result.run_id)
+        self.assertEqual(json.loads(asset["payload"])["campoPNCP"], "original")
+        repository.close()
+
+    def test_checkpoint_does_not_advance_when_run_fails(self):
+        repository = RawRepository(self.database_url)
+
+        def failing_records():
+            yield CollectedRecord(
+                "pncp", {"id": "1"}, "url", "1", 1
+            )
+            raise RuntimeError("falha de coleta")
+
+        with self.assertRaises(RuntimeError):
+            ingest_records(
+                repository,
+                "pncp",
+                ("id",),
+                failing_records(),
+            )
+
+        checkpoint = repository.connection.execute(
+            "SELECT COUNT(*) FROM sync_checkpoint"
+        ).fetchone()[0]
+        status = repository.connection.execute(
+            "SELECT status FROM ingestion_run"
+        ).fetchone()[0]
+        self.assertEqual(checkpoint, 0)
+        self.assertEqual(status, "FAILED")
+        repository.close()
+
+
+if __name__ == "__main__":
+    unittest.main()
