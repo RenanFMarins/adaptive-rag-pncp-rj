@@ -4,7 +4,7 @@
 
 
 
-**Repositório:** `rag-vendefacil-grupo13-araujo-lima`
+**Repositório:** `rag-grande-desafio-grupo03-contratacoes-publicas`
 
 ---
 
@@ -157,4 +157,64 @@ configuração do ambiente e versionamento foram acompanhadas e validadas durant
 o desenvolvimento.
 
 ---
-teste
+## Encontro 2 - 2026-09-18
+### Relato individual - Alisson Lima de Souza (4h)
+
+## Atividades realizadas hoje
+
+Hoje foi desenvolvida a parte inicial de **autenticação e controle de acesso** da aplicação de Contratações Públicas do Estado do Rio de Janeiro.
+
+Foi implementada a integração da autenticação com o banco **SQLite**, utilizando a tabela `users` para persistência dos usuários. A estrutura mantém o padrão modular do projeto, separando as responsabilidades entre os módulos `auth` e `admin` e utilizando o mesmo banco `app.db` já adotado pela aplicação.
+
+Na parte de segurança, foi implementado o armazenamento seguro das senhas através de **hash**, evitando que senhas em texto puro sejam gravadas no banco.
+
+Também foi adicionada a autenticação baseada em **JWT (JSON Web Token)**. Após informar usuário e senha no endpoint de login, as credenciais são verificadas e, quando válidas, a API gera um `access_token`. Esse token pode ser utilizado como **Bearer Token** para acessar endpoints protegidos.
+
+Foram configuradas no `.env` as informações necessárias para geração e validação dos tokens:
+
+```env
+JWT_SECRET_KEY=
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+Também foi implementada a diferenciação entre os perfis:
+
+```text
+user
+admin
+```
+
+As rotas administrativas ficam protegidas, permitindo acesso somente a usuários autenticados com perfil `admin`.
+
+Foi criado ainda o comando para provisionamento seguro do primeiro administrador:
+
+```powershell
+python -m app.create_admin
+```
+
+O fluxo foi testado com a criação do primeiro usuário administrador no SQLite.
+
+O fluxo de autenticação implementado ficou:
+
+```text
+Usuário + Senha
+      ↓
+POST /auth/login
+      ↓
+Consulta do usuário no SQLite
+      ↓
+Verificação do hash da senha
+      ↓
+Geração do JWT
+      ↓
+access_token
+      ↓
+Bearer Token
+      ↓
+Acesso às rotas protegidas
+```
+
+A autenticação também foi integrada ao **Swagger**, permitindo realizar o login, copiar o `access_token`, utilizar a opção `Authorize` e testar endpoints autenticados diretamente em `/docs`.
+
+Por fim, foi utilizada a branch `feature/banco-login` para concentrar o desenvolvimento relacionado ao **banco de dados, usuários, login, autenticação JWT e administração**, além da atualização das dependências do projeto no `requirements.txt`.
