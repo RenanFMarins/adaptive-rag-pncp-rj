@@ -4,7 +4,7 @@
 
 
 
-**Repositório:** `rag-vendefacil-grupo13-araujo-lima`
+**Repositório:** `rag-grande-desafio-grupo03-contratacoes-publicas`
 
 ---
 
