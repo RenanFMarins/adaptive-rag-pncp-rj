@@ -30,6 +30,34 @@ class RawRepository:
         row = self.find_latest(source, resource_type, external_id)
         return row["payload_hash"] if row else None
 
+    def contains_version(
+        self,
+        source: str,
+        resource_type: str,
+        external_id: str,
+        digest: str,
+    ) -> bool:
+    
+        row = self.connection.execute(
+            "SELECT 1 FROM raw_asset WHERE source = ? "
+            "AND resource_type = ? AND external_id = ? "
+            "AND payload_hash = ? LIMIT 1",
+            (source, resource_type, external_id, digest),
+        ).fetchone()
+        return row is not None
+
+    def list_latest(self, source: str, resource_type: str):
+        return self.connection.execute(
+            "SELECT asset.* FROM raw_asset AS asset "
+            "JOIN ("
+            "  SELECT external_id, MAX(rowid) AS latest_rowid "
+            "  FROM raw_asset WHERE source = ? AND resource_type = ? "
+            "  GROUP BY external_id"
+            ") AS latest ON latest.latest_rowid = asset.rowid "
+            "ORDER BY asset.rowid",
+            (source, resource_type),
+        ).fetchall()
+
     def insert_raw(
         self,
         run_id: str,

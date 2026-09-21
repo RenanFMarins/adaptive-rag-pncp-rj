@@ -88,6 +88,85 @@ class RawIngestionTests(unittest.TestCase):
         )
         connection.close()
 
+    def test_latest_payloads_returns_one_version_per_external_id(self):
+        repository = RawRepository(self.database_url)
+        run_id = repository.start_run("pncp_contratacoes", "contratacao")
+        first = CollectedRecord(
+            "pncp_contratacoes",
+            {"numeroControlePNCP": "compra-1", "versao": 1},
+            "url",
+            "1",
+            1,
+        )
+        changed = CollectedRecord(
+            "pncp_contratacoes",
+            {"numeroControlePNCP": "compra-1", "versao": 2},
+            "url",
+            "1",
+            2,
+        )
+        repository.persist_record(
+            run_id,
+            first,
+            ("numeroControlePNCP",),
+            resource_type="contratacao",
+        )
+        repository.persist_record(
+            run_id,
+            changed,
+            ("numeroControlePNCP",),
+            resource_type="contratacao",
+        )
+
+        payloads = repository.latest_payloads(
+            "pncp_contratacoes", "contratacao"
+        )
+
+        self.assertEqual(payloads, [{"numeroControlePNCP": "compra-1", "versao": 2}])
+        repository.close()
+
+    def test_same_pca_in_multiple_pages_is_idempotent(self):
+        repository = RawRepository(self.database_url)
+        page_one = CollectedRecord(
+            "pncp_pca_rj",
+            {"idPcaPncp": "pca-1", "itens": [{"numeroItem": 1}]},
+            "https://pncp.example?p=1",
+            "1",
+            1,
+        )
+        page_two = CollectedRecord(
+            "pncp_pca_rj",
+            {"idPcaPncp": "pca-1", "itens": [{"numeroItem": 2}]},
+            "https://pncp.example?p=2",
+            "2",
+            2,
+        )
+
+        first = ingest_records(
+            repository,
+            "pncp_pca_rj",
+            ("idPcaPncp",),
+            [page_one, page_two],
+            resource_type="pca",
+        )
+        second = ingest_records(
+            repository,
+            "pncp_pca_rj",
+            ("idPcaPncp",),
+            [page_one, page_two],
+            resource_type="pca",
+        )
+
+        self.assertEqual((first.new, first.updated), (1, 1))
+        self.assertEqual(
+            (second.new, second.updated, second.unchanged), (0, 0, 2)
+        )
+        raw_count = repository.connection.execute(
+            "SELECT COUNT(*) FROM raw_asset WHERE resource_type = 'pca'"
+        ).fetchone()[0]
+        self.assertEqual(raw_count, 2)
+        repository.close()
+
     def test_run_repository_fail_run_records_error_and_counts(self):
         connection = initialize_database(self.database_url)
         runs = RunRepository(connection)
