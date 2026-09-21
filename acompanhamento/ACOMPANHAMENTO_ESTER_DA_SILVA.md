@@ -121,7 +121,76 @@ e deixamos comentado que a lei vem em HTML e os editais em PDF.
 
 ---
 
-## Encontro 3 · DD/MM/AAAA
+## Encontro 3 · 21/09/2026
+
+### O que eu fiz hoje
+
+Hoje a Ana e eu trabalhamos juntas na coleta da base normativa.
+Começamos atualizando o repositório local com a main, que tinha
+recebido várias mudanças do time (login, banco de dados e requirements).
+
+Antes de escrever código, precisamos entender onde ele deveria ficar. 
+Como o time definiu que devemos seguir a arquitetura
+do README, a coleta ficou em `app/modules/normative/services.py`, junto com
+`model.py`, `schemas.py` e `routes.py`, que por enquanto estão vazios.
+
+A coleta lê o bloco `editais_normativo` do manifesto, baixa a Lei 14.133 e os
+5 editais, copia os 7 decretos que baixamos à mão, confere o sha256 de cada
+decreto e grava tudo em `data/raw/v1/`. Os registros de cada arquivo (tamanho,
+hash, origem, status) ficam em `data/inventory/v1_editais_normativo.json`,
+que é a base para o CORPUS_INVENTORY.md. O resultado foi 13 documentos
+coletados, 0 falhas e divergência 0 em relação ao `volume_alvo`. Rodando uma
+segunda vez, nada foi baixado de novo, que é a idempotência que o professor
+pede.
+
+Também criamos os testes da coleta, que rodam sem internet: reconhecer PDF e
+HTML, não aceitar a mensagem de erro do PNCP como documento, gerar sempre o
+mesmo nome para o mesmo link, não baixar de novo o que já existe e marcar como
+falha um decreto com hash diferente do manifesto. Os 9 testes passaram.
+
+O commit e o push foram feitos do computador da Ana, porque trabalhamos nele,
+então o commit aparece no nome dela.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o rascunho da coleta e dos testes, comparar as duas
+  estruturas de pastas e entender os erros que apareceram.
+- **O que eu conferi / mudei:** mudamos o local do código para seguir a
+  arquitetura do time, ajustamos o caminho dos registros para
+  `data/inventory/`, rodamos a coleta e os testes e conferimos o resultado
+  (13 documentos, 9 testes). Revisei no GitHub se os arquivos chegaram na
+  branch `base-normativa`.
+
+### O que travou
+
+- Os sites do governo usam certificados da ICP-Brasil, que o Python não
+  reconhece, e todos os downloads davam SSLError. Resolvemos com a biblioteca
+  `truststore`, que usa os certificados do Windows. O Planalto também só
+  respondeu quando o programa se identificou como navegador.
+- Salvamos o teste em `tests/integration/` e o comando procurava em `tests/`,
+  por isso deu "file not found".
+
+### Próximo passo
+
+- Incluir `truststore` e `pypdf` no `requirements.txt` (ainda não foi enviado).
+- Combinar com o coordenador a montagem do CORPUS_INVENTORY.md com as 4 bases
+  e onde ficam os decretos baixados à mão (`data/manual/` não está na
+  arquitetura).
+- Na próxima aula, apoiar a Ana no processamento da base normativa.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** coleta em `app/modules/normative/services.py`
+  (13 documentos, 0 falhas), registros em `data/inventory/` e 9 testes
+  passando.
+- **Travou:** certificados dos sites do governo, erro de colagem e caminho do
+  teste.
+- **Próximo passo:** processamento da base normativa e CORPUS_INVENTORY.md.
+
+---
+
+## Encontro 4 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
