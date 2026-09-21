@@ -12,10 +12,19 @@ class SourceConfig:
 	id: str
 	base: str
 	endpoint: str
+	collector: str = "paged"
 	base_id: str = "pncp"
 	natureza: str = "estruturada"
 	resource_type: str = "records"
+	sensitivity: str = "public"
 	params: Mapping[str, Any] = field(default_factory=dict)
+	targets: tuple[Mapping[str, Any], ...] = ()
+	target_source_id: str | None = None
+	target_resource_type: str | None = None
+	target_field_paths: Mapping[str, str] = field(default_factory=dict)
+	items_endpoint_template: str | None = None
+	items_page_size: int = 50
+	max_items_per_purchase: int | None = None
 	item_path: str | None = None
 	key_fields: tuple[str, ...] = ()
 	page_param: str = "pagina"
@@ -34,10 +43,23 @@ class SourceConfig:
 			id=str(value["id"]),
 			base=str(value.get("base", "")),
 			endpoint=str(value["endpoint"]),
+			collector=str(value.get("collector", "paged")),
 			base_id=str(value.get("base_id", "pncp")),
 			natureza=str(value.get("natureza", "estruturada")),
 			resource_type=str(value.get("resource_type", "records")),
+			sensitivity=str(value.get("sensitivity", "public")),
 			params=dict(value.get("params", {})),
+			targets=tuple(dict(target) for target in value.get("targets", ())),
+			target_source_id=value.get("target_source_id"),
+			target_resource_type=value.get("target_resource_type"),
+			target_field_paths=dict(value.get("target_field_paths", {})),
+			items_endpoint_template=value.get("items_endpoint_template"),
+			items_page_size=int(value.get("items_page_size", 50)),
+			max_items_per_purchase=(
+				int(value["max_items_per_purchase"])
+				if value.get("max_items_per_purchase") is not None
+				else None
+			),
 			item_path=value.get("item_path"),
 			key_fields=tuple(value.get("key_fields", ())),
 			page_param=str(pagination.get("page_param", "pagina")),

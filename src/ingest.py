@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Iterable
 
 from app.core.database import initialize_database
@@ -15,8 +16,6 @@ from .schema import CollectedRecord, IngestionResult
 
 
 class RawRepository:
-    """Facade de compatibilidade para a persistencia RAW."""
-
     def __init__(self, database_url: str | None = None) -> None:
         self.connection = initialize_database(database_url)
         self.assets = RawAssetRepository(self.connection)
@@ -52,6 +51,14 @@ class RawRepository:
             source_id, resource_type, run_id, last_page
         )
 
+    def latest_payloads(
+        self, source_id: str, resource_type: str
+    ) -> list[dict]:
+        return [
+            json.loads(row["payload"])
+            for row in self.assets.list_latest(source_id, resource_type)
+        ]
+
     def persist_record(
         self,
         run_id: str,
@@ -66,10 +73,15 @@ class RawRepository:
     ) -> str:
         key = asset_key(record.payload, key_fields)
         digest = payload_hash(record.payload)
-        status = detect_change(
-            self.assets.latest_hash(record.source_id, resource_type, key),
-            digest,
+        latest_digest = self.assets.latest_hash(
+            record.source_id, resource_type, key
         )
+        if self.assets.contains_version(
+            record.source_id, resource_type, key, digest
+        ):
+            status = "UNCHANGED"
+        else:
+            status = detect_change(latest_digest, digest)
         if status != "UNCHANGED":
             self.assets.insert_raw(
                 run_id,

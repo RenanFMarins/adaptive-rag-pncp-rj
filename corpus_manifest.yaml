@@ -3,21 +3,85 @@ sources:
   - id: pncp_pca_rj
     base: https://pncp.gov.br
     base_id: pncp
-    natureza: agregada
+    natureza: agregadaen
     resource_type: pca
     endpoint: /api/consulta/v1/pca/atualizacao
     params:
-      dataInicial: "2025-01-01"
-      dataFinal: "2025-12-31"
-      uf: RJ
+      # A API de consulta do PCA exige os nomes abaixo e datas yyyyMMdd.
+      # O CNPJ limita a primeira carga a um recorte pequeno e reproduzível.
+      dataInicio: "20250401"
+      dataFim: "20250430"
+      cnpj: "42498733000148"
     pagination:
       page_param: pagina
       page_size_param: tamanhoPagina
-      page_size: 50
-      max_pages: 24
+      page_size: 10
+      max_pages: 2
     request:
       timeout_seconds: 30
       rate_limit_seconds: 0.2
     item_path: data
     key_fields:
       - idPcaPncp
+
+  # Prova controlada da base estruturada. O período é fechado e o CNPJ
+  # mantém a carga reproduzível; a ampliação para todo o RJ deve preservar
+  # a separação por modalidade exigida pela API de consulta.
+  - id: pncp_contratacoes_rj_piloto
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: estruturada
+    resource_type: contratacao
+    collector: paged
+    endpoint: /api/consulta/v1/contratacoes/publicacao
+    params:
+      dataInicial: "20260128"
+      dataFinal: "20260128"
+      codigoModalidadeContratacao: 6
+      uf: RJ
+      cnpj: "33345109000110"
+    pagination:
+      page_param: pagina
+      page_size_param: tamanhoPagina
+      page_size: 50
+      max_pages: 1
+    request:
+      timeout_seconds: 45
+      rate_limit_seconds: 0.2
+    item_path: data
+    key_fields:
+      - numeroControlePNCP
+
+  # Piloto real da segunda fonte-semente da base agregada. A lista de
+  # targets abaixo é fallback enquanto a consulta estruturada estiver
+  # indisponível; havendo RAW de contratação, ela tem precedência.
+  - id: pncp_resultado_item_piloto_rj
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: agregada
+    resource_type: resultado_item
+    collector: pncp_item_results
+    sensitivity: public_with_personal_data
+    items_endpoint_template: /api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
+    endpoint: /api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/resultados
+    targets:
+      - cnpj: "33345109000110"
+        ano: 2025
+        sequencial: 66
+    target_source_id: pncp_contratacoes_rj_piloto
+    target_resource_type: contratacao
+    target_field_paths:
+      cnpj: orgaoEntidade.cnpj
+      ano: anoCompra
+      sequencial: sequencialCompra
+    items_page_size: 50
+    pagination:
+      # Aqui uma "página" corresponde a uma contratação-alvo.
+      max_pages: 1
+    request:
+      timeout_seconds: 30
+      rate_limit_seconds: 0.2
+    key_fields:
+      - numeroControlePNCPCompra
+      - numeroItem
+      - sequencialResultado
