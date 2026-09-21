@@ -417,3 +417,178 @@ Posteriormente será iniciada a normalização específica do PCA, distribuindo 
 - PCA;
 - item do PCA.
 
+---
+
+## Encontro 3 - 2026-09-21
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Hoje dei continuidade à implementação da **Base Agregada**, avançando da
+coleta inicial do Plano de Contratações Anual para a segunda fonte
+definida pelo professor: os **valores homologados por item**.
+
+O primeiro trabalho foi compreender a diferença entre os itens existentes no
+PCA e os itens de uma contratação. Apesar de ambos utilizarem o termo "item",
+eles representam etapas diferentes do processo:
+
+- o item do PCA registra o planejamento da futura contratação;
+- o item da contratação representa aquilo que foi efetivamente licitado;
+- o resultado do item registra quantidade e valores homologados, fornecedor e
+  situação do resultado.
+
+Foi confirmado que campos como `valorTotal` e `quantidadeEstimada`, presentes
+no PCA, não podem ser interpretados como valores homologados. Os valores
+homologados são obtidos por um endpoint específico do PNCP e possuem campos
+como:
+
+- `quantidadeHomologada`;
+- `valorUnitarioHomologado`;
+- `valorTotalHomologado`;
+- `sequencialResultado`;
+- `nomeRazaoSocialFornecedor`;
+- `dataResultado`;
+- `situacaoCompraItemResultadoNome`.
+
+### Coleta hierárquica dos resultados
+
+Foi implementado o `ItemResultCollector`, responsável por navegar pela
+estrutura hierárquica da API:
+
+```text
+contratação
+  → itens paginados
+    → item com temResultado=true
+      → resultados homologados do item
+```
+
+O coletor utiliza como identificadores:
+
+- CNPJ do órgão;
+- ano da compra;
+- sequencial da compra;
+- número do item.
+
+### Validação com dados reais
+
+Foi executada uma coleta real e controlada de uma contratação do Estado do
+Rio de Janeiro. A API retornou:
+
+- 42 itens da contratação;
+- 38 itens com resultado homologado;
+- 4 itens sem resultado;
+- total homologado de R$ 317.227,64.
+
+O total calculado a partir dos payloads RAW coincidiu com o valor total
+homologado apresentado no portal do PNCP.
+
+A carga foi executada novamente para validar a idempotência. Na segunda
+execução, os 38 registros foram classificados como `UNCHANGED`, sem criação
+de duplicatas.
+
+Os resultados foram armazenados na tabela `raw_asset` utilizando:
+
+```text
+resource_type = resultado_item
+natureza = agregada
+processing_status = RAW
+```
+
+O JSON original continua preservado na coluna `payload`, sem transformação
+dos nomes ou dos valores fornecidos pelo PNCP.
+
+### Relação com a Base Estruturada
+
+Durante a análise foi identificado que a Base Agregada depende de parte da
+Base Estruturada para descobrir corretamente as contratações que deverão ter
+seus resultados consultados.
+
+A contratação estruturada fornece principalmente:
+
+- `orgaoEntidade.cnpj`;
+- `anoCompra`;
+- `sequencialCompra`;
+- `numeroControlePNCP`;
+- modalidade, objeto, datas e situação da contratação.
+
+Foi adicionada ao manifesto uma fonte piloto para contratações publicadas em
+um período fechado e foi implementada a ligação para que o coletor agregado
+priorize automaticamente os alvos existentes na RAW estruturada.
+
+Quando existirem registros com `resource_type = contratacao`, o sistema
+extrairá CNPJ, ano e sequencial desses payloads e os utilizará para buscar os
+itens e resultados homologados. Um alvo manual foi mantido temporariamente
+como fallback para permitir a validação da integração.
+
+A consulta paginada de contratações apresentou timeout de leitura durante a
+validação real. A falha foi registrada em `ingestion_run` com status `FAILED`,
+sem avançar o checkpoint e sem afetar os resultados já armazenados.
+
+### Modelagem de dados
+
+Também foi estudada a modelagem futura da camada normalizada. Foram
+identificadas como principais entidades:
+
+- órgão;
+- unidade administrativa;
+- PCA;
+- item do PCA;
+- contratação;
+- item da contratação;
+- resultado do item;
+- fornecedor;
+- contrato ou empenho.
+
+### Testes e organização do repositório
+
+Foram adicionados testes para validar:
+
+- paginação dos itens de uma contratação;
+- preservação do payload de resultado;
+- validação da chave composta;
+- rejeição de CNPJ ou identificadores inválidos;
+- substituição do alvo manual por contratações vindas da RAW;
+- recuperação somente da versão mais recente de cada contratação;
+- idempotência e versionamento.
+
+Ao final, a suíte ficou com 23 testes offline executados com sucesso.
+
+O banco local `app.db` também foi adicionado ao `.gitignore` e retirado do
+controle de versão da branch, evitando o envio de dados coletados e arquivos
+binários para o repositório.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- interpretar a diferença entre a documentação OpenAPI 3 e os endpoints
+  operacionais `/v1`;
+- discutir a modelagem relacional das entidades;
+- revisar as regras de paginação, idempotência e versionamento;
+- elaborar uma especificação visual da futura modelagem de dados.
+
+### Resultado do encontro
+
+Ao final do encontro, a Base Agregada passou a possuir duas fontes RAW
+validadas conceitualmente:
+
+```text
+PCA → planejamento
+resultado_item → homologação
+```
+
+A coleta real de resultados homologados foi concluída, paginada e validada
+quanto à idempotência. Também foi preparada a integração com a Base
+Estruturada para descoberta automática das contratações.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- repetir a carga estruturada quando o endpoint de contratações estiver
+  respondendo normalmente;
+- substituir definitivamente o alvo piloto pelos registros estruturados;
+- definir o recorte completo de órgãos, modalidades e período do RJ;
+- implementar retry limitado para falhas transitórias;
+- evoluir da RAW para as tabelas normalizadas;
+- implementar inventário e versionamento imutável do corpus;
+- manter os testes de contrato e integração separados da suíte offline.
