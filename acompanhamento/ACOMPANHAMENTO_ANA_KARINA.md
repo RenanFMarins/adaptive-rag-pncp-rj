@@ -146,3 +146,65 @@ limpar antes de dividir por artigo. [ajustar com a sua visão]
 - **Travou:** certificados dos sites do governo, erro de colagem e caminho do
   teste.
 - **Próximo passo:** processamento da base normativa e CORPUS_INVENTORY.md.
+
+## Encontro 4 · 23/09/2026
+
+### O que eu fiz hoje
+
+Hoje fiz, com a Ester, o processamento da base normativa, que é a minha frente.
+A coleta já estava pronta da aula passada, então os documentos estavam
+disponíveis para serem tratados.
+
+Criei o módulo `app/modules/ingest/`, com `services.py`, `schemas.py` e
+`routes.py`, como manda a arquitetura do time. O processamento faz quatro
+coisas: extrai o texto dos arquivos (PDF e HTML), limpa o que não é do
+documento, corta em pedaços e coloca os metadados.
+
+O que mais me chamou atenção foram os detalhes de cada formato. A Lei 14.133 vem
+em HTML e precisa ser lida como cp1252, senão os acentos quebram. Além disso, o
+Planalto mantém o texto revogado riscado na página: se ele entrasse, o sistema
+responderia com regra que não vale mais. Nos decretos, o cabeçalho e o rodapé da
+impressão apareciam no meio dos artigos, e os rótulos "Art. Xº" ficam numa
+coluna à esquerda, o que exigiu ler o PDF respeitando a posição do texto na
+página.
+
+Na divisão por artigo, aprendi que não basta procurar "Art." no começo da linha:
+citações como "Art. 2º desta Lei" apareciam no meio de um artigo e quebravam o
+pedaço, e a Lei 14.133 ainda insere artigos no Código Penal, que fogem da
+sequência. O resultado final foram 784 pedaços, com a lei completa em 194
+artigos. [ajustar com a sua visão]
+
+Depois criei os testes em `tests/test_ingest_normativa.py`, com uma lei de
+exemplo bem pequena em `tests/fixtures/lei_trecho.html`, feita de propósito com
+um artigo com parágrafos e incisos, uma citação e um trecho riscado. Os 9 testes
+passaram.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o processamento e os testes e entender os problemas de
+  formato dos documentos.
+- **O que eu conferi / mudei:** rodei o processamento, conferi os pedaços
+  gerados, ajustei o caminho de saída para `data/processed/` e corrigi o lugar
+  dos arquivos de teste.
+
+### O que travou
+
+- Os arquivos de teste foram parar em `tests/integration/tests/fixtures/` por
+  causa das "pastas compactas" do VS Code, e o pytest não encontrava.
+- O arquivo de exemplo aparece com os acentos errados no editor, porque está em
+  cp1252 de propósito, e não pode ser salvo pelo VS Code.
+
+### Próximo passo
+
+- Entregar o `data/processed/v1_editais_normativo.jsonl` para quem faz a
+  indexação e a busca.
+- Ajudar no CORPUS_INVENTORY.md e abrir o pull request para a main.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** processamento em
+  `app/modules/ingest/services.py` (784 pedaços, Lei 14.133 com 194 artigos) e
+  9 testes passando.
+- **Travou:** caminho das pastas de teste e codificação do arquivo de exemplo.
+- **Próximo passo:** CORPUS_INVENTORY.md e integração com a etapa de busca.
