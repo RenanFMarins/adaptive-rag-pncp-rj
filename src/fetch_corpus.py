@@ -10,6 +10,7 @@ from .ingestion.pncp_collector import (
     ItemResultCollector,
     PCACollector,
     PNCPCollector,
+    PurchaseItemCollector,
 )
 from .schema import Manifest, SourceConfig, value_at_path
 
@@ -19,29 +20,33 @@ Collector = PNCPCollector
 def resolve_source_targets(
     repository: RawRepository, source: SourceConfig
 ) -> SourceConfig:
-    """Substitui alvos manuais por contratações RAW quando disponíveis."""
+    """Resolve alvos a partir da última versão dos ativos RAW."""
     if not source.target_source_id or not source.target_resource_type:
         return source
 
-    payloads = repository.latest_payloads(
+    assets = repository.latest_assets(
         source.target_source_id, source.target_resource_type
     )
-    if not payloads:
+    if not assets:
         return source
     if not source.target_field_paths:
         raise ValueError("Fonte dependente sem target_field_paths")
 
     targets = []
     seen = set()
-    for payload in payloads:
+    for asset in assets:
+        payload = asset["payload"]
+        external_id = asset["external_id"]
         target = {
-            name: value_at_path(payload, path)
+            name: _target_value(payload, external_id, path)
             for name, path in source.target_field_paths.items()
         }
-        missing = [name for name, value in target.items() if value is None]
+        missing = [
+            name for name, value in target.items() if value in (None, "")
+        ]
         if missing:
             raise ValueError(
-                "Contratação RAW sem campos para resultado_item: "
+                "Ativo RAW sem campos para resolver target: "
                 + ", ".join(missing)
             )
         identity = tuple(target.items())
@@ -49,6 +54,15 @@ def resolve_source_targets(
             seen.add(identity)
             targets.append(target)
     return replace(source, targets=tuple(targets))
+
+
+def _target_value(payload: dict, external_id: str, path: str):
+    if path == "@external_id":
+        return external_id
+    if path == "@parent_external_id":
+        parent, separator, _ = external_id.rpartition("|")
+        return parent if separator else None
+    return value_at_path(payload, path)
 
 
 def run(
@@ -68,6 +82,7 @@ def run(
         collector_classes = {
             "paged": PNCPCollector,
             "pca": PCACollector,
+            "pncp_purchase_items": PurchaseItemCollector,
             "pncp_item_results": ItemResultCollector,
         }
         collector_name = source.collector
@@ -83,7 +98,6 @@ def run(
             checkpoint + 1
             if mode == "update"
             and checkpoint
-            and collector_name != "pncp_item_results"
             else 1
         )
         result = ingest_records(
@@ -99,6 +113,7 @@ def run(
             natureza=source.natureza,
             query_params=dict(source.params),
             sensitivity=source.sensitivity,
+            initial_checkpoint=(checkpoint if mode == "update" else 0),
         )
         print(json.dumps(result.__dict__, ensure_ascii=False, indent=2))
     finally:

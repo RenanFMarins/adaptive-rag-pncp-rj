@@ -8,8 +8,11 @@ from src.ingestion.pncp_client import PNCPClient, PNCPClientError
 
 
 class FakeResponse:
-    def __init__(self, payload):
-        self.payload = json.dumps(payload).encode("utf-8")
+    def __init__(self, payload=None, status=200):
+        self.payload = (
+            b"" if payload is None else json.dumps(payload).encode("utf-8")
+        )
+        self.status = status
 
     def __enter__(self):
         return self
@@ -39,7 +42,7 @@ class PNCPClientTests(unittest.TestCase):
 
     @patch("src.ingestion.pncp_client.urlopen")
     def test_get_translates_http_and_transport_errors(self, urlopen):
-        client = PNCPClient(base_url="https://pncp.example")
+        client = PNCPClient(base_url="https://pncp.example", max_retries=0)
         urlopen.side_effect = HTTPError(
             "https://pncp.example/api", 503, "unavailable", {}, io.BytesIO()
         )
@@ -49,6 +52,38 @@ class PNCPClientTests(unittest.TestCase):
         urlopen.side_effect = URLError("offline")
         with self.assertRaises(PNCPClientError):
             client.get("/api")
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_retries_transient_http_error(self, urlopen):
+        urlopen.side_effect = [
+            HTTPError(
+                "https://pncp.example/api",
+                503,
+                "unavailable",
+                {},
+                io.BytesIO(),
+            ),
+            FakeResponse({"items": [{"id": "1"}]}),
+        ]
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=1,
+            retry_backoff_seconds=0,
+        )
+
+        payload = client.get("/api")
+
+        self.assertEqual(payload, {"items": [{"id": "1"}]})
+        self.assertEqual(urlopen.call_count, 2)
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_returns_empty_list_for_http_204(self, urlopen):
+        urlopen.return_value = FakeResponse(status=204)
+        client = PNCPClient(base_url="https://pncp.example")
+
+        payload = client.get("/api")
+
+        self.assertEqual(payload, [])
 
 
 if __name__ == "__main__":

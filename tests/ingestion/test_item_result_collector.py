@@ -2,7 +2,7 @@ import unittest
 
 from src.fetch_corpus import resolve_source_targets
 from src.ingestion.pncp_collector import ItemResultCollector
-from src.schema import SourceConfig
+from src.schema import CollectionCheckpoint, CollectedRecord, SourceConfig
 
 
 class FakePNCPClient:
@@ -14,11 +14,6 @@ class FakePNCPClient:
 
     def get(self, endpoint, params=None, **kwargs):
         self.requested.append(endpoint)
-        if endpoint.endswith("/itens"):
-            return [
-                {"numeroItem": 1, "temResultado": True},
-                {"numeroItem": 2, "temResultado": False},
-            ]
         return [
             {
                 "numeroControlePNCPCompra": "12345678000199-1-000001/2025",
@@ -45,10 +40,16 @@ class ItemResultCollectorTests(unittest.TestCase):
             natureza="agregada",
             resource_type="resultado_item",
             targets=(
-                {"cnpj": "12345678000199", "ano": 2025, "sequencial": 1},
-            ),
-            items_endpoint_template=(
-                "/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens"
+                {
+                    "numero_controle": "12345678000199-1-000001/2025",
+                    "numero_item": 1,
+                    "tem_resultado": True,
+                },
+                {
+                    "numero_controle": "12345678000199-1-000001/2025",
+                    "numero_item": 2,
+                    "tem_resultado": False,
+                },
             ),
             key_fields=(
                 "numeroControlePNCPCompra",
@@ -57,53 +58,42 @@ class ItemResultCollectorTests(unittest.TestCase):
             ),
         )
 
-    def test_collects_only_available_results_and_preserves_payload(self):
+    def test_uses_raw_items_and_preserves_result_payload(self):
         client = FakePNCPClient()
 
-        records = list(ItemResultCollector(client).collect(self.source()))
+        collected = list(ItemResultCollector(client).collect(self.source()))
+        records = [item for item in collected if isinstance(item, CollectedRecord)]
+        checkpoints = [
+            item for item in collected if isinstance(item, CollectionCheckpoint)
+        ]
 
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0].payload["campoOriginal"], "preservado")
         self.assertEqual(records[0].payload["valorTotalHomologado"], 20.0)
-        self.assertEqual(records[0].cursor, "1")
-        self.assertEqual(len(client.requested), 2)
-        self.assertIn("/itens/1/resultados", client.requested[1])
-
-    def test_paginates_purchase_items(self):
-        client = FakePNCPClient()
-        calls = []
-
-        def paginated_get(endpoint, params=None, **kwargs):
-            if endpoint.endswith("/itens"):
-                calls.append(params)
-                if params["pagina"] == 1:
-                    return [{"numeroItem": 1, "temResultado": False}]
-                return []
-            raise AssertionError("Não deveria consultar resultados")
-
-        client.get = paginated_get
-        source = SourceConfig(
-            **{**self.source().__dict__, "items_page_size": 1}
-        )
-
-        records = list(ItemResultCollector(client).collect(source))
-
-        self.assertEqual(records, [])
         self.assertEqual(
-            calls,
-            [
-                {"pagina": 1, "tamanhoPagina": 1},
-                {"pagina": 2, "tamanhoPagina": 1},
-            ],
+            records[0].external_id,
+            "12345678000199-1-000001/2025|1|1",
         )
+        self.assertEqual([item.cursor for item in checkpoints], ["1", "2"])
+        self.assertEqual(len(client.requested), 1)
+        self.assertIn("/itens/1/resultados", client.requested[0])
+        self.assertNotIn("/itens?", client.requested[0])
+
+    def test_item_without_result_does_not_call_api_but_advances_target(self):
+        client = FakePNCPClient()
+        source = SourceConfig(
+            **{**self.source().__dict__, "targets": (self.source().targets[1],)}
+        )
+
+        collected = list(ItemResultCollector(client).collect(source))
+
+        self.assertEqual(client.requested, [])
+        self.assertEqual(collected, [CollectionCheckpoint("1")])
 
     def test_rejects_result_without_composite_identifier(self):
         client = FakePNCPClient()
-        original_get = client.get
 
         def incomplete_result(endpoint, params=None, **kwargs):
-            if endpoint.endswith("/itens"):
-                return original_get(endpoint, params, **kwargs)
             return [{"numeroItem": 1, "sequencialResultado": 1}]
 
         client.get = incomplete_result
@@ -111,39 +101,46 @@ class ItemResultCollectorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "numeroControlePNCPCompra"):
             list(ItemResultCollector(client).collect(self.source()))
 
-    def test_rejects_invalid_target_cnpj(self):
-        source = self.source()
-        invalid = SourceConfig(
+    def test_rejects_invalid_parent_control_number(self):
+        source = SourceConfig(
             **{
-                **source.__dict__,
-                "targets": ({"cnpj": "123", "ano": 2025, "sequencial": 1},),
+                **self.source().__dict__,
+                "targets": (
+                    {
+                        "numero_controle": "invalido",
+                        "numero_item": 1,
+                        "tem_resultado": True,
+                    },
+                ),
             }
         )
 
-        with self.assertRaisesRegex(ValueError, "CNPJ inválido"):
-            list(ItemResultCollector(FakePNCPClient()).collect(invalid))
+        with self.assertRaisesRegex(ValueError, "pai inválido"):
+            list(ItemResultCollector(FakePNCPClient()).collect(source))
 
-    def test_structured_raw_replaces_manual_target(self):
+    def test_raw_item_metadata_resolves_result_target(self):
         class FakeRepository:
-            def latest_payloads(self, source_id, resource_type):
+            def latest_assets(self, source_id, resource_type):
                 self.lookup = (source_id, resource_type)
                 return [
                     {
-                        "orgaoEntidade": {"cnpj": "98765432000199"},
-                        "anoCompra": 2026,
-                        "sequencialCompra": 42,
+                        "external_id": (
+                            "98765432000199-1-000042/2026|7"
+                        ),
+                        "payload": {"numeroItem": 7, "temResultado": True},
                     }
                 ]
 
         source = SourceConfig(
             **{
                 **self.source().__dict__,
-                "target_source_id": "pncp_contratacoes_rj",
-                "target_resource_type": "contratacao",
+                "targets": (),
+                "target_source_id": "pncp_itens_contratacao_rj",
+                "target_resource_type": "contratacao_item",
                 "target_field_paths": {
-                    "cnpj": "orgaoEntidade.cnpj",
-                    "ano": "anoCompra",
-                    "sequencial": "sequencialCompra",
+                    "numero_controle": "@parent_external_id",
+                    "numero_item": "numeroItem",
+                    "tem_resultado": "temResultado",
                 },
             }
         )
@@ -153,10 +150,17 @@ class ItemResultCollectorTests(unittest.TestCase):
 
         self.assertEqual(
             resolved.targets,
-            ({"cnpj": "98765432000199", "ano": 2026, "sequencial": 42},),
+            (
+                {
+                    "numero_controle": "98765432000199-1-000042/2026",
+                    "numero_item": 7,
+                    "tem_resultado": True,
+                },
+            ),
         )
         self.assertEqual(
-            repository.lookup, ("pncp_contratacoes_rj", "contratacao")
+            repository.lookup,
+            ("pncp_itens_contratacao_rj", "contratacao_item"),
         )
 
 

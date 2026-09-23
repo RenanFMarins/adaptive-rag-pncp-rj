@@ -3,7 +3,7 @@ sources:
   - id: pncp_pca_rj
     base: https://pncp.gov.br
     base_id: pncp
-    natureza: agregadaen
+    natureza: agregada
     resource_type: pca
     endpoint: /api/consulta/v1/pca/atualizacao
     params:
@@ -20,41 +20,70 @@ sources:
     request:
       timeout_seconds: 30
       rate_limit_seconds: 0.2
+      max_retries: 3
+      retry_backoff_seconds: 0.5
     item_path: data
     key_fields:
       - idPcaPncp
 
-  # Prova controlada da base estruturada. O período é fechado e o CNPJ
-  # mantém a carga reproduzível; a ampliação para todo o RJ deve preservar
-  # a separação por modalidade exigida pela API de consulta.
+  # Prova controlada da base estruturada. O período é fechado e a ampliação
+  # deve preservar a separação por modalidade exigida pela API de consulta.
   - id: pncp_contratacoes_rj_piloto
     base: https://pncp.gov.br
     base_id: pncp
     natureza: estruturada
     resource_type: contratacao
     collector: paged
-    endpoint: /api/consulta/v1/contratacoes/publicacao
+    endpoint: /api/consulta/v1/contratacoes/atualizacao
     params:
       dataInicial: "20260128"
       dataFinal: "20260128"
       codigoModalidadeContratacao: 6
       uf: RJ
-      cnpj: "33345109000110"
     pagination:
       page_param: pagina
       page_size_param: tamanhoPagina
-      page_size: 50
+      page_size: 10
       max_pages: 1
     request:
       timeout_seconds: 45
       rate_limit_seconds: 0.2
+      max_retries: 3
+      retry_backoff_seconds: 0.5
     item_path: data
     key_fields:
       - numeroControlePNCP
 
-  # Piloto real da segunda fonte-semente da base agregada. A lista de
-  # targets abaixo é fallback enquanto a consulta estruturada estiver
-  # indisponível; havendo RAW de contratação, ela tem precedência.
+  # Itens das contratações estruturadas já persistidas. O JSON retornado
+  # pelo PNCP é preservado; a identidade externa inclui a contratação-pai.
+  - id: pncp_itens_contratacao_rj_piloto
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: estruturada
+    resource_type: contratacao_item
+    collector: pncp_purchase_items
+    endpoint: /api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
+    target_source_id: pncp_contratacoes_rj_piloto
+    target_resource_type: contratacao
+    target_field_paths:
+      cnpj: orgaoEntidade.cnpj
+      ano: anoCompra
+      sequencial: sequencialCompra
+      numero_controle: numeroControlePNCP
+    items_page_size: 50
+    pagination:
+      # Aqui uma "página" corresponde a uma contratação-alvo.
+      max_pages: 10
+    request:
+      timeout_seconds: 30
+      rate_limit_seconds: 0.2
+      max_retries: 3
+      retry_backoff_seconds: 0.5
+    key_fields:
+      - numeroItem
+
+  # Resultados dos itens já existentes na RAW. O coletor não consulta
+  # novamente a lista de itens e ignora localmente temResultado=false.
   - id: pncp_resultado_item_piloto_rj
     base: https://pncp.gov.br
     base_id: pncp
@@ -62,25 +91,18 @@ sources:
     resource_type: resultado_item
     collector: pncp_item_results
     sensitivity: public_with_personal_data
-    items_endpoint_template: /api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
     endpoint: /api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/resultados
-    targets:
-      - cnpj: "33345109000110"
-        ano: 2025
-        sequencial: 66
-    target_source_id: pncp_contratacoes_rj_piloto
-    target_resource_type: contratacao
+    target_source_id: pncp_itens_contratacao_rj_piloto
+    target_resource_type: contratacao_item
     target_field_paths:
-      cnpj: orgaoEntidade.cnpj
-      ano: anoCompra
-      sequencial: sequencialCompra
-    items_page_size: 50
-    pagination:
-      # Aqui uma "página" corresponde a uma contratação-alvo.
-      max_pages: 1
+      numero_controle: "@parent_external_id"
+      numero_item: numeroItem
+      tem_resultado: temResultado
     request:
       timeout_seconds: 30
       rate_limit_seconds: 0.2
+      max_retries: 3
+      retry_backoff_seconds: 0.5
     key_fields:
       - numeroControlePNCPCompra
       - numeroItem
