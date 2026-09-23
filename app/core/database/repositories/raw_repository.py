@@ -58,6 +58,17 @@ class RawRepository:
             (source, resource_type),
         ).fetchall()
 
+    def list_latest_with_payload(self, source: str, resource_type: str):
+        """Retorna metadados e JSON dos ativos mais recentes para novos alvos."""
+        rows = self.list_latest(source, resource_type)
+        return [
+            {
+                "external_id": row["external_id"],
+                "payload": json.loads(row["payload"]),
+            }
+            for row in rows
+        ]
+
     def insert_raw(
         self,
         run_id: str,

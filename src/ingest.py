@@ -12,7 +12,7 @@ from app.core.database.repositories import (
 from .ingestion.change_detector import asset_key, detect_change
 from .ingestion.hashing import payload_hash
 from .obs import JsonlLogger
-from .schema import CollectedRecord, IngestionResult
+from .schema import CollectionCheckpoint, CollectedRecord, IngestionResult
 
 
 class RawRepository:
@@ -59,6 +59,11 @@ class RawRepository:
             for row in self.assets.list_latest(source_id, resource_type)
         ]
 
+    def latest_assets(
+        self, source_id: str, resource_type: str
+    ) -> list[dict]:
+        return self.assets.list_latest_with_payload(source_id, resource_type)
+
     def persist_record(
         self,
         run_id: str,
@@ -71,7 +76,7 @@ class RawRepository:
         corpus_version: str = "v1",
         sensitivity: str = "public",
     ) -> str:
-        key = asset_key(record.payload, key_fields)
+        key = record.external_id or asset_key(record.payload, key_fields)
         digest = payload_hash(record.payload)
         latest_digest = self.assets.latest_hash(
             record.source_id, resource_type, key
@@ -112,7 +117,7 @@ def ingest_records(
     repository: RawRepository,
     source_id: str,
     key_fields: tuple[str, ...],
-    records: Iterable[CollectedRecord],
+    records: Iterable[CollectedRecord | CollectionCheckpoint],
     mode: str = "update",
     logger: JsonlLogger | None = None,
     resource_type: str = "records",
@@ -121,9 +126,16 @@ def ingest_records(
     query_params: dict | None = None,
     corpus_version: str = "v1",
     sensitivity: str = "public",
+    initial_checkpoint: int = 0,
 ) -> IngestionResult:
     run_id = repository.start_run(source_id, resource_type)
-    counts = {"records_seen": 0, "NEW": 0, "UPDATED": 0, "UNCHANGED": 0}
+    counts = {
+        "records_seen": 0,
+        "NEW": 0,
+        "UPDATED": 0,
+        "UNCHANGED": 0,
+        "FAILED": 0,
+    }
     logger = logger or JsonlLogger()
     last_page = 0
     processed_pages: set[int] = set()
@@ -141,6 +153,8 @@ def ingest_records(
                     page=page,
                     status="SUCCESS",
                 )
+            if isinstance(record, CollectionCheckpoint):
+                continue
             status = repository.persist_record(
                 run_id,
                 record,
@@ -176,7 +190,7 @@ def ingest_records(
                     page=page,
                     status=status,
                 )
-        last_page = max(processed_pages, default=0)
+        last_page = max(processed_pages, default=initial_checkpoint)
         repository.finish_run(run_id, counts, len(processed_pages))
         repository.save_checkpoint(
             source_id, resource_type, run_id, last_page
@@ -204,7 +218,8 @@ def ingest_records(
             counts["UNCHANGED"],
         )
     except Exception as error:
-        last_page = max(processed_pages, default=0)
+        last_page = max(processed_pages, default=initial_checkpoint)
+        counts["FAILED"] += 1
         logger.event(
             "ingestion_failure",
             stage="pncp_fetch",
@@ -216,11 +231,14 @@ def ingest_records(
             new=counts["NEW"],
             updated=counts["UPDATED"],
             unchanged=counts["UNCHANGED"],
-            failed=1,
+            failed=counts["FAILED"],
             error=str(error),
         )
         repository.runs.fail_run(
-            run_id, counts, pages_processed=last_page, error=str(error)
+            run_id,
+            counts,
+            pages_processed=len(processed_pages),
+            error=str(error),
         )
         raise
 

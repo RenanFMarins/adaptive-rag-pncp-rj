@@ -33,6 +33,8 @@ class SourceConfig:
 	max_pages: int | None = None
 	timeout_seconds: float = 30.0
 	rate_limit_seconds: float = 0.0
+	max_retries: int = 2
+	retry_backoff_seconds: float = 0.5
 	headers: Mapping[str, str] = field(default_factory=dict)
 
 	@classmethod
@@ -68,6 +70,10 @@ class SourceConfig:
 			max_pages=(int(pagination["max_pages"]) if pagination.get("max_pages") is not None else None),
 			timeout_seconds=float(request.get("timeout_seconds", 30.0)),
 			rate_limit_seconds=float(request.get("rate_limit_seconds", 0.0)),
+			max_retries=int(request.get("max_retries", 2)),
+			retry_backoff_seconds=float(
+				request.get("retry_backoff_seconds", 0.5)
+			),
 			headers=dict(request.get("headers", {})),
 		)
 
@@ -100,6 +106,14 @@ class CollectedRecord:
 	source_url: str
 	cursor: str
 	ordinal: int
+	external_id: str | None = None
+
+
+@dataclass(frozen=True)
+class CollectionCheckpoint:
+	"""Marca um alvo concluído, mesmo quando ele não retorna registros."""
+
+	cursor: str
 
 
 @dataclass(frozen=True)

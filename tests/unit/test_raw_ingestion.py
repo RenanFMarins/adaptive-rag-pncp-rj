@@ -9,7 +9,7 @@ from app.core.database.repositories.raw_repository import (
 )
 from app.core.database.repositories.run_repository import RunRepository
 from app.core.database import initialize_database
-from src.schema import CollectedRecord
+from src.schema import CollectionCheckpoint, CollectedRecord
 
 
 class RawIngestionTests(unittest.TestCase):
@@ -87,6 +87,35 @@ class RawIngestionTests(unittest.TestCase):
             assets.find_latest("pncp", "records", "1")["id"], second_id
         )
         connection.close()
+
+    def test_record_external_id_overrides_payload_key(self):
+        repository = RawRepository(self.database_url)
+        result = ingest_records(
+            repository,
+            "pncp_itens_contratacao",
+            ("numeroItem",),
+            [
+                CollectedRecord(
+                    "pncp_itens_contratacao",
+                    {"numeroItem": 1, "descricao": "Item original"},
+                    "https://pncp.example/itens",
+                    "1",
+                    1,
+                    external_id="compra-123|1",
+                )
+            ],
+            resource_type="contratacao_item",
+        )
+
+        row = repository.connection.execute(
+            "SELECT external_id, payload FROM raw_asset "
+            "WHERE ingestion_run_id = ?",
+            (result.run_id,),
+        ).fetchone()
+
+        self.assertEqual(row["external_id"], "compra-123|1")
+        self.assertEqual(json.loads(row["payload"])["descricao"], "Item original")
+        repository.close()
 
     def test_latest_payloads_returns_one_version_per_external_id(self):
         repository = RawRepository(self.database_url)
@@ -183,12 +212,12 @@ class RawIngestionTests(unittest.TestCase):
         row = connection.execute(
             "SELECT status, pages_processed, records_received, "
             "records_inserted, records_updated, records_unchanged, "
-            "error_message FROM ingestion_run WHERE id = ?",
+            "records_failed, error_message FROM ingestion_run WHERE id = ?",
             (run_id,),
         ).fetchone()
 
         self.assertEqual(
-            tuple(row), ("FAILED", 2, 3, 1, 1, 1, "timeout")
+            tuple(row), ("FAILED", 2, 3, 1, 1, 1, 0, "timeout")
         )
         connection.close()
 
@@ -259,11 +288,50 @@ class RawIngestionTests(unittest.TestCase):
         checkpoint = repository.connection.execute(
             "SELECT COUNT(*) FROM sync_checkpoint"
         ).fetchone()[0]
-        status = repository.connection.execute(
-            "SELECT status FROM ingestion_run"
-        ).fetchone()[0]
         self.assertEqual(checkpoint, 0)
-        self.assertEqual(status, "FAILED")
+        run = repository.connection.execute(
+            "SELECT status, records_failed FROM ingestion_run"
+        ).fetchone()
+        self.assertEqual(tuple(run), ("FAILED", 1))
+        repository.close()
+
+    def test_target_checkpoint_advances_without_records_and_is_retained(self):
+        repository = RawRepository(self.database_url)
+
+        first = ingest_records(
+            repository,
+            "pncp_resultados",
+            ("id",),
+            [CollectionCheckpoint("3")],
+            resource_type="resultado_item",
+        )
+        second = ingest_records(
+            repository,
+            "pncp_resultados",
+            ("id",),
+            [],
+            resource_type="resultado_item",
+            initial_checkpoint=3,
+        )
+
+        checkpoint = repository.connection.execute(
+            "SELECT last_page FROM sync_checkpoint WHERE source = ?",
+            ("pncp_resultados",),
+        ).fetchone()[0]
+        first_run = repository.connection.execute(
+            "SELECT records_received, pages_processed FROM ingestion_run "
+            "WHERE id = ?",
+            (first.run_id,),
+        ).fetchone()
+        second_run = repository.connection.execute(
+            "SELECT records_received, pages_processed FROM ingestion_run "
+            "WHERE id = ?",
+            (second.run_id,),
+        ).fetchone()
+
+        self.assertEqual(checkpoint, 3)
+        self.assertEqual(tuple(first_run), (0, 1))
+        self.assertEqual(tuple(second_run), (0, 0))
         repository.close()
 
 
