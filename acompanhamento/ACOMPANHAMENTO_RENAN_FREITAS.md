@@ -592,3 +592,185 @@ Os próximos passos serão:
 - evoluir da RAW para as tabelas normalizadas;
 - implementar inventário e versionamento imutável do corpus;
 - manter os testes de contrato e integração separados da suíte offline.
+
+---
+
+## Encontro 4 - 2026-09-23
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+A primeira etapa da camada RAW das bases Estruturada e Agregada do PNCP. O objetivo
+foi completar o encadeamento entre contratação, item da contratação e resultado homologado, garantindo que os dados originais continuassem preservados antes do início da normalização.
+
+O fluxo implementado e validado ficou organizado da seguinte forma:
+
+```text
+contratação RAW
+  → item da contratação RAW
+    → resultado homologado RAW
+```
+
+### Coleta das contratações do Rio de Janeiro
+
+Foi ajustada a fonte piloto de contratações para realizar a consulta por
+atualização, mantendo o filtro `uf=RJ` e retirando o CNPJ fixo que limitava a
+coleta a um único órgão.
+
+### Implementação de `contratacao_item`
+
+Foi implementado o coletor responsável por utilizar as contratações já
+existentes na RAW para consultar seus respectivos itens no PNCP.
+
+O JSON devolvido pela API é armazenado sem inclusão, remoção ou alteração de
+campos. Para manter o relacionamento com a contratação-pai sem modificar o
+payload, foi adotado um identificador externo composto:
+
+```text
+numeroControlePNCP|numeroItem
+```
+
+Essa estratégia permite distinguir corretamente itens com o mesmo número em
+contratações diferentes e fornece a chave necessária para a futura camada
+normalizada.
+
+### Refatoração da coleta de resultados homologados
+
+O coletor de resultados foi refatorado para utilizar exclusivamente os itens
+já existentes na RAW. Antes da alteração, o fluxo consultava novamente o
+endpoint de listagem de itens para descobrir quais possuíam resultado.
+
+Somente itens com indicação de resultado geram uma nova chamada ao PNCP. Os
+itens com `temResultado=false` são processados localmente, sem requisição
+desnecessária.
+
+A execução real processou os 359 itens e coletou 26 resultados novos, sem
+falhas. Todos os 26 resultados foram conferidos e estavam ligados aos seus
+respectivos itens RAW. O banco de debug passou a possuir 64 resultados no
+total, considerando os 38 registros da coleta piloto anterior.
+
+Os payloads incluem informações necessárias à Base Agregada, como:
+
+- `quantidadeHomologada`;
+- `valorUnitarioHomologado`;
+- `valorTotalHomologado`;
+- `sequencialResultado`;
+- fornecedor;
+- situação e data do resultado.
+
+### Correção dos checkpoints por alvo
+
+Foi identificado que um alvo sem registros não avançava o checkpoint, pois o
+controle dependia da existência de um payload para reconhecer o processamento.
+Também existia o risco de uma execução sem novos alvos substituir o checkpoint
+anterior por zero.
+
+Na validação real, o checkpoint de resultados chegou ao alvo 359. Em seguida,
+foi executado o comando de atualização novamente. A nova execução recebeu zero
+registros e manteve corretamente o checkpoint em 359.
+
+### Retry e tratamento de respostas da API
+
+Foi implementado retry configurável para falhas transitórias do PNCP. O
+cliente passa a repetir requisições nos seguintes casos:
+
+- HTTP 429;
+- HTTP 500;
+- HTTP 502;
+- HTTP 503;
+- HTTP 504;
+- timeout;
+- falhas temporárias de conexão.
+
+A espera entre tentativas utiliza crescimento progressivo. Também foi
+adicionado o tratamento de HTTP 204, que agora é interpretado como uma
+resposta válida sem registros, em vez de erro de JSON.
+
+### Correção da contagem de falhas
+
+Foi corrigida a contabilização de falhas em `ingestion_run`. Anteriormente, o
+log indicava a falha, mas `records_failed` poderia permanecer com valor zero.
+
+Agora uma execução interrompida registra corretamente:
+
+- `status = FAILED`;
+- `records_failed = 1`;
+- mensagem do erro;
+- quantidade de registros recebidos antes da falha;
+- páginas ou alvos alcançados durante a execução.
+
+O checkpoint continua avançando somente quando o run termina com sucesso.
+
+### Testes
+
+Foram adicionados e atualizados testes para validar:
+
+- preservação do JSON original;
+- identificador composto com a contratação-pai;
+- uso dos itens RAW pelo coletor de resultados;
+- ausência de chamada HTTP para `temResultado=false`;
+- checkpoint de alvos sem registros;
+- preservação do checkpoint quando não existem novos alvos;
+- retry após erro HTTP transitório;
+- tratamento de HTTP 204;
+- persistência correta de `records_failed`;
+- ligação de resultados ao item correspondente.
+
+Ao final do encontro, a suíte completa ficou com 33 testes executados com
+sucesso.
+
+### Análise da relação entre PCA e contratação
+
+Também foi analisada a futura ligação entre os itens do PCA e os itens das
+contratações. Foi confirmado que os dados RAW recebidos de contratação e
+`contratacao_item` não possuem uma chave direta para `idPcaPncp` ou
+`numeroItemPca`.
+
+Por esse motivo, a futura tabela `PCA_CONTRATACAO_LINK` deverá representar uma
+associação construída na camada normalizada. Ela poderá registrar o método de
+associação e seu nível de confiança, pois um item planejado pode originar
+vários itens de contratação e vários itens planejados também podem ser
+consolidados em uma única contratação.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- revisar a arquitetura da camada RAW;
+- analisar os campos reais retornados pelo PNCP;
+- discutir a modelagem entre PCA, contratação, item e resultado;
+- revisar a estratégia de retry e HTTP 204;
+- documentar o fluxo de ingestão e depuração.
+
+As sugestões foram validadas por meio de testes offline, consultas somente
+leitura ao SQLite e execuções reais controladas contra a API pública do PNCP.
+
+### Resultado do encontro
+
+Ao final do encontro, foi concluído o fluxo RAW previsto para as contratações,
+seus itens e resultados homologados:
+
+```text
+10 contratações
+  → 359 itens de contratação
+    → 26 resultados novos ligados aos itens RAW
+```
+
+A coleta passou a possuir identificação do pai sem alteração do JSON, retry,
+tratamento de ausência de conteúdo, checkpoints por alvo, contagem correta de
+falhas e testes automatizados.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- repetir a coleta do PCA, que ainda não possui registros no banco de debug
+  devido ao timeout da tentativa anterior;
+- analisar os campos reais dos itens do PCA;
+- implementar as tabelas normalizadas de contratação, item e resultado;
+- normalizar órgão, unidade administrativa e fornecedor;
+- definir regras auditáveis para possíveis associações entre PCA e
+  contratação;
+- manter a referência de cada registro normalizado ao respectivo
+  `source_raw_asset_id`;
+- ampliar gradualmente o período, as modalidades e os órgãos consultados no
+  Estado do Rio de Janeiro.
