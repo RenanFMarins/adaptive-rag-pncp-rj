@@ -1,6 +1,13 @@
 from datetime import date
+from dataclasses import dataclass
 from pathlib import Path
-
+import time
+from typing import Any
+import re
+from urllib.parse import urlparse
+import zipfile
+import shutil
+import stat
 import requests
 
 from src.base_estrturada.pncp.client import pncp_client
@@ -287,11 +294,19 @@ def coletar_contratacoes(
 # CONTRATOS
 # ============================================================
 
+@dataclass
+class ResultadoColetaContratos:
+    """Resultado da coleta, inclusive páginas que devem ser retentadas."""
+
+    contratos: list[dict[str, Any]]
+    paginas_com_erro: list[int]
+
+
 def coletar_contratos(
     data_inicial: str,
     data_final: str,
     tamanho_pagina: int = 50,
-) -> list[dict]:
+) -> ResultadoColetaContratos:
     """
     Consulta contratos publicados no PNCP.
     """
@@ -299,13 +314,15 @@ def coletar_contratos(
     if tamanho_pagina <= 0:
         tamanho_pagina = 50
 
-    resultados: list[dict] = []
+    resultados: list[dict[str, Any]] = []
+    paginas_com_erro: list[int] = []
 
     controles_encontrados: set[str] = set()
 
     pagina = 1
+    total_paginas: int | None = None
 
-    while True:
+    while total_paginas is None or pagina <= total_paginas:
         params = {
             "dataInicial": data_inicial,
             "dataFinal": data_final,
@@ -325,7 +342,13 @@ def coletar_contratos(
                 f"página={pagina}"
             )
 
-            break
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         except requests.exceptions.ConnectionError as exc:
             print(
@@ -333,7 +356,13 @@ def coletar_contratos(
                 f"página={pagina} | {exc}"
             )
 
-            break
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         except requests.RequestException as exc:
             print(
@@ -341,31 +370,45 @@ def coletar_contratos(
                 f"página={pagina} | {exc}"
             )
 
-            break
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         if response.status_code == 204:
             break
 
         if response.status_code == 429:
             print(
-                "PNCP retornou HTTP 429 "
-                "ao consultar contratos."
+                f"PNCP continuou retornando HTTP 429 "
+                f"na página {pagina} após as tentativas automáticas."
             )
 
-            break
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         if response.status_code != 200:
             print(
                 f"Erro {response.status_code} | "
                 f"contratos | página={pagina}"
             )
+            print(response.text[:500])
 
-            try:
-                print(response.text)
-            except Exception:
-                pass
+            paginas_com_erro.append(pagina)
 
-            break
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         try:
             dados = response.json()
@@ -376,43 +419,85 @@ def coletar_contratos(
                 "ao consultar contratos."
             )
 
-            break
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
+
+        if not isinstance(dados, dict):
+            print(
+                f"Formato inválido | contratos | página={pagina}"
+            )
+
+            paginas_com_erro.append(pagina)
+
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
 
         registros = (
             dados.get("data")
             or []
         )
 
-        if not registros:
-            break
-
-        # ----------------------------------------------------
-        # REMOVE DUPLICADOS
-        # ----------------------------------------------------
-
-        for item in registros:
-            numero_controle = (
-                item.get(
-                    "numeroControlePNCP"
-                )
+        if not isinstance(registros, list):
+            print(
+                f"Campo 'data' inválido | contratos | página={pagina}"
             )
 
-            if numero_controle:
-                if (
-                    numero_controle
-                    in controles_encontrados
-                ):
-                    continue
+            paginas_com_erro.append(pagina)
 
-                controles_encontrados.add(
-                    numero_controle
-                )
+            if total_paginas is None:
+                break
+
+            pagina += 1
+            continue
+
+        total_paginas = dados.get("totalPaginas") or pagina
+
+        if not registros:
+            print(
+                f"Página {pagina}/{total_paginas} | recebidos=0"
+            )
+
+            if pagina >= total_paginas:
+                break
+
+            pagina += 1
+            time.sleep(5)
+            continue
+
+        # ----------------------------------------------------
+        # FILTRAGEM LOCAL DA UF E REMOÇÃO DE DUPLICADOS
+        # ----------------------------------------------------
+        for item in registros:
+            # Captura a UF do órgão emissor do contrato
+            unidade_orgao = item.get("unidadeOrgao") or {}
+            uf_orgao = str(
+                unidade_orgao.get("ufSigla") or ""
+            ).upper()
+            # Se NÃO for do Rio de Janeiro, pula para o próximo item
+            if uf_orgao != "RJ":
+                continue
+
+            numero_controle = item.get("numeroControlePNCP")
+
+            if numero_controle:
+                if numero_controle in controles_encontrados:
+                    continue
+                controles_encontrados.add(numero_controle)
 
             resultados.append(item)
 
-        total_paginas = (
-            dados.get("totalPaginas")
-            or 1
+        print(
+            f"Página {pagina}/{total_paginas} | "
+            f"recebidos={len(registros)} | "
+            f"RJ acumulados={len(resultados)}"
         )
 
         if pagina >= total_paginas:
@@ -420,7 +505,13 @@ def coletar_contratos(
 
         pagina += 1
 
-    return resultados
+        # Pausa entre páginas bem-sucedidas para reduzir HTTP 429.
+        time.sleep(5)
+
+    return ResultadoColetaContratos(
+        contratos=resultados,
+        paginas_com_erro=paginas_com_erro,
+    )
 
 
 # ============================================================
@@ -1037,3 +1128,560 @@ def baixar_todos_documentos_ata(
             )
 
     return arquivos_baixados
+
+
+# ============================================================
+# CONSULTAR DOCUMENTOS DO CONTRATO
+# ============================================================
+
+def consultar_documentos_contrato(
+        contrato: dict
+) -> list[dict]:
+    """
+    Lista os documentos vinculados a um contrato.
+    Não faz download.
+    """
+
+    orgao_entidade = contrato.get("orgaoEntidade") or {}
+
+    cnpj = orgao_entidade.get("cnpj")
+    ano = contrato.get("anoContrato")
+    sequencial = contrato.get("sequencialContrato")
+
+    if not cnpj or ano is None or sequencial is None:
+        print(
+            "Contrato sem cnpj, anoContrato ou "
+            "sequencialContrato. Ignorando."
+        )
+        return []
+    url = (
+        f"{BASE_URL_PNCP}/v1/orgaos/"
+        f"{cnpj}/contratos/"
+        f"{ano}/{sequencial}/arquivos"
+    )
+
+    try:
+        response = pncp_client.get(url)
+
+    except requests.RequestException as exc:
+        print(
+            f"Erro ao listar documentos do contrato "
+            f"{contrato.get('numeroControlePNCP')}: {exc}"
+        )
+        return []
+
+    if response.status_code == 204:
+        return []
+
+    if response.status_code != 200:
+        print(
+            f"Erro HTTP {response.status_code} ao listar "
+            f"documentos do contrato "
+            f"{contrato.get('numeroControlePNCP')}"
+        )
+        return []
+    try:
+        dados = response.json()
+    except ValueError:
+        print("Resposta de documentos não é um JSON válido.")
+        return []
+
+    if isinstance(dados, list):
+        return dados
+
+    if isinstance(dados, dict):
+        return (
+            dados.get("documentos")
+            or dados.get("data")
+            or []
+        )
+
+    return []
+
+
+# ============================================================
+# BAIXAR DOCUMENTOS DO CONTRATO
+# ============================================================
+
+
+def _nome_seguro(texto: str) -> str:
+    return re.sub(r'[<>:"/\\|?*]', "-", texto)
+
+
+def _url_pura(url: str) -> str:
+    if url.startswith("[") and "](" in url and url.endswith(")"):
+        return url.rsplit("](", 1)[1][:-1]
+    return url
+
+
+def _extensao_por_content_type(
+        content_type: str,
+        url: str
+) -> str:
+    content_type = content_type.lower().split(";")[0].strip()
+
+    extensoes = {
+        "application/pdf": ".pdf",
+        "application/zip": ".zip",
+        "application/x-rar-compressed": ".rar",
+        "application/vnd.rar": ".rar",
+        "application/msword": ".doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+        "application/vnd.oasis.opendocument.text": ".odt",
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+    }
+
+    if content_type in extensoes:
+        return extensoes[content_type]
+
+    extensao_url = Path(urlparse(url).path).suffix
+
+    if extensao_url:
+        return extensao_url.lower()
+
+    return ".bin"
+
+
+def baixar_documento_contrato(
+    numero_controle: str,
+    documento: dict[str, Any],
+    pasta_base: Path | str = "data/documents/original",
+
+) -> Path | None:
+    """
+    Baixa um documento do manifesto e preserva seu formato original.
+    """
+
+    url = documento.get("url") or documento.get("uri")
+
+    if not url:
+        print("Documento sem URL. Ignorando.")
+        return None
+
+    url = _url_pura(str(url))
+
+    sequencial = documento.get("sequencialDocumento", "sem_sequencial")
+
+    pasta_contrato = (
+        Path(pasta_base) / _nome_seguro(numero_controle)
+    )
+
+    try:
+        response = pncp_client.get(
+            url,
+            stream=True,
+            timeout=120
+        )
+
+        if response.status_code != 200:
+            print(
+                f"Erro HTTP {response.status_code} | "
+                f"download | contrato={numero_controle}"
+            )
+            return None
+
+        content_type = response.headers.get(
+            "Content-Type",
+            "",
+        )
+
+        extensao = _extensao_por_content_type(
+            content_type,
+            url,
+        )
+        destino = (
+            pasta_contrato
+            / f"documento_{sequencial}{extensao}"
+        )
+
+        temporario = destino.with_name(
+            f"{destino.name}.part"
+        )
+
+        pasta_contrato.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        with temporario.open("wb") as arquivo:
+            for bloco in response.iter_content(
+                chunk_size=82192
+            ):
+                if bloco:
+                    arquivo.write(bloco)
+
+        response.close()
+
+        if temporario.stat().st_size == 0:
+            temporario.unlink(missing_ok=True)
+
+            print(
+                f"Arquivo vazio | contrato={numero_controle}"
+            )
+            return None
+
+        temporario.replace(destino)
+
+        print(
+            f"Baixado | contrato={numero_controle} | "
+            f"arquivo={destino.name} | "
+            f"tipo={content_type}"
+        )
+
+        return destino
+    except requests.RequestException as exc:
+
+        print(
+            f"Erro no download | contrato={numero_controle} | "
+            f"{exc}"
+        )
+        return None
+
+    except OSError as exc:
+        print(
+            f"Erro ao salvar arquivo | contrato={numero_controle} | "
+            f"{exc}"
+        )
+        return None
+
+
+def baixar_documentos_manifesto(
+        manifesto: list[dict[str, Any]],
+        limite_contratos: int = 5,
+        limite_documentos_por_contrato:  int = 1,
+) -> int:
+    quantidade_baixada = 0
+
+    for contrato in manifesto[:limite_contratos]:
+        numero_controle = contrato.get("numeroControlePNCP")
+
+        if not numero_controle:
+            continue
+
+        documentos = contrato.get("documentos") or []
+
+        for documento in documentos[:limite_documentos_por_contrato]:
+
+            download_anterior = documento.get("download") or {}
+
+            caminho_anterior = download_anterior.get("caminho")
+
+            if (
+                download_anterior.get("status") == "baixado"
+                and caminho_anterior
+                and Path(caminho_anterior).exists()
+            ):
+                print(
+                    f"Já baixado | contrato={numero_controle}"
+                )
+                continue
+
+            caminho = baixar_documento_contrato(
+                numero_controle=numero_controle,
+                documento=documento,
+            )
+
+            if caminho:
+                documento["download"] = {
+                    "status": "baixado",
+                    "caminho": str(caminho),
+                }
+
+                quantidade_baixada += 1
+
+            else:
+                documento["download"] = {
+                    "status": "erro",
+                }
+
+        time.sleep(5)
+
+    return quantidade_baixada
+
+
+def detectar_formato_arquivo(
+    caminho: Path,
+) -> tuple[str, str]:
+    """
+    Retorna: (extensão, descrição do formato).
+    """
+
+    with caminho.open("rb") as arquivo:
+        inicio = arquivo.read(16)
+
+    if inicio.startswith(b"%PDF-"):
+        return ".pdf", "PDF"
+
+    if inicio.startswith(b"Rar!\x1a\x07\x00"):
+        return ".rar", "RAR 4"
+
+    if inicio.startswith(b"Rar!\x1a\x07\x01\x00"):
+        return ".rar", "RAR 5"
+
+    if inicio.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png", "PNG"
+
+    if inicio.startswith(b"\xff\xd8\xff"):
+        return ".jpg", "JPEG"
+
+    if inicio.startswith(b"PK"):
+        try:
+            with zipfile.ZipFile(caminho) as arquivo_zip:
+                nomes = arquivo_zip.namelist()
+
+                if any(nome.startswith("word/") for nome in nomes):
+                    return ".docx", "DOCX"
+
+                if any(nome.startswith("xl/") for nome in nomes):
+                    return ".xlsx", "XLSX"
+
+                if any(nome.startswith("ppt/") for nome in nomes):
+                    return ".pptx", "PPTX"
+
+                if "mimetype" in nomes:
+                    tipo_odf = (
+                        arquivo_zip.read("mimetype")
+                        .decode("utf-8", errors="ignore")
+                    )
+
+                    if "opendocument.text" in tipo_odf:
+                        return ".odt", "ODT"
+
+                return ".zip", "ZIP"
+
+        except zipfile.BadZipFile:
+            return ".bin", "Binário desconhecido"
+
+    # DOC, XLS e PPT antigos usam o mesmo formato-base OLE.
+    if inicio.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
+        return ".ole", "Documento Office antigo (OLE)"
+
+    return ".bin", "Binário desconhecido"
+
+
+def renomear_arquivo_detectado(
+    caminho: Path,
+) -> tuple[Path, str]:
+    extensao, formato = detectar_formato_arquivo(caminho)
+
+    novo_caminho = caminho.with_suffix(extensao)
+
+    if novo_caminho != caminho:
+        caminho.replace(novo_caminho)
+
+    return novo_caminho, formato
+
+
+def identificar_arquivos_do_manifesto(
+    manifesto: list[dict[str, Any]],
+) -> int:
+    quantidade_identificada = 0
+
+    for contrato in manifesto:
+        documentos = contrato.get("documentos") or []
+
+        for documento in documentos:
+            download = documento.get("download") or {}
+
+            if download.get("status") != "baixado":
+                continue
+
+            caminho_texto = download.get("caminho")
+
+            if not caminho_texto:
+                continue
+
+            caminho = Path(caminho_texto)
+
+            if not caminho.exists():
+                download["status"] = "arquivo_nao_encontrado"
+                documento["download"] = download
+                continue
+
+            novo_caminho, formato = (
+                renomear_arquivo_detectado(caminho)
+            )
+
+            documento["download"] = {
+                "status": "identificado",
+                "caminho": str(novo_caminho),
+                "formato": formato,
+            }
+
+            quantidade_identificada += 1
+
+            print(
+                f"Identificado | {novo_caminho.name} | "
+                f"formato={formato}"
+            )
+
+    return quantidade_identificada
+
+
+def _nome_seguro(texto: str) -> str:
+    caracteres_invalidos = '<>:"/\\|?*'
+
+    for caractere in caracteres_invalidos:
+        texto = texto.replace(caractere, "-")
+
+    return texto
+
+
+def extrair_zip_com_seguranca(
+    caminho_zip: Path,
+    pasta_destino: Path,
+    max_arquivos: int = 100,
+    max_tamanho_total: int = 200 * 1024 * 1024,
+) -> list[Path]:
+    """
+    Descompacta um ZIP com limites de segurança.
+
+    Retorna os caminhos dos arquivos extraídos.
+    """
+
+    with zipfile.ZipFile(caminho_zip) as arquivo_zip:
+        itens = arquivo_zip.infolist()
+
+        if len(itens) > max_arquivos:
+            raise RuntimeError(
+                f"ZIP possui {len(itens)} itens; "
+                f"limite permitido: {max_arquivos}."
+            )
+
+        tamanho_total = sum(
+            item.file_size
+            for item in itens
+        )
+
+        if tamanho_total > max_tamanho_total:
+            raise RuntimeError(
+                "ZIP excede o limite de tamanho "
+                "descompactado permitido."
+            )
+
+        pasta_destino.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        destino_absoluto = pasta_destino.resolve()
+        arquivos_extraidos: list[Path] = []
+
+        for item in itens:
+            if item.is_dir():
+                continue
+
+            modo = item.external_attr >> 16
+
+            if stat.S_ISLNK(modo):
+                print(
+                    f"Link simbólico ignorado: {item.filename}"
+                )
+                continue
+
+            caminho_saida = (
+                pasta_destino / item.filename
+            ).resolve()
+
+            # Evita arquivos com caminhos como ../../arquivo.txt
+            if not str(caminho_saida).startswith(
+                str(destino_absoluto)
+            ):
+                print(
+                    f"Caminho inválido ignorado: "
+                    f"{item.filename}"
+                )
+                continue
+
+            caminho_saida.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            with arquivo_zip.open(item) as origem:
+                with caminho_saida.open("wb") as destino:
+                    shutil.copyfileobj(origem, destino)
+
+            arquivos_extraidos.append(caminho_saida)
+
+    return arquivos_extraidos
+
+
+def extrair_zips_do_manifesto(
+    manifesto: list[dict[str, Any]],
+    pasta_base: Path | str = "data/documents/extracted",
+) -> int:
+    quantidade_extraida = 0
+    pasta_base = Path(pasta_base)
+
+    for contrato in manifesto:
+        numero_controle = contrato.get(
+            "numeroControlePNCP"
+        )
+
+        if not numero_controle:
+            continue
+
+        for documento in contrato.get("documentos") or []:
+            download = documento.get("download") or {}
+
+            if download.get("formato") != "ZIP":
+                continue
+
+            caminho_zip = Path(
+                download.get("caminho", "")
+            )
+
+            if not caminho_zip.exists():
+                print(
+                    f"ZIP não encontrado: {caminho_zip}"
+                )
+                continue
+
+            sequencial = documento.get(
+                "sequencialDocumento",
+                "sem_sequencial",
+            )
+
+            pasta_destino = (
+                pasta_base
+                / _nome_seguro(numero_controle)
+                / f"documento_{sequencial}"
+            )
+
+            try:
+                arquivos = extrair_zip_com_seguranca(
+                    caminho_zip=caminho_zip,
+                    pasta_destino=pasta_destino,
+                )
+
+            except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+                documento["extracao"] = {
+                    "status": "erro",
+                    "mensagem": str(exc),
+                }
+
+                print(
+                    f"Erro ao extrair ZIP | "
+                    f"contrato={numero_controle} | {exc}"
+                )
+                continue
+
+            documento["extracao"] = {
+                "status": "extraido",
+                "caminho": str(pasta_destino),
+                "arquivos": [
+                    str(arquivo)
+                    for arquivo in arquivos
+                ],
+            }
+
+            quantidade_extraida += 1
+
+            print(
+                f"ZIP extraído | contrato={numero_controle} | "
+                f"arquivos={len(arquivos)}"
+            )
+
+    return quantidade_extraida
