@@ -46,6 +46,7 @@ data/raw/
 index/
 indexes/
 logs/
+data/documents/
 
 
 # ==============================
