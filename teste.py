@@ -1,5 +1,5 @@
 from src.base_estrturada.pncp.repository import (
-    adicionar_contratos_novos,
+    adicionar_contratacoes_novas,
     salvar_paginas_com_erro,
     salvar_json,
     salvar_lista_de_documentos,
@@ -10,7 +10,10 @@ from src.base_estrturada.pncp.service import (
     coletar_contratos, consultar_documentos_contrato,
     baixar_documentos_manifesto,
     identificar_arquivos_do_manifesto,
-    extrair_zips_do_manifesto)
+    extrair_zips_do_manifesto,
+    coletar_contratacoes, consultar_detalhe_contratacao, salvar_lista_documentos_contratacao
+
+)
 
 
 import json
@@ -19,9 +22,24 @@ from pathlib import Path
 ARQUIVO_CONTRATOS = Path(
     "data/normalized/contratos_rj.json"
 )
-CAMINHO_MANIFESTO = Path("data/normalized/contratos_documentos.json")
+
+ARQUIVO_CONTRATACOES = Path(
+    "data/normalized/contratacoes_rj.json"
+)
+CAMINHO_MANIFESTO_CONTRATOS = Path("data/normalized/contratos_documentos.json")
 
 CAMINHO_DOCUMENTOS = Path("data/documents/original")
+
+CAMINHO_BASE_CONTRATACOES = Path("data/documents/original/contratacoes")
+
+CAMINHO_MANIFESTO_CONTRATACOES = Path(
+    "data/normalized/contratacoes_documentos.json"
+)
+
+CAMINHO_ERROR_CONTRATACOES = Path(
+    "data/checkpoints/contratacoes_paginas_com_erro.json")
+
+CAMINHO_EXTRAIR_CONTRATACOES = Path("data/documents/extracted/contratacoes")
 
 """
 import json
@@ -123,7 +141,7 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-"""
+
 
 manifesto = carregar_json(CAMINHO_MANIFESTO,
                           padrao=[],)
@@ -135,3 +153,135 @@ quantidade = extrair_zips_do_manifesto(manifesto)
 salvar_json(CAMINHO_MANIFESTO, manifesto)
 
 print(f"{quantidade} ZIPs extraídos.")
+
+
+CAMINHO_MANIFESTO_CONTRATACOES = (
+    "data/normalized/contratacoes_documentos.json"
+)
+ coletar_contratacoes,consultar_detalhe_contratacao, salvar_lista_documentos_contratacao
+
+ 
+
+===============================================
+
+contratacoes = coletar_contratacoes(
+    uf="RJ",
+    data_inicial="20260920",
+    data_final="20260922",
+    modalidades=[6],
+    tamanho_pagina=10,
+)
+
+# Teste opcional de detalhe: apenas uma contratação.
+if contratacoes:
+    detalhe = consultar_detalhe_contratacao(
+        contratacoes[0]
+    )
+
+    print("Detalhe retornado:", detalhe)
+
+manifesto = salvar_lista_documentos_contratacao(
+    contratacoes=contratacoes,
+    caminho_manifesto=CAMINHO_MANIFESTO_CONTRATACOES,
+    limite=5,
+)
+
+=========================================================
+ 
+
+
+
+def main() -> None:
+    data_inicial = "20260920"
+    data_final = "20260922"
+
+    print(
+        f"Buscando contratos entre "
+        f"{data_inicial} e {data_final}..."
+    )
+
+    resultado = coletar_contratacoes(
+        uf="RJ",
+        data_inicial=data_inicial,
+        data_final=data_final,
+        tamanho_pagina=50,
+    )
+
+    quantidade_nova = adicionar_contratacoes_novas(
+        resultado.contratacoes
+    )
+
+    salvar_paginas_com_erro(
+        data_inicial=data_inicial,
+        data_final=data_final,
+        paginas=resultado.paginas_com_erro,
+        caminho=CAMINHO_MANIFESTO_CONTRATACOES
+    )
+
+    print("\n" + "=" * 60)
+    print("RESULTADO DA COLETA")
+    print("=" * 60)
+    print(
+        f"Contratações RJ recebidos nesta execução: "
+        f"{len(resultado.contratacoes)}"
+    )
+    print(
+        f"Contratações novos adicionados ao JSON: "
+        f"{quantidade_nova}"
+    )
+
+    if resultado.paginas_com_erro:
+        print(
+            "Páginas pendentes para retentativa: "
+            f"{resultado.paginas_com_erro}"
+        )
+    else:
+        print("Nenhuma página apresentou falha.")
+
+
+if __name__ == "__main__":
+    main()
+
+
+contratacoes = carregar_json(ARQUIVO_CONTRATACOES,
+                             padrao=[],)
+
+print(len(contratacoes))
+
+manifesto = salvar_lista_documentos_contratacao(
+    contratacoes=contratacoes,
+    caminho_manifesto=CAMINHO_MANIFESTO_CONTRATACOES,
+    limite=5,
+)
+
+"""
+
+manifesto = carregar_json(CAMINHO_MANIFESTO_CONTRATACOES,
+                          padrao=[],)
+
+
+qtd_baixada = baixar_documentos_manifesto(
+    manifesto=manifesto,
+    pasta_base=CAMINHO_BASE_CONTRATACOES,
+    limite_contratos=5,
+    limite_documentos_por_contrato=1,
+)
+print(f"Downloads concluídos: {qtd_baixada}")
+
+qtd_identificada = identificar_arquivos_do_manifesto(manifesto)
+print(f"Arquivos identificados e checados: {qtd_identificada}")
+
+qtd_extraida = extrair_zips_do_manifesto(
+    manifesto=manifesto,
+    pasta_base=CAMINHO_EXTRAIR_CONTRATACOES
+)
+print(f"Arquivos ZIP descompactados com sucesso: {qtd_extraida}")
+
+# 💾 Salva o estado final do manifesto limpo
+salvar_json(CAMINHO_MANIFESTO_CONTRATACOES, manifesto)
+
+# quantidade = extrair_zips_do_manifesto(manifesto, CAMINHO_EXTRAIR_CONTRATACOES)
+
+# salvar_json(CAMINHO_MANIFESTO_CONTRATACOES, manifesto)
+
+# print(f"{quantidade} ZIPs extraídos.")
