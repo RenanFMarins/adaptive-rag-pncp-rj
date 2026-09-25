@@ -568,4 +568,291 @@ O desenvolvimento foi validado progressivamente com chamadas reais ao PNCP e tes
 As decisões de separar `client.py` e `service.py`, utilizar os identificadores retornados pelo próprio PNCP e separar o download binário das consultas JSON foram tomadas a partir dos problemas observados durante os testes e da necessidade de manter o código organizado para a futura integração com o pipeline RAG.
 
 ---
+## Encontro 4 - 2026-09-23
+
+### Relato individual - Alisson Lima de Souza (4h)
+
+Hoje concentrei o trabalho na evolução da integração com o **Portal Nacional de Contratações Públicas (PNCP)** e na estruturação da persistência dos dados coletados para integração com o pipeline RAG.
+
+Inicialmente, revisei a documentação oficial do PNCP, principalmente os endpoints relacionados à consulta de contratações, contratos, atas e download de documentos. Durante os testes foram identificados comportamentos como timeout, respostas HTTP `422` e diferenças entre endpoints destinados a consultas JSON e endpoints utilizados para download de arquivos.
+
+### Refatoração da camada PNCP
+
+A estrutura do projeto foi organizada separando a comunicação direta com o PNCP da camada de negócio da aplicação.
+
+A organização utilizada ficou:
+
+```text
+src/
+└── base_estrturada/
+    └── pncp/
+        ├── __init__.py
+        ├── client.py
+        └── service.py
+
+app/
+└── modules/
+    └── pncp/
+        ├── model.py
+        ├── schemas.py
+        ├── services.py
+        ├── routes.py
+        └── cli.py
+```
+
+O `client.py` permaneceu responsável pela infraestrutura HTTP, incluindo sessão reutilizável, timeout, retry, backoff e tratamento de erros transitórios.
+
+O `service.py` da base estruturada ficou responsável pelas operações específicas relacionadas ao PNCP, enquanto o módulo `app/modules/pncp` passou a realizar a integração dessas informações com banco de dados, API FastAPI e demais componentes da aplicação.
+
+Durante essa reorganização também foi identificado e corrigido um problema de importação causado pelo nome do diretório `base_estrturada`, permitindo que o Uvicorn inicializasse novamente a aplicação.
+
+### Persistência dos dados do PNCP
+
+Foi evoluída a estrutura das tabelas responsáveis pelo armazenamento dos dados coletados.
+
+A tabela `pncp_raw_records` passou a representar os registros obtidos diretamente do PNCP, armazenando informações como:
+
+* tipo do registro;
+* número de controle PNCP;
+* ano;
+* sequencial;
+* CNPJ do órgão;
+* órgão;
+* UF;
+* objeto;
+* payload JSON original;
+* data de coleta;
+* data de atualização.
+
+Também foi estruturada a tabela `pncp_files`, responsável pelos arquivos associados aos registros coletados.
+
+Foi criado o relacionamento:
+
+```text
+PNCPRawRecord
+      1
+      │
+      │
+      N
+      ▼
+PNCPFile
+```
+
+Cada arquivo armazenado passou a possuir uma chave estrangeira `pncp_record_id`, permitindo identificar exatamente qual registro do PNCP originou determinado documento.
+
+### Integração PNCP com o modelo do RAG
+
+Também foi revisada a estrutura das tabelas utilizadas pelo pipeline RAG.
+
+O modelo `Document` recebeu a referência opcional `pncp_file_id`, permitindo relacionar um documento processado pelo RAG ao arquivo originalmente obtido do PNCP.
+
+O fluxo de dados planejado passou a ser representado da seguinte maneira:
+
+```text
+PNCP
+ ↓
+PNCPRawRecord
+ ↓
+PNCPFile
+ ↓
+Document
+ ↓
+DocumentChunk
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Contexto recuperado
+ ↓
+LLM
+ ↓
+Resposta
+```
+
+O relacionamento `PNCPFile → Document` foi mantido opcional, permitindo que o sistema continue aceitando documentos provenientes de outras fontes além do PNCP.
+
+### Evolução dos metadados dos chunks
+
+O modelo `DocumentChunk` também foi ampliado para preservar informações relevantes das contratações públicas.
+
+Foram preparados campos como:
+
+```text
+numero_controle_pncp
+cnpj_orgao
+uf
+orgao
+modalidade
+municipio
+fornecedor
+objeto
+valor
+ano
+data_publicacao
+vigencia
+```
+
+Esses metadados poderão posteriormente ser utilizados para filtros durante a recuperação das informações, em conjunto com BM25 e FAISS.
+
+### Revisão dos relacionamentos do banco
+
+Durante os testes foi identificado que alterações realizadas nos models SQLAlchemy não modificavam automaticamente as tabelas já existentes no SQLite.
+
+Como o projeto ainda se encontra em fase de desenvolvimento, o banco foi recriado para que o `Base.metadata.create_all()` gerasse novamente as tabelas utilizando os models atualizados.
+
+Também foi habilitada a integridade referencial do SQLite através de:
+
+```text
+PRAGMA foreign_keys=ON
+```
+
+Após a recriação, foram verificados os principais relacionamentos físicos do banco:
+
+```text
+pncp_raw_records
+      ↓
+pncp_files
+      ↓
+documents
+      ↓
+document_chunks
+      ↓
+response_sources
+      ↓
+responses
+      ↓
+queries
+```
+
+Também foram validados os relacionamentos auxiliares:
+
+```text
+corpus_versions
+      ↓
+documents
+
+queries
+ ├── feedback
+ └── pipeline_events
+```
+
+Foram adicionadas estratégias de exclusão como `ON DELETE CASCADE` e `ON DELETE SET NULL` de acordo com o tipo de relacionamento.
+
+### Preparação para recuperação híbrida
+
+A estrutura do banco também foi preparada para suportar a futura recuperação híbrida.
+
+Os chunks possuem identificadores próprios e metadados indexados, permitindo posteriormente combinar:
+
+```text
+Pergunta do usuário
+        ↓
+Query Analysis
+        ↓
+Filtros por metadados
+        ↓
+┌───────────────┐
+│               │
+▼               ▼
+BM25           FAISS
+│               │
+└───────┬───────┘
+        ↓
+       RRF
+        ↓
+     Reranking
+        ↓
+     Contexto
+        ↓
+       LLM
+```
+
+A tabela `response_sources` mantém a ligação entre as respostas produzidas e os chunks utilizados como fonte, incluindo informações de `rank` e `relevance_score`.
+
+Isso permitirá posteriormente avaliar quais documentos contribuíram para determinada resposta.
+
+### Problemas encontrados e soluções
+
+Durante o desenvolvimento foram encontrados alguns problemas importantes.
+
+**Erro de importação do módulo PNCP**
+
+A aplicação inicialmente apresentou:
+
+```text
+ModuleNotFoundError:
+No module named 'src.base_estruturada'
+```
+
+Foi identificado que o nome real do diretório era `base_estrturada`. Os imports foram ajustados para corresponder à estrutura física do projeto.
+
+**Diferença entre models e banco SQLite**
+
+O SQLAlchemy tentava consultar campos como `sequencial` e `uf`, mas o banco existente havia sido criado antes da inclusão dessas colunas.
+
+Como `create_all()` não altera tabelas existentes, foi necessário atualizar/recriar a estrutura do banco durante esta fase de desenvolvimento.
+
+**Ausência dos relacionamentos físicos**
+
+Também foi identificado que alguns relacionamentos estavam definidos conceitualmente nos models, mas ainda não existiam como chaves estrangeiras no banco físico.
+
+Os models foram revisados e o banco recriado, passando a conter as FKs necessárias entre PNCP, documentos, chunks, consultas e respostas.
+
+### Resumo do dia
+
+**Entreguei hoje:**
+
+* revisão da documentação e dos endpoints do PNCP;
+* análise dos erros de timeout e HTTP `422`;
+* evolução do `PNCPClient`;
+* organização da camada `src/base_estrturada/pncp`;
+* organização do módulo `app/modules/pncp`;
+* correção dos imports da camada PNCP;
+* integração do módulo PNCP com FastAPI;
+* testes dos endpoints pela aplicação;
+* evolução dos models `PNCPRawRecord` e `PNCPFile`;
+* criação do relacionamento entre registros PNCP e arquivos;
+* evolução do model `Document`;
+* criação da referência entre `Document` e `PNCPFile`;
+* evolução do model `DocumentChunk`;
+* inclusão de metadados específicos do PNCP nos chunks;
+* revisão dos models `CorpusVersion`, `Query`, `Response`, `ResponseSource`, `PipelineEvent` e `Feedback`;
+* habilitação das foreign keys do SQLite;
+* recriação do banco durante a fase de desenvolvimento;
+* validação das chaves estrangeiras no modelo físico;
+* preparação da rastreabilidade entre resposta e chunks utilizados como fonte;
+* preparação da estrutura de dados para BM25, FAISS e recuperação híbrida.
+
+### Próximo passo
+
+Com a estrutura de persistência e os relacionamentos principais preparados, o próximo passo será validar o fluxo completo de transformação dos documentos baixados do PNCP em documentos processáveis pelo RAG:
+
+```text
+PNCP
+ ↓
+Coleta
+ ↓
+Persistência dos metadados
+ ↓
+Download do documento
+ ↓
+Document
+ ↓
+Extração de texto
+ ↓
+Chunking
+ ↓
+DocumentChunk
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Recuperação
+ ↓
+LLM
+```
+
+A próxima etapa deve verificar principalmente se o serviço responsável pela ingestão, após baixar um `PNCPFile`, já cria corretamente o `Document` correspondente e posteriormente seus `DocumentChunks`.
 

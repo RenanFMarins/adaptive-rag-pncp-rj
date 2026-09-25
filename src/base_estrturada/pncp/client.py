@@ -97,9 +97,13 @@ class PNCPClient:
                 # --------------------------------------------
 
                 if response.status_code in self.STATUS_RETRY:
-
                     if tentativa < self.max_tentativas:
-                        self._aguardar(tentativa)
+                        self._aguardar(
+                            tentativa=tentativa,
+                            response=response,
+                        )
+
+                        response.close()
                         continue
 
                     return response
@@ -178,20 +182,40 @@ class PNCPClient:
     def _aguardar(
         self,
         tentativa: int,
+        response: requests.Response | None = None,
     ) -> None:
         """
-        Backoff exponencial.
+        Aguarda antes de uma nova tentativa.
 
-        Exemplo com backoff=1:
-
-        tentativa 1 -> 1 segundo
-        tentativa 2 -> 2 segundos
-        tentativa 3 -> 4 segundos
+        Para HTTP 429, respeita Retry-After quando o PNCP o informar.
+        Para os demais casos, usa backoff exponencial.
         """
 
         segundos = (
             self.backoff
             * (2 ** (tentativa - 1))
+        )
+
+        if response is not None and response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+
+            if retry_after and retry_after.isdigit():
+                segundos = max(segundos, float(retry_after))
+            else:
+                # O PNCP não informou quanto esperar.
+                segundos = max(segundos, 30.0)
+
+        pagina = (
+            response.request.url
+            if response is not None
+            else "sem resposta"
+        )
+
+        print(
+            f"Nova tentativa em {segundos:.0f}s | "
+            f"tentativa={tentativa}/{self.max_tentativas} | "
+            f"status={response.status_code if response else 'timeout/conexão'} | "
+            f"requisição={pagina}"
         )
 
         time.sleep(segundos)
@@ -213,7 +237,7 @@ class PNCPClient:
 # ============================================================
 
 pncp_client = PNCPClient(
-    timeout=30,
-    max_tentativas=3,
-    backoff=1.0,
+    timeout=60,
+    max_tentativas=4,
+    backoff=3.0,
 )
