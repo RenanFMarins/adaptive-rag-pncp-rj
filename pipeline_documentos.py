@@ -30,7 +30,7 @@ from src.base_estrturada.pncp.repository import (
 
 from src.base_estrturada.pncp.service import (
     coletar_contratos, consultar_documentos_contrato,
-    baixar_documentos_manifesto,
+    baixar_documentos_lista,
     coletar_contratacoes, consultar_detalhe_contratacao
 
 )
@@ -127,7 +127,7 @@ def processar_documentos(
     # 4. Baixa os documentos listados no manifesto
     #    (essa função também marca, no próprio manifesto, se cada
     #    documento foi baixado com sucesso ou não)
-    qtd_baixada = baixar_documentos_manifesto(
+    qtd_baixada = baixar_documentos_lista(
         manifesto=manifesto,
         pasta_base=pasta_base,
         limite_contratos=limite_contratos,
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     #     paginas=resultado.paginas_com_erro,
     #     caminho=CAMINHO_MANIFESTO_CONTRATACOES,
     # )
-
+"""
     # Roda o fluxo para Contratações
     resultado_contratacoes = processar_documentos(
         nome_etapa="Contratações",
@@ -207,39 +207,39 @@ if __name__ == "__main__":
         limite_contratos=5,
         limite_documentos_por_contrato=1,
     )
+"""
+# -----------------------------------------------------------------
+# PARTE 1 — COLETA DE CONTRATOS (DESATIVADA)
+# -----------------------------------------------------------------
+# Mesma ideia da coleta de contratações, mas com as funções/parâmetros
+# equivalentes para contratos. Ajuste os nomes se forem diferentes
+# no seu projeto.
+#
+# resultado = coletar_contratos(
+#     data_inicial=data_inicial,
+#     data_final=data_final,
+#     tamanho_pagina=50,
+# )
+# quantidade_nova = adicionar_contratos_novos(resultado.contratos)
+# salvar_paginas_com_erro(
+#     data_inicial=data_inicial,
+#     data_final=data_final,
+#     paginas=resultado.paginas_com_erro,
+#     caminho=CAMINHO_MANIFESTO_CONTRATOS,
+# )
 
-    # -----------------------------------------------------------------
-    # PARTE 1 — COLETA DE CONTRATOS (DESATIVADA)
-    # -----------------------------------------------------------------
-    # Mesma ideia da coleta de contratações, mas com as funções/parâmetros
-    # equivalentes para contratos. Ajuste os nomes se forem diferentes
-    # no seu projeto.
-    #
-    # resultado = coletar_contratos(
-    #     data_inicial=data_inicial,
-    #     data_final=data_final,
-    #     tamanho_pagina=50,
-    # )
-    # quantidade_nova = adicionar_contratos_novos(resultado.contratos)
-    # salvar_paginas_com_erro(
-    #     data_inicial=data_inicial,
-    #     data_final=data_final,
-    #     paginas=resultado.paginas_com_erro,
-    #     caminho=CAMINHO_MANIFESTO_CONTRATOS,
-    # )
+# Roda o mesmo fluxo para Contratos (mesma lógica, pastas diferentes)
+resultado_contratos = processar_documentos(
+    nome_etapa="Contratos",
+    arquivo_entrada=ARQUIVO_CONTRATOS,
+    caminho_manifesto=CAMINHO_MANIFESTO_CONTRATOS,
+    pasta_base=CAMINHO_BASE_CONTRATOS,
+    pasta_extrair=CAMINHO_EXTRAIR_CONTRATOS,
+    funcao_gerar_manifesto=salvar_lista_de_documentos_contratos,
+    limite_contratos=5,
+    limite_documentos_por_contrato=1,
+)
 
-    # Roda o mesmo fluxo para Contratos (mesma lógica, pastas diferentes)
-    resultado_contratos = processar_documentos(
-        nome_etapa="Contratos",
-        arquivo_entrada=ARQUIVO_CONTRATOS,
-        caminho_manifesto=CAMINHO_MANIFESTO_CONTRATOS,
-        pasta_base=CAMINHO_BASE_CONTRATOS,
-        pasta_extrair=CAMINHO_EXTRAIR_CONTRATOS,
-        funcao_gerar_manifesto=salvar_lista_de_documentos_contratos,
-        limite_contratos=5,
-        limite_documentos_por_contrato=1,
-    )
-
-    print("\n=== Resumo final ===")
-    print("Contratações:", resultado_contratacoes)
-    print("Contratos:", resultado_contratos)
+print("\n=== Resumo final ===")
+# print("Contratações:", resultado_contratacoes)
+print("Contratos:", resultado_contratos)

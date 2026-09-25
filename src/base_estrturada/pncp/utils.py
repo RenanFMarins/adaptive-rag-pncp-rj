@@ -1,6 +1,26 @@
 from urllib.parse import urlsplit, urlunsplit, urlparse
 from pathlib import Path
 import re
+from typing import Any
+
+
+TIPOS_PRIORITARIOS = {
+    "Edital",
+    "Termo de Referência",
+    "Estudo Técnico Preliminar",
+    "Minuta do Contrato",
+    "Contrato",
+    "Termo Aditivo",
+    "Termo de Apostilamento",
+    "Ata de Registro de Preços",
+    "Termo de Rescisão",
+    "Relatório Final de Contrato",
+    "Documento de Formalização da Demanda",
+    "Mapa de Riscos",
+    "Termo/Ato de Homologação",
+    "Aviso de Contratação Direta",
+    "Ato que autoriza a Contratação Direta",
+}
 
 
 def url_pura(url: str) -> str:
@@ -65,3 +85,45 @@ def extensao_por_content_type(
         return extensao_url.lower()
 
     return ".bin"
+
+
+def obter_tipo_documento(
+    documento: dict[str, Any],
+    tipos_por_id: dict[int, str],
+) -> str | None:
+    """
+    Obtém o tipo do documento considerando as diferentes
+    estruturas retornadas pelo PNCP.
+    """
+
+    # Algumas respostas já trazem o nome do tipo
+    tipo_nome = documento.get("tipoDocumentoNome")
+    print("=============")
+    print(tipo_nome)
+    print("=============")
+    if tipo_nome:
+        return str(tipo_nome).strip()
+
+    # Outras podem trazer somente o ID
+    tipo_id = documento.get("tipoDocumentoId")
+
+    if tipo_id is not None:
+        return tipos_por_id.get(int(tipo_id))
+
+    return None
+
+
+def deve_baixar_documento(
+    documento: dict[str, Any],
+    tipos_por_id: dict[int, str],
+) -> bool:
+
+    tipo = obter_tipo_documento(
+        documento,
+        tipos_por_id
+    )
+
+    if not tipo:
+        return False
+
+    return tipo in TIPOS_PRIORITARIOS

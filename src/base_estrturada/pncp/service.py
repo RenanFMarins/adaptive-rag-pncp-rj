@@ -10,7 +10,7 @@ import requests
 
 from src.base_estrturada.pncp.client import pncp_client
 from src.base_estrturada.pncp.utils import (
-    url_pura, nome_seguro, extensao_por_content_type)
+    url_pura, nome_seguro, extensao_por_content_type, deve_baixar_documento)
 
 
 # ============================================================
@@ -102,10 +102,33 @@ def carregar_modalidades(
 
         return {}
 
+# ============================================================
+# FILTRAR DOCUMENTOS
+# ============================================================
+
+
+def carregar_tipos_documento(somente_ativos: bool = True) -> dict[int, str]:
+    url = f"{BASE_URL_PNCP}/v1/tipos-documentos"
+
+    params = {"statusAtivo": "true"} if somente_ativos else {}
+
+    r = requests.get(
+        url,
+        params=params,
+        timeout=30,
+    )
+    r.raise_for_status()
+
+    return {
+        int(d["id"]): d["nome"]
+        for d in r.json()
+    }
 
 # ============================================================
 # CONTRATAÇÕES PUBLICADAS
 # ============================================================
+
+
 @dataclass
 class ResultadoColetaContratacoes:
     """Resultado da coleta, inclusive páginas que devem ser retentadas."""
@@ -1529,15 +1552,19 @@ def baixar_documentos(
         return None
 
 
-def baixar_documentos_manifesto(
-        manifesto: list[dict[str, Any]],
-        pasta_base: str,
-        limite_contratos: int = 5,
-        limite_documentos_por_contrato:  int = 1,
+def baixar_documentos_lista(
+    manifesto: list[dict[str, Any]],
+    pasta_base: str,
+    limite_contratos: int = 5,
+    limite_documentos_por_contrato: int = 1,
 ) -> int:
+
+    tipos_por_id = carregar_tipos_documento()
+
     quantidade_baixada = 0
 
     for contrato in manifesto[:limite_contratos]:
+
         numero_controle = contrato.get("numeroControlePNCP")
 
         if not numero_controle:
@@ -1545,26 +1572,23 @@ def baixar_documentos_manifesto(
 
         documentos = contrato.get("documentos") or []
 
-        for documento in documentos[:limite_documentos_por_contrato]:
+        documentos_selecionados = [
+            documento
+            for documento in documentos
+            if deve_baixar_documento(
+                documento,
+                tipos_por_id,
+            )
+        ]
 
-            download_anterior = documento.get("download") or {}
-
-            caminho_anterior = download_anterior.get("caminho")
-
-            if (
-                download_anterior.get("status") == "baixado"
-                and caminho_anterior
-                and Path(caminho_anterior).exists()
-            ):
-                print(
-                    f"Já baixado | contrato={numero_controle}"
-                )
-                continue
+        for documento in documentos_selecionados[
+            :limite_documentos_por_contrato
+        ]:
 
             caminho = baixar_documentos(
                 numero_controle=numero_controle,
                 documento=documento,
-                pasta_base=pasta_base
+                pasta_base=pasta_base,
             )
 
             if caminho:
@@ -1574,12 +1598,5 @@ def baixar_documentos_manifesto(
                 }
 
                 quantidade_baixada += 1
-
-            else:
-                documento["download"] = {
-                    "status": "erro",
-                }
-
-        time.sleep(5)
 
     return quantidade_baixada
