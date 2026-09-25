@@ -35,3 +35,11 @@ Hoje, dei continuidade ao desenvolvimento da parte de contratos, realizando algu
 A partir dessa base, desenvolvi o fluxo para listar os documentos relacionados a cada contrato e realizar o download desses arquivos. Também criei um manifesto contendo informações dos contratos e os respectivos links dos documentos. Com esse JSON, consigo percorrer os registros e realizar o download dos arquivos automaticamente.
 
 Como os documentos podem vir em formatos diferentes, como ZIP e PDF, também implementei uma função para realizar a extração do conteúdo dos arquivos PDF. Dessa forma, avancei na estrutura do fluxo de coleta dos contratos até a obtenção e preparação dos documentos que serão utilizados no projeto.
+
+## Encontro 5 - 2026-09-25
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade ao desenvolvimento da parte de contratos, adaptando o que já havia sido implementado para trabalhar também com contratações. Busquei reaproveitar as funções existentes, realizando alguns ajustes necessários para adequá-las ao novo fluxo.
+
+Também implementei a parte de filtros e uma pipeline para realizar testes de download dos documentos. Como existem 37 tipos diferentes de documentos, optei por aplicar um filtro para selecionar apenas os tipos relevantes para o projeto, evitando trabalhar inicialmente com todos eles. Dessa forma, conseguimos reduzir a quantidade de documentos processados e tornar a base de testes mais controlada, considerando o grande volume de dados disponível.
