@@ -252,7 +252,93 @@ de exemplo em `tests/fixtures/`. Os 9 testes passaram.
 
 ---
 
-## Encontro 5 · DD/MM/AAAA
+## Encontro 5 · 25/09/2026
+
+### O que eu fiz hoje
+
+Hoje a Ana não pôde comparecer, então comecei atualizando a nossa branch com a main, que tinha 15 commits novos do time, e rodei tudo de novo para conferir que o merge não quebrou nada: a coleta
+(13 documentos, 0 falhas), o processamento (784 trechos) e os testes (18
+passando). Precisei instalar o pytest na minha máquina.
+
+Criei o `CORPUS_INVENTORY.md`, que estava vazio e é entregável obrigatório da
+Etapa 1. Usei os dados reais da coleta: totais da versão, tabela por base,
+detalhe dos 13 arquivos com tamanho e sha256, as falhas (nenhuma) e o
+histórico de versões. As outras três bases ficaram com as linhas em branco,
+para cada responsável preencher.
+
+Depois implementei o que faltava da coleta em relação ao enunciado: os comandos
+`update` e `inventory`. O `update` cria a versão seguinte sem sobrescrever a
+anterior e gera o `DIFF_v1_v2.md`, dizendo o que entrou, saiu, mudou de
+conteúdo e permaneceu idêntico. Isso é o que vai permitir o teste de regressão
+nas próximas sprints. Testei criando a v2: a v1 continuou intacta.
+
+Na primeira execução, o diff acusou que a Lei 14.133 tinha mudado. Comparei os
+dois downloads e descobri que o texto é idêntico: o que muda é um script de
+segurança do site do Planalto, com um código diferente a cada acesso. Se
+ficasse assim, toda atualização daria alarme falso. Passei a calcular também um
+`sha256_conteudo`, que ignora os scripts no caso de HTML, e o diff passou a
+acusar corretamente 13 arquivos idênticos.
+
+Conferi se o corpus responde às perguntas normativas do PERSONAS.md,
+procurando os temas nos 784 trechos. Todas têm fonte: ME/EPP aparece na Lei
+14.133 (arts. 4, 15, 60 e 81), adesão a ata no Decreto 48.843, prazo de
+vigência nos Decretos 48.816 e 48.817, e dispensa por valor no art. 75 da lei.
+
+Por último, fiz uma varredura de dados pessoais e encontrei, nos editais, 4
+CPFs, 2 telefones e 31 e-mails, o que contraria a política de sensibilidade
+que nós mesmas escrevemos. Implementei o mascaramento na ingestão: CPF e
+telefone viram `[CPF MASCARADO]` e `[TELEFONE MASCARADO]`, enquanto CNPJ, nome
+de empresa e valores continuam, porque são públicos por lei. Os e-mails
+encontrados são de setores, e não de pessoas, então foram mantidos e
+sinalizados no metadado `dados_pessoais`, para o time decidir depois.
+Após reprocessar, não sobrou nenhum CPF nem telefone visível, e 19 trechos ficaram
+marcados.
+
+Escrevi testes para tudo o que fiz hoje: versão seguinte na sequência, hash que
+ignora o script do site mas detecta mudança real de texto, classificação do
+diff, inventário legível e o mascaramento. O total passou de 18 para 27 testes,
+todos rodando sem internet.
+
+Também corrigi o `requirements-dev.txt`, que estava com `trustsore` escrito
+errado, o que fazia o `pip install -r requirements-dev.txt` falhar, e
+acrescentei o `pytest`, que não estava listado.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** o mascaramento e os
+  testes, e me ajudar a investigar por que o diff acusava mudança na lei.
+- **O que eu conferi / mudei:** decidi manter a v2 como demonstração do
+  versionamento em vez de apagá-la; decidi manter os e-mails de setor
+  sinalizados em vez de mascarar tudo, porque a política fala em e-mail pessoal;
+  conferi o resultado do mascaramento reprocessando os 784 trechos; e rodei
+  todos os testes antes de dar por encerrado.
+
+### O que travou
+
+- Os logs estruturados (item 2.4 do enunciado) continuam pendentes, porque
+  `app/core/logging.py` e `src/obs.py` estão vazios e é preciso combinar com o
+  time quem escreve e quais são os nomes de `stage` da preparação do corpus.
+
+### Próximo passo
+
+- Definir com o time o módulo de logs e instrumentar a coleta e a ingestão.
+- Documentar no README como rodar a coleta e o processamento.
+- Abrir o pull request da `base-normativa` para a main.
+- Perguntar ao time onde ficam os decretos baixados à mão (`data/manual/`, que
+  não está na estrutura do README) e se o `data/processed/` vai para o Git.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** CORPUS_INVENTORY.md, comandos `update` e
+  `inventory` com diff entre versões, mascaramento de dados pessoais na
+  ingestão e 27 testes passando.
+- **Travou:** logs estruturados dependem de decisão do time.
+- **Próximo passo:** logs, README e pull request para a main.
+
+---
+
+## Encontro 6 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
