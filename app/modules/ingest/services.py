@@ -109,6 +109,34 @@ def limpar(texto: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# 1.1 Política de sensibilidade: mascaramento na ingestão
+# ---------------------------------------------------------------------------
+
+# O manifesto e o ARQUITETURA.md definem: CPF de pessoa física e telefone
+# pessoal são MASCARADOS. CNPJ, nome de empresa e valores são públicos por lei
+# e continuam no texto. O mascaramento é feito aqui, na ingestão, e não na hora
+# de responder, porque filtrar por metadado é barato e determinístico.
+CPF = re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b")
+TELEFONE = re.compile(r"\(\d{2}\)\s?\d{4,5}-\d{4}")
+EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]+\b")
+
+
+def mascarar_dados_pessoais(texto: str):
+    """
+    Devolve (texto_mascarado, achados). `achados` conta o que foi encontrado,
+    para registrar no metadado do chunk e no relatório da ingestão.
+    """
+    achados = {
+        "cpf": len(CPF.findall(texto)),
+        "telefone": len(TELEFONE.findall(texto)),
+        "email": len(EMAIL.findall(texto)),
+    }
+    texto = CPF.sub("[CPF MASCARADO]", texto)
+    texto = TELEFONE.sub("[TELEFONE MASCARADO]", texto)
+    return texto, {k: v for k, v in achados.items() if v}
+
+
+# ---------------------------------------------------------------------------
 # 2. Metadados do documento
 # ---------------------------------------------------------------------------
 
@@ -263,11 +291,13 @@ def gerar_chunks(caminho: Path) -> list[dict]:
         sufixo = "" if vistos[marcador] == 1 else f"_{vistos[marcador]}"
         for n, parte in enumerate(_partir_se_longo(nome, trecho.strip()), start=1):
             chunk_id = f"{BASE_ID}:{caminho.stem}:{marcador}{sufixo}:p{n}"
-            chunks.append({
-                "texto": parte.strip(),
-                "metadata": {**meta_doc, "chunk_id": chunk_id,
-                             "artigo" if meta_doc["doc_type"] != "edital" else "clausula": nome},
-            })
+            # Política de sensibilidade aplicada na ingestão
+            texto_chunk, achados = mascarar_dados_pessoais(parte.strip())
+            metadata = {**meta_doc, "chunk_id": chunk_id,
+                        "artigo" if meta_doc["doc_type"] != "edital" else "clausula": nome}
+            if achados:
+                metadata["dados_pessoais"] = achados
+            chunks.append({"texto": texto_chunk, "metadata": metadata})
     return chunks
 
 
@@ -280,7 +310,9 @@ def processar(versao="v1", raiz="data/raw", saida=None):
             continue
         chunks = gerar_chunks(caminho)
         m = chunks[0]["metadata"]
-        print(f"  {caminho.name}: {m['doc_type']} | {len(chunks)} chunks")
+        mascarados = sum(1 for c in chunks if "dados_pessoais" in c["metadata"])
+        aviso = f" | {mascarados} chunk(s) com dado pessoal mascarado" if mascarados else ""
+        print(f"  {caminho.name}: {m['doc_type']} | {len(chunks)} chunks{aviso}")
         todos.extend(chunks)
 
     # Os chunks vão para data/processed/, como define a arquitetura do time

@@ -88,3 +88,41 @@ def test_versao_vigente_do_artigo_entra(chunks):
     # O mesmo Art. 2º tem uma redação riscada (antiga) e a vigente.
     # Só a vigente pode aparecer.
     assert "O prazo de vigência do contrato será de 12 (doze) meses" in _artigo(chunks, "Art. 2")[0]["texto"]
+
+
+# --- 5. Política de sensibilidade: mascaramento na ingestão --------------
+
+def test_cpf_e_telefone_sao_mascarados():
+    texto = ("O pregoeiro, CPF 046.368.117-25, telefone (34) 99678-7950, "
+             "conduzirá a sessão.")
+    saida, achados = services.mascarar_dados_pessoais(texto)
+
+    assert "046.368.117-25" not in saida
+    assert "(34) 99678-7950" not in saida
+    assert "[CPF MASCARADO]" in saida and "[TELEFONE MASCARADO]" in saida
+    assert achados == {"cpf": 1, "telefone": 1}
+
+
+def test_cnpj_e_valor_nao_sao_mascarados():
+    # Público por lei: CNPJ de empresa, nome de fornecedor e valor do contrato
+    texto = "Empresa X LTDA, CNPJ 12.345.678/0001-99, valor de R$ 500.000,00."
+    saida, achados = services.mascarar_dados_pessoais(texto)
+
+    assert saida == texto
+    assert achados == {}
+
+
+def test_chunk_com_dado_pessoal_fica_marcado_no_metadado(tmp_path):
+    arquivo = tmp_path / "edital_teste.html"
+    arquivo.write_text(
+        "<html><body><p>EDITAL N° 1/2025</p>"
+        "<p>1 - DO OBJETO: aquisição de material.</p>"
+        "<p>2 - DO PREGOEIRO: CPF 046.368.117-25.</p></body></html>",
+        encoding="cp1252")
+
+    chunks = services.gerar_chunks(arquivo)
+    com_dado = [c for c in chunks if "dados_pessoais" in c["metadata"]]
+
+    assert com_dado, "o chunk com CPF deveria ser marcado no metadado"
+    assert com_dado[0]["metadata"]["dados_pessoais"]["cpf"] == 1
+    assert "046.368.117-25" not in " ".join(c["texto"] for c in chunks)

@@ -8,6 +8,7 @@ temporária (tmp_path), e nunca baixam nada.
 """
 
 import hashlib
+import json
 
 from app.modules.normative import services
 
@@ -83,3 +84,72 @@ def test_decreto_com_hash_diferente_vira_falha(tmp_path):
 
     assert registros[0]["status"] == "falhou"
     assert not (destino / "decreto-teste.pdf").exists()
+
+
+# --- versionamento: qual é a próxima versão -------------------------------
+
+def test_primeira_versao_e_v1(tmp_path):
+    assert services.proxima_versao(tmp_path) == "v1"
+
+
+def test_proxima_versao_vem_depois_da_ultima(tmp_path):
+    for nome in ["v1", "v2", "outra_pasta"]:
+        (tmp_path / nome).mkdir()
+    assert services.versoes_existentes(tmp_path) == ["v1", "v2"]
+    assert services.proxima_versao(tmp_path) == "v3"
+
+
+# --- hash do conteúdo: ignora o que muda a cada download ------------------
+
+def test_script_do_html_nao_muda_o_hash_do_conteudo():
+    # O Planalto gera um script de segurança diferente a cada acesso.
+    # O documento é o mesmo, então o hash do conteúdo não pode mudar.
+    a = b"<html><script>token=111</script><p>Art. 1.</p></html>"
+    b = b"<html><script>token=999</script><p>Art. 1.</p></html>"
+    assert services.sha256_do_conteudo(a, "html") == services.sha256_do_conteudo(b, "html")
+    assert services.sha256_de(a) != services.sha256_de(b)
+
+
+def test_mudanca_real_no_texto_muda_o_hash_do_conteudo():
+    a = b"<html><p>Art. 1. Texto original.</p></html>"
+    b = b"<html><p>Art. 1. Texto alterado.</p></html>"
+    assert services.sha256_do_conteudo(a, "html") != services.sha256_do_conteudo(b, "html")
+
+
+# --- diff entre versões ---------------------------------------------------
+
+def _inventario(tmp_path, versao, registros, monkeypatch):
+    monkeypatch.setattr(services, "PASTA_INVENTARIO", tmp_path)
+    caminho = tmp_path / f"{versao}_{services.BASE_ID}.json"
+    caminho.write_text(json.dumps(registros, ensure_ascii=False), encoding="utf-8")
+
+
+def test_diff_classifica_entrou_saiu_mudou_e_identico(tmp_path, monkeypatch):
+    def reg(origem, nome, h):
+        return {"path": f"data/raw/v1/{nome}", "origem": origem, "sha256": h,
+                "sha256_conteudo": h, "status": "ok", "bytes": 10, "tipo": "pdf"}
+
+    v1 = [reg("u/identico", "a.pdf", "aaa"), reg("u/mudou", "b.pdf", "bbb"), reg("u/saiu", "c.pdf", "ccc")]
+    v2 = [reg("u/identico", "a.pdf", "aaa"), reg("u/mudou", "b.pdf", "zzz"), reg("u/entrou", "d.pdf", "ddd")]
+    _inventario(tmp_path, "v1", v1, monkeypatch)
+    _inventario(tmp_path, "v2", v2, monkeypatch)
+
+    texto = services.gerar_diff("v1", "v2").read_text(encoding="utf-8")
+
+    assert "| Entraram | 1 |" in texto
+    assert "| Saíram | 1 |" in texto
+    assert "| Mudaram de conteúdo | 1 |" in texto
+    assert "| Permaneceram idênticos | 1 |" in texto
+
+
+def test_inventario_legivel_traz_totais(tmp_path, monkeypatch):
+    registros = [{"path": "data/raw/v1/a.pdf", "origem": "u/a", "sha256": "a" * 64,
+                  "sha256_conteudo": "a" * 64, "status": "ok", "bytes": 1000, "tipo": "pdf",
+                  "coletado_em": "2026-09-25T10:00:00-03:00"}]
+    _inventario(tmp_path, "v1", registros, monkeypatch)
+
+    texto = services.escrever_inventario("v1").read_text(encoding="utf-8")
+
+    assert "| Arquivos | 1 |" in texto
+    assert "| Falhas | 0 |" in texto
+    assert "Nenhuma." in texto

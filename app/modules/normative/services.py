@@ -18,6 +18,7 @@ Uso:
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import time
 from datetime import datetime
@@ -116,6 +117,23 @@ def baixar_com_retentativa(url: str) -> bytes:
     raise RuntimeError(f"{ultimo_erro} após {TENTATIVAS} tentativas")
 
 
+SCRIPT_HTML = re.compile(rb"<script.*?</script>", re.S | re.I)
+
+
+def sha256_do_conteudo(conteudo: bytes, tipo: str | None) -> str | None:
+    """
+    Impressão digital do CONTEÚDO, ignorando o que muda a cada download sem que
+    o documento tenha mudado. No HTML do Planalto, por exemplo, há um script de
+    segurança com um código diferente a cada acesso: sem isso, toda atualização
+    acusaria que a lei mudou (alarme falso no diff entre versões).
+    """
+    if conteudo is None:
+        return None
+    if tipo == "html":
+        conteudo = SCRIPT_HTML.sub(b"", conteudo)
+    return sha256_de(conteudo)
+
+
 def registro(caminho, tipo, conteudo, origem, status="ok", erro=None):
     """Uma linha do inventário, no formato do enunciado."""
     return {
@@ -124,6 +142,7 @@ def registro(caminho, tipo, conteudo, origem, status="ok", erro=None):
         "tipo": tipo,
         "bytes": len(conteudo) if conteudo else 0,
         "sha256": sha256_de(conteudo) if conteudo else None,
+        "sha256_conteudo": sha256_do_conteudo(conteudo, tipo),
         "origem": origem,
         "coletado_em": agora(),
         "status": status,
@@ -239,10 +258,189 @@ def coletar(caminho_manifesto="corpus_manifest.yaml", versao="v1", raiz="data/ra
     return registros
 
 
+# ---------------------------------------------------------------------------
+# Versionamento: update (nova versão) e inventory (inventário legível)
+# ---------------------------------------------------------------------------
+
+PASTA_INVENTARIO = Path("data/inventory")
+
+
+def versoes_existentes(raiz="data/raw"):
+    """Versões já coletadas, em ordem: ['v1', 'v2', ...]."""
+    pasta = Path(raiz)
+    if not pasta.exists():
+        return []
+    versoes = [p.name for p in pasta.iterdir() if p.is_dir() and re.fullmatch(r"v\d+", p.name)]
+    return sorted(versoes, key=lambda v: int(v[1:]))
+
+
+def proxima_versao(raiz="data/raw"):
+    """'v1' se não houver nenhuma; senão, a seguinte à última ('v2', 'v3'...)."""
+    existentes = versoes_existentes(raiz)
+    return f"v{int(existentes[-1][1:]) + 1}" if existentes else "v1"
+
+
+def carregar_registros(versao):
+    """Lê os registros de uma versão já coletada (data/inventory/vN_<base>.json)."""
+    caminho = PASTA_INVENTARIO / f"{versao}_{BASE_ID}.json"
+    if not caminho.exists():
+        raise FileNotFoundError(f"Inventário não encontrado: {caminho}")
+    return json.loads(caminho.read_text(encoding="utf-8"))
+
+
+def _por_origem(registros):
+    """Indexa os registros pela origem (URL ou link do decreto), que não muda entre versões."""
+    return {r["origem"]: r for r in registros}
+
+
+def gerar_diff(versao_anterior, versao_nova):
+    """
+    Compara duas versões e grava data/inventory/DIFF_<ant>_<nova>.md respondendo:
+    o que entrou, o que saiu, o que mudou de conteúdo (sha256 diferente) e o que
+    permaneceu idêntico. Esse diff é o insumo do teste de regressão.
+    """
+    antes = _por_origem(carregar_registros(versao_anterior))
+    depois = _por_origem(carregar_registros(versao_nova))
+
+    # Compara pelo sha256 do conteúdo (ignora o que muda a cada download sem
+    # que o documento tenha mudado). Inventários antigos caem no sha256 do arquivo.
+    def _hash(r):
+        return r.get("sha256_conteudo") or r["sha256"]
+
+    entraram = [o for o in depois if o not in antes]
+    sairam = [o for o in antes if o not in depois]
+    mudaram = [o for o in depois if o in antes and _hash(depois[o]) != _hash(antes[o])]
+    identicos = [o for o in depois if o in antes and _hash(depois[o]) == _hash(antes[o])]
+
+    def _nome(origem, mapa):
+        caminho = mapa[origem].get("path")
+        return Path(caminho).name if caminho else "(sem arquivo)"
+
+    linhas = [
+        f"# DIFF {versao_anterior} -> {versao_nova} · {BASE_ID}",
+        "",
+        f"Gerado em {agora()}",
+        "",
+        "| Situação | Quantidade |",
+        "| --- | --- |",
+        f"| Entraram | {len(entraram)} |",
+        f"| Saíram | {len(sairam)} |",
+        f"| Mudaram de conteúdo | {len(mudaram)} |",
+        f"| Permaneceram idênticos | {len(identicos)} |",
+        "",
+    ]
+    for titulo, origens, mapa in [("## Entraram", entraram, depois),
+                                  ("## Saíram", sairam, antes),
+                                  ("## Mudaram de conteúdo", mudaram, depois),
+                                  ("## Permaneceram idênticos", identicos, depois)]:
+        linhas.append(titulo)
+        linhas.append("")
+        if not origens:
+            linhas += ["Nenhum.", ""]
+            continue
+        for origem in sorted(origens, key=lambda o: _nome(o, mapa)):
+            nome = _nome(origem, mapa)
+            if titulo == "## Mudaram de conteúdo":
+                linhas.append(f"- `{nome}` · sha256 {_hash(antes[origem])[:12]} -> "
+                              f"{_hash(depois[origem])[:12]} · {origem}")
+            else:
+                linhas.append(f"- `{nome}` · {origem}")
+        linhas.append("")
+
+    PASTA_INVENTARIO.mkdir(parents=True, exist_ok=True)
+    saida = PASTA_INVENTARIO / f"DIFF_{versao_anterior}_{versao_nova}.md"
+    saida.write_text("\n".join(linhas), encoding="utf-8")
+    print(f"Diff: {len(entraram)} entraram, {len(sairam)} saíram, "
+          f"{len(mudaram)} mudaram, {len(identicos)} idênticos")
+    print(f"Diff salvo em {saida}")
+    return saida
+
+
+def atualizar(caminho_manifesto="corpus_manifest.yaml", raiz="data/raw"):
+    """
+    Cria uma versão nova (v(n+1)) SEM sobrescrever a anterior e gera o diff
+    entre as duas. Se ainda não existir nenhuma versão, funciona como o fetch.
+    """
+    anterior = versoes_existentes(raiz)[-1] if versoes_existentes(raiz) else None
+    nova = proxima_versao(raiz)
+    print(f"Atualizando: {anterior or '(nenhuma)'} -> {nova}")
+
+    coletar(caminho_manifesto, nova, raiz)
+    if anterior:
+        gerar_diff(anterior, nova)
+    else:
+        print("Primeira versão coletada: não há diff a gerar.")
+    return nova
+
+
+def escrever_inventario(versao):
+    """
+    Gera o inventário legível da base (data/inventory/<versao>_<base>.md), com
+    os totais, a tabela de arquivos e a lista de falhas. É o insumo da seção da
+    base normativa no CORPUS_INVENTORY.md.
+    """
+    registros = carregar_registros(versao)
+    ok = [r for r in registros if r["status"] == "ok"]
+    falhas = [r for r in registros if r["status"] != "ok"]
+    formatos = {}
+    for r in ok:
+        formatos[r["tipo"]] = formatos.get(r["tipo"], 0) + 1
+    total_bytes = sum(r["bytes"] for r in ok)
+
+    linhas = [
+        f"# Inventário {versao} · {BASE_ID}",
+        "",
+        f"Coletado em {max((r['coletado_em'] for r in ok), default='-')}",
+        "",
+        "| | |",
+        "| --- | --- |",
+        f"| Arquivos | {len(ok)} |",
+        f"| Bytes | {total_bytes:,} |".replace(",", "."),
+        f"| Formatos | {', '.join(f'{n} {t}' for t, n in sorted(formatos.items()))} |",
+        f"| Falhas | {len(falhas)} |",
+        "",
+        "## Arquivos",
+        "",
+        "| Arquivo | Tipo | Bytes | sha256 | Origem |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for r in ok:
+        linhas.append(f"| `{Path(r['path']).name}` | {r['tipo']} | {r['bytes']:,} | "
+                      f"`{r['sha256'][:12]}` | {r['origem']} |".replace(",", "."))
+    linhas += ["", "## Falhas", ""]
+    linhas += ([f"- {r['origem']} · {r['erro']}" for r in falhas] if falhas else ["Nenhuma."])
+
+    saida = PASTA_INVENTARIO / f"{versao}_{BASE_ID}.md"
+    saida.write_text("\n".join(linhas) + "\n", encoding="utf-8")
+    print(f"Inventário salvo em {saida}")
+    return saida
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Coleta da base normativa")
+    parser = argparse.ArgumentParser(description="Coleta e versionamento da base normativa")
+    sub = parser.add_subparsers(dest="comando")
+
+    p_fetch = sub.add_parser("fetch", help="coleta inicial em uma versão")
+    p_fetch.add_argument("--manifest", default="corpus_manifest.yaml")
+    p_fetch.add_argument("--versao", default="v1")
+    p_fetch.add_argument("--raiz", default="data/raw")
+
+    p_update = sub.add_parser("update", help="cria a versão seguinte e gera o diff")
+    p_update.add_argument("--manifest", default="corpus_manifest.yaml")
+    p_update.add_argument("--raiz", default="data/raw")
+
+    p_inv = sub.add_parser("inventory", help="gera o inventário legível de uma versão")
+    p_inv.add_argument("--versao", default="v1")
+
+    # Sem subcomando, mantém o uso antigo: coleta a versão indicada
     parser.add_argument("--manifest", default="corpus_manifest.yaml")
     parser.add_argument("--versao", default="v1")
     parser.add_argument("--raiz", default="data/raw")
+
     args = parser.parse_args()
-    coletar(args.manifest, args.versao, args.raiz)
+    if args.comando == "update":
+        atualizar(args.manifest, args.raiz)
+    elif args.comando == "inventory":
+        escrever_inventario(args.versao)
+    else:
+        coletar(args.manifest, args.versao, args.raiz)
