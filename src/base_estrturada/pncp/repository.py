@@ -3,7 +3,6 @@ import zipfile
 import shutil
 import stat
 import os
-import re
 
 from pathlib import Path
 from typing import Any
