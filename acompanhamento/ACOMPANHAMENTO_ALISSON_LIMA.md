@@ -855,4 +855,153 @@ LLM
 ```
 
 A próxima etapa deve verificar principalmente se o serviço responsável pela ingestão, após baixar um `PNCPFile`, já cria corretamente o `Document` correspondente e posteriormente seus `DocumentChunks`.
+Encontro 5 - 2026-09-25
 
+Relato individual - Alisson Lima de Souza (4h)
+
+Hoje concentrei o trabalho na evolução da persistência dos documentos relacionados aos contratos obtidos do Portal Nacional de Contratações Públicas (PNCP).
+
+O objetivo principal foi preparar a estrutura do banco de dados para que os documentos associados aos contratos possam ser armazenados e posteriormente utilizados pelo fluxo de ingestão e pelo pipeline RAG.
+
+Persistência dos documentos dos contratos
+
+Foi trabalhada a parte do banco de dados responsável por registrar os documentos vinculados aos contratos coletados do PNCP.
+
+A estrutura segue o fluxo geral:
+
+PNCP
+ ↓
+Contrato
+ ↓
+Documento do contrato
+ ↓
+Persistência no banco
+ ↓
+Processamento do documento
+ ↓
+Chunking
+ ↓
+DocumentChunk
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Recuperação
+ ↓
+LLM
+
+Essa etapa é importante para manter a rastreabilidade entre os dados estruturados obtidos do PNCP e os arquivos que posteriormente serão utilizados pelo sistema RAG.
+
+Estrutura para armazenamento dos documentos
+
+O trabalho realizado hoje ficou concentrado na preparação da persistência necessária para salvar os documentos associados aos contratos.
+
+A ideia é permitir que cada documento mantenha sua relação com o registro de origem, possibilitando posteriormente identificar de qual contratação ou contrato determinado conteúdo foi obtido.
+
+Com essa estrutura, o sistema poderá seguir o fluxo:
+
+Contrato PNCP
+      ↓
+Documento associado
+      ↓
+Registro no banco
+      ↓
+Arquivo/documento persistido
+      ↓
+Ingestão pelo RAG
+
+Essa associação também será importante para evitar que os documentos utilizados pelo RAG fiquem desconectados dos dados originais do PNCP.
+
+Integração futura com o RAG
+
+A persistência dos documentos representa uma etapa intermediária entre a coleta dos contratos e o processamento do conteúdo pelo RAG.
+
+Após a conclusão dessa estrutura, os documentos poderão seguir para as etapas de:
+
+Documento
+    ↓
+Extração de texto
+    ↓
+Normalização
+    ↓
+Chunking
+    ↓
+DocumentChunk
+    ↓
+┌──────────────┐
+│              │
+▼              ▼
+BM25          FAISS
+│              │
+└──────┬───────┘
+       ↓
+      RRF
+       ↓
+Recuperação
+       ↓
+Contexto
+       ↓
+LLM
+
+Dessa forma, o banco de dados funciona como parte da ligação entre a coleta das informações públicas e a camada de recuperação de conhecimento.
+
+Versionamento
+
+As alterações realizadas hoje foram organizadas e registradas no repositório por meio de um commit, concentrando as mudanças relacionadas à estrutura do banco para persistência dos documentos dos contratos.
+
+O commit permite manter essa evolução isolada e rastreável dentro do histórico do projeto.
+
+Resumo do dia
+
+Entreguei hoje:
+
+evolução da estrutura de persistência dos documentos relacionados aos contratos;
+
+preparação do banco de dados para registrar os documentos coletados;
+
+organização da relação entre contratos e seus respectivos documentos;
+
+preparação da rastreabilidade da origem dos documentos;
+
+adequação da estrutura para futura integração com o processo de ingestão do RAG;
+
+preparação do fluxo entre documentos persistidos e posterior geração de chunks;
+
+revisão da estrutura necessária para utilização desses documentos pelo BM25 e FAISS;
+
+registro das alterações realizadas em um commit no repositório.
+
+Próximo passo
+
+O próximo passo será continuar a integração entre os documentos dos contratos armazenados no banco e o processo de ingestão do RAG.
+
+O fluxo a ser validado será:
+
+PNCP
+ ↓
+Contrato
+ ↓
+Documento do contrato
+ ↓
+Persistência no banco
+ ↓
+Download/identificação do arquivo
+ ↓
+Document
+ ↓
+Extração do texto
+ ↓
+Chunking
+ ↓
+DocumentChunk
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Recuperação
+ ↓
+LLM
+
+A próxima etapa deverá verificar principalmente se os documentos associados aos contratos estão sendo corretamente recuperados a partir do banco e encaminhados para o processamento, permitindo posteriormente a geração dos chunks e sua indexação nos mecanismos de recuperação do RAG.
