@@ -190,7 +190,69 @@ então o commit aparece no nome dela.
 
 ---
 
-## Encontro 4 · DD/MM/AAAA
+## Encontro 4 · 23/09/2026
+
+### O que eu fiz hoje
+
+Hoje a Ana e eu trabalhamos juntas no processamento da base normativa, que é a
+frente dela, depois de termos concluído a coleta na aula passada.
+
+Comecei preparando o meu ambiente. Ao rodar a coleta na minha máquina, apareceu
+"ModuleNotFoundError: No module named 'requests'", porque as bibliotecas tinham
+sido instaladas só no computador da Ana. Instalei `requests`, `pyyaml`,
+`truststore` e `pypdf` com `python -m pip install`, que garante a instalação no
+mesmo Python que roda o projeto, e a coleta funcionou: 13 documentos, 0 falhas.
+
+Criamos o módulo `app/modules/ingest/`, com `services.py`, `schemas.py` e
+`routes.py`, seguindo a arquitetura do time. O processamento lê os documentos
+que a coleta baixou, extrai o texto (PDF e HTML), limpa o cabeçalho e o rodapé
+que o navegador colocou nos decretos e corta os documentos em pedaços: a lei e
+os decretos por artigo, e os editais por cláusula. Cada pedaço leva junto os
+metadados obrigatórios. O resultado foram 784 pedaços, gravados em
+`data/processed/v1_editais_normativo.jsonl`.
+
+Fiquei responsável por conferir o resultado. Abri o arquivo gerado e verifiquei
+que a Lei 14.133 saiu com os 194 artigos, em ordem e sem faltar nenhum, que não
+havia pedaço sem metadado obrigatório nem identificador repetido, e que os tipos
+de documento estavam certos (7 decretos, 5 editais e 1 lei). Também li alguns
+pedaços para ver se o artigo estava inteiro, com os parágrafos e incisos juntos.
+
+Depois criamos os testes, em `tests/test_ingest_normativa.py`, com um documento
+de exemplo em `tests/fixtures/`. Os 9 testes passaram.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o processamento e os testes, e entender os erros que
+  apareceram no caminho.
+- **O que eu conferi / mudei:** conferi eu mesma o arquivo gerado (os 194
+  artigos, os metadados e os tipos de documento) e rodei os testes.
+
+### O que travou
+
+- As bibliotecas não estavam instaladas na minha máquina.
+- O arquivo de exemplo está salvo em cp1252, de propósito, para imitar o site do
+  Planalto, e o VS Code mostra os acentos errados. Aprendi que não posso salvá-lo
+  pelo editor, senão os testes quebram.
+
+### Próximo passo
+
+- Montar, com o time, o CORPUS_INVENTORY.md, que é obrigatório na Etapa 1, a
+  partir do `data/inventory/`.
+- Abrir o pull request da `base-normativa` para a main.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** processamento em
+  `app/modules/ingest/services.py` (784 pedaços, Lei 14.133 com 194 artigos) e
+  9 testes passando.
+- **Travou:** bibliotecas faltando e codificação do
+  arquivo de exemplo.
+- **Próximo passo:** CORPUS_INVENTORY.md e integração com a etapa de busca.
+
+---
+
+## Encontro 5 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
