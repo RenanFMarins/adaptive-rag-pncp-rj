@@ -31,15 +31,16 @@ DATA_FINAL = "20260918"
 UF = "RJ"
 
 # Pregão Eletrônico.
-MODALIDADE_PREGAO_ELETRONICO = 6
+MODALIDADE_PREGAO_ELETRONICO = 1
 
 # Diretório onde os documentos serão salvos.
 PASTA_DOWNLOADS = Path("downloads_pncp")
 
-
+""""""
 # ============================================================
 # FUNÇÕES AUXILIARES
 # ============================================================
+
 
 def titulo(texto: str) -> None:
     """
