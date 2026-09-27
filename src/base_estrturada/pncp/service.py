@@ -134,7 +134,12 @@ class ResultadoColetaContratacoes:
     """Resultado da coleta, inclusive páginas que devem ser retentadas."""
 
     contratacoes: list[dict[str, Any]]
-    paginas_com_erro: list[int]
+    falhas: list[dict[str, Any]]
+
+    @property
+    def paginas_com_erro(self) -> list[int]:
+        """Compatibilidade temporária com o formato antigo."""
+        return [falha["pagina"] for falha in self.falhas]
 
 
 def coletar_contratacoes(
@@ -143,16 +148,29 @@ def coletar_contratacoes(
     data_final: str,
     modalidades: list[int] | None = None,
     tamanho_pagina: int = 50,
-) -> list[dict]:
+    limite_paginas_por_modalidade: int | None = None,
+) -> ResultadoColetaContratacoes:
     """
     Consulta contratações publicadas no PNCP.
 
     A consulta é realizada por modalidade e percorre
     automaticamente as páginas disponíveis.
+
+    `limite_paginas_por_modalidade` serve para testes. Quando
+    informado, limita quantas páginas serão consultadas em cada
+    modalidade. Com None, a coleta percorre todas as páginas.
     """
 
     if tamanho_pagina <= 0:
         tamanho_pagina = 50
+
+    if (
+        limite_paginas_por_modalidade is not None
+        and limite_paginas_por_modalidade <= 0
+    ):
+        raise ValueError(
+            "limite_paginas_por_modalidade deve ser maior que zero."
+        )
 
     uf = uf.upper().strip()
 
@@ -166,9 +184,27 @@ def coletar_contratacoes(
         )
 
     resultados: list[dict] = []
-    paginas_com_erro: list[int] = []
+    falhas: list[dict[str, Any]] = []
 
     controles_encontrados: set[str] = set()
+
+    def registrar_falha(
+        pagina: int,
+        modalidade: int,
+        motivo: str,
+    ) -> None:
+        falhas.append(
+            {
+                "tipo": "contratacao",
+                "dataInicial": data_inicial,
+                "dataFinal": data_final,
+                "pagina": pagina,
+                "modalidade": modalidade,
+                "motivo": motivo,
+                "status": "pendente",
+                "tentativasReprocessamento": 0,
+            }
+        )
 
     for modalidade in modalidades:
         print(
@@ -179,6 +215,16 @@ def coletar_contratacoes(
         total_paginas: int | None = None
 
         while total_paginas is None or pagina <= total_paginas:
+            if (
+                limite_paginas_por_modalidade is not None
+                and pagina > limite_paginas_por_modalidade
+            ):
+                print(
+                    f"Limite de {limite_paginas_por_modalidade} "
+                    f"página(s) atingido | modalidade={modalidade}"
+                )
+                break
+
             params = {
                 "dataInicial": data_inicial,
                 "dataFinal": data_final,
@@ -200,7 +246,7 @@ def coletar_contratacoes(
                     f"modalidade={modalidade} | "
                     f"página={pagina}")
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "timeout")
 
                 if total_paginas is None:
                     break
@@ -215,7 +261,7 @@ def coletar_contratacoes(
                     f"página={pagina} | "
                     f"{exc}"
                 )
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "erro_conexao")
 
                 if total_paginas is None:
                     break
@@ -231,7 +277,7 @@ def coletar_contratacoes(
                     f"{exc}"
                 )
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "erro_requisicao")
 
                 if total_paginas is None:
                     break
@@ -257,7 +303,7 @@ def coletar_contratacoes(
                       f"Modalidade={modalidade} | "
                       f"página={pagina}")
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "http_429")
 
                 if total_paginas is None:
                     break
@@ -277,7 +323,11 @@ def coletar_contratacoes(
                     f"página={pagina}"
                 )
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(
+                    pagina,
+                    modalidade,
+                    f"http_{response.status_code}",
+                )
 
                 if total_paginas is None:
                     break
@@ -297,7 +347,7 @@ def coletar_contratacoes(
                       f"modalidade={modalidade} | "
                       f"página={pagina}")
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "json_invalido")
 
                 if total_paginas is None:
                     break
@@ -310,7 +360,7 @@ def coletar_contratacoes(
                     f"Formato inválido | Contratações | página={pagina}"
                 )
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "formato_invalido")
 
                 if total_paginas is None:
                     break
@@ -328,7 +378,7 @@ def coletar_contratacoes(
                       f"modalidade={modalidade} | "
                       f"página={pagina}")
 
-                paginas_com_erro.append(pagina)
+                registrar_falha(pagina, modalidade, "campo_data_invalido")
 
                 if total_paginas is None:
                     break
@@ -392,7 +442,81 @@ def coletar_contratacoes(
 
     return ResultadoColetaContratacoes(
         contratacoes=resultados,
-        paginas_com_erro=paginas_com_erro,
+        falhas=falhas,
+    )
+
+
+def coletar_pagina_contratacoes(
+    uf: str,
+    data_inicial: str,
+    data_final: str,
+    modalidade: int,
+    pagina: int,
+    tamanho_pagina: int = 50,
+) -> ResultadoColetaContratacoes:
+    """Consulta uma página específica de contratações.
+
+    Usada somente no reprocessamento manual dos checkpoints: não percorre
+    outras páginas e mantém os mesmos campos de falha da coleta principal.
+    """
+
+    def falha(motivo: str) -> ResultadoColetaContratacoes:
+        return ResultadoColetaContratacoes(
+            contratacoes=[],
+            falhas=[
+                {
+                    "tipo": "contratacao",
+                    "dataInicial": data_inicial,
+                    "dataFinal": data_final,
+                    "pagina": pagina,
+                    "modalidade": modalidade,
+                    "motivo": motivo,
+                    "status": "pendente",
+                    "tentativasReprocessamento": 0,
+                }
+            ],
+        )
+
+    params = {
+        "dataInicial": data_inicial,
+        "dataFinal": data_final,
+        "codigoModalidadeContratacao": modalidade,
+        "uf": uf.upper().strip(),
+        "pagina": pagina,
+        "tamanhoPagina": tamanho_pagina,
+    }
+
+    try:
+        response = pncp_client.get(BASE_URL_CONTRATACOES, params=params)
+    except requests.exceptions.Timeout:
+        return falha("timeout")
+    except requests.exceptions.ConnectionError:
+        return falha("erro_conexao")
+    except requests.RequestException:
+        return falha("erro_requisicao")
+
+    if response.status_code == 204:
+        return ResultadoColetaContratacoes(contratacoes=[], falhas=[])
+    if response.status_code == 429:
+        return falha("http_429")
+    if response.status_code != 200:
+        return falha(f"http_{response.status_code}")
+
+    try:
+        dados = response.json()
+    except ValueError:
+        return falha("json_invalido")
+
+    if not isinstance(dados, dict):
+        return falha("formato_invalido")
+
+    registros = dados.get("data") or []
+    if not isinstance(registros, list):
+        return falha("campo_data_invalido")
+
+    return ResultadoColetaContratacoes(
+        contratacoes=[item for item in registros if isinstance(item, dict)],
+        falhas=[],
     )
 
 
@@ -532,30 +656,68 @@ class ResultadoColetaContratos:
     """Resultado da coleta, inclusive páginas que devem ser retentadas."""
 
     contratos: list[dict[str, Any]]
-    paginas_com_erro: list[int]
+    falhas: list[dict[str, Any]]
+
+    @property
+    def paginas_com_erro(self) -> list[int]:
+        """Compatibilidade temporária com o formato antigo."""
+        return [falha["pagina"] for falha in self.falhas]
 
 
 def coletar_contratos(
     data_inicial: str,
     data_final: str,
     tamanho_pagina: int = 50,
+    limite_paginas: int | None = None,
 ) -> ResultadoColetaContratos:
     """
     Consulta contratos publicados no PNCP.
+
+    `limite_paginas` serve para testes. Quando informado, limita
+    quantas páginas serão consultadas. Com None, a coleta percorre
+    todas as páginas.
     """
 
     if tamanho_pagina <= 0:
         tamanho_pagina = 50
 
+    if limite_paginas is not None and limite_paginas <= 0:
+        raise ValueError(
+            "limite_paginas deve ser maior que zero."
+        )
+
     resultados: list[dict[str, Any]] = []
-    paginas_com_erro: list[int] = []
+    falhas: list[dict[str, Any]] = []
 
     controles_encontrados: set[str] = set()
+
+    def registrar_falha(
+        pagina: int,
+        motivo: str,
+    ) -> None:
+        falhas.append(
+            {
+                "tipo": "contrato",
+                "dataInicial": data_inicial,
+                "dataFinal": data_final,
+                "pagina": pagina,
+                "motivo": motivo,
+                "status": "pendente",
+                "tentativasReprocessamento": 0,
+            }
+        )
 
     pagina = 1
     total_paginas: int | None = None
 
     while total_paginas is None or pagina <= total_paginas:
+        if limite_paginas is not None and pagina > limite_paginas:
+            print(
+                f"Limite de {limite_paginas} página(s) atingido "
+                "na coleta de contratos."
+            )
+            break
+
         params = {
             "dataInicial": data_inicial,
             "dataFinal": data_final,
@@ -575,7 +737,7 @@ def coletar_contratos(
                 f"página={pagina}"
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "timeout")
 
             if total_paginas is None:
                 break
@@ -589,7 +751,7 @@ def coletar_contratos(
                 f"página={pagina} | {exc}"
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "erro_conexao")
 
             if total_paginas is None:
                 break
@@ -603,7 +765,7 @@ def coletar_contratos(
                 f"página={pagina} | {exc}"
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "erro_requisicao")
 
             if total_paginas is None:
                 break
@@ -620,7 +782,7 @@ def coletar_contratos(
                 f"na página {pagina} após as tentativas automáticas."
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "http_429")
 
             if total_paginas is None:
                 break
@@ -635,7 +797,10 @@ def coletar_contratos(
             )
             print(response.text[:500])
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(
+                pagina,
+                f"http_{response.status_code}",
+            )
 
             if total_paginas is None:
                 break
@@ -652,7 +817,7 @@ def coletar_contratos(
                 "ao consultar contratos."
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "json_invalido")
 
             if total_paginas is None:
                 break
@@ -665,7 +830,7 @@ def coletar_contratos(
                 f"Formato inválido | contratos | página={pagina}"
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "formato_invalido")
 
             if total_paginas is None:
                 break
@@ -683,7 +848,7 @@ def coletar_contratos(
                 f"Campo 'data' inválido | contratos | página={pagina}"
             )
 
-            paginas_com_erro.append(pagina)
+            registrar_falha(pagina, "campo_data_invalido")
 
             if total_paginas is None:
                 break
@@ -743,8 +908,80 @@ def coletar_contratos(
 
     return ResultadoColetaContratos(
         contratos=resultados,
-        paginas_com_erro=paginas_com_erro,
+        falhas=falhas,
     )
+
+
+def coletar_pagina_contratos(
+    data_inicial: str,
+    data_final: str,
+    pagina: int,
+    tamanho_pagina: int = 500,
+) -> ResultadoColetaContratos:
+    """Consulta uma página específica de contratos para reprocessamento."""
+
+    def falha(motivo: str) -> ResultadoColetaContratos:
+        return ResultadoColetaContratos(
+            contratos=[],
+            falhas=[
+                {
+                    "tipo": "contrato",
+                    "dataInicial": data_inicial,
+                    "dataFinal": data_final,
+                    "pagina": pagina,
+                    "motivo": motivo,
+                    "status": "pendente",
+                    "tentativasReprocessamento": 0,
+                }
+            ],
+        )
+
+    params = {
+        "dataInicial": data_inicial,
+        "dataFinal": data_final,
+        "pagina": pagina,
+        "tamanhoPagina": tamanho_pagina,
+    }
+
+    try:
+        response = pncp_client.get(BASE_URL_CONTRATOS, params=params)
+    except requests.exceptions.Timeout:
+        return falha("timeout")
+    except requests.exceptions.ConnectionError:
+        return falha("erro_conexao")
+    except requests.RequestException:
+        return falha("erro_requisicao")
+
+    if response.status_code == 204:
+        return ResultadoColetaContratos(contratos=[], falhas=[])
+    if response.status_code == 429:
+        return falha("http_429")
+    if response.status_code != 200:
+        return falha(f"http_{response.status_code}")
+
+    try:
+        dados = response.json()
+    except ValueError:
+        return falha("json_invalido")
+
+    if not isinstance(dados, dict):
+        return falha("formato_invalido")
+
+    registros = dados.get("data") or []
+    if not isinstance(registros, list):
+        return falha("campo_data_invalido")
+
+    contratos_rj: list[dict[str, Any]] = []
+    for item in registros:
+        if not isinstance(item, dict):
+            continue
+
+        unidade_orgao = item.get("unidadeOrgao") or {}
+        uf_orgao = str(unidade_orgao.get("ufSigla") or "").upper()
+        if uf_orgao == "RJ":
+            contratos_rj.append(item)
+
+    return ResultadoColetaContratos(contratos=contratos_rj, falhas=[])
 
 
 # ============================================================
