@@ -1,155 +1,341 @@
-"""
-Pipeline de Documentos — Contratos e Contratações
-==================================================
+"""Pipeline mensal do PNCP.
 
-Este script roda APENAS a segunda parte do fluxo (download e organização
-dos documentos). A primeira parte (coleta de contratos/contratações via
-API) já tem uma base pronta e por isso fica comentada/desativada abaixo,
-para não disparar requisições desnecessárias de novo.
-
-As funções (coletar_contratos, adicionar_contratos_novos,
-salvar_paginas_com_erro, carregar_json, salvar_json,
-salvar_lista_documentos_contratacao, baixar_documentos_manifesto,
-identificar_arquivos_do_manifesto, extrair_zips_do_manifesto) são
-assumidas como já existentes no seu projeto (importe-as do módulo onde
-estão implementadas). Aqui só está a ORQUESTRAÇÃO do fluxo.
+O fluxo ativo coleta contratos e contratações e os salva por ano/mês.
+A etapa de documentos permanece disponível, mas não é executada aqui.
 """
+
+from calendar import monthrange
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable
 
 from src.base_estrturada.pncp.repository import (
-    adicionar_contratacoes_novas,
-    adicionar_contratos_novos,
-    salvar_paginas_com_erro,
+    adicionar_registros_novos,
+    carregar_json,
+    extrair_zips_do_manifesto,
+    identificar_arquivos_do_manifesto,
+    atualizar_falha_reprocessada,
+    salvar_falhas_coleta,
     salvar_json,
     salvar_lista_de_documentos_contratos,
-    carregar_json, salvar_lista_documentos_contratacao,
-    salvar_lista_de_documentos_contratos,
-    identificar_arquivos_do_manifesto,
-    extrair_zips_do_manifesto,
-
+    salvar_lista_documentos_contratacao,
 )
-
 from src.base_estrturada.pncp.service import (
-    coletar_contratos, consultar_documentos_contrato,
     baixar_documentos_lista,
-    coletar_contratacoes, consultar_detalhe_contratacao
-
+    coletar_pagina_contratacoes,
+    coletar_pagina_contratos,
+    coletar_contratacoes,
+    coletar_contratos,
 )
 
 
-# -----------------------------------------------------------------
-# PARTE 1 — COLETA DE CONTRATAÇÕES (DESATIVADA)
-# -----------------------------------------------------------------
-# Já existe uma base de contratações coletada e estruturada.
-# Não rodar de novo agora (evita requisições demoradas e desnecessárias).
-# Quando precisar atualizar a base, é só descomentar este bloco
-# (lembrando de definir data_inicial e data_final antes).
-#
-# resultado = coletar_contratacoes(
-#     uf="RJ",
-#     data_inicial=data_inicial,
-#     data_final=data_final,
-#     tamanho_pagina=50,
-# )
-# quantidade_nova = adicionar_contratacoes_novas(
-#     resultado.contratacoes
-# )
-# salvar_paginas_com_erro(
-#     data_inicial=data_inicial,
-#     data_final=data_final,
-#     paginas=resultado.paginas_com_erro,
-#     caminho=CAMINHO_MANIFESTO_CONTRATACOES,
-# )
+@dataclass(frozen=True)
+class PeriodoColeta:
+    """Representa um mês fechado de coleta."""
+
+    ano: int
+    mes: int
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.mes <= 12:
+            raise ValueError("mes deve estar entre 1 e 12.")
+
+    @property
+    def data_inicial(self) -> str:
+        return f"{self.ano}{self.mes:02d}01"
+
+    @property
+    def data_final(self) -> str:
+        ultimo_dia = monthrange(self.ano, self.mes)[1]
+        return f"{self.ano}{self.mes:02d}{ultimo_dia:02d}"
+
+    @property
+    def identificador(self) -> str:
+        return f"{self.ano}_{self.mes:02d}"
+
+
+def caminhos_do_periodo(periodo: PeriodoColeta) -> dict[str, Path]:
+    """Monta os caminhos mensais de dados, falhas e manifestos."""
+
+    ano = str(periodo.ano)
+    identificador = periodo.identificador
+
+    return {
+        "contratos": Path(
+            f"data/normalized/contratos/{ano}/"
+            f"contratos_{identificador}.json"
+        ),
+        "contratacoes": Path(
+            f"data/normalized/contratacoes/{ano}/"
+            f"contratacoes_{identificador}.json"
+        ),
+        "falhas_contratos": Path(
+            f"data/checkpoints/contratos/{ano}/"
+            f"falhas_{identificador}.json"
+        ),
+        "falhas_contratacoes": Path(
+            f"data/checkpoints/contratacoes/{ano}/"
+            f"falhas_{identificador}.json"
+        ),
+        "manifesto_contratos": Path(
+            f"data/normalized/contratos/{ano}/"
+            f"contratos_documentos_{identificador}.json"
+        ),
+        "manifesto_contratacoes": Path(
+            f"data/normalized/contratacoes/{ano}/"
+            f"contratacoes_documentos_{identificador}.json"
+        ),
+    }
+
+
+def coletar_e_salvar_contratos(
+    periodo: PeriodoColeta,
+    arquivo_saida: Path,
+    arquivo_falhas: Path,
+    tamanho_pagina: int,
+    limite_paginas: int | None,
+) -> int:
+    """Coleta contratos de um mês e mescla apenas os registros novos."""
+
+    resultado = coletar_contratos(
+        data_inicial=periodo.data_inicial,
+        data_final=periodo.data_final,
+        tamanho_pagina=tamanho_pagina,
+        limite_paginas=limite_paginas,
+    )
+
+    quantidade_nova = adicionar_registros_novos(
+        resultado.contratos,
+        arquivo=arquivo_saida,
+    )
+    salvar_falhas_coleta(
+        falhas=resultado.falhas,
+        caminho=arquivo_falhas,
+        tipo="contrato",
+    )
+
+    print(
+        f"Contratos | período={periodo.identificador} | "
+        f"novos={quantidade_nova} | falhas={len(resultado.falhas)}"
+    )
+    return quantidade_nova
+
+
+def coletar_e_salvar_contratacoes(
+    periodo: PeriodoColeta,
+    arquivo_saida: Path,
+    arquivo_falhas: Path,
+    modalidades: list[int],
+    tamanho_pagina: int,
+    limite_paginas_por_modalidade: int | None,
+) -> int:
+    """Coleta contratações de um mês e mescla apenas as novas."""
+
+    resultado = coletar_contratacoes(
+        uf="RJ",
+        data_inicial=periodo.data_inicial,
+        data_final=periodo.data_final,
+        modalidades=modalidades,
+        tamanho_pagina=tamanho_pagina,
+        limite_paginas_por_modalidade=limite_paginas_por_modalidade,
+    )
+
+    quantidade_nova = adicionar_registros_novos(
+        resultado.contratacoes,
+        arquivo=arquivo_saida,
+    )
+    salvar_falhas_coleta(
+        falhas=resultado.falhas,
+        caminho=arquivo_falhas,
+        tipo="contratacao",
+    )
+
+    print(
+        f"Contratações | período={periodo.identificador} | "
+        f"novas={quantidade_nova} | falhas={len(resultado.falhas)}"
+    )
+    return quantidade_nova
+
+
+def reprocessar_falhas_contratos(
+    arquivo_saida: Path,
+    arquivo_falhas: Path,
+    tamanho_pagina: int,
+    max_tentativas: int = 3,
+) -> dict[str, int]:
+    """Reprocessa manualmente apenas páginas pendentes de contratos."""
+
+    checkpoint = carregar_json(arquivo_falhas, padrao={"falhas": []})
+    falhas = checkpoint.get("falhas", []) if isinstance(checkpoint, dict) else []
+    pendentes = [
+        falha
+        for falha in falhas
+        if isinstance(falha, dict)
+        and falha.get("tipo") == "contrato"
+        and falha.get("status") == "pendente"
+    ]
+
+    resumo = {"tentadas": 0, "resolvidas": 0, "pendentes": 0, "novos": 0}
+
+    for falha in pendentes:
+        pagina = falha.get("pagina")
+        if not isinstance(pagina, int):
+            continue
+
+        resumo["tentadas"] += 1
+        resultado = coletar_pagina_contratos(
+            data_inicial=str(falha["dataInicial"]),
+            data_final=str(falha["dataFinal"]),
+            pagina=pagina,
+            tamanho_pagina=tamanho_pagina,
+        )
+
+        if not resultado.falhas:
+            resumo["novos"] += adicionar_registros_novos(
+                resultado.contratos,
+                arquivo=arquivo_saida,
+            )
+            atualizar_falha_reprocessada(
+                caminho=arquivo_falhas,
+                falha_original=falha,
+                sucesso=True,
+                max_tentativas=max_tentativas,
+            )
+            resumo["resolvidas"] += 1
+        else:
+            atualizar_falha_reprocessada(
+                caminho=arquivo_falhas,
+                falha_original=falha,
+                sucesso=False,
+                motivo=resultado.falhas[0].get("motivo"),
+                max_tentativas=max_tentativas,
+            )
+            resumo["pendentes"] += 1
+
+    print("Reprocessamento manual | contratos |", resumo)
+    return resumo
+
+
+def reprocessar_falhas_contratacoes(
+    arquivo_saida: Path,
+    arquivo_falhas: Path,
+    tamanho_pagina: int,
+    max_tentativas: int = 3,
+) -> dict[str, int]:
+    """Reprocessa manualmente páginas pendentes de contratações."""
+
+    checkpoint = carregar_json(arquivo_falhas, padrao={"falhas": []})
+    falhas = checkpoint.get("falhas", []) if isinstance(checkpoint, dict) else []
+    pendentes = [
+        falha
+        for falha in falhas
+        if isinstance(falha, dict)
+        and falha.get("tipo") == "contratacao"
+        and falha.get("status") == "pendente"
+    ]
+
+    resumo = {"tentadas": 0, "resolvidas": 0, "pendentes": 0, "novas": 0}
+
+    for falha in pendentes:
+        pagina = falha.get("pagina")
+        modalidade = falha.get("modalidade")
+        if not isinstance(pagina, int) or not isinstance(modalidade, int):
+            continue
+
+        resumo["tentadas"] += 1
+        resultado = coletar_pagina_contratacoes(
+            uf="RJ",
+            data_inicial=str(falha["dataInicial"]),
+            data_final=str(falha["dataFinal"]),
+            modalidade=modalidade,
+            pagina=pagina,
+            tamanho_pagina=tamanho_pagina,
+        )
+
+        if not resultado.falhas:
+            resumo["novas"] += adicionar_registros_novos(
+                resultado.contratacoes,
+                arquivo=arquivo_saida,
+            )
+            atualizar_falha_reprocessada(
+                caminho=arquivo_falhas,
+                falha_original=falha,
+                sucesso=True,
+                max_tentativas=max_tentativas,
+            )
+            resumo["resolvidas"] += 1
+        else:
+            atualizar_falha_reprocessada(
+                caminho=arquivo_falhas,
+                falha_original=falha,
+                sucesso=False,
+                motivo=resultado.falhas[0].get("motivo"),
+                max_tentativas=max_tentativas,
+            )
+            resumo["pendentes"] += 1
+
+    print("Reprocessamento manual | contratações |", resumo)
+    return resumo
 
 
 # ---------------------------------------------------------------------------
-# PARTE 2 — DOCUMENTOS (o que roda agora)
+# ETAPA FUTURA — MANIFESTO E DOWNLOAD DE DOCUMENTOS
 # ---------------------------------------------------------------------------
+
+def gerar_manifesto_documentos(
+    nome_etapa: str,
+    arquivo_entrada: Path,
+    caminho_manifesto: Path,
+    funcao_gerar_manifesto: Callable[..., list[dict[str, Any]]],
+    limite_itens: int = 5,
+) -> list[dict[str, Any]]:
+    """Lista documentos de itens já coletados, sem baixar arquivos."""
+
+    itens = carregar_json(arquivo_entrada, padrao=[])
+    if not isinstance(itens, list):
+        raise RuntimeError(
+            f"O arquivo de entrada deve conter uma lista: {arquivo_entrada}"
+        )
+
+    return funcao_gerar_manifesto(
+        itens,
+        caminho_manifesto,
+        limite=limite_itens,
+    )
+
 
 def processar_documentos(
     nome_etapa: str,
-    arquivo_entrada: str,
-    caminho_manifesto: str,
-    pasta_base: str,
-    pasta_extrair: str,
-    funcao_gerar_manifesto,
-    limite_contratos: int = 5,
-    limite_documentos_por_contrato: int = 1,
-):
-    """
-    Roda o fluxo completo de documentos para uma base já coletada
-    (contratos OU contratações — o mesmo fluxo serve para os dois).
+    arquivo_entrada: Path,
+    caminho_manifesto: Path,
+    pasta_base: Path,
+    pasta_extrair: Path,
+    funcao_gerar_manifesto: Callable[..., list[dict[str, Any]]],
+    limite_itens: int = 5,
+    limite_documentos_por_item: int = 1,
+) -> dict[str, int]:
+    """Etapa futura: gera manifesto, baixa, identifica e extrai arquivos."""
 
-    Passos:
-        1. Carrega os itens já salvos (arquivo_entrada).
-        2. Gera o manifesto com a lista de documentos de cada item.
-        3. Recarrega o manifesto salvo em disco.
-        4. Baixa os documentos listados no manifesto.
-        5. Identifica o tipo de cada arquivo baixado (PDF, ZIP, etc.).
-        6. Extrai os arquivos que vierem em ZIP/RAR.
-        7. Salva o manifesto atualizado (estado final).
-
-    Parâmetros
-    ----------
-    nome_etapa : str
-        Só para identificar nos prints/logs (ex: "Contratos" ou "Contratações").
-    arquivo_entrada : str
-        Caminho do JSON com os itens já coletados.
-    caminho_manifesto : str
-        Caminho onde o manifesto (lista de documentos) é salvo/lido.
-    pasta_base : str
-        Pasta onde os documentos baixados são salvos.
-    pasta_extrair : str
-        Pasta onde os arquivos ZIP/RAR extraídos são salvos.
-    limite_contratos : int
-        Quantos itens processar (útil para testes/execuções parciais).
-    limite_documentos_por_contrato : int
-        Quantos documentos baixar por item.
-
-    Retorna
-    -------
-    dict com os totais de cada etapa (baixados, identificados, extraídos).
-    """
-    print(f"\n=== {nome_etapa}: iniciando processamento de documentos ===")
-
-    # 1. Carrega os itens já coletados (contratos ou contratações)
-    itens = carregar_json(arquivo_entrada, padrao=[])
-    print(f"[{nome_etapa}] {len(itens)} itens carregados de '{arquivo_entrada}'.")
-
-    # 2. Gera o manifesto com a lista de documentos de cada item
-    manifesto = funcao_gerar_manifesto(
-        itens, caminho_manifesto, limite_contratos,
+    manifesto = gerar_manifesto_documentos(
+        nome_etapa=nome_etapa,
+        arquivo_entrada=arquivo_entrada,
+        caminho_manifesto=caminho_manifesto,
+        funcao_gerar_manifesto=funcao_gerar_manifesto,
+        limite_itens=limite_itens,
     )
 
-    # 3. Recarrega o manifesto do disco, garantindo que estamos trabalhando
-    #    com exatamente o que foi salvo (e não só com o retorno em memória)
-    manifesto = carregar_json(caminho_manifesto, padrao=[])
-
-    # 4. Baixa os documentos listados no manifesto
-    #    (essa função também marca, no próprio manifesto, se cada
-    #    documento foi baixado com sucesso ou não)
     qtd_baixada = baixar_documentos_lista(
         manifesto=manifesto,
         pasta_base=pasta_base,
-        limite_contratos=limite_contratos,
-        limite_documentos_por_contrato=limite_documentos_por_contrato,
+        limite_contratos=limite_itens,
+        limite_documentos_por_contrato=limite_documentos_por_item,
     )
-    print(f"[{nome_etapa}] Downloads concluídos: {qtd_baixada}")
-
-    # 5. Identifica o tipo de cada arquivo baixado (PDF, ZIP, RAR, etc.)
     qtd_identificada = identificar_arquivos_do_manifesto(manifesto)
-    print(f"[{nome_etapa}] Arquivos identificados e checados: {qtd_identificada}")
-
-    # 6. Extrai os arquivos que vierem compactados (ZIP/RAR)
     qtd_extraida = extrair_zips_do_manifesto(
         manifesto=manifesto,
         pasta_base=pasta_extrair,
     )
-    print(f"[{nome_etapa}] Arquivos ZIP descompactados com sucesso: {qtd_extraida}")
-
-    # 7. Salva o estado final do manifesto (com status de download,
-    #    tipo identificado e extração já atualizados)
     salvar_json(caminho_manifesto, manifesto)
-    print(f"[{nome_etapa}] Manifesto final salvo em '{caminho_manifesto}'.")
 
     return {
         "baixados": qtd_baixada,
@@ -159,87 +345,59 @@ def processar_documentos(
 
 
 if __name__ == "__main__":
+    # Mude somente ano e mês para fazer outra coleta mensal.
+    PERIODO = PeriodoColeta(ano=2026, mes=8)
+    CAMINHOS = caminhos_do_periodo(PERIODO)
 
-    # --- Caminhos: CONTRATAÇÕES -------------------------------------------
-    ARQUIVO_CONTRATACOES = "data/normalized/contratacoes_rj.json"
-    CAMINHO_MANIFESTO_CONTRATACOES = "data/normalized/contratacoes_documentos.json"
-    CAMINHO_BASE_CONTRATACOES = "data/documents/original/contratacoes"
-    CAMINHO_EXTRAIR_CONTRATACOES = "data/documents/extracted/contratacoes"
+    # Valores seguros para teste. Para percorrer o mês inteiro, mude o
+    # respectivo limite para None depois de validar as primeiras páginas.
+    TAMANHO_PAGINA_CONTRATO = 500
+    LIMITE_PAGINAS_CONTRATOS = None
+    TAMANHO_PAGINA_CONTRATACAO = 50
+    MODALIDADES_CONTRATACOES = None
+    LIMITE_PAGINAS_POR_MODALIDADE = None
+    MAX_TENTATIVAS_REPROCESSAMENTO = 3
 
-    # --- Caminhos: CONTRATOS -------------------------------------------
-    ARQUIVO_CONTRATOS = "data/normalized/contratos_rj.json"
-    CAMINHO_MANIFESTO_CONTRATOS = "data/normalized/contratos_documentos.json"
-    CAMINHO_BASE_CONTRATOS = "data/documents/original/contrato"
-    CAMINHO_EXTRAIR_CONTRATOS = "data/documents/extracted/contratatos"
+    # Use "coletar" para a busca mensal e "reprocessar" somente quando
+    # quiser tentar novamente as páginas do checkpoint.
+    MODO_EXECUCAO = "coletar"
+    EXECUTAR_CONTRATOS = False
+    EXECUTAR_CONTRATACOES = True
 
-   # -----------------------------------------------------------------
-    # PARTE 1 — COLETA DE CONTRATAÇÕES (DESATIVADA)
-    # -----------------------------------------------------------------
-    # Já existe uma base de contratações coletada e estruturada.
-    # Não rodar de novo agora (evita requisições demoradas e desnecessárias).
-    # Quando precisar atualizar a base, é só descomentar este bloco
-    # (lembrando de definir data_inicial e data_final antes).
-    #
-    # resultado = coletar_contratacoes(
-    #     uf="RJ",
-    #     data_inicial=data_inicial,
-    #     data_final=data_final,
-    #     tamanho_pagina=50,
-    # )
-    # quantidade_nova = adicionar_contratacoes_novas(
-    #     resultado.contratacoes
-    # )
-    # salvar_paginas_com_erro(
-    #     data_inicial=data_inicial,
-    #     data_final=data_final,
-    #     paginas=resultado.paginas_com_erro,
-    #     caminho=CAMINHO_MANIFESTO_CONTRATACOES,
-    # )
-"""
-    # Roda o fluxo para Contratações
-    resultado_contratacoes = processar_documentos(
-        nome_etapa="Contratações",
-        arquivo_entrada=ARQUIVO_CONTRATACOES,
-        caminho_manifesto=CAMINHO_MANIFESTO_CONTRATACOES,
-        pasta_base=CAMINHO_BASE_CONTRATACOES,
-        pasta_extrair=CAMINHO_EXTRAIR_CONTRATACOES,
-        funcao_gerar_manifesto=salvar_lista_documentos_contratacao,
-        limite_contratos=5,
-        limite_documentos_por_contrato=1,
-    )
-"""
-# -----------------------------------------------------------------
-# PARTE 1 — COLETA DE CONTRATOS (DESATIVADA)
-# -----------------------------------------------------------------
-# Mesma ideia da coleta de contratações, mas com as funções/parâmetros
-# equivalentes para contratos. Ajuste os nomes se forem diferentes
-# no seu projeto.
-#
-# resultado = coletar_contratos(
-#     data_inicial=data_inicial,
-#     data_final=data_final,
-#     tamanho_pagina=50,
-# )
-# quantidade_nova = adicionar_contratos_novos(resultado.contratos)
-# salvar_paginas_com_erro(
-#     data_inicial=data_inicial,
-#     data_final=data_final,
-#     paginas=resultado.paginas_com_erro,
-#     caminho=CAMINHO_MANIFESTO_CONTRATOS,
-# )
+    if MODO_EXECUCAO not in {"coletar", "reprocessar"}:
+        raise ValueError("MODO_EXECUCAO deve ser 'coletar' ou 'reprocessar'.")
 
-# Roda o mesmo fluxo para Contratos (mesma lógica, pastas diferentes)
-resultado_contratos = processar_documentos(
-    nome_etapa="Contratos",
-    arquivo_entrada=ARQUIVO_CONTRATOS,
-    caminho_manifesto=CAMINHO_MANIFESTO_CONTRATOS,
-    pasta_base=CAMINHO_BASE_CONTRATOS,
-    pasta_extrair=CAMINHO_EXTRAIR_CONTRATOS,
-    funcao_gerar_manifesto=salvar_lista_de_documentos_contratos,
-    limite_contratos=5,
-    limite_documentos_por_contrato=1,
-)
+    if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATOS:
+        coletar_e_salvar_contratos(
+            periodo=PERIODO,
+            arquivo_saida=CAMINHOS["contratos"],
+            arquivo_falhas=CAMINHOS["falhas_contratos"],
+            tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
+            limite_paginas=LIMITE_PAGINAS_CONTRATOS,
+        )
 
-print("\n=== Resumo final ===")
-# print("Contratações:", resultado_contratacoes)
-print("Contratos:", resultado_contratos)
+    if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATACOES:
+        coletar_e_salvar_contratacoes(
+            periodo=PERIODO,
+            arquivo_saida=CAMINHOS["contratacoes"],
+            arquivo_falhas=CAMINHOS["falhas_contratacoes"],
+            modalidades=MODALIDADES_CONTRATACOES,
+            tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
+            limite_paginas_por_modalidade=LIMITE_PAGINAS_POR_MODALIDADE,
+        )
+
+    if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATOS:
+        reprocessar_falhas_contratos(
+            arquivo_saida=CAMINHOS["contratos"],
+            arquivo_falhas=CAMINHOS["falhas_contratos"],
+            tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
+            max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
+        )
+
+    if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATACOES:
+        reprocessar_falhas_contratacoes(
+            arquivo_saida=CAMINHOS["contratacoes"],
+            arquivo_falhas=CAMINHOS["falhas_contratacoes"],
+            tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
+            max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
+        )

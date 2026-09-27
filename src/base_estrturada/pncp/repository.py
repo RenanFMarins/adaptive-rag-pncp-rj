@@ -4,6 +4,7 @@ import shutil
 import stat
 import os
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -144,10 +145,131 @@ def salvar_paginas_com_erro(
     salvar_json(caminho, dados)
 
 
+def salvar_falhas_coleta(
+    falhas: list[dict[str, Any]],
+    caminho: Path | str,
+    tipo: str,
+) -> None:
+    """
+    Persiste falhas estruturadas de contratos ou contratações.
+
+    A chave formada por tipo, período, página e modalidade evita
+    duplicar a mesma falha em execuções consecutivas.
+    """
+
+    caminho = Path(caminho)
+    dados_existentes = carregar_json(caminho, padrao={})
+
+    falhas_existentes: list[dict[str, Any]] = []
+
+    if isinstance(dados_existentes, dict):
+        falhas_existentes = dados_existentes.get("falhas", [])
+
+        # Migra o formato antigo, que guardava somente páginas.
+        if not falhas_existentes and dados_existentes.get("paginasComErro"):
+            for pagina in dados_existentes["paginasComErro"]:
+                falha_migrada: dict[str, Any] = {
+                    "tipo": tipo,
+                    "dataInicial": dados_existentes.get("dataInicial"),
+                    "dataFinal": dados_existentes.get("dataFinal"),
+                    "pagina": pagina,
+                    "motivo": "migrado_formato_antigo",
+                    "status": "pendente",
+                    "tentativasReprocessamento": 0,
+                }
+
+                # Uma contratação antiga sem modalidade não pode ser
+                # reprocessada automaticamente com segurança.
+                if tipo == "contratacao":
+                    falha_migrada["modalidade"] = None
+                    falha_migrada["status"] = "revisao_manual"
+
+                falhas_existentes.append(falha_migrada)
+
+    def chave(falha: dict[str, Any]) -> tuple[Any, ...]:
+        return (
+            falha.get("tipo"),
+            falha.get("dataInicial"),
+            falha.get("dataFinal"),
+            falha.get("modalidade"),
+            falha.get("pagina"),
+        )
+
+    chaves_existentes = {
+        chave(falha)
+        for falha in falhas_existentes
+        if isinstance(falha, dict)
+    }
+
+    for falha in falhas:
+        if not isinstance(falha, dict):
+            continue
+
+        if chave(falha) in chaves_existentes:
+            continue
+
+        falhas_existentes.append(falha)
+        chaves_existentes.add(chave(falha))
+
+    salvar_json(
+        caminho,
+        {"falhas": falhas_existentes},
+    )
+
+
+def atualizar_falha_reprocessada(
+    caminho: Path | str,
+    falha_original: dict[str, Any],
+    sucesso: bool,
+    motivo: str | None = None,
+    max_tentativas: int = 3,
+) -> None:
+    """Atualiza uma falha após uma tentativa manual de reprocessamento."""
+
+    caminho = Path(caminho)
+    dados = carregar_json(caminho, padrao={"falhas": []})
+    falhas = dados.get("falhas", []) if isinstance(dados, dict) else []
+
+    def chave(falha: dict[str, Any]) -> tuple[Any, ...]:
+        return (
+            falha.get("tipo"),
+            falha.get("dataInicial"),
+            falha.get("dataFinal"),
+            falha.get("modalidade"),
+            falha.get("pagina"),
+        )
+
+    agora = datetime.now(timezone.utc).isoformat()
+    chave_original = chave(falha_original)
+
+    for falha in falhas:
+        if not isinstance(falha, dict) or chave(falha) != chave_original:
+            continue
+
+        tentativas = int(falha.get("tentativasReprocessamento", 0)) + 1
+        falha["tentativasReprocessamento"] = tentativas
+        falha["ultimoReprocessamentoEm"] = agora
+
+        if sucesso:
+            falha["status"] = "resolvida"
+            falha["resolvidaEm"] = agora
+            falha.pop("ultimoMotivo", None)
+        else:
+            falha["ultimoMotivo"] = motivo or "falha_desconhecida"
+            falha["status"] = (
+                "revisao_manual"
+                if tentativas >= max_tentativas
+                else "pendente"
+            )
+        break
+
+    salvar_json(caminho, {"falhas": falhas})
+
+
 def salvar_lista_de_documentos_contratos(
         contratos: list[dict],
         caminho: Path | str,
-        limite: int = 5,) -> None:
+        limite: int = 5,) -> list[dict]:
 
     manifesto = []
 
