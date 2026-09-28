@@ -7,9 +7,15 @@ from dataclasses import replace
 from .ingest import RawRepository, ingest_records
 from .ingestion.pncp_client import PNCPClient
 from .ingestion.pncp_collector import (
+    CommitmentCollector,
+    ContractCollector,
+    ContractTimelineCollector,
     ItemResultCollector,
     PCACollector,
+    PCAFullCollector,
     PNCPCollector,
+    PriceRegistryCollector,
+    PublishedContractCollector,
     PurchaseItemCollector,
 )
 from .schema import Manifest, SourceConfig, value_at_path
@@ -21,12 +27,19 @@ def resolve_source_targets(
     repository: RawRepository, source: SourceConfig
 ) -> SourceConfig:
     """Resolve alvos a partir da última versão dos ativos RAW."""
-    if not source.target_source_id or not source.target_resource_type:
+    target_source_ids = source.target_source_ids
+    if not target_source_ids and source.target_source_id:
+        target_source_ids = (source.target_source_id,)
+    if not target_source_ids or not source.target_resource_type:
         return source
 
-    assets = repository.latest_assets(
-        source.target_source_id, source.target_resource_type
-    )
+    assets = []
+    for target_source_id in target_source_ids:
+        assets.extend(
+            repository.latest_assets(
+                target_source_id, source.target_resource_type
+            )
+        )
     if not assets:
         return source
     if not source.target_field_paths:
@@ -34,7 +47,7 @@ def resolve_source_targets(
 
     targets = []
     seen = set()
-    for asset in assets:
+    for asset in sorted(assets, key=lambda item: item["external_id"]):
         payload = asset["payload"]
         external_id = asset["external_id"]
         target = {
@@ -82,6 +95,12 @@ def run(
         collector_classes = {
             "paged": PNCPCollector,
             "pca": PCACollector,
+            "pncp_pca_plans": PCAFullCollector,
+            "pncp_price_registry": PriceRegistryCollector,
+            "pncp_published_contracts": PublishedContractCollector,
+            "pncp_commitments": CommitmentCollector,
+            "pncp_contracts": ContractCollector,
+            "pncp_contract_timeline": ContractTimelineCollector,
             "pncp_purchase_items": PurchaseItemCollector,
             "pncp_item_results": ItemResultCollector,
         }
@@ -114,6 +133,8 @@ def run(
             query_params=dict(source.params),
             sensitivity=source.sensitivity,
             initial_checkpoint=(checkpoint if mode == "update" else 0),
+            window_start=str(source.params.get("dataInicial") or "") or None,
+            window_end=str(source.params.get("dataFinal") or "") or None,
         )
         print(json.dumps(result.__dict__, ensure_ascii=False, indent=2))
     finally:

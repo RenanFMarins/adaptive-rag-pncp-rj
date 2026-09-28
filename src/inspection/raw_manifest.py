@@ -11,6 +11,12 @@ ALLOWED_NATURES = {"normativa", "estruturada", "conversacional", "agregada"}
 ALLOWED_COLLECTORS = {
     "paged",
     "pca",
+    "pncp_pca_plans",
+    "pncp_price_registry",
+    "pncp_contracts",
+    "pncp_contract_timeline",
+    "pncp_published_contracts",
+    "pncp_commitments",
     "pncp_purchase_items",
     "pncp_item_results",
 }
@@ -50,6 +56,8 @@ def validate_source(source: SourceConfig) -> list[str]:
         errors.append(
             f"{prefix}: retry_backoff_seconds não pode ser negativo"
         )
+    if source.max_concurrency < 1:
+        errors.append(f"{prefix}: max_concurrency deve ser maior que zero")
 
     if source.collector == "pncp_item_results":
         for placeholder in ("{cnpj}", "{ano}", "{sequencial}", "{numeroItem}"):
@@ -57,7 +65,11 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: endpoint de resultados não possui {placeholder}"
                 )
-        if not source.targets and not source.target_source_id:
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
             errors.append(
                 f"{prefix}: configure target_source_id para os itens RAW"
             )
@@ -73,10 +85,172 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: endpoint de itens não possui {placeholder}"
                 )
-        if not source.targets and not source.target_source_id:
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
             errors.append(
                 f"{prefix}: configure targets ou target_source_id para as compras"
             )
+
+    if source.collector == "pncp_pca_plans":
+        for placeholder in ("{cnpj}", "{ano}", "{sequencial}"):
+            if placeholder not in source.endpoint:
+                errors.append(
+                    f"{prefix}: endpoint de PCA completo não possui {placeholder}"
+                )
+        discovery = source.discovery_endpoint_template or ""
+        for placeholder in ("{cnpj}", "{ano}"):
+            if placeholder not in discovery:
+                errors.append(
+                    f"{prefix}: endpoint de descoberta de PCA não possui "
+                    f"{placeholder}"
+                )
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
+            errors.append(
+                f"{prefix}: configure fontes RAW para resolver os órgãos do PCA"
+            )
+        if source.params.get("anoPca") is None:
+            errors.append(f"{prefix}: parâmetro obrigatório ausente: anoPca")
+
+    if source.collector == "pncp_price_registry":
+        if source.resource_type != "ata_registro_preco":
+            errors.append(
+                f"{prefix}: pncp_price_registry exige "
+                "resource_type ata_registro_preco"
+            )
+        if source.item_path != "data":
+            errors.append(
+                f"{prefix}: pncp_price_registry exige item_path 'data'"
+            )
+        if "numeroControlePNCPAta" not in source.key_fields:
+            errors.append(
+                f"{prefix}: key_fields deve conter numeroControlePNCPAta"
+            )
+        for parameter in ("dataInicial", "dataFinal"):
+            if parameter not in source.params:
+                errors.append(
+                    f"{prefix}: parâmetro obrigatório ausente: {parameter}"
+                )
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
+            errors.append(
+                f"{prefix}: configure fontes RAW para resolver as unidades"
+            )
+
+    if source.collector == "pncp_published_contracts":
+        if source.resource_type != "contrato":
+            errors.append(
+                f"{prefix}: pncp_published_contracts exige resource_type contrato"
+            )
+        if source.item_path != "data":
+            errors.append(
+                f"{prefix}: pncp_published_contracts exige item_path 'data'"
+            )
+        if "numeroControlePNCP" not in source.key_fields:
+            errors.append(
+                f"{prefix}: key_fields deve conter numeroControlePNCP"
+            )
+        for parameter in ("dataInicial", "dataFinal"):
+            if parameter not in source.params:
+                errors.append(
+                    f"{prefix}: parâmetro obrigatório ausente: {parameter}"
+                )
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
+            errors.append(
+                f"{prefix}: configure fontes RAW para resolver as unidades"
+            )
+
+    if source.collector == "pncp_commitments":
+        if source.resource_type != "empenho":
+            errors.append(
+                f"{prefix}: pncp_commitments exige resource_type empenho"
+            )
+        for placeholder in ("{cnpj}", "{ano}", "{sequencial}"):
+            if placeholder not in source.endpoint:
+                errors.append(
+                    f"{prefix}: endpoint de empenhos não possui {placeholder}"
+                )
+        if source.item_path != "data":
+            errors.append(
+                f"{prefix}: pncp_commitments exige item_path 'data'"
+            )
+        if (
+            not source.targets
+            and not source.target_source_id
+            and not source.target_source_ids
+        ):
+            errors.append(
+                f"{prefix}: configure a fonte RAW dos contratos"
+            )
+        required_keys = {
+            "cnpj",
+            "ano",
+            "sequencialContrato",
+            "sequencialEmpenho",
+        }
+        missing_keys = required_keys.difference(source.key_fields)
+        if missing_keys:
+            errors.append(
+                f"{prefix}: key_fields sem {', '.join(sorted(missing_keys))}"
+            )
+
+    if source.collector == "pncp_contract_timeline":
+        if source.resource_type != "contratacao":
+            errors.append(
+                f"{prefix}: pncp_contract_timeline exige "
+                "resource_type contratacao"
+            )
+        if source.item_path != "data":
+            errors.append(
+                f"{prefix}: pncp_contract_timeline exige item_path 'data'"
+            )
+        if "numeroControlePNCP" not in source.key_fields:
+            errors.append(
+                f"{prefix}: key_fields deve conter numeroControlePNCP"
+            )
+        for parameter in ("dataInicial", "dataFinal", "uf", "modalidades"):
+            if parameter not in source.params:
+                errors.append(
+                    f"{prefix}: parâmetro obrigatório ausente: {parameter}"
+                )
+        modalities = source.params.get("modalidades")
+        if not isinstance(modalities, list) or not modalities:
+            errors.append(f"{prefix}: modalidades deve ser uma lista não vazia")
+
+    if source.collector == "pncp_contracts":
+        if source.resource_type != "contratacao":
+            errors.append(
+                f"{prefix}: pncp_contracts exige resource_type contratacao"
+            )
+        if source.item_path != "data":
+            errors.append(f"{prefix}: pncp_contracts exige item_path 'data'")
+        if "numeroControlePNCP" not in source.key_fields:
+            errors.append(
+                f"{prefix}: key_fields deve conter numeroControlePNCP"
+            )
+        for parameter in (
+            "dataInicial",
+            "dataFinal",
+            "codigoModalidadeContratacao",
+            "uf",
+        ):
+            if parameter not in source.params:
+                errors.append(
+                    f"{prefix}: parâmetro obrigatório ausente: {parameter}"
+                )
 
     return errors
 
@@ -112,6 +286,8 @@ def source_summary(source: SourceConfig) -> dict[str, object]:
         "max_pages": source.max_pages,
         "target_count": len(source.targets),
         "target_source_id": source.target_source_id,
+        "target_source_ids": list(source.target_source_ids),
+        "max_concurrency": source.max_concurrency,
     }
 
 

@@ -29,8 +29,15 @@ class RawRepository:
         self,
         source_id: str,
         resource_type: str = "records",
+        window_start: str | None = None,
+        window_end: str | None = None,
     ) -> str:
-        return self.runs.start(source_id, resource_type)
+        return self.runs.start(
+            source_id,
+            resource_type,
+            window_start=window_start,
+            window_end=window_end,
+        )
 
     def get_checkpoint(
         self,
@@ -50,6 +57,25 @@ class RawRepository:
         self.checkpoints.update_checkpoint(
             source_id, resource_type, run_id, last_page
         )
+
+    def save_progress(
+        self,
+        source_id: str,
+        resource_type: str,
+        run_id: str,
+        last_page: int,
+    ) -> None:
+        self.checkpoints.update_progress(
+            source_id, resource_type, run_id, last_page
+        )
+
+    def fail_progress(
+        self,
+        source_id: str,
+        resource_type: str,
+        run_id: str,
+    ) -> None:
+        self.checkpoints.mark_failed(source_id, resource_type, run_id)
 
     def latest_payloads(
         self, source_id: str, resource_type: str
@@ -127,8 +153,15 @@ def ingest_records(
     corpus_version: str = "v1",
     sensitivity: str = "public",
     initial_checkpoint: int = 0,
+    window_start: str | None = None,
+    window_end: str | None = None,
 ) -> IngestionResult:
-    run_id = repository.start_run(source_id, resource_type)
+    run_id = repository.start_run(
+        source_id,
+        resource_type,
+        window_start=window_start,
+        window_end=window_end,
+    )
     counts = {
         "records_seen": 0,
         "NEW": 0,
@@ -154,6 +187,10 @@ def ingest_records(
                     status="SUCCESS",
                 )
             if isinstance(record, CollectionCheckpoint):
+                repository.save_progress(
+                    source_id, resource_type, run_id, page
+                )
+                last_page = page
                 continue
             status = repository.persist_record(
                 run_id,
@@ -162,7 +199,11 @@ def ingest_records(
                 resource_type,
                 base_id,
                 natureza,
-                query_params,
+                (
+                    dict(record.query_params)
+                    if record.query_params is not None
+                    else query_params
+                ),
                 corpus_version,
                 sensitivity,
             )
@@ -217,8 +258,9 @@ def ingest_records(
             counts["UPDATED"],
             counts["UNCHANGED"],
         )
-    except Exception as error:
+    except BaseException as error:
         last_page = max(processed_pages, default=initial_checkpoint)
+        error_message = str(error) or type(error).__name__
         counts["FAILED"] += 1
         logger.event(
             "ingestion_failure",
@@ -232,14 +274,15 @@ def ingest_records(
             updated=counts["UPDATED"],
             unchanged=counts["UNCHANGED"],
             failed=counts["FAILED"],
-            error=str(error),
+            error=error_message,
         )
         repository.runs.fail_run(
             run_id,
             counts,
             pages_processed=len(processed_pages),
-            error=str(error),
+            error=error_message,
         )
+        repository.fail_progress(source_id, resource_type, run_id)
         raise
 
 

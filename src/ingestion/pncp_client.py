@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from http.client import HTTPException
 import json
 import time
 from typing import Any, Mapping
@@ -59,6 +60,7 @@ class PNCPClient:
         headers: Mapping[str, str] | None = None,
         max_retries: int | None = None,
         retry_backoff_seconds: float | None = None,
+        not_found_as_empty: bool = False,
     ) -> Any:
         url = self.build_url(endpoint, params, base_url)
         request = Request(
@@ -96,34 +98,64 @@ class PNCPClient:
                     ),
                 ) as response:
                     status = getattr(response, "status", None)
+                    response_headers = getattr(response, "headers", None)
+                    content_type = (
+                        response_headers.get("Content-Type")
+                        if response_headers is not None
+                        else None
+                    )
                     raw_payload = response.read()
                     if status == 204:
                         payload = []
                     else:
                         payload = json.loads(raw_payload.decode("utf-8"))
             except HTTPError as error:
+                if error.code == 404 and not_found_as_empty:
+                    self.logger.event(
+                        "pncp_response",
+                        method="GET",
+                        url=url,
+                        status=404,
+                        success=True,
+                        treated_as_empty=True,
+                        attempt=attempt + 1,
+                        latency_seconds=time.perf_counter() - started,
+                    )
+                    return []
                 should_retry = (
                     error.code in self.RETRYABLE_HTTP_STATUS
                     and attempt < retry_limit
                 )
+                error_headers = getattr(error, "headers", None)
+                error_content_type = (
+                    error_headers.get("Content-Type")
+                    if error_headers is not None
+                    else None
+                )
+                retry_after_seconds = self._retry_after_seconds(error_headers)
                 self.logger.event(
                     "pncp_response",
                     method="GET",
                     url=url,
                     status=error.code,
+                    content_type=error_content_type,
                     success=False,
                     retrying=should_retry,
+                    retry_after_seconds=retry_after_seconds,
                     attempt=attempt + 1,
                     latency_seconds=time.perf_counter() - started,
+                    error_summary=self._http_error_summary(error),
                 )
                 if should_retry:
-                    self._wait_before_retry(backoff, attempt)
+                    self._wait_before_retry(
+                        backoff, attempt, retry_after_seconds
+                    )
                     attempt += 1
                     continue
                 raise PNCPClientError(
                     f"PNCP retornou HTTP {error.code} para {url}"
                 ) from error
-            except (URLError, TimeoutError) as error:
+            except (URLError, TimeoutError, HTTPException, ConnectionError) as error:
                 should_retry = attempt < retry_limit
                 self.logger.event(
                     "pncp_response",
@@ -161,6 +193,7 @@ class PNCPClient:
                 method="GET",
                 url=url,
                 status=status,
+                content_type=content_type,
                 success=True,
                 attempt=attempt + 1,
                 latency_seconds=time.perf_counter() - started,
@@ -168,10 +201,46 @@ class PNCPClient:
             return payload
 
     @staticmethod
-    def _wait_before_retry(backoff: float, attempt: int) -> None:
-        delay = backoff * (2**attempt)
+    def _http_error_summary(error: HTTPError) -> dict[str, Any]:
+        raw_body = error.read(4096)
+        summary: dict[str, Any] = {
+            "reason": str(error.reason),
+            "body_bytes_sampled": len(raw_body),
+        }
+        if raw_body:
+            try:
+                parsed = json.loads(raw_body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                summary["body_type"] = "non_json"
+            else:
+                summary["body_type"] = type(parsed).__name__
+                if isinstance(parsed, Mapping):
+                    summary["response_keys"] = sorted(
+                        str(key) for key in parsed
+                    )
+        return summary
+
+    @staticmethod
+    def _retry_after_seconds(headers: Any) -> float | None:
+        if headers is None:
+            return None
+        value = headers.get("Retry-After")
+        if value is None:
+            return None
+        try:
+            return max(0.0, float(value))
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _wait_before_retry(
+        backoff: float,
+        attempt: int,
+        retry_after_seconds: float | None = None,
+    ) -> None:
+        delay = max(backoff * (2**attempt), retry_after_seconds or 0.0)
         if delay:
-            time.sleep(delay)
+            time.sleep(min(delay, 60.0))
 
     def fetch_page(self, source: SourceConfig, page: int) -> tuple[Any, str]:
         params = dict(source.params)
