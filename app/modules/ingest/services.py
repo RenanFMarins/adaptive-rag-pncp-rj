@@ -152,6 +152,20 @@ def _data_por_extenso(dia, mes, ano):
         return None
     return f"{int(ano):04d}-{numero_mes:02d}-{int(dia):02d}"
 
+def ficha_do_documento(caminho: Path) -> dict:
+    """
+    Lê o <arquivo>.meta.json gravado na coleta. É de onde vem a data oficial de
+    publicação dos editais, que o texto do PDF não informa de forma confiável.
+
+    Documento sem ficha (a Lei 14.133 e os decretos, que não vêm do PNCP, ou um
+    edital cuja consulta falhou) devolve {} — quem chama trata a ausência, e a
+    ingestão continua rodando offline, sem tocar na rede.
+    """
+    ficha = caminho.parent / f"{caminho.stem}.meta.json"
+    if ficha.exists():
+        return json.loads(ficha.read_text(encoding="utf-8"))
+    return {}
+
 
 def metadados_do_documento(caminho: Path, texto: str) -> dict:
     """
@@ -194,6 +208,13 @@ def metadados_do_documento(caminho: Path, texto: str) -> dict:
                     numero_edital=re.sub(r"\s+", " ", edital.group(1)).strip() if edital else None)
         orgao = re.search(r"(Governo do Estado do Rio de Janeiro\s+[^\n]+|Prefeitura Municipal de [^\n]+)", inicio)
         meta["orgao"] = orgao.group(1).strip() if orgao else None
+        # Vigência do edital: data oficial do PNCP, gravada na coleta em
+        # <arquivo>.meta.json. O texto do PDF não traz a data de publicação de
+        # forma confiável — cita dezenas de datas de outras normas, e qualquer
+        # uma delas seria pega por engano.
+        ficha = ficha_do_documento(caminho)
+        meta["data_publicacao"] = ficha.get("data_publicacao")
+        meta["fonte_data"] = "pncp" if ficha.get("data_publicacao") else "indisponivel"
 
     ano = re.search(r"(20\d{2})", meta.get("data_publicacao") or caminho.name)
     meta["ano"] = int(ano.group(1)) if ano else None

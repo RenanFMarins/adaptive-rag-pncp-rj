@@ -1,6 +1,6 @@
 # Inventário v1 · editais_normativo
 
-Coletado em 2026-09-25T15:37:37-03:00
+Coletado em 2026-09-28T16:18:25-03:00
 
 | | |
 | --- | --- |
@@ -13,7 +13,7 @@ Coletado em 2026-09-25T15:37:37-03:00
 
 | Arquivo | Tipo | Bytes | sha256 | Origem |
 | --- | --- | --- | --- | --- |
-| `planalto_l14133.html` | html | 649.705 | `1cbcced00ae8` | https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm |
+| `planalto_l14133.html` | html | 649.705 | `e0935e23b84c` | https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm |
 | `pncp_42498600000171_2025_926_arq1.pdf` | pdf | 560.992 | `1062573c7c4e` | https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/926/arquivos/1 |
 | `pncp_11867889000125_2025_48_arq1.pdf` | pdf | 2.289.291 | `531d0ca7d804` | https://pncp.gov.br/pncp-api/v1/orgaos/11867889000125/compras/2025/48/arquivos/1 |
 | `pncp_42498600000171_2025_4831_arq9.pdf` | pdf | 498.281 | `0ab17df0e23b` | https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/4831/arquivos/9 |
