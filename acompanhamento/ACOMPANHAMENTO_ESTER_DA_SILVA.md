@@ -338,7 +338,91 @@ acrescentei o `pytest`, que não estava listado.
 
 ---
 
-## Encontro 6 · DD/MM/AAAA
+## Encontro 6 · 28/09/2026
+
+### O que eu fiz hoje
+
+Comecei o dia comparando, item por item, o que já está no repositório com o que
+o enunciado do professor exige da base normativa. Foi um exercício útil: a
+coleta, o versionamento, o diff, o inventário legível, o processamento e a
+política de sensibilidade já estavam prontos, mas apareceram quatro pendências
+que eu não tinha enxergado antes. Organizei em ordem de peso e ataquei as duas
+primeiras.
+
+A primeira foi a **data de vigência dos editais**. O manifesto declara
+`campo_vigencia: data_publicacao`, mas quando fui conferir, só 481 dos 784
+trechos tinham esse campo — os 303 chunks de edital estavam todos sem data. A
+lei e os decretos trazem a data na linha de título; os editais, não.
+
+A primeira ideia foi extrair a data do texto do PDF, e ela se mostrou ruim
+rápido: o que o regex trazia era "13 de dezembro de 2023" e coisas parecidas,
+que são as datas de **outras normas citadas dentro do edital**. Um edital cita
+dezenas delas. Foi aí que fui atrás da API do PNCP e descobri que, tirando o
+número do arquivo do fim da URL, ela devolve a ficha da compra com o campo
+`dataPublicacaoPncp` — a data oficial, sem adivinhação.
+
+A solução ficou assim: a coleta passa a gravar um `<arquivo>.meta.json` ao lado
+de cada edital baixado, e a ingestão lê esse arquivo. Isso mantém a rede só na
+coleta, que é onde ela deve estar, e os testes do processamento continuam
+rodando offline. Acrescentei também um metadado `fonte_data`, que registra de
+onde veio a data — inclusive o valor `indisponivel`, para o caso de o PNCP não
+responder. Achei importante deixar isso explícito em vez de fingir que toda data
+tem a mesma confiabilidade. O resultado final foi 784 de 784 com data.
+
+A segunda pendência foi o **formato do inventário em JSON**. O nosso
+`v1_editais_normativo.json` era uma lista solta de arquivos, e o enunciado pede
+um `v1.json` com envelope: `scenario_id`, `version`, `coletado_em`,
+`manifest_hash`, `totais`, `por_base`, `arquivos` e `falhas`. Faltava tudo isso,
+principalmente o `manifest_hash`, que é o sha256 do manifesto e é o que prova de
+qual versão do manifesto aquele corpus veio.
+
+Montei o comando de forma que ele **junta o que cada base já coletou** em vez de
+exigir que as quatro estejam prontas. Hoje o `v1.json` sai só com a nossa base;
+quando as outras rodarem, entram sozinhas. Assim ninguém fica bloqueado
+esperando ninguém — o que, para um arquivo compartilhado pelo time inteiro, me
+pareceu a decisão mais importante do dia.
+
+Os testes foram de 27 para 31.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** investigar por que os editais estavam sem data, escrever as
+  funções de consulta ao PNCP e do envelope do inventário, e os testes.
+- **O que eu conferi / mudei:** conferi na mão a resposta da API do PNCP antes
+  de escrever qualquer código; decidi gravar a ficha em arquivo separado em vez
+  de consultar a rede na ingestão, para os testes continuarem offline; decidi
+  que o inventário junta as bases disponíveis em vez de esperar as quatro; e
+  decidi adiar o item do overlap, que era o menos valioso e obrigaria a
+  reprocessar tudo em cima da hora.
+
+### O que travou
+
+- O ambiente virtual da máquina onde trabalhamos não tinha `pypdf`,
+  `truststore`, `requests`, `PyYAML` nem `pytest`, e foi preciso instalar um a
+  um conforme os erros apareciam.
+- Descobrimos que o `requirements.txt` do repositório está salvo em **UTF-16**,
+  o que faz o `pip install -r requirements.txt` falhar. Qualquer pessoa que
+  clonar o repositório vai bater nisso.
+- Perdemos bastante tempo com recuo de linha: ao colar blocos no VS Code, a
+  primeira linha perdia os espaços e virava `IndentationError`. Aprendi a
+  conferir sempre a primeira linha depois de colar.
+
+### Próximo passo
+
+- Igualar manifesto e código no chunking: o manifesto promete overlap e o código
+  não faz.
+- Escrever no README como rodar a coleta e o processamento, e registrar a
+  política de sensibilidade.
+- Logs estruturados: avisar no grupo que vou escrever o `app/core/logging.py`,
+  que está vazio, e propor `coleta` e `ingestao` como nomes de `stage`, já que a
+  lista canônica só cobre a fase de consulta.
+- Abrir o pull request da `base-normativa` para a main.
+- Corrigir a codificação do `requirements.txt`.
+
+---
+
+## Encontro 7 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
@@ -357,11 +441,5 @@ acrescentei o `pytest`, que não estava listado.
 ### Próximo passo
 
 - 
-
-### Resumo do time no dia
-
-- **Entregamos (base normativa):**
-- **Travou:**
-- **Próximo passo:** 
 
 ---
