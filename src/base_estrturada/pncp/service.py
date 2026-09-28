@@ -646,6 +646,64 @@ def consultar_documentos_contratacao(
     return []
 
 
+@dataclass
+class ResultadoListaDocumentos:
+    """Resultado da listagem de documentos de um único item do PNCP."""
+
+    documentos: list[dict[str, Any]]
+    erro: str | None = None
+
+
+def consultar_documentos_contratacao_detalhado(
+    contratacao: dict[str, Any],
+) -> ResultadoListaDocumentos:
+    """Lista documentos de contratação preservando o motivo de falha."""
+
+    orgao = contratacao.get("orgaoEntidade") or {}
+    cnpj = orgao.get("cnpj")
+    ano = contratacao.get("anoCompra")
+    sequencial = contratacao.get("sequencialCompra")
+
+    if not cnpj or ano is None or sequencial is None:
+        return ResultadoListaDocumentos([], "identificador_incompleto")
+
+    url = f"{BASE_URL_PNCP}/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos"
+
+    try:
+        response = pncp_client.get(url)
+    except requests.exceptions.Timeout:
+        return ResultadoListaDocumentos([], "timeout")
+    except requests.exceptions.ConnectionError:
+        return ResultadoListaDocumentos([], "erro_conexao")
+    except requests.RequestException:
+        return ResultadoListaDocumentos([], "erro_requisicao")
+
+    if response.status_code == 204:
+        return ResultadoListaDocumentos([])
+    if response.status_code == 429:
+        return ResultadoListaDocumentos([], "http_429")
+    if response.status_code != 200:
+        return ResultadoListaDocumentos([], f"http_{response.status_code}")
+
+    try:
+        dados = response.json()
+    except ValueError:
+        return ResultadoListaDocumentos([], "json_invalido")
+
+    if isinstance(dados, list):
+        return ResultadoListaDocumentos(
+            [item for item in dados if isinstance(item, dict)]
+        )
+    if isinstance(dados, dict):
+        documentos = dados.get("documentos") or dados.get("data") or []
+        if isinstance(documentos, list):
+            return ResultadoListaDocumentos(
+                [item for item in documentos if isinstance(item, dict)]
+            )
+
+    return ResultadoListaDocumentos([], "formato_invalido")
+
+
 # ============================================================
 # CONTRATOS
 # ============================================================
@@ -1669,6 +1727,56 @@ def consultar_documentos_contrato(
     return []
 
 
+def consultar_documentos_contrato_detalhado(
+    contrato: dict[str, Any],
+) -> ResultadoListaDocumentos:
+    """Lista documentos de contrato preservando o motivo de falha."""
+
+    orgao = contrato.get("orgaoEntidade") or {}
+    cnpj = orgao.get("cnpj")
+    ano = contrato.get("anoContrato")
+    sequencial = contrato.get("sequencialContrato")
+
+    if not cnpj or ano is None or sequencial is None:
+        return ResultadoListaDocumentos([], "identificador_incompleto")
+
+    url = f"{BASE_URL_PNCP}/v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos"
+
+    try:
+        response = pncp_client.get(url)
+    except requests.exceptions.Timeout:
+        return ResultadoListaDocumentos([], "timeout")
+    except requests.exceptions.ConnectionError:
+        return ResultadoListaDocumentos([], "erro_conexao")
+    except requests.RequestException:
+        return ResultadoListaDocumentos([], "erro_requisicao")
+
+    if response.status_code == 204:
+        return ResultadoListaDocumentos([])
+    if response.status_code == 429:
+        return ResultadoListaDocumentos([], "http_429")
+    if response.status_code != 200:
+        return ResultadoListaDocumentos([], f"http_{response.status_code}")
+
+    try:
+        dados = response.json()
+    except ValueError:
+        return ResultadoListaDocumentos([], "json_invalido")
+
+    if isinstance(dados, list):
+        return ResultadoListaDocumentos(
+            [item for item in dados if isinstance(item, dict)]
+        )
+    if isinstance(dados, dict):
+        documentos = dados.get("documentos") or dados.get("data") or []
+        if isinstance(documentos, list):
+            return ResultadoListaDocumentos(
+                [item for item in documentos if isinstance(item, dict)]
+            )
+
+    return ResultadoListaDocumentos([], "formato_invalido")
+
+
 # ============================================================
 # BAIXAR DOCUMENTOS DO CONTRATO
 # ============================================================
@@ -1723,20 +1831,27 @@ def baixar_documentos(
             url,
         )
 
+        # ``titulo`` e' o nome informado pelo PNCP. Ele e' preservado sempre
+        # que for possivel; somente caracteres proibidos no Windows sao
+        # alterados. O sequencial nao vira prefixo do arquivo.
         if titulo_documento:
-            # Caso de Contratações: Higieniza o título removendo caracteres proibidos
-            nome_limpo = re.sub(
-                r'[\\/*?:"<>|]', '', str(titulo_documento)).strip().replace(" ", "_")
-            # Garante que não duplique a extensão se o título já terminar com ela (ex: .pdf.pdf)
-            if nome_limpo.lower().endswith(extensao.lower()):
-                nome_final = f"{sequencial}_{nome_limpo}"
-            else:
-                nome_final = f"{sequencial}_{nome_limpo}{extensao}"
+            nome_original = str(titulo_documento).strip()
+            nome_final = nome_seguro(nome_original)
         else:
-            # Caso de Contratos: Mantém o fallback clássico com o sequencial
-            nome_final = f"documento_{sequencial}{extensao}"
+            nome_final = f"documento_{sequencial}"
+
+        if not Path(nome_final).suffix:
+            nome_final = f"{nome_final}{extensao}"
 
         destino = pasta_contrato / nome_final
+
+        # Dois documentos de uma mesma entidade podem ter o mesmo titulo.
+        # So nesse caso acrescentamos o sequencial, sem perder o nome original.
+        if destino.exists():
+            nome_base = destino.stem
+            destino = destino.with_name(
+                f"{nome_base} (documento {sequencial}){destino.suffix}"
+            )
 
         temporario = destino.with_name(
             f"{destino.name}.part"
@@ -1792,15 +1907,23 @@ def baixar_documentos(
 def baixar_documentos_lista(
     manifesto: list[dict[str, Any]],
     pasta_base: str,
-    limite_contratos: int = 5,
-    limite_documentos_por_contrato: int = 1,
+    limite_contratos: int | None = 5,
+    limite_documentos_por_contrato: int | None = 1,
+    somente_tipos_prioritarios: bool = False,
 ) -> int:
 
     tipos_por_id = carregar_tipos_documento()
 
     quantidade_baixada = 0
 
-    for contrato in manifesto[:limite_contratos]:
+    entidades_processadas = 0
+
+    for contrato in manifesto:
+        if (
+            limite_contratos is not None
+            and entidades_processadas >= limite_contratos
+        ):
+            break
 
         numero_controle = contrato.get("numeroControlePNCP")
 
@@ -1809,18 +1932,34 @@ def baixar_documentos_lista(
 
         documentos = contrato.get("documentos") or []
 
-        documentos_selecionados = [
-            documento
-            for documento in documentos
-            if deve_baixar_documento(
+        documentos_selecionados = []
+        for documento in documentos:
+            if somente_tipos_prioritarios and not deve_baixar_documento(
                 documento,
                 tipos_por_id,
-            )
-        ]
+            ):
+                continue
 
-        for documento in documentos_selecionados[
-            :limite_documentos_por_contrato
-        ]:
+            download = documento.get("download") or {}
+            caminho_existente = Path(download.get("caminho", ""))
+            if (
+                download.get("status") in {"baixado", "identificado"}
+                and caminho_existente.exists()
+            ):
+                continue
+
+            documentos_selecionados.append(documento)
+
+        if not documentos_selecionados:
+            continue
+
+        entidades_processadas += 1
+        if limite_documentos_por_contrato is not None:
+            documentos_selecionados = documentos_selecionados[
+                :limite_documentos_por_contrato
+            ]
+
+        for documento in documentos_selecionados:
 
             caminho = baixar_documentos(
                 numero_controle=numero_controle,

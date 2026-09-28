@@ -1,0 +1,116 @@
+{
+  "periodo": "2026_08",
+  "geradoEm": "2026-09-27T20:48:49.201434+00:00",
+  "observacao": "Inventario gerado somente a partir dos manifestos; nenhuma chamada ao PNCP foi realizada.",
+  "porOrigem": {
+    "contratos": {
+      "origem": "contratos",
+      "resumo": {
+        "entidades": 110,
+        "documentos_listados": 126,
+        "documentos_baixados": 70,
+        "documentos_identificados": 70
+      },
+      "porTipoDocumento": {
+        "Contrato": 99,
+        "Nota de Empenho": 26,
+        "Outros Documentos": 1
+      },
+      "porFormatoOriginal": {
+        "PDF": 54,
+        "ZIP": 16
+      },
+      "porStatusDownload": {
+        "identificado": 70,
+        "nao_baixado": 56
+      },
+      "extracaoZip": {
+        "extraido": 16
+      },
+      "porFormatoExpandido": {
+        "PDF": 16
+      }
+    },
+    "contratacoes": {
+      "origem": "contratacoes",
+      "resumo": {
+        "entidades": 110,
+        "documentos_listados": 311,
+        "documentos_baixados": 299,
+        "documentos_identificados": 299
+      },
+      "porTipoDocumento": {
+        "Outros Documentos": 128,
+        "Edital": 118,
+        "Termo de Referência": 23,
+        "Estudo Técnico Preliminar": 19,
+        "Minuta do Contrato": 7,
+        "Minuta de Ata de Registro de Preços": 6,
+        "Documento de Formalização da Demanda - DFD": 3,
+        "Mapa de Riscos": 3,
+        "Ato que autoriza a Contratação Direta": 2,
+        "Aviso de Contratação Direta": 2
+      },
+      "porFormatoOriginal": {
+        "PDF": 263,
+        "ZIP": 28,
+        "XLSX": 3,
+        "DOCX": 2,
+        "Documento Office antigo (OLE)": 2,
+        "RAR 5": 1
+      },
+      "porStatusDownload": {
+        "identificado": 299,
+        "nao_baixado": 12
+      },
+      "extracaoZip": {
+        "extraido": 28
+      },
+      "porFormatoExpandido": {
+        "sem_extensao_ou_desconhecido": 930,
+        "PDF": 167,
+        "DOCX": 24,
+        "PNG": 21,
+        "JPG": 20,
+        "XLSX": 19,
+        "JPEG": 6,
+        "ZIP": 4,
+        "XLS": 2
+      }
+    }
+  },
+  "consolidado": {
+    "porFormatoOriginal": {
+      "PDF": 317,
+      "ZIP": 44,
+      "XLSX": 3,
+      "DOCX": 2,
+      "Documento Office antigo (OLE)": 2,
+      "RAR 5": 1
+    },
+    "porFormatoExpandido": {
+      "sem_extensao_ou_desconhecido": 930,
+      "PDF": 183,
+      "DOCX": 24,
+      "PNG": 21,
+      "JPG": 20,
+      "XLSX": 19,
+      "JPEG": 6,
+      "ZIP": 4,
+      "XLS": 2
+    },
+    "decisaoInicialPorFormato": {
+      "DOCX": "extrair_texto",
+      "Documento Office antigo (OLE)": "revisar_formato",
+      "JPEG": "avaliar_ocr",
+      "JPG": "avaliar_ocr",
+      "PDF": "extrair_texto",
+      "PNG": "avaliar_ocr",
+      "RAR 5": "revisar_formato",
+      "XLS": "extrair_tabela",
+      "XLSX": "extrair_tabela",
+      "ZIP": "processar_conteudo_expandido",
+      "sem_extensao_ou_desconhecido": "revisar_formato"
+    }
+  }
+}

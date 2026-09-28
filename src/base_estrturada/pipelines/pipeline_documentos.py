@@ -166,7 +166,8 @@ def reprocessar_falhas_contratos(
     """Reprocessa manualmente apenas páginas pendentes de contratos."""
 
     checkpoint = carregar_json(arquivo_falhas, padrao={"falhas": []})
-    falhas = checkpoint.get("falhas", []) if isinstance(checkpoint, dict) else []
+    falhas = checkpoint.get("falhas", []) if isinstance(
+        checkpoint, dict) else []
     pendentes = [
         falha
         for falha in falhas
@@ -225,7 +226,8 @@ def reprocessar_falhas_contratacoes(
     """Reprocessa manualmente páginas pendentes de contratações."""
 
     checkpoint = carregar_json(arquivo_falhas, padrao={"falhas": []})
-    falhas = checkpoint.get("falhas", []) if isinstance(checkpoint, dict) else []
+    falhas = checkpoint.get("falhas", []) if isinstance(
+        checkpoint, dict) else []
     pendentes = [
         falha
         for falha in falhas
@@ -346,7 +348,7 @@ def processar_documentos(
 
 if __name__ == "__main__":
     # Mude somente ano e mês para fazer outra coleta mensal.
-    PERIODO = PeriodoColeta(ano=2026, mes=8)
+    PERIODO = PeriodoColeta(ano=2026, mes=5)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Valores seguros para teste. Para percorrer o mês inteiro, mude o

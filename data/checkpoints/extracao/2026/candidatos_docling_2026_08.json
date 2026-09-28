@@ -1,0 +1,18 @@
+{
+  "periodo": "2026_08",
+  "geradoEm": "2026-09-28T17:45:50.703723+00:00",
+  "criterio": "erro na extracao rapida ou menos de 300 caracteres",
+  "candidatos": [
+    {
+      "origem": "contratos",
+      "numeroControlePNCP": "42498733000148-2-000841/2026",
+      "sequencialDocumento": 1,
+      "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+      "tipoFonte": "pdf_original",
+      "motivo": "texto_nativo_insuficiente",
+      "statusDocling": "concluida",
+      "caminhoMarkdown": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+    }
+  ],
+  "atualizadoEm": "2026-09-28T17:58:14.525140+00:00"
+}

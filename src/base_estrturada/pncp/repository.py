@@ -3,6 +3,8 @@ import zipfile
 import shutil
 import stat
 import os
+import base64
+import binascii
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +12,9 @@ from typing import Any
 
 
 from src.base_estrturada.pncp.service import (
-    consultar_documentos_contrato, consultar_documentos_contratacao)
+    consultar_documentos_contrato_detalhado,
+    consultar_documentos_contratacao_detalhado,
+)
 
 
 ARQUIVO_CONTRATOS = Path(
@@ -267,78 +271,112 @@ def atualizar_falha_reprocessada(
 
 
 def salvar_lista_de_documentos_contratos(
-        contratos: list[dict],
-        caminho: Path | str,
-        limite: int = 5,) -> list[dict]:
+    contratos: list[dict[str, Any]],
+    caminho: Path | str,
+    limite: int = 5,
+) -> list[dict[str, Any]]:
+    """Lista documentos de novos contratos e preserva o manifesto existente."""
 
-    manifesto = []
+    manifesto = carregar_json(caminho, padrao=[])
+    if not isinstance(manifesto, list):
+        raise RuntimeError(f"O manifesto deveria conter uma lista: {caminho}")
 
-    for contrato in contratos[:limite]:
-        lista_arquivos = consultar_documentos_contrato(contrato)
+    controles_existentes = {
+        item.get("numeroControlePNCP")
+        for item in manifesto
+        if isinstance(item, dict) and item.get("numeroControlePNCP")
+    }
+    processados = 0
 
-        contrato_formatado = {
-            "numeroControlePNCP": contrato.get("numeroControlePNCP"),
-            "cnpjOrgao": contrato.get("cnpjOrgao") or contrato.get("orgaoEntidade", {}).get("cnpj"),
-            "anoContrato": contrato.get("anoContrato"),
-            "sequencialContrato": contrato.get("sequencialContrato"),
-            "documentos": lista_arquivos
-        }
+    for contrato in contratos:
+        if processados >= limite:
+            break
 
-        manifesto.append(contrato_formatado)
+        numero_controle = contrato.get("numeroControlePNCP")
+        if not numero_controle or numero_controle in controles_existentes:
+            continue
 
+        resultado = consultar_documentos_contrato_detalhado(contrato)
+        status = "concluida" if resultado.erro is None else "erro"
+
+        manifesto.append(
+            {
+                "numeroControlePNCP": numero_controle,
+                "cnpjOrgao": contrato.get("cnpjOrgao")
+                or (contrato.get("orgaoEntidade") or {}).get("cnpj"),
+                "anoContrato": contrato.get("anoContrato"),
+                "sequencialContrato": contrato.get("sequencialContrato"),
+                "documentos": resultado.documentos,
+                "listagem": {
+                    "status": status,
+                    "consultadaEm": datetime.now(timezone.utc).isoformat(),
+                    "erro": resultado.erro,
+                },
+            }
+        )
+        controles_existentes.add(numero_controle)
+        processados += 1
         print(
-            f"Contrato: {contrato['numeroControlePNCP']} | "
-            f"Documentos: {len(lista_arquivos)}"
+            f"Contrato: {numero_controle} | documentos="
+            f"{len(resultado.documentos)} | status={status}"
         )
 
-        for documento in lista_arquivos:
-            print(
-                f"  - {documento.get('tipoDocumentoNome')} | "
-                f"{documento.get('titulo')} | "
-                f"{documento.get('url')}"
-            )
-
     salvar_json(caminho, manifesto)
-
     return manifesto
 
 
 def salvar_lista_documentos_contratacao(
-    contratacoes: list[dict],
+    contratacoes: list[dict[str, Any]],
     caminho: Path | str,
     limite: int = 5,
-) -> list[dict]:
-    manifesto = []
+) -> list[dict[str, Any]]:
+    """Lista documentos de novas contratações sem sobrescrever o manifesto."""
 
-    for contratacao in contratacoes[:limite]:
-        documentos = consultar_documentos_contratacao(
-            contratacao
-        )
+    manifesto = carregar_json(caminho, padrao=[])
+    if not isinstance(manifesto, list):
+        raise RuntimeError(f"O manifesto deveria conter uma lista: {caminho}")
 
+    controles_existentes = {
+        item.get("numeroControlePNCP")
+        for item in manifesto
+        if isinstance(item, dict) and item.get("numeroControlePNCP")
+    }
+    processados = 0
+
+    for contratacao in contratacoes:
+        if processados >= limite:
+            break
+
+        numero_controle = contratacao.get("numeroControlePNCP")
+        if not numero_controle or numero_controle in controles_existentes:
+            continue
+
+        resultado = consultar_documentos_contratacao_detalhado(contratacao)
         orgao = contratacao.get("orgaoEntidade") or {}
+        status = "concluida" if resultado.erro is None else "erro"
 
-        contratacao_formatada = {
-            "numeroControlePNCP": contratacao.get(
-                "numeroControlePNCP"
-            ),
-            "cnpjOrgao": orgao.get("cnpj"),
-            "anoCompra": contratacao.get("anoCompra"),
-            "sequencialCompra": contratacao.get(
-                "sequencialCompra"
-            ),
-            "documentos": documentos,
-        }
-
-        manifesto.append(contratacao_formatada)
-
+        manifesto.append(
+            {
+                "numeroControlePNCP": numero_controle,
+                "cnpjOrgao": orgao.get("cnpj"),
+                "anoCompra": contratacao.get("anoCompra"),
+                "sequencialCompra": contratacao.get("sequencialCompra"),
+                "documentos": resultado.documentos,
+                "listagem": {
+                    "status": status,
+                    "consultadaEm": datetime.now(timezone.utc).isoformat(),
+                    "erro": resultado.erro,
+                },
+            }
+        )
+        controles_existentes.add(numero_controle)
+        processados += 1
         print(
-            f"Contratação: "
-            f"{contratacao.get('numeroControlePNCP')} | "
-            f"Documentos: {len(documentos)}"
+            f"Contratação: {numero_controle} | documentos="
+            f"{len(resultado.documentos)} | status={status}"
         )
 
     salvar_json(caminho, manifesto)
-
     return manifesto
 
 
@@ -402,9 +440,62 @@ def _detectar_formato_arquivo(
     return ".bin", "Binário desconhecido"
 
 
+def _decodificar_pdf_base64(caminho: Path) -> Path | None:
+    """Decodifica um PDF que o PNCP tenha devolvido como texto Base64.
+
+    Alguns endpoints retornam ``application/octet-stream`` cujo conteudo e'
+    Base64 (``JVBER...``), em vez dos bytes normais de um PDF. A conversao so
+    acontece quando o resultado pode ser validado pelo cabecalho ``%PDF-``.
+    """
+
+    try:
+        conteudo = caminho.read_bytes()
+    except OSError:
+        return None
+
+    # Remove quebras de linha que podem existir no Base64, sem tentar
+    # interpretar arquivos binarios desconhecidos como texto.
+    conteudo_base64 = b"".join(conteudo.split())
+    if not conteudo_base64.startswith(b"JVBER"):
+        return None
+
+    try:
+        conteudo_decodificado = base64.b64decode(
+            conteudo_base64,
+            validate=True,
+        )
+    except (binascii.Error, ValueError):
+        return None
+
+    if not conteudo_decodificado.startswith(b"%PDF-"):
+        return None
+
+    destino = caminho.with_suffix(".pdf")
+    if destino.exists() and destino != caminho:
+        destino = destino.with_name(
+            f"{destino.stem} (base64){destino.suffix}"
+        )
+
+    temporario = destino.with_name(f"{destino.name}.tmp")
+    try:
+        temporario.write_bytes(conteudo_decodificado)
+        os.replace(temporario, destino)
+        if caminho != destino:
+            caminho.unlink()
+    except OSError:
+        temporario.unlink(missing_ok=True)
+        return None
+
+    return destino
+
+
 def renomear_arquivo_detectado(
     caminho: Path,
-) -> tuple[Path, str]:
+) -> tuple[Path, str, str | None]:
+    caminho_pdf = _decodificar_pdf_base64(caminho)
+    if caminho_pdf is not None:
+        return caminho_pdf, "PDF", "base64"
+
     extensao, formato = _detectar_formato_arquivo(caminho)
 
     novo_caminho = caminho.with_suffix(extensao)
@@ -412,7 +503,7 @@ def renomear_arquivo_detectado(
     if novo_caminho != caminho:
         caminho.replace(novo_caminho)
 
-    return novo_caminho, formato
+    return novo_caminho, formato, None
 
 
 def identificar_arquivos_do_manifesto(
@@ -425,7 +516,12 @@ def identificar_arquivos_do_manifesto(
         for documento in documentos:
             download = documento.get("download") or {}
 
-            if download.get("status") != "baixado":
+            status_atual = download.get("status")
+            binario_desconhecido = (
+                status_atual == "identificado"
+                and download.get("formato") == "Binário desconhecido"
+            )
+            if status_atual != "baixado" and not binario_desconhecido:
                 continue
 
             caminho_texto = download.get("caminho")
@@ -440,15 +536,19 @@ def identificar_arquivos_do_manifesto(
                 documento["download"] = download
                 continue
 
-            novo_caminho, formato = (
+            novo_caminho, formato, codificacao_origem = (
                 renomear_arquivo_detectado(caminho)
             )
 
-            documento["download"] = {
+            dados_download = {
                 "status": "identificado",
                 "caminho": str(novo_caminho),
                 "formato": formato,
             }
+            if codificacao_origem is not None:
+                dados_download["codificacaoOrigem"] = codificacao_origem
+
+            documento["download"] = dados_download
 
             quantidade_identificada += 1
 
@@ -472,6 +572,7 @@ def _nome_seguro(texto: str) -> str:
 def extrair_zip_com_seguranca(
     caminho_zip: Path,
     pasta_destino: Path,
+    sufixo_colisao: str,
     max_arquivos: int = 100,
     max_tamanho_total: int = 200 * 1024 * 1024,
 ) -> list[Path]:
@@ -521,9 +622,7 @@ def extrair_zip_com_seguranca(
                 )
                 continue
 
-            caminho_saida = (
-                pasta_destino / item.filename
-            ).resolve()
+            caminho_saida = (pasta_destino / item.filename).resolve()
 
             # Evita arquivos com caminhos como ../../arquivo.txt
             if not str(caminho_saida).startswith(
@@ -540,6 +639,15 @@ def extrair_zip_com_seguranca(
                 exist_ok=True,
             )
 
+            # A pasta de destino e' unica para o contrato/contratacao.
+            # Preservamos o nome e a hierarquia do ZIP; em colisao real,
+            # apenas acrescentamos a origem do documento para nao sobrescrever.
+            if caminho_saida.exists():
+                caminho_saida = caminho_saida.with_name(
+                    f"{caminho_saida.stem} ({sufixo_colisao})"
+                    f"{caminho_saida.suffix}"
+                )
+
             with arquivo_zip.open(item) as origem:
                 with caminho_saida.open("wb") as destino:
                     shutil.copyfileobj(origem, destino)
@@ -547,6 +655,108 @@ def extrair_zip_com_seguranca(
             arquivos_extraidos.append(caminho_saida)
 
     return arquivos_extraidos
+
+
+def extrair_zips_aninhados_com_seguranca(
+    arquivos_iniciais: list[Path],
+    sufixo_colisao: str,
+    max_profundidade: int = 3,
+    max_arquivos_total: int = 500,
+    max_tamanho_total: int = 500 * 1024 * 1024,
+) -> dict[str, Any]:
+    """Expande ZIPs encontrados dentro de outro ZIP ja extraido.
+
+    Os conteudos sao extraidos ao lado do ZIP interno, preservando a estrutura
+    original. Os limites sao globais para essa cadeia de ZIPs aninhados.
+    """
+
+    pendentes = [(Path(caminho), 1) for caminho in arquivos_iniciais]
+    zips_processados: list[str] = []
+    arquivos_extraidos: list[Path] = []
+    arquivos_office_ignorados: list[dict[str, str]] = []
+    avisos: list[str] = []
+    caminhos_processados: set[str] = set()
+    total_arquivos = 0
+    total_tamanho = 0
+
+    while pendentes:
+        caminho_zip, profundidade = pendentes.pop(0)
+        if not caminho_zip.exists() or not zipfile.is_zipfile(caminho_zip):
+            continue
+
+        # DOCX, XLSX, PPTX e ODT tambem sao ZIPs internamente. Eles nao devem
+        # ser expandidos aqui: sao documentos finais e terao extratores
+        # proprios na etapa de texto/tabelas.
+        _, formato = _detectar_formato_arquivo(caminho_zip)
+        if formato != "ZIP":
+            arquivos_office_ignorados.append(
+                {"caminho": str(caminho_zip), "formato": formato}
+            )
+            continue
+
+        caminho_resolvido = str(caminho_zip.resolve())
+        if caminho_resolvido in caminhos_processados:
+            continue
+
+        if profundidade > max_profundidade:
+            avisos.append(
+                f"limite_de_profundidade | arquivo={caminho_zip}"
+            )
+            continue
+
+        try:
+            with zipfile.ZipFile(caminho_zip) as arquivo_zip:
+                itens = [
+                    item for item in arquivo_zip.infolist()
+                    if not item.is_dir()
+                ]
+                quantidade_itens = len(itens)
+                tamanho_itens = sum(item.file_size for item in itens)
+        except (OSError, zipfile.BadZipFile) as exc:
+            avisos.append(f"zip_interno_invalido | arquivo={caminho_zip} | {exc}")
+            continue
+
+        if total_arquivos + quantidade_itens > max_arquivos_total:
+            avisos.append(
+                f"limite_total_de_arquivos | arquivo={caminho_zip}"
+            )
+            continue
+
+        if total_tamanho + tamanho_itens > max_tamanho_total:
+            avisos.append(
+                f"limite_total_de_tamanho | arquivo={caminho_zip}"
+            )
+            continue
+
+        try:
+            novos_arquivos = extrair_zip_com_seguranca(
+                caminho_zip=caminho_zip,
+                pasta_destino=caminho_zip.parent,
+                sufixo_colisao=sufixo_colisao,
+                max_arquivos=max_arquivos_total - total_arquivos,
+                max_tamanho_total=max_tamanho_total - total_tamanho,
+            )
+        except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+            avisos.append(f"erro_ao_extrair_zip_interno | arquivo={caminho_zip} | {exc}")
+            continue
+
+        caminhos_processados.add(caminho_resolvido)
+        zips_processados.append(str(caminho_zip))
+        arquivos_extraidos.extend(novos_arquivos)
+        total_arquivos += quantidade_itens
+        total_tamanho += tamanho_itens
+
+        pendentes.extend(
+            (novo_arquivo, profundidade + 1)
+            for novo_arquivo in novos_arquivos
+        )
+
+    return {
+        "arquivos": arquivos_extraidos,
+        "zipsProcessados": zips_processados,
+        "arquivosOfficeIgnorados": arquivos_office_ignorados,
+        "avisos": avisos,
+    }
 
 
 def extrair_zips_do_manifesto(
@@ -580,49 +790,73 @@ def extrair_zips_do_manifesto(
                 )
                 continue
 
-            sequencial = documento.get(
-                "sequencialDocumento",
-                "sem_sequencial",
-            )
+            sequencial = str(documento.get("sequencialDocumento", "sem_sequencial"))
 
-            pasta_destino = (
-                pasta_base
-                / _nome_seguro(numero_controle)
-                / f"documento_{sequencial}"
-            )
+            # Uma pasta por contrato/contratacao. Nenhuma pasta artificial e'
+            # criada por documento; somente a hierarquia que ja vier no ZIP.
+            pasta_destino = pasta_base / _nome_seguro(numero_controle)
+            extracao_anterior = documento.get("extracao") or {}
+            arquivos = [
+                Path(caminho)
+                for caminho in extracao_anterior.get("arquivos") or []
+                if Path(caminho).exists()
+            ]
 
-            try:
-                arquivos = extrair_zip_com_seguranca(
-                    caminho_zip=caminho_zip,
-                    pasta_destino=pasta_destino,
-                )
+            if extracao_anterior.get("status") != "extraido":
+                try:
+                    arquivos = extrair_zip_com_seguranca(
+                        caminho_zip=caminho_zip,
+                        pasta_destino=pasta_destino,
+                        sufixo_colisao=f"documento {sequencial}",
+                    )
+                except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+                    documento["extracao"] = {
+                        "status": "erro",
+                        "mensagem": str(exc),
+                    }
 
-            except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
-                documento["extracao"] = {
-                    "status": "erro",
-                    "mensagem": str(exc),
-                }
+                    print(
+                        f"Erro ao extrair ZIP | "
+                        f"contrato={numero_controle} | {exc}"
+                    )
+                    continue
 
-                print(
-                    f"Erro ao extrair ZIP | "
-                    f"contrato={numero_controle} | {exc}"
-                )
+                quantidade_extraida += 1
+
+            # Manifestos antigos podem ja ter o ZIP externo como extraido.
+            # Neles, este bloco processa apenas ZIPs internos ainda pendentes.
+            aninhados_anteriores = extracao_anterior.get("zipsAninhados") or {}
+            if aninhados_anteriores.get("status") == "concluida":
                 continue
+
+            resultado_aninhados = extrair_zips_aninhados_com_seguranca(
+                arquivos_iniciais=arquivos,
+                sufixo_colisao=f"documento {sequencial}",
+            )
+            arquivos.extend(resultado_aninhados["arquivos"])
 
             documento["extracao"] = {
                 "status": "extraido",
                 "caminho": str(pasta_destino),
-                "arquivos": [
-                    str(arquivo)
-                    for arquivo in arquivos
-                ],
+                "arquivos": [str(arquivo) for arquivo in arquivos],
+                "zipsAninhados": {
+                    "status": (
+                        "concluida"
+                        if not resultado_aninhados["avisos"]
+                        else "com_avisos"
+                    ),
+                    "zipsProcessados": resultado_aninhados["zipsProcessados"],
+                    "arquivosOfficeIgnorados": resultado_aninhados[
+                        "arquivosOfficeIgnorados"
+                    ],
+                    "avisos": resultado_aninhados["avisos"],
+                },
             }
-
-            quantidade_extraida += 1
 
             print(
                 f"ZIP extraído | contrato={numero_controle} | "
-                f"arquivos={len(arquivos)}"
+                f"arquivos={len(arquivos)} | "
+                f"zips_aninhados={len(resultado_aninhados['zipsProcessados'])}"
             )
 
     return quantidade_extraida
