@@ -1,0 +1,11 @@
+{
+  "geradoEm": "2026-09-28T20:21:12.937104+00:00",
+  "arquivoChunks": "data\\chunks\\teste\\chunks_2026_08.jsonl",
+  "usarLangChain": true,
+  "resumo": {
+    "textosLidos": 5,
+    "chunksGerados": 180,
+    "textosSemArquivo": 0,
+    "textosSemRegistroEstruturado": 0
+  }
+}
