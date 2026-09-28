@@ -53,6 +53,7 @@ htmlcov/
 # Project generated data
 # ==============================
 data/raw/
+data/exports/
 index/
 indexes/
 logs/
