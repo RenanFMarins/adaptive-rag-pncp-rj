@@ -158,3 +158,4 @@ def test_edital_sem_ficha_nao_quebra_a_ingestao(tmp_path):
     assert chunks, "o edital deveria ser processado mesmo sem ficha"
     assert chunks[0]["metadata"]["data_publicacao"] is None
     assert chunks[0]["metadata"]["fonte_data"] == "indisponivel"
+

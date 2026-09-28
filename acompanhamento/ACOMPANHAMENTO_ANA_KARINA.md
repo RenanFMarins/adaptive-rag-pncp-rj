@@ -208,3 +208,75 @@ passaram.
   9 testes passando.
 - **Travou:** caminho das pastas de teste e codificação do arquivo de exemplo.
 - **Próximo passo:** CORPUS_INVENTORY.md e integração com a etapa de busca.
+
+## Encontro 6 · 28/09/2026
+
+### O que eu fiz hoje
+
+Trabalhamos as duas na minha máquina, revisando o que ainda faltava na base
+normativa em relação ao enunciado. Depois da lista pronta, pegamos as duas
+pendências de maior peso.
+
+A primeira foi a *data dos editais*. Eu tinha feito o processamento no
+encontro anterior, e quando conferimos os metadados descobrimos que os 303
+trechos de edital estavam sem data_publicacao a lei e os decretos têm a data
+na linha de título, os editais não têm nada parecido. Tentamos extrair do texto
+e o resultado foi ruim: o que vinha eram as datas das leis citadas dentro do
+edital. Acabamos indo buscar na API do PNCP, que devolve a data oficial de
+publicação de cada arquivo.
+
+Alterei o metadados_do_documento para ler uma ficha gravada pela coleta, em
+vez de consultar a rede na hora de processar. Isso importa para a parte que é
+minha: os testes do processamento continuam rodando offline, sem depender de o
+PNCP estar no ar.
+
+Reprocessei os 13 documentos e confirmei os 784 trechos, agora todos com data.
+Escrevi também o teste que garante que um edital *sem* ficha continua sendo
+processado, em vez de quebrar a ingestão.
+
+A segunda parte foi o inventário em JSON, que passou a ter o envelope exigido
+pelo enunciado, com o manifest_hash amarrando o corpus ao manifesto.
+
+Os testes foram de 27 para 31.
+
+### Onde usei IA e o que mudei no resultado
+
+- *Ferramenta:* Claude.
+- *Para quê:* entender por que os editais estavam sem data de publicação,
+  escrever a função que lê a ficha do PNCP na ingestão e os testes novos, e
+  diagnosticar os erros de indentação e de importação que apareceram no
+  caminho.
+- *O que eu conferi / mudei:* conferi a resposta da API do PNCP antes de
+  aceitar a solução, porque a primeira ideia (extrair a data do texto do PDF)
+  tinha dado resultado errado e eu queria ver a fonte; reprocessei os 13
+  documentos e conferi os metadados dos 784 trechos, em vez de confiar na
+  contagem; e fiz questão de que a ingestão lesse um arquivo local em vez de
+  chamar a rede, para os meus testes continuarem rodando offline.
+
+### O que travou
+
+- Meu ambiente virtual estava sem pypdf, truststore, requests, PyYAML e
+  pytest, e foi preciso instalar um a um conforme os erros apareciam.
+- O requirements.txt do repositório está salvo em UTF-16 e não instala com
+  pip install -r. Qualquer pessoa que clonar vai bater nisso.
+- Colamos os dois testes novos no arquivo errado e eles falharam com
+  NameError, porque dependiam de um helper que estava no outro arquivo.
+- Ao colar blocos de código no VS Code, a primeira linha perdia o recuo e virava
+  IndentationError. Aconteceu três vezes até a gente pegar o jeito de
+  conferir sempre a primeira linha depois de colar.
+
+### Próximo passo
+
+- Overlap entre as partes de um artigo longo, para o código cumprir o que o
+  manifesto promete.
+- Documentar o processamento no README.
+- Entregar o data/processed/v1_editais_normativo.jsonl para a indexação.
+
+### Resumo do time no dia
+
+- *Entregamos (base normativa):* campo_vigencia preenchido nos 784 trechos,
+  com a data vinda da API oficial do PNCP; inventário data/inventory/v1.json
+  no formato do enunciado, com manifest_hash; 31 testes passando.
+- *Travou:* dependências ausentes no ambiente e a codificação do
+  requirements.txt.
+- *Próximo passo:* overlap, README, logs e pull request para a main.
