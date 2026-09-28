@@ -153,3 +153,56 @@ def test_inventario_legivel_traz_totais(tmp_path, monkeypatch):
     assert "| Arquivos | 1 |" in texto
     assert "| Falhas | 0 |" in texto
     assert "Nenhuma." in texto
+
+# --- inventário JSON no formato do enunciado -----------------------------
+
+def test_inventario_json_tem_o_envelope_do_enunciado(tmp_path, monkeypatch):
+    registros = [
+        {"path": "data/raw/v1/a.pdf", "origem": "u/a", "sha256": "a" * 64,
+         "sha256_conteudo": "a" * 64, "status": "ok", "bytes": 1000,
+         "tipo": "pdf", "coletado_em": "2026-09-28T10:00:00-03:00"},
+        {"path": None, "origem": "u/b", "sha256": None, "sha256_conteudo": None,
+         "status": "falhou", "bytes": 0, "tipo": None, "erro": "HTTP 404",
+         "coletado_em": "2026-09-28T10:00:01-03:00"},
+    ]
+    _inventario(tmp_path, "v1", registros, monkeypatch)
+
+    manifesto = tmp_path / "manifesto.yaml"
+    manifesto.write_text(
+        "scenario_id: contratacoes-rj\n"
+        "bases:\n"
+        f"  - base_id: {services.BASE_ID}\n"
+        "    natureza: normativa\n"
+        "    volume_alvo: 2\n", encoding="utf-8")
+
+    caminho = services.inventario_json("v1", str(manifesto))
+    dados = json.loads(caminho.read_text(encoding="utf-8"))
+
+    assert dados["scenario_id"] == "contratacoes-rj"
+    assert dados["version"] == "v1"
+    assert dados["manifest_hash"].startswith("sha256:")
+    assert dados["totais"] == {"arquivos": 1, "bytes": 1000, "falhas": 1}
+    assert dados["por_base"][0]["natureza"] == "normativa"
+    assert dados["por_base"][0]["divergencia_alvo"] == 1
+    assert dados["falhas"][0]["erro"] == "HTTP 404"
+
+
+def test_base_ainda_nao_coletada_nao_aparece_no_inventario(tmp_path, monkeypatch):
+    # Cada base entra sozinha quando a coleta dela rodar: ninguém espera ninguém.
+    _inventario(tmp_path, "v1", [], monkeypatch)
+
+    manifesto = tmp_path / "manifesto.yaml"
+    manifesto.write_text(
+        "scenario_id: contratacoes-rj\n"
+        "bases:\n"
+        f"  - base_id: {services.BASE_ID}\n"
+        "    natureza: normativa\n"
+        "    volume_alvo: 13\n"
+        "  - base_id: contratos_estruturado\n"
+        "    natureza: estruturada\n"
+        "    volume_alvo: 1200\n", encoding="utf-8")
+
+    dados = json.loads(services.inventario_json("v1", str(manifesto))
+                       .read_text(encoding="utf-8"))
+
+    assert [b["base_id"] for b in dados["por_base"]] == [services.BASE_ID]

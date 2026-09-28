@@ -479,6 +479,74 @@ def escrever_inventario(versao):
     return saida
 
 
+def hash_do_manifesto(caminho_manifesto="corpus_manifest.yaml") -> str:
+    """
+    sha256 do manifesto. É o que amarra o corpus coletado à versão exata do
+    manifesto que o gerou: se alguém trocar uma URL ou um volume_alvo, o hash
+    muda e fica evidente que o inventário é de outro corpus.
+    """
+    return "sha256:" + sha256_de(Path(caminho_manifesto).read_bytes())
+
+
+def inventario_json(versao, caminho_manifesto="corpus_manifest.yaml"):
+    """
+    Monta data/inventory/<versao>.json no formato do enunciado (item 2.3):
+    scenario_id, version, coletado_em, manifest_hash, totais, por_base,
+    arquivos e falhas.
+
+    Junta o que cada base já gravou em <versao>_<base_id>.json. Base ainda não
+    coletada simplesmente não aparece, e entra sozinha quando a coleta dela
+    rodar — ninguém precisa esperar por ninguém.
+    """
+    manifesto = yaml.safe_load(Path(caminho_manifesto).read_text(encoding="utf-8"))
+
+    arquivos, falhas, por_base = [], [], []
+    for base in manifesto["bases"]:
+        caminho = PASTA_INVENTARIO / f"{versao}_{base['base_id']}.json"
+        if not caminho.exists():
+            continue
+        registros = json.loads(caminho.read_text(encoding="utf-8"))
+        ok = [r for r in registros if r["status"] == "ok"]
+
+        formatos = {}
+        for r in ok:
+            formatos[r["tipo"]] = formatos.get(r["tipo"], 0) + 1
+
+        por_base.append({
+            "base_id": base["base_id"],
+            "natureza": base["natureza"],
+            "arquivos": len(ok),
+            "formatos": formatos,
+            "bytes": sum(r["bytes"] for r in ok),
+            "volume_alvo": base.get("volume_alvo"),
+            "divergencia_alvo": (base.get("volume_alvo") or 0) - len(ok),
+        })
+        arquivos += ok
+        falhas += [{"origem": r["origem"], "erro": r["erro"]}
+                   for r in registros if r["status"] != "ok"]
+
+    inventario = {
+        "scenario_id": manifesto["scenario_id"],
+        "version": versao,
+        "coletado_em": max((r["coletado_em"] for r in arquivos), default=agora()),
+        "manifest_hash": hash_do_manifesto(caminho_manifesto),
+        "totais": {
+            "arquivos": len(arquivos),
+            "bytes": sum(r["bytes"] for r in arquivos),
+            "falhas": len(falhas),
+        },
+        "por_base": por_base,
+        "arquivos": arquivos,
+        "falhas": falhas,
+    }
+
+    saida = PASTA_INVENTARIO / f"{versao}.json"
+    saida.write_text(json.dumps(inventario, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Inventário JSON salvo em {saida} "
+          f"({len(arquivos)} arquivos, {len(falhas)} falhas, {len(por_base)} base(s))")
+    return saida
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Coleta e versionamento da base normativa")
     sub = parser.add_subparsers(dest="comando")
@@ -494,6 +562,7 @@ if __name__ == "__main__":
 
     p_inv = sub.add_parser("inventory", help="gera o inventário legível de uma versão")
     p_inv.add_argument("--versao", default="v1")
+    p_inv.add_argument("--manifest", default="corpus_manifest.yaml")
 
     # Sem subcomando, mantém o uso antigo: coleta a versão indicada
     parser.add_argument("--manifest", default="corpus_manifest.yaml")
@@ -505,5 +574,6 @@ if __name__ == "__main__":
         atualizar(args.manifest, args.raiz)
     elif args.comando == "inventory":
         escrever_inventario(args.versao)
+        inventario_json(args.versao, args.manifest) 
     else:
         coletar(args.manifest, args.versao, args.raiz)
