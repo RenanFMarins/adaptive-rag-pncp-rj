@@ -1,4 +1,4 @@
-from src.base_estrturada.pncp.repository import (
+from src.base_estruturada.pncp.repository import (
     adicionar_contratacoes_novas,
     salvar_paginas_com_erro,
     salvar_json,
@@ -6,7 +6,7 @@ from src.base_estrturada.pncp.repository import (
     carregar_json
 )
 
-from src.base_estrturada.pncp.service import (
+from src.base_estruturada.pncp.service import (
     coletar_contratos, consultar_documentos_contrato,
     baixar_documentos_manifesto,
     identificar_arquivos_do_manifesto,

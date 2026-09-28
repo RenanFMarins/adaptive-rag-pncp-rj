@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from src.base_estrturada.pncp.service import (
+from src.base_estruturada.pncp.service import (
     baixar_documento_ata,
     carregar_modalidades,
     coletar_contratacoes,
