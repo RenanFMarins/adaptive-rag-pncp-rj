@@ -295,6 +295,55 @@ class RawIngestionTests(unittest.TestCase):
         self.assertEqual(tuple(run), ("FAILED", 1))
         repository.close()
 
+    def test_completed_target_progress_survives_later_failure(self):
+        repository = RawRepository(self.database_url)
+
+        def failing_after_completed_target():
+            yield CollectionCheckpoint("4")
+            raise RuntimeError("falha após alvo completo")
+
+        with self.assertRaises(RuntimeError):
+            ingest_records(
+                repository,
+                "pncp_itens",
+                ("id",),
+                failing_after_completed_target(),
+                resource_type="contratacao_item",
+            )
+
+        checkpoint = repository.connection.execute(
+            "SELECT last_page, status FROM sync_checkpoint WHERE source = ?",
+            ("pncp_itens",),
+        ).fetchone()
+        self.assertEqual(tuple(checkpoint), (4, "FAILED"))
+        repository.close()
+
+    def test_keyboard_interrupt_marks_run_and_progress_as_failed(self):
+        repository = RawRepository(self.database_url)
+
+        def interrupted_records():
+            yield CollectionCheckpoint("2")
+            raise KeyboardInterrupt()
+
+        with self.assertRaises(KeyboardInterrupt):
+            ingest_records(
+                repository,
+                "pncp_itens",
+                ("id",),
+                interrupted_records(),
+                resource_type="contratacao_item",
+            )
+
+        run = repository.connection.execute(
+            "SELECT status, error_message FROM ingestion_run"
+        ).fetchone()
+        checkpoint = repository.connection.execute(
+            "SELECT last_page, status FROM sync_checkpoint"
+        ).fetchone()
+        self.assertEqual(tuple(run), ("FAILED", "KeyboardInterrupt"))
+        self.assertEqual(tuple(checkpoint), (2, "FAILED"))
+        repository.close()
+
     def test_target_checkpoint_advances_without_records_and_is_retained(self):
         repository = RawRepository(self.database_url)
 

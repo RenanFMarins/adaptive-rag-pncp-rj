@@ -1,3 +1,4 @@
+from http.client import IncompleteRead, RemoteDisconnected
 import io
 import json
 import unittest
@@ -75,6 +76,80 @@ class PNCPClientTests(unittest.TestCase):
 
         self.assertEqual(payload, {"items": [{"id": "1"}]})
         self.assertEqual(urlopen.call_count, 2)
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_retries_remote_disconnect(self, urlopen):
+        urlopen.side_effect = [
+            RemoteDisconnected("server closed connection"),
+            FakeResponse({"items": [{"id": "1"}]}),
+        ]
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=1,
+            retry_backoff_seconds=0,
+        )
+
+        payload = client.get("/api")
+
+        self.assertEqual(payload, {"items": [{"id": "1"}]})
+        self.assertEqual(urlopen.call_count, 2)
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_retries_incomplete_response(self, urlopen):
+        urlopen.side_effect = [
+            IncompleteRead(b"partial"),
+            FakeResponse({"items": [{"id": "1"}]}),
+        ]
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=1,
+            retry_backoff_seconds=0,
+        )
+
+        self.assertEqual(client.get("/api"), {"items": [{"id": "1"}]})
+        self.assertEqual(urlopen.call_count, 2)
+
+    @patch("src.ingestion.pncp_client.time.sleep")
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_respects_retry_after_header(self, urlopen, sleep):
+        urlopen.side_effect = [
+            HTTPError(
+                "https://pncp.example/api",
+                429,
+                "too many requests",
+                {"Retry-After": "3"},
+                io.BytesIO(),
+            ),
+            FakeResponse({"data": []}),
+        ]
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=1,
+            retry_backoff_seconds=0.5,
+        )
+
+        self.assertEqual(client.get("/api"), {"data": []})
+        sleep.assert_called_once_with(3.0)
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_can_treat_http_404_as_empty_without_retry(self, urlopen):
+        urlopen.side_effect = HTTPError(
+            "https://pncp.example/api",
+            404,
+            "not found",
+            {},
+            io.BytesIO(),
+        )
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=3,
+            retry_backoff_seconds=0,
+        )
+
+        payload = client.get("/api", not_found_as_empty=True)
+
+        self.assertEqual(payload, [])
+        self.assertEqual(urlopen.call_count, 1)
 
     @patch("src.ingestion.pncp_client.urlopen")
     def test_get_returns_empty_list_for_http_204(self, urlopen):

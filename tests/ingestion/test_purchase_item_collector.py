@@ -1,3 +1,4 @@
+import threading
 import unittest
 
 from src.ingestion.pncp_collector import PurchaseItemCollector
@@ -9,8 +10,7 @@ class FakePNCPClient:
         self.requests = []
 
     def build_url(self, endpoint, params=None, base_url=None):
-        page = params.get("pagina") if params else None
-        return f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}?pagina={page}"
+        return f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
     def get(self, endpoint, params=None, **kwargs):
         self.requests.append((endpoint, params))
@@ -58,7 +58,53 @@ class PurchaseItemCollectorTests(unittest.TestCase):
             "12345678000199-1-000007/2026|1",
         )
         self.assertEqual(records[0].cursor, "1")
+        self.assertEqual(
+            records[0].query_params["numeroControlePNCP"],
+            "12345678000199-1-000007/2026",
+        )
         self.assertEqual(collected[-1], CollectionCheckpoint("1"))
+
+    def test_endpoint_is_called_once_without_fake_pagination(self):
+        client = FakePNCPClient()
+
+        list(PurchaseItemCollector(client).collect(self.source()))
+
+        self.assertEqual(len(client.requests), 1)
+        self.assertIsNone(client.requests[0][1])
+
+    def test_parallel_requests_keep_target_checkpoint_order(self):
+        class ConcurrentClient(FakePNCPClient):
+            def __init__(self):
+                super().__init__()
+                self.barrier = threading.Barrier(2)
+
+            def get(self, endpoint, params=None, **kwargs):
+                self.requests.append((endpoint, params))
+                self.barrier.wait(timeout=1)
+                return [{"numeroItem": 1, "temResultado": False}]
+
+        first = self.source().targets[0]
+        second = {
+            **first,
+            "sequencial": 8,
+            "numero_controle": "12345678000199-1-000008/2026",
+        }
+        source = SourceConfig(
+            **{
+                **self.source().__dict__,
+                "targets": (first, second),
+                "max_concurrency": 2,
+            }
+        )
+
+        collected = list(PurchaseItemCollector(ConcurrentClient()).collect(source))
+        checkpoints = [
+            item.cursor
+            for item in collected
+            if isinstance(item, CollectionCheckpoint)
+        ]
+
+        self.assertEqual(checkpoints, ["1", "2"])
 
     def test_empty_target_still_emits_checkpoint(self):
         client = FakePNCPClient()

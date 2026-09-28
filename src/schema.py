@@ -18,10 +18,13 @@ class SourceConfig:
 	resource_type: str = "records"
 	sensitivity: str = "public"
 	params: Mapping[str, Any] = field(default_factory=dict)
+	audit_context: Mapping[str, Any] = field(default_factory=dict)
 	targets: tuple[Mapping[str, Any], ...] = ()
 	target_source_id: str | None = None
+	target_source_ids: tuple[str, ...] = ()
 	target_resource_type: str | None = None
 	target_field_paths: Mapping[str, str] = field(default_factory=dict)
+	discovery_endpoint_template: str | None = None
 	items_endpoint_template: str | None = None
 	items_page_size: int = 50
 	max_items_per_purchase: int | None = None
@@ -35,6 +38,7 @@ class SourceConfig:
 	rate_limit_seconds: float = 0.0
 	max_retries: int = 2
 	retry_backoff_seconds: float = 0.5
+	max_concurrency: int = 1
 	headers: Mapping[str, str] = field(default_factory=dict)
 
 	@classmethod
@@ -51,10 +55,18 @@ class SourceConfig:
 			resource_type=str(value.get("resource_type", "records")),
 			sensitivity=str(value.get("sensitivity", "public")),
 			params=dict(value.get("params", {})),
+			audit_context=dict(value.get("audit_context", {})),
 			targets=tuple(dict(target) for target in value.get("targets", ())),
 			target_source_id=value.get("target_source_id"),
+			target_source_ids=tuple(
+				str(source_id)
+				for source_id in value.get("target_source_ids", ())
+			),
 			target_resource_type=value.get("target_resource_type"),
 			target_field_paths=dict(value.get("target_field_paths", {})),
+			discovery_endpoint_template=value.get(
+				"discovery_endpoint_template"
+			),
 			items_endpoint_template=value.get("items_endpoint_template"),
 			items_page_size=int(value.get("items_page_size", 50)),
 			max_items_per_purchase=(
@@ -74,6 +86,7 @@ class SourceConfig:
 			retry_backoff_seconds=float(
 				request.get("retry_backoff_seconds", 0.5)
 			),
+			max_concurrency=int(request.get("max_concurrency", 1)),
 			headers=dict(request.get("headers", {})),
 		)
 
@@ -107,6 +120,7 @@ class CollectedRecord:
 	cursor: str
 	ordinal: int
 	external_id: str | None = None
+	query_params: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)

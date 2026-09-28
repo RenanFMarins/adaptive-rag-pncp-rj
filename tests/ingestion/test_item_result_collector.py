@@ -163,6 +163,39 @@ class ItemResultCollectorTests(unittest.TestCase):
             ("pncp_itens_contratacao_rj", "contratacao_item"),
         )
 
+    def test_targets_from_multiple_sources_are_sorted_and_deduplicated(self):
+        class FakeRepository:
+            def latest_assets(self, source_id, resource_type):
+                values = {
+                    "m04": [
+                        {"external_id": "compra-b", "payload": {"id": "b"}},
+                    ],
+                    "m06": [
+                        {"external_id": "compra-a", "payload": {"id": "a"}},
+                        {"external_id": "compra-b", "payload": {"id": "b"}},
+                    ],
+                }
+                return values[source_id]
+
+        source = SourceConfig(
+            id="itens_completos",
+            base="https://pncp.example",
+            endpoint="/itens",
+            target_source_ids=("m04", "m06"),
+            target_resource_type="contratacao",
+            target_field_paths={"numero_controle": "@external_id"},
+        )
+
+        resolved = resolve_source_targets(FakeRepository(), source)
+
+        self.assertEqual(
+            resolved.targets,
+            (
+                {"numero_controle": "compra-a"},
+                {"numero_controle": "compra-b"},
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
