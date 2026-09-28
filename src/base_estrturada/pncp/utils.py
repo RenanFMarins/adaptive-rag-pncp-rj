@@ -4,7 +4,11 @@ import re
 from typing import Any
 
 
-TIPOS_PRIORITARIOS = {
+# Referencia para a futura etapa de extracao textual e FAISS. Estes documentos
+# costumam ter mais contexto semantico sobre objeto, regras, obrigacoes e
+# decisoes. A lista nao controla o download enquanto
+# SOMENTE_TIPOS_PRIORITARIOS estiver False no pipeline de download.
+TIPOS_PRIORITARIOS_RAG = {
     "Edital",
     "Termo de Referência",
     "Estudo Técnico Preliminar",
@@ -21,6 +25,25 @@ TIPOS_PRIORITARIOS = {
     "Aviso de Contratação Direta",
     "Ato que autoriza a Contratação Direta",
 }
+
+# Referencia para a futura base estruturada. Nota de Empenho entra aqui porque
+# normalmente oferece campos financeiros e administrativos importantes, mas
+# tende a ter pouco texto para busca semantica. Ainda nao ha codigo usando
+# esta lista: ela e' somente uma decisao de organizacao para a proxima etapa.
+TIPOS_PRIORITARIOS_ESTRUTURADOS = {
+    "Nota de Empenho",
+    "Contrato",
+    "Termo Aditivo",
+    "Termo de Apostilamento",
+    "Termo de Rescisão",
+    "Ata de Registro de Preços",
+    "Termo/Ato de Homologação",
+    "Ato que autoriza a Contratação Direta",
+}
+
+# Compatibilidade com a funcao de filtro ja existente. Quando o filtro for
+# ativado no futuro, ele usara a selecao semantica/RAG por padrao.
+TIPOS_PRIORITARIOS = TIPOS_PRIORITARIOS_RAG
 
 
 def url_pura(url: str) -> str:
@@ -98,9 +121,6 @@ def obter_tipo_documento(
 
     # Algumas respostas já trazem o nome do tipo
     tipo_nome = documento.get("tipoDocumentoNome")
-    print("=============")
-    print(tipo_nome)
-    print("=============")
     if tipo_nome:
         return str(tipo_nome).strip()
 
