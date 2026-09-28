@@ -115,7 +115,68 @@ def baixar_com_retentativa(url: str) -> bytes:
         if tentativa < TENTATIVAS:
             time.sleep(ESPERA_ENTRE_TENTATIVAS)
     raise RuntimeError(f"{ultimo_erro} após {TENTATIVAS} tentativas")
+def url_da_lista(url: str) -> str | None:
+    """
+    De .../compras/<ano>/<seq>/arquivos/<n> para .../compras/<ano>/<seq>/arquivos.
 
+    O link do manifesto aponta para UM arquivo; tirando o número do fim,
+    chega-se à lista de arquivos daquela compra, que o PNCP responde em JSON
+    com a ficha de cada um. Devolve None para links que não são do PNCP
+    (a Lei 14.133 do Planalto, por exemplo).
+    """
+    if "pncp.gov.br" not in url or "/arquivos/" not in url:
+        return None
+    return url.rsplit("/", 1)[0]
+
+
+def ficha_do_pncp(url: str) -> dict | None:
+    """
+    Pergunta ao PNCP a ficha do documento: data de publicação, título e tipo.
+
+    É daqui que sai o `campo_vigencia` dos editais (data_publicacao). Sem isso,
+    a data teria de ser garimpada do texto do PDF, que cita dezenas de datas de
+    outras normas ("Lei nº 14.133, de 1º de abril de 2021", "Decreto nº 48.843,
+    de 13 de dezembro de 2023"), e qualquer uma delas seria pega por engano.
+
+    Devolve None se o link não for do PNCP ou se a consulta falhar: a coleta do
+    documento não pode quebrar por causa da ficha.
+    """
+    lista = url_da_lista(url)
+    if not lista:
+        return None
+    try:
+        sequencial = int(url.rsplit("/", 1)[1])
+        resposta = sessao.get(lista, timeout=60, headers={"Accept": "application/json"})
+        if resposta.status_code != 200:
+            return None
+        for item in resposta.json():
+            if item.get("sequencialDocumento") == sequencial:
+                return {
+                    "data_publicacao": (item.get("dataPublicacaoPncp") or "")[:10] or None,
+                    "titulo": item.get("titulo"),
+                    "tipo_documento": item.get("tipoDocumentoNome"),
+                    "origem": url,
+                }
+    except (requests.RequestException, ValueError):
+        return None
+    return None
+
+
+def salvar_ficha(pasta: Path, nome: str, url: str):
+    """
+    Grava <nome>.meta.json ao lado do documento, com a ficha do PNCP.
+
+    A ingestão lê esse arquivo em vez de consultar a rede: assim a rede fica só
+    na coleta, que é o lugar certo, e os testes do processamento continuam
+    rodando offline. Ficha já existente não é baixada de novo (idempotência).
+    """
+    destino = pasta / f"{nome}.meta.json"
+    if destino.exists():
+        return
+    ficha = ficha_do_pncp(url)
+    if ficha:
+        destino.write_text(json.dumps(ficha, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"  [ficha]     {destino.name} · publicado em {ficha['data_publicacao']}")
 
 SCRIPT_HTML = re.compile(rb"<script.*?</script>", re.S | re.I)
 
@@ -175,6 +236,7 @@ def coletar_urls(urls, pasta, rate_limit):
             conteudo = existente.read_bytes()
             print(f"  [já existe] {existente.name}")
             registros.append(registro(existente, existente.suffix[1:], conteudo, url))
+            salvar_ficha(pasta, nome, url)
             continue
 
         try:
@@ -196,6 +258,7 @@ def coletar_urls(urls, pasta, rate_limit):
             destino.write_bytes(conteudo)
             print(f"  [baixado]   {destino.name} ({len(conteudo):,} bytes)")
             registros.append(registro(destino, tipo, conteudo, url))
+            salvar_ficha(pasta, nome, url)
 
         time.sleep(rate_limit)  # respeita o site entre um download e outro
     return registros
@@ -416,6 +479,74 @@ def escrever_inventario(versao):
     return saida
 
 
+def hash_do_manifesto(caminho_manifesto="corpus_manifest.yaml") -> str:
+    """
+    sha256 do manifesto. É o que amarra o corpus coletado à versão exata do
+    manifesto que o gerou: se alguém trocar uma URL ou um volume_alvo, o hash
+    muda e fica evidente que o inventário é de outro corpus.
+    """
+    return "sha256:" + sha256_de(Path(caminho_manifesto).read_bytes())
+
+
+def inventario_json(versao, caminho_manifesto="corpus_manifest.yaml"):
+    """
+    Monta data/inventory/<versao>.json no formato do enunciado (item 2.3):
+    scenario_id, version, coletado_em, manifest_hash, totais, por_base,
+    arquivos e falhas.
+
+    Junta o que cada base já gravou em <versao>_<base_id>.json. Base ainda não
+    coletada simplesmente não aparece, e entra sozinha quando a coleta dela
+    rodar — ninguém precisa esperar por ninguém.
+    """
+    manifesto = yaml.safe_load(Path(caminho_manifesto).read_text(encoding="utf-8"))
+
+    arquivos, falhas, por_base = [], [], []
+    for base in manifesto["bases"]:
+        caminho = PASTA_INVENTARIO / f"{versao}_{base['base_id']}.json"
+        if not caminho.exists():
+            continue
+        registros = json.loads(caminho.read_text(encoding="utf-8"))
+        ok = [r for r in registros if r["status"] == "ok"]
+
+        formatos = {}
+        for r in ok:
+            formatos[r["tipo"]] = formatos.get(r["tipo"], 0) + 1
+
+        por_base.append({
+            "base_id": base["base_id"],
+            "natureza": base["natureza"],
+            "arquivos": len(ok),
+            "formatos": formatos,
+            "bytes": sum(r["bytes"] for r in ok),
+            "volume_alvo": base.get("volume_alvo"),
+            "divergencia_alvo": (base.get("volume_alvo") or 0) - len(ok),
+        })
+        arquivos += ok
+        falhas += [{"origem": r["origem"], "erro": r["erro"]}
+                   for r in registros if r["status"] != "ok"]
+
+    inventario = {
+        "scenario_id": manifesto["scenario_id"],
+        "version": versao,
+        "coletado_em": max((r["coletado_em"] for r in arquivos), default=agora()),
+        "manifest_hash": hash_do_manifesto(caminho_manifesto),
+        "totais": {
+            "arquivos": len(arquivos),
+            "bytes": sum(r["bytes"] for r in arquivos),
+            "falhas": len(falhas),
+        },
+        "por_base": por_base,
+        "arquivos": arquivos,
+        "falhas": falhas,
+    }
+
+    saida = PASTA_INVENTARIO / f"{versao}.json"
+    saida.write_text(json.dumps(inventario, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Inventário JSON salvo em {saida} "
+          f"({len(arquivos)} arquivos, {len(falhas)} falhas, {len(por_base)} base(s))")
+    return saida
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Coleta e versionamento da base normativa")
     sub = parser.add_subparsers(dest="comando")
@@ -431,6 +562,7 @@ if __name__ == "__main__":
 
     p_inv = sub.add_parser("inventory", help="gera o inventário legível de uma versão")
     p_inv.add_argument("--versao", default="v1")
+    p_inv.add_argument("--manifest", default="corpus_manifest.yaml")
 
     # Sem subcomando, mantém o uso antigo: coleta a versão indicada
     parser.add_argument("--manifest", default="corpus_manifest.yaml")
@@ -442,5 +574,6 @@ if __name__ == "__main__":
         atualizar(args.manifest, args.raiz)
     elif args.comando == "inventory":
         escrever_inventario(args.versao)
+        inventario_json(args.versao, args.manifest) 
     else:
         coletar(args.manifest, args.versao, args.raiz)
