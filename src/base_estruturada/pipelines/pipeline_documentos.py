@@ -11,12 +11,15 @@ from typing import Any, Callable
 
 from src.base_estruturada.pncp.repository import (
     adicionar_registros_novos,
+    carregar_checkpoint_documentos,
     carregar_json,
     extrair_zips_do_manifesto,
     identificar_arquivos_do_manifesto,
     atualizar_falha_reprocessada,
     salvar_falhas_coleta,
     salvar_json,
+    materializar_manifesto_com_checkpoint,
+    salvar_estado_documentos,
     salvar_lista_de_documentos_contratos,
     salvar_lista_documentos_contratacao,
 )
@@ -84,6 +87,16 @@ def caminhos_do_periodo(periodo: PeriodoColeta) -> dict[str, Path]:
         "manifesto_contratacoes": Path(
             f"data/normalized/contratacoes/{ano}/"
             f"contratacoes_documentos_{identificador}.json"
+        ),
+        # Estado local separado: erros, downloads, formatos e extracoes.
+        # O manifesto acima permanece como a listagem original do PNCP.
+        "checkpoint_documentos_contratos": Path(
+            f"data/checkpoints/documentos/contratos/{ano}/"
+            f"estado_documentos_{identificador}.json"
+        ),
+        "checkpoint_documentos_contratacoes": Path(
+            f"data/checkpoints/documentos/contratacoes/{ano}/"
+            f"estado_documentos_{identificador}.json"
         ),
     }
 
@@ -288,6 +301,7 @@ def gerar_manifesto_documentos(
     nome_etapa: str,
     arquivo_entrada: Path,
     caminho_manifesto: Path,
+    caminho_checkpoint: Path,
     funcao_gerar_manifesto: Callable[..., list[dict[str, Any]]],
     limite_itens: int = 5,
 ) -> list[dict[str, Any]]:
@@ -302,6 +316,7 @@ def gerar_manifesto_documentos(
     return funcao_gerar_manifesto(
         itens,
         caminho_manifesto,
+        caminho_checkpoint=caminho_checkpoint,
         limite=limite_itens,
     )
 
@@ -310,6 +325,7 @@ def processar_documentos(
     nome_etapa: str,
     arquivo_entrada: Path,
     caminho_manifesto: Path,
+    caminho_checkpoint: Path,
     pasta_base: Path,
     pasta_extrair: Path,
     funcao_gerar_manifesto: Callable[..., list[dict[str, Any]]],
@@ -318,12 +334,18 @@ def processar_documentos(
 ) -> dict[str, int]:
     """Etapa futura: gera manifesto, baixa, identifica e extrai arquivos."""
 
-    manifesto = gerar_manifesto_documentos(
+    manifesto_original = gerar_manifesto_documentos(
         nome_etapa=nome_etapa,
         arquivo_entrada=arquivo_entrada,
         caminho_manifesto=caminho_manifesto,
+        caminho_checkpoint=caminho_checkpoint,
         funcao_gerar_manifesto=funcao_gerar_manifesto,
         limite_itens=limite_itens,
+    )
+    checkpoint = carregar_checkpoint_documentos(caminho_checkpoint)
+    manifesto = materializar_manifesto_com_checkpoint(
+        manifesto_original,
+        checkpoint,
     )
 
     qtd_baixada = baixar_documentos_lista(
@@ -337,7 +359,11 @@ def processar_documentos(
         manifesto=manifesto,
         pasta_base=pasta_extrair,
     )
-    salvar_json(caminho_manifesto, manifesto)
+    salvar_estado_documentos(
+        caminho_checkpoint,
+        checkpoint,
+        manifesto,
+    )
 
     return {
         "baixados": qtd_baixada,

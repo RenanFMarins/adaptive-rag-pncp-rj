@@ -12,6 +12,7 @@ from src.base_estruturada.pipelines.pipeline_documentos import (
     caminhos_do_periodo,
 )
 from src.base_estruturada.pncp.repository import (
+    carregar_checkpoint_documentos,
     carregar_json,
     salvar_lista_de_documentos_contratos,
     salvar_lista_documentos_contratacao,
@@ -22,6 +23,7 @@ def listar_documentos_do_periodo(
     nome_etapa: str,
     arquivo_entrada: Path,
     arquivo_manifesto: Path,
+    arquivo_checkpoint: Path,
     funcao_listagem: Callable[..., list[dict[str, Any]]],
     limite_novos_itens: int,
 ) -> None:
@@ -42,25 +44,29 @@ def listar_documentos_do_periodo(
     manifesto = funcao_listagem(
         itens,
         arquivo_manifesto,
+        caminho_checkpoint=arquivo_checkpoint,
         limite=limite_novos_itens,
     )
 
     novos = len(manifesto) - total_antes
+    checkpoint = carregar_checkpoint_documentos(arquivo_checkpoint)
+    estados = checkpoint.get("entidades") or {}
     concluidos = sum(
         1
-        for item in manifesto
-        if isinstance(item, dict)
-        and (item.get("listagem") or {}).get("status") == "concluida"
+        for estado in estados.values()
+        if isinstance(estado, dict)
+        and estado.get("statusListagem") == "concluida"
     )
     erros = sum(
         1
-        for item in manifesto
-        if isinstance(item, dict)
-        and (item.get("listagem") or {}).get("status") == "erro"
+        for estado in estados.values()
+        if isinstance(estado, dict)
+        and estado.get("statusListagem") == "erro"
     )
 
     print(
-        f"Manifesto: {arquivo_manifesto} | novos={novos} | "
+        f"Listagem original: {arquivo_manifesto}\n"
+        f"Checkpoint: {arquivo_checkpoint} | novos={novos} | "
         f"concluídos={concluidos} | erros={erros}"
     )
 
@@ -83,6 +89,7 @@ if __name__ == "__main__":
             nome_etapa="Contratos",
             arquivo_entrada=CAMINHOS["contratos"],
             arquivo_manifesto=CAMINHOS["manifesto_contratos"],
+            arquivo_checkpoint=CAMINHOS["checkpoint_documentos_contratos"],
             funcao_listagem=salvar_lista_de_documentos_contratos,
             limite_novos_itens=LIMITE_NOVOS_CONTRATOS,
         )
@@ -92,6 +99,9 @@ if __name__ == "__main__":
             nome_etapa="Contratações",
             arquivo_entrada=CAMINHOS["contratacoes"],
             arquivo_manifesto=CAMINHOS["manifesto_contratacoes"],
+            arquivo_checkpoint=CAMINHOS[
+                "checkpoint_documentos_contratacoes"
+            ],
             funcao_listagem=salvar_lista_documentos_contratacao,
             limite_novos_itens=LIMITE_NOVAS_CONTRATACOES,
         )

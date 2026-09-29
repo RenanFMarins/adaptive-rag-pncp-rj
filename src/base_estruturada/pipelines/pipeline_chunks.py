@@ -17,7 +17,12 @@ from src.base_estruturada.pipelines.pipeline_documentos import (
     PeriodoColeta,
     caminhos_do_periodo,
 )
-from src.base_estruturada.pncp.repository import carregar_json, salvar_json
+from src.base_estruturada.pncp.repository import (
+    carregar_checkpoint_documentos,
+    carregar_json,
+    materializar_manifesto_com_checkpoint,
+    salvar_json,
+)
 
 
 def _indice_por_controle(registros: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -148,8 +153,18 @@ if __name__ == "__main__":
     USAR_LANGCHAIN = True
 
     manifestos = {
-        "contratos": carregar_json(CAMINHOS["manifesto_contratos"], padrao=[]),
-        "contratacoes": carregar_json(CAMINHOS["manifesto_contratacoes"], padrao=[]),
+        "contratos": materializar_manifesto_com_checkpoint(
+            carregar_json(CAMINHOS["manifesto_contratos"], padrao=[]),
+            carregar_checkpoint_documentos(
+                CAMINHOS["checkpoint_documentos_contratos"]
+            ),
+        ),
+        "contratacoes": materializar_manifesto_com_checkpoint(
+            carregar_json(CAMINHOS["manifesto_contratacoes"], padrao=[]),
+            carregar_checkpoint_documentos(
+                CAMINHOS["checkpoint_documentos_contratacoes"]
+            ),
+        ),
     }
     bases = {
         "contratos": carregar_json(CAMINHOS["contratos"], padrao=[]),

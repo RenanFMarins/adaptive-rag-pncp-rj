@@ -1968,11 +1968,20 @@ def baixar_documentos_lista(
             )
 
             if caminho:
+                download_anterior = documento.get("download") or {}
                 documento["download"] = {
                     "status": "baixado",
                     "caminho": str(caminho),
+                    "tentativas": int(download_anterior.get("tentativas", 0)) + 1,
                 }
 
                 quantidade_baixada += 1
+            else:
+                download_anterior = documento.get("download") or {}
+                documento["download"] = {
+                    "status": "erro",
+                    "tentativas": int(download_anterior.get("tentativas", 0)) + 1,
+                    "ultimoErro": "falha_no_download",
+                }
 
     return quantidade_baixada

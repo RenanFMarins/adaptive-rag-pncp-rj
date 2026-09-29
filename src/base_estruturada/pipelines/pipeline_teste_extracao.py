@@ -14,7 +14,12 @@ from src.base_estruturada.pipelines.pipeline_documentos import (
     PeriodoColeta,
     caminhos_do_periodo,
 )
-from src.base_estruturada.pncp.repository import carregar_json, salvar_json
+from src.base_estruturada.pncp.repository import (
+    carregar_checkpoint_documentos,
+    carregar_json,
+    materializar_manifesto_com_checkpoint,
+    salvar_json,
+)
 
 
 def nome_seguro(texto: str) -> str:
@@ -170,6 +175,8 @@ def executar_teste(
     periodo: PeriodoColeta,
     arquivo_manifesto_contratos: Path,
     arquivo_manifesto_contratacoes: Path,
+    arquivo_checkpoint_contratos: Path,
+    arquivo_checkpoint_contratacoes: Path,
     pasta_saida: Path,
     arquivo_relatorio: Path,
     limite_originais_por_origem: int,
@@ -179,10 +186,22 @@ def executar_teste(
 ) -> dict[str, Any]:
     """Executa os dois metodos sobre exatamente a mesma selecao de PDFs."""
 
-    contratos = carregar_json(arquivo_manifesto_contratos, padrao=[])
-    contratacoes = carregar_json(arquivo_manifesto_contratacoes, padrao=[])
-    if not isinstance(contratos, list) or not isinstance(contratacoes, list):
+    contratos_originais = carregar_json(arquivo_manifesto_contratos, padrao=[])
+    contratacoes_originais = carregar_json(
+        arquivo_manifesto_contratacoes, padrao=[]
+    )
+    if not isinstance(contratos_originais, list) or not isinstance(
+        contratacoes_originais, list
+    ):
         raise RuntimeError("Os manifestos precisam conter listas JSON.")
+    contratos = materializar_manifesto_com_checkpoint(
+        contratos_originais,
+        carregar_checkpoint_documentos(arquivo_checkpoint_contratos),
+    )
+    contratacoes = materializar_manifesto_com_checkpoint(
+        contratacoes_originais,
+        carregar_checkpoint_documentos(arquivo_checkpoint_contratacoes),
+    )
 
     documentos = selecionar_pdfs(
         contratos,
@@ -266,6 +285,12 @@ if __name__ == "__main__":
         periodo=PERIODO,
         arquivo_manifesto_contratos=CAMINHOS["manifesto_contratos"],
         arquivo_manifesto_contratacoes=CAMINHOS["manifesto_contratacoes"],
+        arquivo_checkpoint_contratos=CAMINHOS[
+            "checkpoint_documentos_contratos"
+        ],
+        arquivo_checkpoint_contratacoes=CAMINHOS[
+            "checkpoint_documentos_contratacoes"
+        ],
         pasta_saida=PASTA_SAIDA,
         arquivo_relatorio=ARQUIVO_RELATORIO,
         limite_originais_por_origem=LIMITE_PDFS_ORIGINAIS_POR_ORIGEM,

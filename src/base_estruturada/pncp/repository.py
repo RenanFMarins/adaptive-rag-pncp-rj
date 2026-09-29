@@ -5,6 +5,7 @@ import stat
 import os
 import base64
 import binascii
+import copy
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +53,95 @@ def salvar_json(caminho: Path | str, dados: Any) -> None:
         json.dump(dados, arquivo, ensure_ascii=False, indent=2)
 
     os.replace(temporario, caminho)
+
+
+def _chave_documento(
+    numero_controle: str,
+    documento: dict[str, Any],
+) -> str:
+    """Identificador estavel do documento dentro de um contrato/compra."""
+
+    sequencial = documento.get("sequencialDocumento", "sem_sequencial")
+    return f"{numero_controle}|{sequencial}"
+
+
+def carregar_checkpoint_documentos(caminho: Path | str) -> dict[str, Any]:
+    """Carrega o estado separado da listagem e do processamento documental."""
+
+    checkpoint = carregar_json(
+        caminho,
+        padrao={"entidades": {}, "documentos": {}},
+    )
+    if not isinstance(checkpoint, dict):
+        raise RuntimeError(f"Checkpoint de documentos invalido: {caminho}")
+
+    checkpoint.setdefault("schemaVersion", "estado_documentos_pncp_v1")
+    checkpoint.setdefault("entidades", {})
+    checkpoint.setdefault("documentos", {})
+    if not isinstance(checkpoint["entidades"], dict):
+        checkpoint["entidades"] = {}
+    if not isinstance(checkpoint["documentos"], dict):
+        checkpoint["documentos"] = {}
+    return checkpoint
+
+
+def materializar_manifesto_com_checkpoint(
+    manifesto_original: list[dict[str, Any]],
+    checkpoint: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Aplica estado local a uma copia, sem alterar a listagem original."""
+
+    manifesto = copy.deepcopy(manifesto_original)
+    estados = checkpoint.get("documentos") or {}
+
+    for entidade in manifesto:
+        if not isinstance(entidade, dict):
+            continue
+        numero_controle = str(entidade.get("numeroControlePNCP") or "")
+        if not numero_controle:
+            continue
+        for documento in entidade.get("documentos") or []:
+            if not isinstance(documento, dict):
+                continue
+            estado = estados.get(_chave_documento(numero_controle, documento))
+            if not isinstance(estado, dict):
+                continue
+            for campo in ("download", "extracao", "processamentoTexto"):
+                if campo in estado:
+                    documento[campo] = copy.deepcopy(estado[campo])
+
+    return manifesto
+
+
+def salvar_estado_documentos(
+    caminho: Path | str,
+    checkpoint: dict[str, Any],
+    manifesto_processado: list[dict[str, Any]],
+) -> None:
+    """Atualiza somente o checkpoint com o estado produzido no processamento."""
+
+    documentos = checkpoint.setdefault("documentos", {})
+    for entidade in manifesto_processado:
+        if not isinstance(entidade, dict):
+            continue
+        numero_controle = str(entidade.get("numeroControlePNCP") or "")
+        if not numero_controle:
+            continue
+        for documento in entidade.get("documentos") or []:
+            if not isinstance(documento, dict):
+                continue
+            estado = {
+                campo: copy.deepcopy(documento[campo])
+                for campo in ("download", "extracao", "processamentoTexto")
+                if campo in documento
+            }
+            # Todo documento listado aparece no checkpoint. A ausencia de
+            # download deixa de ser ambigua: significa explicitamente pendente.
+            if not estado:
+                estado = {"download": {"status": "pendente"}}
+            documentos[_chave_documento(numero_controle, documento)] = estado
+
+    salvar_json(caminho, checkpoint)
 
 
 def salvar_pagina_raw(
@@ -273,20 +363,43 @@ def atualizar_falha_reprocessada(
 def salvar_lista_de_documentos_contratos(
     contratos: list[dict[str, Any]],
     caminho: Path | str,
+    caminho_checkpoint: Path | str,
     limite: int = 5,
 ) -> list[dict[str, Any]]:
-    """Lista documentos de novos contratos e preserva o manifesto existente."""
+    """Lista documentos sem gravar estado de execucao no retorno da API."""
 
     manifesto = carregar_json(caminho, padrao=[])
     if not isinstance(manifesto, list):
         raise RuntimeError(f"O manifesto deveria conter uma lista: {caminho}")
 
+    checkpoint = carregar_checkpoint_documentos(caminho_checkpoint)
+    estados_entidades = checkpoint["entidades"]
+
     controles_existentes = {
         item.get("numeroControlePNCP")
         for item in manifesto
-        if isinstance(item, dict) and item.get("numeroControlePNCP")
+        if isinstance(item, dict)
+        and item.get("numeroControlePNCP")
+        and (item.get("listagem") or {}).get("status") != "erro"
     }
+
+    # Compatibilidade com manifestos antigos, que ainda contem ``listagem``.
+    for item in manifesto:
+        if not isinstance(item, dict):
+            continue
+        numero_controle = item.get("numeroControlePNCP")
+        if not numero_controle or numero_controle in estados_entidades:
+            continue
+        listagem_antiga = item.get("listagem") or {}
+        estados_entidades[numero_controle] = {
+            "statusListagem": listagem_antiga.get("status", "concluida"),
+            "consultadaEm": listagem_antiga.get("consultadaEm"),
+            "ultimoErro": listagem_antiga.get("erro"),
+            "tentativas": 0,
+        }
+
     processados = 0
+    manifesto_alterado = False
 
     for contrato in contratos:
         if processados >= limite:
@@ -299,49 +412,83 @@ def salvar_lista_de_documentos_contratos(
         resultado = consultar_documentos_contrato_detalhado(contrato)
         status = "concluida" if resultado.erro is None else "erro"
 
-        manifesto.append(
-            {
+        estado_anterior = estados_entidades.get(numero_controle, {})
+        estados_entidades[numero_controle] = {
+            "statusListagem": status,
+            "consultadaEm": datetime.now(timezone.utc).isoformat(),
+            "ultimoErro": resultado.erro,
+            "tentativas": int(estado_anterior.get("tentativas", 0)) + 1,
+        }
+
+        # Sem resposta valida, somente o checkpoint recebe o erro. Assim a
+        # proxima execucao tenta novamente sem contaminar o JSON original.
+        if resultado.erro is None:
+            registro = {
                 "numeroControlePNCP": numero_controle,
                 "cnpjOrgao": contrato.get("cnpjOrgao")
                 or (contrato.get("orgaoEntidade") or {}).get("cnpj"),
                 "anoContrato": contrato.get("anoContrato"),
                 "sequencialContrato": contrato.get("sequencialContrato"),
                 "documentos": resultado.documentos,
-                "listagem": {
-                    "status": status,
-                    "consultadaEm": datetime.now(timezone.utc).isoformat(),
-                    "erro": resultado.erro,
-                },
             }
-        )
-        controles_existentes.add(numero_controle)
+            manifesto.append(registro)
+            manifesto_alterado = True
+            for documento in resultado.documentos:
+                if isinstance(documento, dict):
+                    checkpoint["documentos"].setdefault(
+                        _chave_documento(numero_controle, documento),
+                        {"download": {"status": "pendente"}},
+                    )
+            controles_existentes.add(numero_controle)
         processados += 1
         print(
             f"Contrato: {numero_controle} | documentos="
             f"{len(resultado.documentos)} | status={status}"
         )
 
-    salvar_json(caminho, manifesto)
+    if manifesto_alterado:
+        salvar_json(caminho, manifesto)
+    salvar_json(caminho_checkpoint, checkpoint)
     return manifesto
 
 
 def salvar_lista_documentos_contratacao(
     contratacoes: list[dict[str, Any]],
     caminho: Path | str,
+    caminho_checkpoint: Path | str,
     limite: int = 5,
 ) -> list[dict[str, Any]]:
-    """Lista documentos de novas contratações sem sobrescrever o manifesto."""
+    """Lista documentos sem gravar estado de execucao no retorno da API."""
 
     manifesto = carregar_json(caminho, padrao=[])
     if not isinstance(manifesto, list):
         raise RuntimeError(f"O manifesto deveria conter uma lista: {caminho}")
 
+    checkpoint = carregar_checkpoint_documentos(caminho_checkpoint)
+    estados_entidades = checkpoint["entidades"]
+
     controles_existentes = {
         item.get("numeroControlePNCP")
         for item in manifesto
-        if isinstance(item, dict) and item.get("numeroControlePNCP")
+        if isinstance(item, dict)
+        and item.get("numeroControlePNCP")
+        and (item.get("listagem") or {}).get("status") != "erro"
     }
+    for item in manifesto:
+        if not isinstance(item, dict):
+            continue
+        numero_controle = item.get("numeroControlePNCP")
+        if not numero_controle or numero_controle in estados_entidades:
+            continue
+        listagem_antiga = item.get("listagem") or {}
+        estados_entidades[numero_controle] = {
+            "statusListagem": listagem_antiga.get("status", "concluida"),
+            "consultadaEm": listagem_antiga.get("consultadaEm"),
+            "ultimoErro": listagem_antiga.get("erro"),
+            "tentativas": 0,
+        }
     processados = 0
+    manifesto_alterado = False
 
     for contratacao in contratacoes:
         if processados >= limite:
@@ -355,28 +502,40 @@ def salvar_lista_documentos_contratacao(
         orgao = contratacao.get("orgaoEntidade") or {}
         status = "concluida" if resultado.erro is None else "erro"
 
-        manifesto.append(
-            {
+        estado_anterior = estados_entidades.get(numero_controle, {})
+        estados_entidades[numero_controle] = {
+            "statusListagem": status,
+            "consultadaEm": datetime.now(timezone.utc).isoformat(),
+            "ultimoErro": resultado.erro,
+            "tentativas": int(estado_anterior.get("tentativas", 0)) + 1,
+        }
+
+        if resultado.erro is None:
+            registro = {
                 "numeroControlePNCP": numero_controle,
                 "cnpjOrgao": orgao.get("cnpj"),
                 "anoCompra": contratacao.get("anoCompra"),
                 "sequencialCompra": contratacao.get("sequencialCompra"),
                 "documentos": resultado.documentos,
-                "listagem": {
-                    "status": status,
-                    "consultadaEm": datetime.now(timezone.utc).isoformat(),
-                    "erro": resultado.erro,
-                },
             }
-        )
-        controles_existentes.add(numero_controle)
+            manifesto.append(registro)
+            manifesto_alterado = True
+            for documento in resultado.documentos:
+                if isinstance(documento, dict):
+                    checkpoint["documentos"].setdefault(
+                        _chave_documento(numero_controle, documento),
+                        {"download": {"status": "pendente"}},
+                    )
+            controles_existentes.add(numero_controle)
         processados += 1
         print(
             f"Contratação: {numero_controle} | documentos="
             f"{len(resultado.documentos)} | status={status}"
         )
 
-    salvar_json(caminho, manifesto)
+    if manifesto_alterado:
+        salvar_json(caminho, manifesto)
+    salvar_json(caminho_checkpoint, checkpoint)
     return manifesto
 
 
@@ -544,6 +703,7 @@ def identificar_arquivos_do_manifesto(
                 "status": "identificado",
                 "caminho": str(novo_caminho),
                 "formato": formato,
+                "tentativas": int(download.get("tentativas", 0)),
             }
             if codificacao_origem is not None:
                 dados_download["codificacaoOrigem"] = codificacao_origem
