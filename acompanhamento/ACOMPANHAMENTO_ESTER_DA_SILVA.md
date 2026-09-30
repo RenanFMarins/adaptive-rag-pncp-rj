@@ -422,7 +422,115 @@ Os testes foram de 27 para 31.
 
 ---
 
-## Encontro 7 · DD/MM/AAAA
+## Encontro 7 · 30/09/2026
+
+### O que eu fiz hoje
+
+Fechamos as duas pendências que faltavam na base normativa e achamos uma terceira
+no caminho.
+
+A primeira foi o **overlap**. O manifesto declarava "split por artigo/cláusula,
+com overlap" e o código não fazia overlap nenhum — manifesto e implementação
+diziam coisas diferentes, e isso é o tipo de incoerência que ninguém percebe até
+alguém confiar no manifesto.
+
+Implementamos do jeito que faz sentido para texto normativo: o overlap existe
+**só entre as partes de um artigo que ficou grande demais** e precisou ser
+dividido. Cada parte passa a repetir os 200 caracteres finais da anterior,
+cortados em palavra inteira. Entre artigos diferentes não há overlap nenhum, e
+isso é deliberado: artigo é unidade fechada, e misturar dois faria a busca
+devolver um artigo com o texto do outro. Reescrevemos o `chunking_sugerido` do
+manifesto para descrever exatamente isso, inclusive o que o código **não** faz e
+por quê.
+
+Uma consequência que nós não tínhamos previsto: o total subiu de 784 para 796
+trechos. A causa é mecânica — a cauda ocupa parte do limite de 4.000 caracteres,
+então os trechos longos passam a ser cortados um pouco mais cedo. Registramos a
+explicação no inventário, porque daqui a duas semanas alguém veria o número
+mudar sem entender.
+
+Chegamos a achar que o overlap não estava funcionando, porque o comando que nós
+usamos mostrava só o começo da parte 2 — e dali é impossível distinguir repetição
+de continuação natural. Só comparando o fim da parte 1 com o começo da parte 2
+ficou claro. Escrevemos uma conferência que faz essa comparação para todos os
+trechos: 281 partes de continuação, todas repetindo de fato o final da anterior.
+
+A segunda foi o **README**. Ele não explicava em lugar nenhum como rodar a base
+normativa — conferimos e não havia uma única menção aos comandos. Escrevemos a seção
+dentro de "Bases do projeto", que é a parte que é nossa, com o que está no
+corpus, as dependências, os quatro comandos e o que cada um produz, o critério
+de divisão do texto, a lista de metadados e a política de sensibilidade. Escolhemos
+esse lugar de propósito: é a única parte do README que ninguém mais edita, então
+o risco de conflito é quase zero.
+
+A terceira foi olhando os trechos do overlap, vimos que os editais
+do SEI trazem, a cada troca de página, a data e hora da impressão e o link com o
+número da página **dentro do texto das cláusulas**. Eram 125 linhas em 57
+trechos, indo para o índice como se fossem conteúdo do edital.
+
+O mais interessante é por que isso passou: o filtro já tinha uma regra para
+data e hora, mas ela exigia ano de dois dígitos (`13/09/24`, formato dos
+decretos), e os editais vêm com quatro (`21/02/2025`). A regra existia e não
+pegava. Aceitar 2 ou 4 dígitos resolveu.
+
+Tomamos um cuidado aqui: sobraram quatro ocorrências do domínio do SEI que nós
+decidimos **não** remover. São o aviso de verificação da assinatura digital, que é
+conteúdo do documento e aparece no meio da linha. O filtro só corta linha que
+começa com o padrão, então ele preserva isso naturalmente — mas conferimos cada
+uma antes de dar por encerrado.
+
+Conferindo que nada de conteúdo tinha sido levado junto, descobrimos uma coisa boa:
+a Lei 14.133 no nosso corpus tem os artigos 1 a 194 em ordem **mais o Art.
+44-A**, incluído pela Lei 15.210/2025. Ou seja, o corpus capturou uma alteração
+deste ano — justamente porque escolhemos o texto compilado do Planalto em vez do
+PDF estático que estava circulando.
+
+Os testes foram de 31 para 37.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** implementar o overlap, escrever a seção do README, investigar o
+  lixo de impressão e escrever os testes.
+- **O que eu conferi / mudei:** decidimos que não haveria overlap entre artigos
+  diferentes, contra a leitura literal do manifesto, porque artigo é unidade
+  fechada; conferimos o overlap comparando as duas partes em vez de aceitar o
+  resultado do comando de verificação, que estava errado; decidimos preservar as
+  quatro ocorrências do domínio do SEI depois de ler cada uma, em vez de apagar
+  tudo que casava com o domínio; e conferimos a contagem de artigos da lei antes de
+  commitar, o que revelou o Art. 44-A.
+
+### O que travou
+
+- O primeiro teste do overlap falhava, e o erro era nosso: o texto de exemplo não
+  tinha quebras de linha, e o `_partir_se_longo` divide por linha justamente
+  para não cortar no meio de uma frase. Isso nos mostrou uma limitação real do
+  código — um documento que viesse com o texto todo numa linha só geraria um
+  chunk gigante. Não acontece com os nossos 13, mas é um caso a cobrir depois.
+- A conferência do overlap deu 4 falsos negativos por causa do nosso próprio
+  comando, que fatiava 150 caracteres e ultrapassava a região repetida.
+
+### Próximo passo
+
+- Logs estruturados (item 2.4): é a última exigência do enunciado em aberto na
+  nossa parte. O `app/core/logging.py` continua com 0 bytes.
+- Abrir o pull request, depois de combinar o que fazer com o
+  `tests/integration/test_normative_coleta.py` que está na branch principal — é
+  uma cópia antiga do nosso arquivo, com 9 testes contra os 17 atuais.
+- Cobrir o caso do documento sem quebras de linha.
+- O `requirements.txt` em UTF-16 continua quebrado na branch principal.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** overlap coerente com o manifesto, seção da
+  base normativa no README, remoção do lixo de impressão dos editais do SEI e
+  37 testes passando. Corpus em 794 trechos.
+- **Travou:** os logs continuam dependendo de uma definição do time.
+- **Próximo passo:** logs, pull request e resolver o arquivo de teste duplicado.
+
+---
+
+## Encontro 8 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
@@ -441,5 +549,11 @@ Os testes foram de 27 para 31.
 ### Próximo passo
 
 - 
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):**
+- **Travou:**
+- **Próximo passo:** 
 
 ---
