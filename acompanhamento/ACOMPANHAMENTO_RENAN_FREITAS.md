@@ -950,3 +950,142 @@ Contratações RJ — 2023 a 2025
 → associação futura com contratações.
 
 Como próximo passo, será realizado o primeiro smoke test de contratação utilizando 2023-T1, `uf=RJ`, uma modalidade válida e uma página pequena. Após a validação da persistência RAW, idempotência, `ingestion_run` e `sync_checkpoint`, a coleta poderá ser expandida gradualmente para todas as páginas e demais trimestres de 2023, 2024 e 2025.
+
+
+---
+
+## Encontro 6 - 2026-09-28
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei o trabalho na ampliação, auditoria e distribuição
+da camada RAW das bases Estruturada e Agregada do PNCP. O objetivo foi sair do
+recorte piloto e consolidar um conjunto reproduzível de dados do Estado do Rio
+de Janeiro, preservando os JSONs originais e mantendo rastreabilidade por
+execução, fonte e checkpoint.
+
+### Ampliação das contratações do Rio de Janeiro
+
+Foi concluída a coleta das contratações publicadas no RJ entre 1º de janeiro
+de 2023 e 26 de setembro de 2026, contemplando as 14 modalidades previstas
+pela API do PNCP.
+
+O primeiro trimestre de 2023 resultou em 2.024 contratações. Para o período de
+1º de abril de 2023 até a data de corte, foram preservadas outras 174.457
+contratações. Com isso, a camada RAW passou a possuir 176.481 contratações
+únicas nesse recorte.
+
+### Complementação do primeiro trimestre de 2023
+
+Para formar um recorte fechado e compartilhável, foram concluídas e validadas
+as fontes dependentes das contratações publicadas entre janeiro e março de
+2023:
+
+- 2.024 contratações;
+- 4.804 itens de contratação;
+- 3.669 resultados homologados;
+- 1.378 contratos;
+- consulta de empenhos para os 1.378 contratos.
+
+A consulta de empenhos terminou com `SUCCESS`, mas o PNCP não retornou
+registros para os contratos desse recorte. Essa ausência foi mantida de forma
+auditável por meio de `ingestion_run` e `sync_checkpoint`.
+
+### Coleta completa do PCA de 2023
+
+Também foi concluída a descoberta dos PCAs de 2023 para os órgãos encontrados
+nas contratações iniciais do RJ.
+
+Foram preservados:
+
+- 195 planos de contratação;
+- 49.063 itens dentro dos JSONs dos planos;
+- 61 órgãos consultados com checkpoint concluído.
+
+Os itens de PCA permaneceram aninhados no payload original, respeitando a
+responsabilidade da RAW. A futura tabela `pca_item` será produzida na camada
+normalizada.
+
+### Atas de Registro de Preços
+
+Foi realizada uma coleta inicial de atas vigentes entre 2023 e setembro de
+2026 para 233 unidades administrativas conhecidas no recorte inicial.
+
+A execução recebeu 65.671 ocorrências e preservou 36.597 atas únicas. As
+29.074 ocorrências restantes eram repetições identificadas pelo número de
+controle da ata.
+
+Após a coleta completa das contratações, foi identificado um universo de pelo
+menos 2.097 unidades. Por isso, as atas atuais ainda representam um recorte
+parcial. Foi decidido não incluí-las no snapshot trimestral e realizar
+posteriormente uma coleta específica com todas as unidades descobertas.
+
+
+### Snapshot RAW e distribuição para a equipe
+
+Foi criado um snapshot imutável do primeiro trimestre de 2023, excluindo as
+atas e incluindo o PCA anual como contexto de planejamento.
+
+O snapshot foi validado com:
+
+- `PRAGMA integrity_check = ok`;
+- verificação de chaves estrangeiras;
+- restauração completa do dump SQL;
+- conferência das contagens;
+- hashes SHA-256.
+
+Foram gerados:
+
+- banco SQLite compactado;
+- dump SQL compactado;
+- inventário CSV;
+- arquivo de hashes.
+
+Os artefatos foram publicados em uma Release privada do GitHub com a tag
+`dados-raw-rj-2023-t1-v1`. A pasta local de exportações foi incluída no
+`.gitignore` para evitar o versionamento acidental dos bancos.
+
+### Qualidade e testes
+
+A suíte automatizada passou a possuir 69 testes executados com sucesso. O
+`corpus_manifest.yaml` foi validado com 27 fontes e nenhum erro.
+
+Também foram reforçados:
+
+- retry para falhas transitórias;
+- tratamento de HTTP 204 e 404 conforme o endpoint;
+- checkpoints por página ou alvo;
+- coleta paralela com entrega ordenada;
+- preservação do payload original;
+- detecção de registros novos, atualizados e inalterados;
+- auditoria das execuções com falha.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- analisar os endpoints e os payloads reais do PNCP;
+- revisar a estratégia de coleta por trimestre e modalidade;
+- diagnosticar timeouts e limites da API;
+- revisar a modelagem entre contratação, item, resultado, contrato e PCA;
+- estruturar os testes e as verificações de integridade;
+- organizar o snapshot RAW e sua distribuição por GitHub Release;
+
+### Resultado do encontro
+
+Ao final do encontro, foi consolidado um recorte RAW auditável do primeiro
+trimestre de 2023 e publicada uma versão imutável para compartilhamento com a
+equipe.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- retomar a coleta de `contratacao_item` a partir do checkpoint salvo;
+- coletar `resultado_item` para os novos itens;
+- coletar contratos do período complementar;
+- consultar empenhos dos novos contratos;
+- ampliar os PCAs para os anos de 2024, 2025 e 2026;
+- refazer a coleta de atas com todas as unidades descobertas;
+- iniciar a camada normalizada a partir do snapshot do primeiro trimestre;
+- criar snapshots e Releases separados para os próximos trimestres.
