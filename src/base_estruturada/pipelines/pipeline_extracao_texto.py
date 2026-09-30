@@ -5,6 +5,7 @@ ao Docling. Modo ``docling``: processa somente essa fila. Nenhum dos modos
 baixa documentos ou gera chunks.
 """
 
+import argparse
 import re
 import time
 from datetime import datetime, timezone
@@ -25,6 +26,11 @@ from src.base_estruturada.pncp.repository import (
 
 
 MINIMO_CARACTERES_TEXTO_NATIVO = 300
+
+
+def _periodo(valor: str) -> PeriodoColeta:
+    ano, mes = valor.replace("-", "/").split("/", maxsplit=1)
+    return PeriodoColeta(ano=int(ano), mes=int(mes))
 
 
 def _agora() -> str:
@@ -371,7 +377,18 @@ def executar_docling_pendente(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Extrai texto dos PDFs PNCP ja baixados."
+    )
+    parser.add_argument("--tipo", choices=["contratos", "contratacoes", "todos"])
+    parser.add_argument("--periodo")
+    parser.add_argument("--modo", choices=["rapido", "docling"])
+    parser.add_argument("--limite", type=int)
+    args = parser.parse_args()
+
     PERIODO = PeriodoColeta(ano=2026, mes=8)
+    if args.periodo:
+        PERIODO = _periodo(args.periodo)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Execute primeiro "rapido". Depois revise o checkpoint e altere para
@@ -379,6 +396,11 @@ if __name__ == "__main__":
     MODO_EXECUCAO = "docling"  # "rapido" ou "docling"
     LIMITE_ARQUIVOS_RAPIDOS: int | None = 10
     LIMITE_CANDIDATOS_DOCLING: int | None = 3
+    if args.modo:
+        MODO_EXECUCAO = args.modo
+    if args.limite is not None:
+        LIMITE_ARQUIVOS_RAPIDOS = args.limite
+        LIMITE_CANDIDATOS_DOCLING = args.limite
 
     ARQUIVO_CHECKPOINT = Path(
         f"data/checkpoints/extracao/{PERIODO.ano}/"
@@ -391,6 +413,10 @@ if __name__ == "__main__":
         "contratos": carregar_json(CAMINHOS["manifesto_contratos"], padrao=[]),
         "contratacoes": carregar_json(CAMINHOS["manifesto_contratacoes"], padrao=[]),
     }
+    if args.tipo in {"contratos", "contratacoes"}:
+        manifestos_originais = {
+            args.tipo: manifestos_originais[args.tipo],
+        }
     if not all(
         isinstance(manifesto, list)
         for manifesto in manifestos_originais.values()
@@ -398,12 +424,10 @@ if __name__ == "__main__":
         raise RuntimeError(
             "Os manifestos de contratos e contratacoes devem ser listas.")
     checkpoints_documentos = {
-        "contratos": carregar_checkpoint_documentos(
-            CAMINHOS["checkpoint_documentos_contratos"]
-        ),
-        "contratacoes": carregar_checkpoint_documentos(
-            CAMINHOS["checkpoint_documentos_contratacoes"]
-        ),
+        origem: carregar_checkpoint_documentos(
+            CAMINHOS[f"checkpoint_documentos_{origem}"]
+        )
+        for origem in manifestos_originais
     }
     manifestos = {
         origem: materializar_manifesto_com_checkpoint(
@@ -420,16 +444,12 @@ if __name__ == "__main__":
             pasta_saida=PASTA_RAPIDO,
             limite_arquivos=LIMITE_ARQUIVOS_RAPIDOS,
         )
-        salvar_estado_documentos(
-            CAMINHOS["checkpoint_documentos_contratos"],
-            checkpoints_documentos["contratos"],
-            manifestos["contratos"],
-        )
-        salvar_estado_documentos(
-            CAMINHOS["checkpoint_documentos_contratacoes"],
-            checkpoints_documentos["contratacoes"],
-            manifestos["contratacoes"],
-        )
+        for origem in manifestos:
+            salvar_estado_documentos(
+                CAMINHOS[f"checkpoint_documentos_{origem}"],
+                checkpoints_documentos[origem],
+                manifestos[origem],
+            )
         checkpoint = _gerar_checkpoint_docling(
             periodo=PERIODO,
             manifestos=manifestos,
@@ -448,16 +468,12 @@ if __name__ == "__main__":
             pasta_saida=PASTA_DOCLING,
             limite_candidatos=LIMITE_CANDIDATOS_DOCLING,
         )
-        salvar_estado_documentos(
-            CAMINHOS["checkpoint_documentos_contratos"],
-            checkpoints_documentos["contratos"],
-            manifestos["contratos"],
-        )
-        salvar_estado_documentos(
-            CAMINHOS["checkpoint_documentos_contratacoes"],
-            checkpoints_documentos["contratacoes"],
-            manifestos["contratacoes"],
-        )
+        for origem in manifestos:
+            salvar_estado_documentos(
+                CAMINHOS[f"checkpoint_documentos_{origem}"],
+                checkpoints_documentos[origem],
+                manifestos[origem],
+            )
         salvar_json(ARQUIVO_CHECKPOINT, checkpoint)
         print(f"Resumo Docling | {resumo}")
     else:
