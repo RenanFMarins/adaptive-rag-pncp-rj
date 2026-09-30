@@ -280,3 +280,79 @@ Os testes foram de 27 para 31.
 - *Travou:* dependências ausentes no ambiente e a codificação do
   requirements.txt.
 - *Próximo passo:* overlap, README, logs e pull request para a main.
+
+
+## Encontro 7 · 30/09/2026
+
+### O que eu fiz hoje
+
+Hoje mexemos no processamento, que é a parte que eu venho cuidando desde o
+começo.
+
+A primeira mudança foi o **overlap**. O manifesto prometia "split por
+artigo/cláusula, com overlap" e o meu código não fazia isso — quando um artigo
+passava de 4.000 caracteres, eu dividia em partes e a parte seguinte começava
+seca, sem a frase que a introduzia. Agora cada parte repete os 200 caracteres
+finais da anterior, cortados em palavra inteira para não começar no meio de uma
+palavra.
+
+O que eu não quis fazer foi overlap entre artigos diferentes. Para texto
+normativo isso seria ruim: o artigo é uma unidade fechada, e colar o fim do Art.
+74 no começo do Art. 75 faria a busca devolver o artigo errado com um pedaço do
+certo. Deixei isso escrito no manifesto e no comentário do código, porque é o
+tipo de decisão que alguém desfaz sem querer.
+
+Acrescentei também os metadados `parte` e `tem_overlap` em cada trecho, para
+quem for indexar saber quais repetem texto e não contar o mesmo conteúdo duas
+vezes.
+
+Depois veio o **lixo de impressão**. Olhando os trechos, vi que os editais do
+SEI trazem a data da impressão e o link com o número da página no meio das
+cláusulas — 125 linhas em 57 trechos. Eu já tinha um filtro para isso, feito
+para os decretos, mas ele exigia ano de dois dígitos e os editais vêm com
+quatro. A regra estava lá e não pegava.
+
+Reprocessei os 13 documentos depois de cada mudança e conferi os números: o
+corpus foi para 796 com o overlap e voltou para 794 com a limpeza, porque sem o
+lixo alguns trechos deixam de estourar o limite. Conferi também que a Lei 14.133
+continua completa e descobri que ela tem um artigo a mais do que eu contava, o
+Art. 44-A, incluído por uma lei de 2025.
+
+Escrevi quatro testes do overlap e dois do lixo de impressão. O total foi de 31
+para 37.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever a função do overlap, corrigir o filtro de lixo de
+  impressão e escrever os testes.
+- **O que eu conferi / mudei:** reprocessei os 13 documentos a cada alteração e
+  comparei as contagens por arquivo, em vez de aceitar o total; conferi que a
+  mudança do lixo só afetou o edital de 60 páginas, o que confirmou que o filtro
+  não estava comendo texto bom; e conferi a contagem de artigos da lei antes de
+  dar por encerrado.
+
+### O que travou
+
+- Um dos testes do overlap falhava porque o texto de exemplo não tinha quebras
+  de linha, e a minha função divide por linha de propósito, para não cortar no
+  meio de uma frase. Isso mostrou uma limitação real: um documento que viesse
+  todo numa linha só geraria um chunk enorme.
+- A primeira conferência do overlap parecia dizer que ele não estava
+  funcionando, e o problema era o comando de verificação, não o código.
+
+### Próximo passo
+
+- Cobrir o caso do documento sem quebras de linha.
+- Entregar o `data/processed/v1_editais_normativo.jsonl` para quem vai indexar.
+- Logs estruturados, quando o time definir.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** overlap entre partes de artigo longo, com os
+  metadados `parte` e `tem_overlap`; remoção do cabeçalho e rodapé de impressão
+  dos editais; seção da base normativa no README; 37 testes passando. Corpus em
+  794 trechos.
+- **Travou:** os logs dependem de definição do time, ainda estamos decidindo 
+- **Próximo passo:** logs, pull request e o arquivo de teste duplicado na branch
+  principal.
