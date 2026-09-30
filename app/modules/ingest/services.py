@@ -26,7 +26,7 @@ from pypdf import PdfReader
 BASE_ID = "editais_normativo"
 SENSITIVITY = "publico"   # definido na ingestão, como o enunciado exige
 MAX_CARACTERES = 4000     # acima disso, o artigo/cláusula é dividido em partes
-
+OVERLAP_CARACTERES = 200  # trecho do fim da parte anterior repetido na seguinte
 
 # ---------------------------------------------------------------------------
 # 1. Extração de texto
@@ -273,6 +273,22 @@ def _dividir_por_marcador(texto, padrao, sequencial=False):
     return pedacos
 
 
+def _cauda(texto: str) -> str:
+    """
+    Últimos OVERLAP_CARACTERES do trecho, começando em palavra inteira.
+
+    É o overlap declarado no manifesto. Ele existe SÓ entre as partes de um
+    mesmo artigo ou cláusula longa: sem ele, um inciso que caiu na parte
+    seguinte perde a frase que o introduzia. Entre artigos diferentes não há
+    overlap, porque o artigo é uma unidade fechada e misturar dois faria a
+    busca devolver um artigo com o texto do outro.
+    """
+    if OVERLAP_CARACTERES <= 0 or len(texto) <= OVERLAP_CARACTERES:
+        return texto.strip()
+    pedaco = texto[-OVERLAP_CARACTERES:]
+    return pedaco[pedaco.find(" ") + 1:].strip()
+
+
 def _partir_se_longo(rotulo, texto):
     """
     Artigo/cláusula grande demais é dividido por parágrafo (linha), sem cortar
@@ -285,7 +301,7 @@ def _partir_se_longo(rotulo, texto):
     for linha in texto.split("\n"):
         if len(atual) + len(linha) > MAX_CARACTERES and atual:
             partes.append(atual)
-            atual = f"[{rotulo} (continuação)]\n"
+            atual = f"[{rotulo} (continuação)]\n{_cauda(atual)}\n"
         atual += linha + "\n"
     partes.append(atual)
     return partes
@@ -315,7 +331,8 @@ def gerar_chunks(caminho: Path) -> list[dict]:
             # Política de sensibilidade aplicada na ingestão
             texto_chunk, achados = mascarar_dados_pessoais(parte.strip())
             metadata = {**meta_doc, "chunk_id": chunk_id,
-                        "artigo" if meta_doc["doc_type"] != "edital" else "clausula": nome}
+                        "artigo" if meta_doc["doc_type"] != "edital" else "clausula": nome,
+                        "parte": n, "tem_overlap": n > 1}
             if achados:
                 metadata["dados_pessoais"] = achados
             chunks.append({"texto": texto_chunk, "metadata": metadata})
