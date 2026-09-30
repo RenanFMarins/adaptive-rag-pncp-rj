@@ -159,3 +159,36 @@ def test_edital_sem_ficha_nao_quebra_a_ingestao(tmp_path):
     assert chunks[0]["metadata"]["data_publicacao"] is None
     assert chunks[0]["metadata"]["fonte_data"] == "indisponivel"
 
+# --- 7. Overlap entre partes de um artigo longo --------------------------
+
+def test_parte_seguinte_repete_o_final_da_anterior():
+    # O texto precisa ter quebras de linha: _partir_se_longo corta por linha,
+    # para não partir no meio de uma frase.
+    texto = "Art. 1 " + ("palavra palavra palavra palavra\n" * 300)
+    partes = services._partir_se_longo("Art. 1", texto)
+
+    assert len(partes) > 1
+    cauda = services._cauda(partes[0])
+    assert cauda, "a cauda não pode ser vazia"
+    assert cauda in partes[1], "a parte seguinte deveria repetir o final da anterior"
+
+
+def test_cauda_comeca_em_palavra_inteira():
+    # Cortar no meio de uma palavra deixaria o trecho recuperado sujo.
+    cauda = services._cauda("a" * 500 + " palavra inteira no final do trecho")
+    assert not cauda.startswith("a" * 10)
+    assert cauda.endswith("trecho")
+
+
+def test_nao_ha_overlap_entre_artigos_diferentes(chunks):
+    # Artigo é unidade fechada: o Art. 2 não pode começar com texto do Art. 1.
+    art2 = _artigo(chunks, "Art. 2")[0]["texto"]
+    assert art2.startswith("Art. 2")
+
+
+def test_chunk_diz_se_repete_texto_da_parte_anterior(chunks):
+    # A indexação precisa saber quais trechos repetem texto, para não contar
+    # o mesmo conteúdo duas vezes.
+    assert all("parte" in c["metadata"] for c in chunks)
+    assert all(c["metadata"]["tem_overlap"] == (c["metadata"]["parte"] > 1)
+               for c in chunks)
