@@ -55,3 +55,15 @@ Também iniciei a etapa de tratamento dos documentos e extração dos textos. At
 Com os documentos já extraídos, também comecei a trabalhar na etapa de criação dos chunks, preparando esses dados para posteriormente serem armazenados e utilizados no banco vetorial.
 
 Além disso, durante o final de semana, aproveitei para realizar novas requisições e downloads de contratos e contratações, com o objetivo de aumentar as bases que serão utilizadas no projeto.
+
+## Encontro 6 - 2026-09-30
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, trabalhei na preparação e ambientação do Google Colab para receber e processar os documentos utilizados no projeto. Para isso, refatorei algumas partes do código para adequar o fluxo ao processamento pelo Colab e realizei validações para verificar o funcionamento e o desempenho dessa abordagem.
+
+Também comecei a estruturar uma documentação com orientações sobre esse processo, com o objetivo de compartilhar com os demais integrantes do grupo e facilitar a utilização do Colab na etapa de extração e processamento dos dados.
+
+Além disso, dediquei parte do tempo à revisão da arquitetura do projeto, principalmente em relação ao fluxo de processamento da base que estou desenvolvendo. Fiz algumas modificações e testes buscando melhorar essa estrutura antes de integrar definitivamente as alterações ao projeto principal.
+
+Dessa forma, o trabalho de hoje ficou concentrado principalmente na refatoração do código, validação do fluxo, análise de desempenho e organização da arquitetura para posteriormente implementar essas melhorias no projeto.
