@@ -46,6 +46,9 @@ data/raw/
 index/
 indexes/
 logs/
+data/documents/
+data/extracted/
+data/extraction_tests/
 
 
 # ==============================

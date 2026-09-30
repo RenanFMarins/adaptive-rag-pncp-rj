@@ -1,0 +1,38 @@
+{
+  "periodo": "2026_08",
+  "geradoEm": "2026-09-30T18:59:28.396685+00:00",
+  "criterio": "erro na extracao rapida ou menos de 300 caracteres",
+  "candidatos": [
+    {
+      "origem": "contratos",
+      "numeroControlePNCP": "33781055000135-2-004268/2026",
+      "sequencialDocumento": 1,
+      "caminhoFonte": "F:\\ecoa_projetos\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\2026\\08\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+      "tipoFonte": "pdf_original",
+      "motivo": "erro_na_extracao_rapida",
+      "statusDocling": "concluida",
+      "caminhoMarkdown": "data\\extracted\\docling\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.md"
+    },
+    {
+      "origem": "contratos",
+      "numeroControlePNCP": "42498733000148-2-000841/2026",
+      "sequencialDocumento": 1,
+      "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+      "tipoFonte": "pdf_original",
+      "motivo": "texto_nativo_insuficiente",
+      "statusDocling": "concluida",
+      "caminhoMarkdown": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+    },
+    {
+      "origem": "contratos",
+      "numeroControlePNCP": "42498733000148-2-000841/2026",
+      "sequencialDocumento": 1,
+      "caminhoFonte": "F:\\ecoa_projetos\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\2026\\08\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+      "tipoFonte": "pdf_original",
+      "motivo": "erro_na_extracao_rapida",
+      "statusDocling": "concluida",
+      "caminhoMarkdown": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+    }
+  ],
+  "atualizadoEm": "2026-09-30T19:09:27.872392+00:00"
+}

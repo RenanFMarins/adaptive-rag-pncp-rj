@@ -774,3 +774,318 @@ Os próximos passos serão:
   `source_raw_asset_id`;
 - ampliar gradualmente o período, as modalidades e os órgãos consultados no
   Estado do Rio de Janeiro.
+## Encontro 5 - 2026-09-25
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Hoje concentrei meu trabalho na definição da estratégia de expansão da coleta das bases Estruturada e Agregada do PNCP para contemplar o período de três anos solicitado no projeto.
+
+A partir da arquitetura e da camada RAW já implementadas, revisei a ordem das próximas etapas para evitar misturar coleta. Foi definido que o fluxo deverá continuar respeitando a sequência:
+
+PNCP
+→ coleta
+→ RAW_ASSET
+→ validação
+→ normalização
+→ tabelas analíticas.
+
+Com isso, os dados recebidos da API deverão ser inicialmente armazenados integralmente na camada RAW, preservando o JSON original, e somente depois serão distribuídos para entidades como ORGAO, UNIDADE, CONTRATACAO, PCA, PCA_ITEM e demais tabelas normalizadas.
+
+Também foi definido o recorte temporal inicial do corpus, utilizando os anos de 2023, 2024 e 2025. Para facilitar checkpoint, auditoria, retomada de execução e tratamento de falhas, a coleta será dividida por trimestre:
+
+2023:
+T1 — janeiro a março;
+T2 — abril a junho;
+T3 — julho a setembro;
+T4 — outubro a dezembro.
+
+2024:
+T1, T2, T3 e T4.
+
+2025:
+T1, T2, T3 e T4.
+
+Dessa forma, o corpus poderá ser construído progressivamente em 12 janelas independentes, permitindo identificar exatamente qual período, modalidade ou página apresentou algum problema sem necessidade de repetir toda a coleta.
+
+Inicialmente, a ideia era iniciar diretamente pela coleta de PCA e, a partir dos itens planejados, localizar as contratações relacionadas. Durante a análise, foi identificado que o endpoint de PCA permite filtros como CNPJ e código da unidade, porém não possui filtro direto por UF. Essa limitação dificulta uma coleta específica do Estado do Rio de Janeiro caso ainda não exista uma lista prévia de CNPJs dos órgãos pertencentes ao estado.
+
+A estratégia foi reorganizada. Como a API de contratações permite utilizar diretamente o filtro `uf=RJ` e retorna dados do órgão e da unidade administrativa, foi definido que a coleta deverá começar pelas contratações do Rio de Janeiro.
+
+O novo fluxo planejado ficou:
+Contratações com UF = RJ
+→ RAW_ASSET
+→ identificação de órgãos e unidades
+→ lista de CNPJs observados no RJ
+→ consulta de PCA por CNPJ
+→ PCA RAW.
+
+Essa abordagem evita realizar uma coleta nacional de PCA apenas para depois identificar quais registros pertencem ao Rio de Janeiro.
+
+Outro ponto importante definido foi que, mesmo que as contratações já tragam informações de órgão, unidade, município, UF e código IBGE, esses dados não serão imediatamente distribuídos para as tabelas normalizadas.
+O fluxo deverá permanecer:
+API PNCP
+→ RAW_ASSET.
+
+Somente em uma etapa posterior será realizado:
+RAW_ASSET
+→ ORGAO
+→ UNIDADE
+→ CONTRATACAO.
+
+Essa decisão mantém a rastreabilidade dos dados, preserva o conteúdo original recebido da API e permite reprocessar a normalização futuramente sem precisar consultar novamente o PNCP.
+
+Também foi planejada a primeira etapa de coleta das contratações. O endpoint utilizado será o de publicação de contratações, com filtro para o Estado do Rio de Janeiro e recorte trimestral.
+O fluxo de execução será organizado por:
+
+ano
++ trimestre
++ modalidade
++ página.
+
+Por exemplo:
+
+2023-T1
+→ modalidade
+→ página 1
+→ página 2
+→ ...
+→ RAW_ASSET.
+
+Como o endpoint exige `codigoModalidadeContratacao`, a coleta completa deverá posteriormente percorrer as modalidades definidas para o corpus.
+
+Antes de realizar uma coleta extensa, foi decidido executar um smoke test controlado utilizando:
+UF = RJ;
+ano = 2023;
+trimestre = T1;
+uma modalidade válida;
+página = 1;
+10 registros.
+
+O objetivo desse primeiro teste será comprovar o fluxo real:
+PNCP
+→ response["data"]
+→ numeroControlePNCP
+→ SHA-256
+→ NEW / UPDATED / UNCHANGED
+→ RAW_ASSET.
+
+Cada contratação deverá ser armazenada com:
+
+resource_type = contratacao
+external_id = numeroControlePNCP
+payload = objeto completo retornado pela API.
+O payload deverá permanecer integralmente preservado, sem renomear, remover ou transformar campos.
+A lógica de versionamento já implementada continuará sendo reutilizada:
+external_id inexistente
+→ NEW;
+external_id existente com hash diferente
+→ UPDATED;
+external_id existente com mesmo hash
+→ UNCHANGED.
+
+Também foi definido que a infraestrutura existente deverá ser reutilizada para essa nova fonte. Não deverá ser criada uma segunda camada de ingestão específica para contratações. O mesmo fluxo já utilizado para PCA deverá ser generalizado para trabalhar com múltiplos tipos de recursos, como:
+pca;
+contratacao;
+contratacao_item;
+resultado_item.
+
+A infraestrutura existente deverá continuar utilizando:
+raw_asset;
+ingestion_run;
+sync_checkpoint;
+fetch_corpus.py;
+ingest.py;
+schema.py;
+obs.py;
+hashing SHA-256;
+controle de NEW, UPDATED e UNCHANGED.
+
+Outro ponto analisado foi a estratégia de checkpoint. Como a coleta será dividida por trimestre, modalidade e página, o checkpoint deverá distinguir corretamente cada contexto de execução para evitar que uma coleta interfira em outra.
+Por exemplo, o checkpoint de:
+
+2023-T1 / modalidade A
+não deverá interferir em:
+
+2023-T1 / modalidade B
+nem em:
+
+2023-T2 / modalidade A.
+
+Após a coleta RAW das contratações, a próxima etapa será utilizar os dados de `orgaoEntidade` e `unidadeOrgao` para popular as tabelas ORGAO e UNIDADE.
+A ideia é obter uma lista de CNPJs observados nas contratações do Estado do Rio de Janeiro e utilizar esses CNPJs como filtro para a futura coleta de PCA.
+
+O fluxo futuro deverá seguir:
+RAW contratacao
+→ ORGAO
+→ UNIDADE
+→ CNPJs observados
+→ PCA por CNPJ
+→ PCA 2023, 2024 e 2025.
+
+Também foi reforçado que essa lista deverá ser tratada como “órgãos do RJ observados no corpus de contratações”, e não necessariamente como uma lista completa de todos os órgãos existentes no estado.
+
+Posteriormente, após a coleta dos PCA, será possível construir o fluxo entre planejamento e execução:
+
+PCA
+→ PCA_ITEM
+→ PCA_CONTRATACAO_LINK
+→ CONTRATACAO_ITEM
+→ RESULTADO_ITEM.
+
+A relação entre PCA e contratação não deverá ser assumida como direta, pois os itens planejados e os itens efetivamente contratados são entidades diferentes. A futura associação poderá utilizar critérios como CNPJ, período, unidade administrativa, classificação, descrição dos itens, similaridade textual ou semântica e nível de confiança.
+
+Utilizei o ChatGPT como apoio para revisar a estratégia de expansão do corpus, analisar a ordem correta entre coleta RAW e normalização, discutir a utilização de contratações para identificar órgãos do RJ, analisar as diferenças entre os filtros disponíveis nos endpoints de PCA e contratação, estruturar a coleta dos três anos por trimestre, definir a estratégia de checkpoint por período, modalidade e página e revisar a relação entre PCA, contratação, item e resultado homologado.
+
+Ao final do encontro, foi definida a estratégia de expansão do corpus para o período de três anos, priorizando primeiro a coleta de contratações do Estado do Rio de Janeiro na camada RAW.
+O fluxo consolidado ficou:
+
+Contratações RJ — 2023 a 2025
+→ coleta por trimestre
+→ RAW_ASSET
+→ validação e versionamento
+→ ORGAO / UNIDADE
+→ CNPJs observados
+→ PCA 2023 a 2025
+→ PCA_ITEM
+→ associação futura com contratações.
+
+Como próximo passo, será realizado o primeiro smoke test de contratação utilizando 2023-T1, `uf=RJ`, uma modalidade válida e uma página pequena. Após a validação da persistência RAW, idempotência, `ingestion_run` e `sync_checkpoint`, a coleta poderá ser expandida gradualmente para todas as páginas e demais trimestres de 2023, 2024 e 2025.
+
+
+---
+
+## Encontro 6 - 2026-09-28
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei o trabalho na ampliação, auditoria e distribuição
+da camada RAW das bases Estruturada e Agregada do PNCP. O objetivo foi sair do
+recorte piloto e consolidar um conjunto reproduzível de dados do Estado do Rio
+de Janeiro, preservando os JSONs originais e mantendo rastreabilidade por
+execução, fonte e checkpoint.
+
+### Ampliação das contratações do Rio de Janeiro
+
+Foi concluída a coleta das contratações publicadas no RJ entre 1º de janeiro
+de 2023 e 26 de setembro de 2026, contemplando as 14 modalidades previstas
+pela API do PNCP.
+
+O primeiro trimestre de 2023 resultou em 2.024 contratações. Para o período de
+1º de abril de 2023 até a data de corte, foram preservadas outras 174.457
+contratações. Com isso, a camada RAW passou a possuir 176.481 contratações
+únicas nesse recorte.
+
+### Complementação do primeiro trimestre de 2023
+
+Para formar um recorte fechado e compartilhável, foram concluídas e validadas
+as fontes dependentes das contratações publicadas entre janeiro e março de
+2023:
+
+- 2.024 contratações;
+- 4.804 itens de contratação;
+- 3.669 resultados homologados;
+- 1.378 contratos;
+- consulta de empenhos para os 1.378 contratos.
+
+A consulta de empenhos terminou com `SUCCESS`, mas o PNCP não retornou
+registros para os contratos desse recorte. Essa ausência foi mantida de forma
+auditável por meio de `ingestion_run` e `sync_checkpoint`.
+
+### Coleta completa do PCA de 2023
+
+Também foi concluída a descoberta dos PCAs de 2023 para os órgãos encontrados
+nas contratações iniciais do RJ.
+
+Foram preservados:
+
+- 195 planos de contratação;
+- 49.063 itens dentro dos JSONs dos planos;
+- 61 órgãos consultados com checkpoint concluído.
+
+Os itens de PCA permaneceram aninhados no payload original, respeitando a
+responsabilidade da RAW. A futura tabela `pca_item` será produzida na camada
+normalizada.
+
+### Atas de Registro de Preços
+
+Foi realizada uma coleta inicial de atas vigentes entre 2023 e setembro de
+2026 para 233 unidades administrativas conhecidas no recorte inicial.
+
+A execução recebeu 65.671 ocorrências e preservou 36.597 atas únicas. As
+29.074 ocorrências restantes eram repetições identificadas pelo número de
+controle da ata.
+
+Após a coleta completa das contratações, foi identificado um universo de pelo
+menos 2.097 unidades. Por isso, as atas atuais ainda representam um recorte
+parcial. Foi decidido não incluí-las no snapshot trimestral e realizar
+posteriormente uma coleta específica com todas as unidades descobertas.
+
+
+### Snapshot RAW e distribuição para a equipe
+
+Foi criado um snapshot imutável do primeiro trimestre de 2023, excluindo as
+atas e incluindo o PCA anual como contexto de planejamento.
+
+O snapshot foi validado com:
+
+- `PRAGMA integrity_check = ok`;
+- verificação de chaves estrangeiras;
+- restauração completa do dump SQL;
+- conferência das contagens;
+- hashes SHA-256.
+
+Foram gerados:
+
+- banco SQLite compactado;
+- dump SQL compactado;
+- inventário CSV;
+- arquivo de hashes.
+
+Os artefatos foram publicados em uma Release privada do GitHub com a tag
+`dados-raw-rj-2023-t1-v1`. A pasta local de exportações foi incluída no
+`.gitignore` para evitar o versionamento acidental dos bancos.
+
+### Qualidade e testes
+
+A suíte automatizada passou a possuir 69 testes executados com sucesso. O
+`corpus_manifest.yaml` foi validado com 27 fontes e nenhum erro.
+
+Também foram reforçados:
+
+- retry para falhas transitórias;
+- tratamento de HTTP 204 e 404 conforme o endpoint;
+- checkpoints por página ou alvo;
+- coleta paralela com entrega ordenada;
+- preservação do payload original;
+- detecção de registros novos, atualizados e inalterados;
+- auditoria das execuções com falha.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- analisar os endpoints e os payloads reais do PNCP;
+- revisar a estratégia de coleta por trimestre e modalidade;
+- diagnosticar timeouts e limites da API;
+- revisar a modelagem entre contratação, item, resultado, contrato e PCA;
+- estruturar os testes e as verificações de integridade;
+- organizar o snapshot RAW e sua distribuição por GitHub Release;
+
+### Resultado do encontro
+
+Ao final do encontro, foi consolidado um recorte RAW auditável do primeiro
+trimestre de 2023 e publicada uma versão imutável para compartilhamento com a
+equipe.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- retomar a coleta de `contratacao_item` a partir do checkpoint salvo;
+- coletar `resultado_item` para os novos itens;
+- coletar contratos do período complementar;
+- consultar empenhos dos novos contratos;
+- ampliar os PCAs para os anos de 2024, 2025 e 2026;
+- refazer a coleta de atas com todas as unidades descobertas;
+- iniciar a camada normalizada a partir do snapshot do primeiro trimestre;
+- criar snapshots e Releases separados para os próximos trimestres.
