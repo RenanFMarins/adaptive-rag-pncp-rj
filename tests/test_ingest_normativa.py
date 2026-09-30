@@ -192,3 +192,29 @@ def test_chunk_diz_se_repete_texto_da_parte_anterior(chunks):
     assert all("parte" in c["metadata"] for c in chunks)
     assert all(c["metadata"]["tem_overlap"] == (c["metadata"]["parte"] > 1)
                for c in chunks)
+
+# --- 8. Lixo de impressão não entra no corpus ----------------------------
+
+def test_cabecalho_de_impressao_do_sei_nao_entra():
+    # Editais salvos do SEI trazem, a cada página, a data/hora da impressão e
+    # o link com o número da página. Isso ia para o índice como se fosse
+    # conteúdo do edital.
+    texto = ("2 - DO OBJETO\n"
+             "21/02/2025, 08:48 SEI/ERJ - 90500290 - Edital de Licitação\n"
+             "https://sei.rj.gov.br/sei/controlador.php?acao=x 10/60\n"
+             "Aquisição de insumos laboratoriais.")
+
+    limpo = services.limpar(texto)
+
+    assert "SEI/ERJ" not in limpo
+    assert "sei.rj.gov.br" not in limpo
+    assert "DO OBJETO" in limpo
+    assert "insumos laboratoriais" in limpo
+
+
+def test_data_de_impressao_com_ano_de_dois_digitos_tambem_sai():
+    # Os decretos vêm com "13/09/24" e os editais com "21/02/2025".
+    limpo = services.limpar("13/09/24, 10:15 Leis Estaduais\nArt. 1 O texto vale.")
+
+    assert "10:15" not in limpo
+    assert "Art. 1 O texto vale." in limpo    

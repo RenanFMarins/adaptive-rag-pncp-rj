@@ -87,13 +87,17 @@ def extrair_texto(caminho: Path) -> str:
     return "".join(parser.partes)
 
 
-# Cabeçalho e rodapé que o navegador coloca em cada página quando o decreto é
-# salvo com Ctrl+P (nome do site, data/hora da impressão e o link). Se ficarem,
-# aparecem no meio dos artigos, a cada troca de página.
+# Cabeçalho e rodapé que o navegador coloca em cada página quando o documento é
+# salvo com Ctrl+P: nome do site ou do sistema, data/hora da impressão, o link e
+# o número da página. Se ficarem, aparecem no meio dos artigos e das cláusulas a
+# cada troca de página, e vão para o índice como se fossem conteúdo.
 LIXO_DE_IMPRESSAO = re.compile(
     r"^(Leis Estaduais|Rio de Janeiro"
-    r"|\d{2}/\d{2}/\d{2}, \d{2}:\d{2} .*"
-    r"|https?://leisestaduais\.com\.br/.*)$",
+    # Data e hora da impressão. O ano vem com 2 dígitos nos decretos
+    # ("13/09/24") e com 4 nos editais do SEI ("21/02/2025").
+    r"|\d{2}/\d{2}/\d{2,4}, \d{2}:\d{2} .*"
+    # Rodapé com o link e o número da página ("... 10/60")
+    r"|https?://(leisestaduais\.com\.br|sei\.rj\.gov\.br)/.*)$",
     re.M,
 )
 

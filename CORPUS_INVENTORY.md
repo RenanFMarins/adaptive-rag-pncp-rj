@@ -89,22 +89,26 @@ pausa de 5 segundos antes de marcar como `falhou`, e confere o início do arquiv
 
 | | |
 | --- | --- |
-| **Trechos (chunks) gerados** | 796 |
+| **Trechos (chunks) gerados** | 794 |
 | **Saída** | `data/processed/v1_editais_normativo.jsonl` |
 | **Comando** | `python -m app.modules.ingest.services --versao v1` |
 | **Critério** | lei e decretos: 1 artigo por chunk · editais: 1 cláusula por chunk |
-| **Conferência** | Lei 14.133 com os 194 artigos, em ordem e sem faltar nenhum |
+| **Conferência** | Lei 14.133 com os artigos 1 a 194 em ordem, mais o Art. 44-A incluído pela Lei 15.210/2025 |
 | **Sensibilidade** | CPF e telefone mascarados na ingestão (18 trechos marcados com `dados_pessoais`) |
-| **Overlap** | 283 trechos de continuação repetem os 200 caracteres finais da parte anterior (`tem_overlap`) |
-> O total passou de 784 para 796 trechos quando o overlap entrou. A causa é
-> mecânica: a cauda de 200 caracteres ocupa parte do limite de 4.000 de cada
-> trecho, então artigos e cláusulas longos passam a ser cortados um pouco mais
-> cedo e alguns geram uma parte a mais. O aumento (1,5%) está todo nos editais;
-> lei e decretos não mudaram, porque seus artigos raramente estouram o limite.
+| **Overlap** | 281 trechos de continuação repetem os 200 caracteres finais da parte anterior (`tem_overlap`) |
+| **Limpeza** | Cabeçalho e rodapé de impressão (data/hora, link e número da página) removidos antes da divisão |
+
+> O total foi de 784 para 796 trechos quando o overlap entrou: a cauda de 200
+> caracteres ocupa parte do limite de 4.000 de cada trecho, então artigos e
+> cláusulas longos passam a ser cortados um pouco mais cedo e alguns geram uma
+> parte a mais. Depois, a remoção do cabeçalho e do rodapé de impressão dos
+> editais do SEI (125 linhas, todas no edital de 60 páginas) trouxe o total
+> para 794: sem esse lixo, alguns trechos deixam de estourar o limite e não se
+> dividem mais.
 
 ### 3.5 Política de sensibilidade aplicada
 
-A varredura dos 796 trechos encontrou dados pessoais nos editais: 4 CPFs,
+A varredura dos 794 trechos encontrou dados pessoais nos editais: 4 CPFs,
 2 telefones e 38 ocorrências de e-mail. O número de e-mails subiu de 31 para 38
 com a entrada do overlap: alguns caem na região repetida entre uma parte e a
 seguinte e são contados nos dois trechos. Não são e-mails novos.
