@@ -25,6 +25,73 @@ from src.base_estruturada.pncp.repository import (
 )
 
 
+def aplicar_estado_docling(
+    manifestos: dict[str, list[dict[str, Any]]],
+    estado_docling: dict[str, Any],
+) -> None:
+    """Aplica o checkpoint Docling somente em memoria, para gerar chunks.
+
+    O manifesto original continua sendo a copia imutavel da resposta da API.
+    Esta funcao cria/atualiza ``processamentoTexto`` apenas no objeto que esta
+    em memoria durante esta execucao.
+    """
+
+    estados = estado_docling.get("documentos", {})
+    if not isinstance(estados, dict):
+        return
+
+    por_controle: dict[tuple[str, str], dict[str, Any]] = {}
+    for origem, manifesto in manifestos.items():
+        for entidade in manifesto:
+            if isinstance(entidade, dict) and entidade.get("numeroControlePNCP"):
+                por_controle[(origem, str(entidade["numeroControlePNCP"]))] = entidade
+
+    for item in estados.values():
+        if not isinstance(item, dict) or item.get("status") != "concluido":
+            continue
+        entidade = por_controle.get((
+            str(item.get("origem")),
+            str(item.get("numeroControlePNCP")),
+        ))
+        if entidade is None:
+            continue
+
+        for documento in entidade.get("documentos") or []:
+            if (
+                isinstance(documento, dict)
+                and documento.get("sequencialDocumento") == item.get("sequencialDocumento")
+            ):
+                registros = documento.setdefault("processamentoTexto", [])
+                relativo = str(item.get("caminhoFonteRelativo") or "")
+                registro = next(
+                    (
+                        atual for atual in registros
+                        if atual.get("caminhoFonteRelativo") == relativo
+                    ),
+                    None,
+                )
+                if registro is None:
+                    registro = {
+                        "origem": item.get("origem"),
+                        "numeroControlePNCP": item.get("numeroControlePNCP"),
+                        "sequencialDocumento": item.get("sequencialDocumento"),
+                        "tipoFonte": item.get("tipoFonte"),
+                        "caminhoFonteRelativo": relativo,
+                    }
+                    registros.append(registro)
+                registro["docling"] = {
+                    "status": "concluida",
+                    "caminho": item.get("caminhoMarkdown"),
+                    "quantidadeCaracteres": item.get("quantidadeCaracteres"),
+                    "executadoEm": item.get("atualizadoEm"),
+                }
+                registro["textoAtivo"] = {
+                    "origem": "docling",
+                    "caminho": item.get("caminhoMarkdown"),
+                }
+                break
+
+
 def _indice_por_controle(registros: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {
         str(registro["numeroControlePNCP"]): registro
@@ -166,6 +233,15 @@ if __name__ == "__main__":
             ),
         ),
     }
+    # O checkpoint do Colab e' uma camada separada do manifesto original.
+    # Aplicamos seus Markdown apenas em memoria para esta geracao de chunks.
+    estado_docling = carregar_json(
+        CAMINHOS["checkpoint_extracao_docling"],
+        padrao={"documentos": {}},
+    )
+    if not isinstance(estado_docling, dict):
+        raise RuntimeError("Checkpoint de extracao Docling invalido.")
+    aplicar_estado_docling(manifestos, estado_docling)
     bases = {
         "contratos": carregar_json(CAMINHOS["contratos"], padrao=[]),
         "contratacoes": carregar_json(CAMINHOS["contratacoes"], padrao=[]),

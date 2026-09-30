@@ -1,0 +1,793 @@
+{
+  "entidades": {
+    "29138286000158-1-000119/2025": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:46.505943+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "29138286000158-1-000125/2025": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:46.541551+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "29138286000158-1-000127/2025": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:46.587744+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-001563/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.074445+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-015448/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.115780+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-009055/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.159121+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-001564/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.204411+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33787094000140-1-000307/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.238443+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-009056/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.304584+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-009057/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:06:55.346046+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-015452/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:04.405629+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00444232000139-1-000849/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:04.442421+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "06977747000180-1-000103/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:04.484468+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000305-1-002970/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:04.522826+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-015455/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:04.568834+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394445000101-1-000190/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:15.079865+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-009061/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:15.116261+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28523215000106-1-000204/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:27.509865+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-015456/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:27.549982+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-009062/2026": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-09-30T12:07:39.114436+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    }
+  },
+  "documentos": {
+    "29138286000158-1-000119/2025|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\29138286000158-1-000119-2025\\EDITAL.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "29138286000158-1-000125/2025|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\29138286000158-1-000125-2025\\EDITAL.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "29138286000158-1-000127/2025|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\29138286000158-1-000127-2025\\EDITAL.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394544000185-1-001563/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001563/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394544000185-1-001563-2026\\Edital ID 57-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394544000185-1-001563/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001563/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001563/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001563/2026|6": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394544000185-1-001563-2026\\245-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394452000103-1-015448/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015448-2026\\Anexo I - Termo de Referencia.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394452000103-1-015448/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015448/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015448/2026|4": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015448-2026\\EDITAL_160327-000017-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009055/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\071. EDITAL_765720-000058-2026-Atualizado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\072._TR_765720-000018-2026_REVISADO_assinado_assinado_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\073._Apendice_A_DO_TR_ETP_765720-000106-2025-2_REVISADO_assinado-1_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\074. Apendice_B_do_TR_IMR.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\075. Apendice_C_TR_Plan_Custos_Form_Precos_REV12 ASSINADO.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\076._Apendice_D_TR_Composicao_ENCARGOS_PECAS_HNMD_REVISADO_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\077. Apendice_E_TR_Planilha_Servicos_Complementares_REV01 ASSINADO.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\078._Apendice_F_TR_Planilha_Precos_Consolidada_HNMD_REVISADA_01_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\079._Apendice_G_Relatorio_Itens_Licitados_REVISADA_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\080._Apendice_H_TR_Planilha_Form_Custo_Pecas_REVISADA_01_assinado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\081. Apendice_I_TR_PLANO_MANUTENCAO_ELEVADORES_REVISADO.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\082. Apendice_J_TR_PLANO_MANUTENCAO_CAMERAS_REVISADO.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\083. Anexo_II_TR_Plan_Custos_Form_Precos_REV12.LICITANTE.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\084. Anexo_III_Composição e Memorial de Cálculo Encargos.xls",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\085. Anexo_IV_Modelo_Planilha_Servicos_Complementares_Para_Licitantes.ods",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\086. Anexo_V_Modelo_Proposta_Preco_Consolidada_rev00.LICITANTE.ODS",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\087. Anexo_VI_Modelo_Planilha_Pecas_Para_Licitantes.ods",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\088. Anexo_VII_Modelo_Modelo_Vistoria_Abstencao.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\089. Anexo_VIII_Modelo_Contrato_Firmado.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\090. Anexo_IX_Minuta_do_Contrato.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\mimetype",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\manifest.rdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\meta.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\Thumbnails\\thumbnail.png",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\settings.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\META-INF\\manifest.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\content.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\styles.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\mimetype (documento 1)",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\manifest (documento 1).rdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\meta (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\Thumbnails\\thumbnail (documento 1).png",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\settings (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\META-INF\\manifest (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\content (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\styles (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\mimetype (documento 1)",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\Configurations2\\accelerator\\current.xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\manifest (documento 1).rdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\meta (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\content (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\Thumbnails\\thumbnail (documento 1).png",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\settings (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\META-INF\\manifest (documento 1).xml",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\styles (documento 1).xml"
+        ],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\085. Anexo_IV_Modelo_Planilha_Servicos_Complementares_Para_Licitantes.ods",
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\086. Anexo_V_Modelo_Proposta_Preco_Consolidada_rev00.LICITANTE.ODS",
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394502000144-1-009055-2026\\18. PE_131_2026 - Man_Elevadores\\087. Anexo_VI_Modelo_Planilha_Pecas_Para_Licitantes.ods"
+          ],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      }
+    },
+    "00394544000185-1-001564/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394544000185-1-001564-2026\\1 edital.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394544000185-1-001564/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001564/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001564/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-001564/2026|5": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394544000185-1-001564-2026\\302-2025.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "33787094000140-1-000307/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\33787094000140-1-000307-2026\\Edital de Pregao Eletronico SRP n 114637-13-2026 - Eventos (servicos).pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009056/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009056-2026\\Edital.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009056/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009056/2026|3": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009056-2026\\Anexo I - Termo de Referencia.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009057/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009057-2026\\Edital (Controle de Pragas).pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009057/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\EDITAL_160313-000004-2026.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\TR_160313-000023-2026.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\1. ETP 16031304_2026.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\ANEXO I - Modelo de declaracao de compromissos assumidos.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\ARP160313_000005_2026.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\CONTRATO160313_000002_2026.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\EDITAL_160313-000004-2026.pdf"
+        ],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      }
+    },
+    "00394452000103-1-015452/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|6": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\4-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394452000103-1-015452/2026|7": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|8": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015452/2026|9": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015452-2026\\23-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00444232000139-1-000849/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00444232000139-1-000849-2026\\EDITAL COMPLETO ASSINADO.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "06977747000180-1-000103/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\06977747000180-1-000103-2026\\Edital - PE.EPE.90.010-2026 (PE 109-2026).zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratacoes\\2026\\08\\06977747000180-1-000103-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\06977747000180-1-000103-2026\\Edital - PE.EPE.90.010-2026 (PE 109-2026)\\1. Edital - PE.EPE.90.010-2026 - Clicksign.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\06977747000180-1-000103-2026\\Edital - PE.EPE.90.010-2026 (PE 109-2026)\\2. Apenso B - TR-SRL-012-2026 - Modelo Planilha de Custos e Proposta.xlsx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\06977747000180-1-000103-2026\\Edital - PE.EPE.90.010-2026 (PE 109-2026)\\3. Aviso nº 02 - Clicksign.pdf"
+        ],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\06977747000180-1-000103-2026\\Edital - PE.EPE.90.010-2026 (PE 109-2026)\\2. Apenso B - TR-SRL-012-2026 - Modelo Planilha de Custos e Proposta.xlsx",
+              "formato": "XLSX"
+            }
+          ],
+          "avisos": []
+        }
+      }
+    },
+    "15126437000305-1-002970/2026|3": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\SEI_63824421_CONJUR___Edital_Pregao_Bens___RCC_3.0.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\SEI_63824421_CONJUR___Edital_Pregao_Bens___RCC_3.0.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\Descrição detalhada dos itens.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\SEI_63082216_RCC_3.0___Termo_de_Referencia___SRP_PPS.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\SEI_63281391_RCC_3.0___Ata_de_Registro_de_Precos___Bens.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\15126437000305-1-002970-2026\\SEI_63282119_RCC_3.0___Contrato_Continuado_Bens_Recorrentes_Minuta.pdf"
+        ],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      }
+    },
+    "00394452000103-1-015455/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|6": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015455-2026\\1. Edital 52_2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394452000103-1-015455/2026|7": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015455/2026|8": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015455-2026\\27-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394445000101-1-000190/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-1-000190/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394445000101-1-000190-2026\\EDITAL.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394445000101-1-000190/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-1-000190/2026|4": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394445000101-1-000190-2026\\TR.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009061/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009061/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009061-2026\\3 - EDITAL_740014-000020-2026 (2) SINAPI.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "28523215000106-1-000204/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|6": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|7": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000204/2026|8": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\12-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "28523215000106-1-000204/2026|9": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisorias - 1 Alteracao.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\1. Edital SRP PE 88-2026 - Sv. Divisórias, Forro, Marmoraria e Outros.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\10. Anexo VII-B - PE 88-2026 - Modelo de Declaração de Vistoria.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\11. Anexo VII-C - PE 88-2026 - Termo de Declaracao SEI.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\12. Anexo VIII - PE 88-2026 - Modelo de Termo de Preposto.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\13. Anexo IX - PE 88-2026 - Modelo de Ata de Registro de Preços.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\14. Anexo  X - PE 88-2026 - Modelo de Termo de Respons. sobre a Ata.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\2. Anexo - PE 88-2026 - Termo de Referência - 1ª Alteração.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\3. Anexo I - PE 88-2026 - Planilha estimativa de custos.xlsx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\4. Anexo II - PE 88-2026 - Planilha analítica de custos (exceto mobiliário).xlsx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\5. Anexo III - PE 88-2026 - BDI.xlsx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\6. Anexo IV - PE 88-2026 - Modelos de Móveis sob medida.pdf",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\7. Anexo V - PE 88-2026 - Endereços das unidades da UFF.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\8. Anexo VI - PE 88-2026 - IMR.xlsx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\9. Anexo VII-A - PE 88-2026 - Modelo de Proposta Comercial.docx",
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\~$ Edital SRP PE 88-2026 - Sv. Divisórias, Forro, Marmoraria e Outros.docx"
+        ],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\1. Edital SRP PE 88-2026 - Sv. Divisórias, Forro, Marmoraria e Outros.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\10. Anexo VII-B - PE 88-2026 - Modelo de Declaração de Vistoria.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\12. Anexo VIII - PE 88-2026 - Modelo de Termo de Preposto.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\13. Anexo IX - PE 88-2026 - Modelo de Ata de Registro de Preços.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\14. Anexo  X - PE 88-2026 - Modelo de Termo de Respons. sobre a Ata.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\3. Anexo I - PE 88-2026 - Planilha estimativa de custos.xlsx",
+              "formato": "XLSX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\4. Anexo II - PE 88-2026 - Planilha analítica de custos (exceto mobiliário).xlsx",
+              "formato": "XLSX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\5. Anexo III - PE 88-2026 - BDI.xlsx",
+              "formato": "XLSX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\7. Anexo V - PE 88-2026 - Endereços das unidades da UFF.docx",
+              "formato": "DOCX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\8. Anexo VI - PE 88-2026 - IMR.xlsx",
+              "formato": "XLSX"
+            },
+            {
+              "caminho": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratacoes\\2026\\08\\28523215000106-1-000204-2026\\Edital e Anexos - PE 88.2026 - Divisórias - 1ª Alteração\\9. Anexo VII-A - PE 88-2026 - Modelo de Proposta Comercial.docx",
+              "formato": "DOCX"
+            }
+          ],
+          "avisos": []
+        }
+      }
+    },
+    "28523215000106-1-000204/2026|10": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015456-2026\\EDITAL 00.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394452000103-1-015456/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|6": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|7": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|8": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|9": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-015456/2026|10": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394452000103-1-015456-2026\\18-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009062/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009062/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009062-2026\\7.0 - TR_741000-000079-2026_GN_RB.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009062/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009062/2026|4": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009062/2026|5": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-009062/2026|6": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratacoes\\2026\\08\\00394502000144-1-009062-2026\\13_-_EDITAL741000_000041_2026_assinado.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      }
+    },
+    "00394502000144-1-009062/2026|7": {
+      "download": {
+        "status": "pendente"
+      }
+    }
+  },
+  "schemaVersion": "estado_documentos_pncp_v1"
+}
