@@ -1,0 +1,1225 @@
+{
+  "entidades": {},
+  "documentos": {
+    "33781055000135-2-004268/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\2026\\08\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33781055000135-2-004268/2026",
+          "tipoFonte": "pdf_original",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+          "tituloDocumentoPncp": "Contrato 00047/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.txt",
+            "quantidadeCaracteres": 38409,
+            "quantidadeLinhas": 976,
+            "executadoEm": "2026-09-28T17:45:36.284186+00:00",
+            "tempoSegundos": 2.49
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.txt"
+          }
+        },
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33781055000135-2-004268/2026",
+          "tipoFonte": "pdf_original",
+          "caminhoFonte": "F:\\ecoa_projetos\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\2026\\08\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+          "tituloDocumentoPncp": "Contrato 00047/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "erro",
+            "erro": "ModuleNotFoundError: No module named 'pypdf'",
+            "executadoEm": "2026-09-30T18:59:28.387687+00:00",
+            "tempoSegundos": 0.0
+          },
+          "docling": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\docling\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.md",
+            "quantidadeCaracteres": 36852,
+            "quantidadeLinhas": 299,
+            "executadoEm": "2026-09-30T19:07:44.940372+00:00",
+            "tempoSegundos": 131.73
+          },
+          "textoAtivo": {
+            "origem": "docling",
+            "caminho": "data\\extracted\\docling\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.md"
+          }
+        }
+      ]
+    },
+    "42498733000148-2-000841/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\2026\\08\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+        "formato": "PDF",
+        "tentativas": 1
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "42498733000148-2-000841/2026",
+          "tipoFonte": "pdf_original",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+          "tituloDocumentoPncp": "CONTRATO092026INATOSassinado.pdf",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.txt",
+            "quantidadeCaracteres": 0,
+            "quantidadeLinhas": 48,
+            "executadoEm": "2026-09-28T17:45:36.334738+00:00",
+            "tempoSegundos": 0.05
+          },
+          "docling": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md",
+            "quantidadeCaracteres": 45923,
+            "quantidadeLinhas": 412,
+            "executadoEm": "2026-09-28T17:58:14.524992+00:00",
+            "tempoSegundos": 455.3
+          },
+          "textoAtivo": {
+            "origem": "docling",
+            "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+          }
+        },
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "42498733000148-2-000841/2026",
+          "tipoFonte": "pdf_original",
+          "caminhoFonte": "F:\\ecoa_projetos\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\2026\\08\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+          "tituloDocumentoPncp": "CONTRATO092026INATOSassinado.pdf",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "erro",
+            "erro": "ModuleNotFoundError: No module named 'pypdf'",
+            "executadoEm": "2026-09-30T18:59:28.387687+00:00",
+            "tempoSegundos": 0.0
+          },
+          "docling": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md",
+            "quantidadeCaracteres": 45923,
+            "quantidadeLinhas": 412,
+            "executadoEm": "2026-09-30T19:09:27.871393+00:00",
+            "tempoSegundos": 102.93
+          },
+          "textoAtivo": {
+            "origem": "docling",
+            "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+          }
+        }
+      ]
+    },
+    "42498733000148-2-000841/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\2026NE000123INATOS.pdf",
+        "formato": "PDF"
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "42498733000148-2-000841/2026",
+          "tipoFonte": "pdf_original",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\2026NE000123INATOS.pdf",
+          "tituloDocumentoPncp": "2026NE000123INATOS.pdf",
+          "sequencialDocumento": 2,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__2026NE000123INATOS.txt",
+            "quantidadeCaracteres": 2800,
+            "quantidadeLinhas": 58,
+            "executadoEm": "2026-09-28T17:45:36.411501+00:00",
+            "tempoSegundos": 0.08
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__2026NE000123INATOS.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000231/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\2026\\08\\33657248000189-2-000231-2026\\Contrato OCS No.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\2026\\08\\33657248000189-2-000231-2026",
+        "arquivos": [],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000231/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000231-2026\\268_2026 - Contrato Assinado.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0268/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000231-2026\\pdf_expandido_de_zip__268_2026 - Contrato Assinado.txt",
+            "quantidadeCaracteres": 190087,
+            "quantidadeLinhas": 4279,
+            "executadoEm": "2026-09-28T17:45:41.629659+00:00",
+            "tempoSegundos": 5.22
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000231-2026\\pdf_expandido_de_zip__268_2026 - Contrato Assinado.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000232/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\2026\\08\\33657248000189-2-000232-2026\\Contrato OCS No.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\2026\\08\\33657248000189-2-000232-2026",
+        "arquivos": [],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000232/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000232-2026\\269_ 2026 - Contrato Assinado.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0269/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000232-2026\\pdf_expandido_de_zip__269_ 2026 - Contrato Assinado.txt",
+            "quantidadeCaracteres": 115730,
+            "quantidadeLinhas": 2090,
+            "executadoEm": "2026-09-28T17:45:44.935909+00:00",
+            "tempoSegundos": 3.31
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000232-2026\\pdf_expandido_de_zip__269_ 2026 - Contrato Assinado.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000233/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\2026\\08\\33657248000189-2-000233-2026\\Contrato OCS No.zip",
+        "formato": "ZIP",
+        "tentativas": 1
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\2026\\08\\33657248000189-2-000233-2026",
+        "arquivos": [],
+        "zipsAninhados": {
+          "status": "concluida",
+          "zipsProcessados": [],
+          "arquivosOfficeIgnorados": [],
+          "avisos": []
+        }
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000233/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000233-2026\\270_2026 contrato.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0270/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000233-2026\\pdf_expandido_de_zip__270_2026 contrato.txt",
+            "quantidadeCaracteres": 114170,
+            "quantidadeLinhas": 2178,
+            "executadoEm": "2026-09-28T17:45:47.793372+00:00",
+            "tempoSegundos": 2.86
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000233-2026\\pdf_expandido_de_zip__270_2026 contrato.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000234/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000234-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026\\271_2026 Contrato.pdf"
+        ]
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000234/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026\\271_2026 Contrato.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0271/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000234-2026\\pdf_expandido_de_zip__271_2026 Contrato.txt",
+            "quantidadeCaracteres": 113156,
+            "quantidadeLinhas": 2054,
+            "executadoEm": "2026-09-28T17:45:50.472400+00:00",
+            "tempoSegundos": 2.68
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000234-2026\\pdf_expandido_de_zip__271_2026 Contrato.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000235/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000235-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026\\4400007122.pdf"
+        ]
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000235/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026\\4400007122.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0280/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000235-2026\\pdf_expandido_de_zip__4400007122.txt",
+            "quantidadeCaracteres": 2608,
+            "quantidadeLinhas": 48,
+            "executadoEm": "2026-09-28T17:45:50.522467+00:00",
+            "tempoSegundos": 0.05
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000235-2026\\pdf_expandido_de_zip__4400007122.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000236/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000236-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026\\4400007124.pdf"
+        ]
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000236/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026\\4400007124.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0282/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000236-2026\\pdf_expandido_de_zip__4400007124.txt",
+            "quantidadeCaracteres": 2596,
+            "quantidadeLinhas": 49,
+            "executadoEm": "2026-09-28T17:45:50.570428+00:00",
+            "tempoSegundos": 0.05
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000236-2026\\pdf_expandido_de_zip__4400007124.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000237/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000237-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026\\4400007126.pdf"
+        ]
+      },
+      "processamentoTexto": [
+        {
+          "origem": "contratos",
+          "numeroControlePNCP": "33657248000189-2-000237/2026",
+          "tipoFonte": "pdf_expandido_de_zip",
+          "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026\\4400007126.pdf",
+          "tituloDocumentoPncp": "Contrato OCS No. 0283/2026",
+          "sequencialDocumento": 1,
+          "rapido": {
+            "status": "concluida",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000237-2026\\pdf_expandido_de_zip__4400007126.txt",
+            "quantidadeCaracteres": 2726,
+            "quantidadeLinhas": 51,
+            "executadoEm": "2026-09-28T17:45:50.619824+00:00",
+            "tempoSegundos": 0.05
+          },
+          "docling": {
+            "status": "nao_necessario"
+          },
+          "textoAtivo": {
+            "origem": "rapido",
+            "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000237-2026\\pdf_expandido_de_zip__4400007126.txt"
+          }
+        }
+      ]
+    },
+    "33657248000189-2-000238/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000238-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000238-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000238-2026\\284_2026 contrato.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000239/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000239-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000239-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000239-2026\\4400007127.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000240/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000240-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000240-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000240-2026\\4400007128.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000241/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000241-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000241-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000241-2026\\4400007129.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000242/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000242-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000242-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000242-2026\\4400007117.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000243/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000243-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000243-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000243-2026\\4400007119.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000244/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000244-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000244-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000244-2026\\4400007130.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000245/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000245-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000245-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000245-2026\\4400007131.pdf"
+        ]
+      }
+    },
+    "33657248000189-2-000246/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000246-2026\\Contrato OCS No.zip",
+        "formato": "ZIP"
+      },
+      "extracao": {
+        "status": "extraido",
+        "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000246-2026",
+        "arquivos": [
+          "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000246-2026\\4400007132.pdf"
+        ]
+      }
+    },
+    "34906284000100-2-000008/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\34906284000100-2-000008-2026\\Contrato005.2026Gs.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394494000136-2-001481/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394494000136-2-001481-2026\\Contrato 00028-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "15126437000143-2-000675/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\15126437000143-2-000675-2026\\Contrato 00010-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "33781055000135-2-004269/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33781055000135-2-004269-2026\\OF 610-2026-SIMUNO CH.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-007041/2025|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-007041-2025\\CONTRATO_068_2025___ONKO_SOL__assinado.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-007041/2025|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-007041-2025\\2025NE01830 ONKOSOL.pdf",
+        "formato": "PDF"
+      }
+    },
+    "29076130000190-2-000136/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\29076130000190-2-000136-2026\\CONTRATON1502026Assinadosignedassinado01082026120832.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003335/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003335-2026\\2026NE00458 ASS BRASILEIRA DE ESTUDOS E PREVENCAO DO SUICIDIO.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003335/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003335-2026\\CTT_076_assinado.pdf",
+        "formato": "PDF"
+      }
+    },
+    "10779511000107-2-000425/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000425-2026\\Contrato 00072-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00444232000139-2-000909/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000909-2026\\2026NC000093. ATENDENDO A SC- 70.784. RESERVA DE RECURSO PARA PAGAMENTO DO SERVIÇO DE MANUTENÇÃO DE CATRACAS E CONTROLADORES DE ACESSO, COM O FORNECIMENTO DE SOFTWARE. CONSULTORIA02@LABORINFO.COM.BR.pdf",
+        "formato": "PDF"
+      }
+    },
+    "10779511000107-2-000426/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000426-2026\\Contrato 00073-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "33781055000135-2-004270/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33781055000135-2-004270-2026\\Contrato 2026NE000745.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00402552000126-2-000302/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00402552000126-2-000302-2026\\Contrato 00018-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "10779511000107-2-000427/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000427-2026\\Contrato 00074-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "28645786000113-2-000015/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\28645786000113-2-000015-2026\\202026  L T DAFLON TRANSPORTES LTDAassinado.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00444232000139-2-000910/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000910-2026\\AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010-2025 - SEI Nº 65509.001891-2026-93 - DFD Nº 628-2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00444232000139-2-000911/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000911-2026\\AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010-2025 - SEI Nº 65509.001891-2026-93 - DFD Nº 628-2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00444232000139-2-000912/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000912-2026\\AQUISIÇÃO DE MATERIAIS PARA MANUTENÇÃO INDUSTRIAL NAS AREAS FABRIS DA FE  -  SI 24  -  (DFD) Nº 706-2026-(SESG FE) DE 01-07-2026 - SIORG 319903.pdf",
+        "formato": "PDF"
+      }
+    },
+    "04892707001425-2-000007/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\04892707001425-2-000007-2026\\Contrato 00485-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008205/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008205-2026\\PREGÃO  91084-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008206/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008206-2026\\PREGÃO  91084-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008207/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008207-2026\\PREGÃO  90042-2025 - UASG- 254447 - MS-INSTITUTO FERNANDES FIGUEIRA-FIOCRUZ-RJ - --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008208/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008208-2026\\PREGÃO  90023-2025 - UASG- 160020 - HOSPITAL MILITAR DE ÁREA DE MANAUS --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008209/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008209-2026\\PREGÃO   90042-2025 - UASG- 254447 - MS-INSTITUTO FERNANDES FIGUEIRA-FIOCRUZ-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008210/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008210-2026\\PREGÃO- 90023-2026 - UASG- 250103 - HOSPITAL FEDERAL DE IPANEMA -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008211/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008211-2026\\PREGÃO   90023-2025 - UASG- 765720 - HOSPITAL NAVAL MARCÍLIO DIAS  - MM --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008212/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008212-2026\\PREGÃO- 91222-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008213/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008213-2026\\PREGÃO- 90036-2025 - UASG- 160399 - HOSPITAL MILITAR DE ÁREA DE PORTO ALEGRE -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "00394544000185-2-008214/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008214-2026\\PREGÃO- 90018-2025 - UASG- 160039 - HOSPITAL GERAL DE SALVADOR -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003336/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003336-2026\\NE 2026NE13505 MASTERCLASS.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003337/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003337-2026\\2026NE01533 MEDMACH SOLUCOES.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003338/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003338-2026\\3890 NOVA LINEA.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003338/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003338-2026\\CONTRATO 126 2026 NOVA LINEA 21797 2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003339/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003339-2026\\CONTRATO 125 2026 COTACAO 21797 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003339/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003339-2026\\3891 COTACAO.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003340/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003340-2026\\CONTRATO 124 2026 SAMTRONIC 21797 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003340/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003340-2026\\3892 SAMTRONIC.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003341/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003341-2026\\CONTRATO 114 2026 CRISTALIA 15354 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003341/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003341-2026\\3874 CRIS.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003342/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003342-2026\\CONTRATO 113 2026 MEDKA 15354 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003342/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003342-2026\\3872 MEDKA.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003343/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003343-2026\\CONTRATO 112 2026 SMART 15354 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003343/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003343-2026\\3873 SMART.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003344/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003344-2026\\CONTRATO 111 2026 NOVA LINEA 15354 2026.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003344/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003344-2026\\3871 NOVA.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003345/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003345-2026\\3869 MULT.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "42498600000171-2-003345/2026|2": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003345-2026\\CONTRATO 110 2026 MULTIFARMA 15354 2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "50634611000160-2-000017/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\50634611000160-2-000017-2026\\CONTRATO N 38.pdf",
+        "formato": "PDF"
+      }
+    },
+    "42498600000171-2-003346/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003346-2026\\NE 43779.pdf",
+        "formato": "PDF",
+        "codificacaoOrigem": "base64"
+      }
+    },
+    "33663683000116-2-000417/2026|1": {
+      "download": {
+        "status": "identificado",
+        "caminho": "data\\documents\\original\\contratos\\33663683000116-2-000417-2026\\Contrato 00028-2026.pdf",
+        "formato": "PDF"
+      }
+    },
+    "27792373000107-2-000166/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "27792373000107-2-000166/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003347/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003347/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28543098000142-2-000061/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28543098000142-2-000062/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "39754247000139-2-000009/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-2-001464/2024|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29172467000109-2-000117/2025|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42441758000105-2-000129/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29115441000110-2-000149/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003348/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "12995547000153-2-000056/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004272/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004273/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003349/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34143842000114-2-000035/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34143842000114-2-000036/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003350/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003351/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28615557000156-2-000012/2024|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "12995547000153-2-000057/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004274/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "02313673000127-2-000101/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-2-008215/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-2-000418/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42441758000105-2-000130/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-2-008216/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004275/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004276/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003352/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003352/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-2-004277/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29115474000160-2-000470/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-2-000665/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003353/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003353/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-2-000166/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29880739000117-2-000015/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "53970845000176-2-000006/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42441758000105-2-000131/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "12995547000153-2-000058/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-2-000419/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-2-008217/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28521748000159-2-000108/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-2-000167/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-2-005607/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "12292556000188-2-000006/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-2-001212/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-2-000420/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-2-000540/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498733000148-2-000842/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498733000148-2-000842/2026|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498733000148-2-000842/2026|3": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-2-000541/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-2-003354/2026|1": {
+      "download": {
+        "status": "pendente"
+      }
+    }
+  },
+  "schemaVersion": "estado_documentos_pncp_v1"
+}

@@ -1,0 +1,81 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+
+from sqlalchemy.orm import Session
+
+from app.core.database import create_sqlite_engine, init_db
+from app.modules.corpus.model import CorpusVersion
+from app.modules.documents.model import Document, DocumentChunk
+from src.retrieve import buscar_bm25, buscar_dense, reciprocal_rank_fusion, retrieve_hibrido
+
+
+def fake_embedding(texto: str) -> list[float]:
+    texto = texto.lower()
+    if "alpha" in texto:
+        return [1.0, 0.0]
+    if "beta" in texto:
+        return [0.0, 1.0]
+    return [0.5, 0.5]
+
+
+class HybridRetrievalTests(unittest.TestCase):
+    def setUp(self):
+        self.engine = create_sqlite_engine("sqlite:///:memory:")
+        init_db(self.engine)
+        self.session = Session(self.engine)
+        self.addCleanup(self.engine.dispose)
+        self.addCleanup(self.session.close)
+
+        corpus = CorpusVersion(version="retrieval-test", status="ready")
+        document = Document(
+            corpus_version=corpus,
+            source_file="fonte",
+            base_id="pncp_rj_estruturada",
+            doc_type="contrato",
+            sensitivity="publico",
+        )
+        self.chunks = [
+            DocumentChunk(document=document, chunk_id="c1", content="alpha alpha contrato"),
+            DocumentChunk(document=document, chunk_id="c2", content="beta compra"),
+            DocumentChunk(document=document, chunk_id="c3", content="gamma edital"),
+        ]
+        self.session.add_all(self.chunks)
+        self.session.commit()
+
+    def test_bm25_rankeia_por_conteudo(self):
+        resultado = buscar_bm25("alpha", self.chunks, top_k=2)
+        self.assertEqual(resultado[0][0], "c1")
+
+    def test_dense_rankeia_com_faiss(self):
+        with TemporaryDirectory() as pasta:
+            resultado = buscar_dense(
+                "beta",
+                self.chunks,
+                top_k=2,
+                cache_dir=Path(pasta),
+                embedding_fn=fake_embedding,
+            )
+        self.assertEqual(resultado[0][0], "c2")
+
+    def test_rrf_e_retrieval_hibrido(self):
+        fused = reciprocal_rank_fusion(
+            [[("c1", 10.0), ("c2", 1.0)], [("c2", 0.9), ("c1", 0.8)]],
+            k=60,
+        )
+        self.assertAlmostEqual(fused["c1"], fused["c2"])
+
+        with TemporaryDirectory() as pasta:
+            resultado = retrieve_hibrido(
+                self.session,
+                "alpha",
+                top_k=2,
+                cache_dir=Path(pasta),
+                embedding_fn=fake_embedding,
+            )
+        self.assertEqual(resultado[0].chunk_id, "c1")
+        self.assertEqual(resultado[0].metadata["base_id"], "pncp_rj_estruturada")
+
+
+if __name__ == "__main__":
+    unittest.main()

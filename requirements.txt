@@ -1,0 +1,5 @@
+faiss-cpu
+numpy
+openai
+python-dotenv
+rank-bm25
