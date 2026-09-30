@@ -1,0 +1,3547 @@
+[
+  {
+    "numeroControlePNCP": "33781055000135-2-004268/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4268,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33781055000135/contratos/2026/4268/arquivos/1",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33781055000135/contratos/2026/4268/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-01T10:48:00",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4268,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00047/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+          "formato": "PDF"
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33781055000135-2-004268/2026",
+            "tipoFonte": "pdf_original",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\33781055000135-2-004268-2026\\Contrato 00047-2026.pdf",
+            "tituloDocumentoPncp": "Contrato 00047/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.txt",
+              "quantidadeCaracteres": 38409,
+              "quantidadeLinhas": 976,
+              "executadoEm": "2026-09-28T17:45:36.284186+00:00",
+              "tempoSegundos": 2.49
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33781055000135-2-004268-2026\\pdf_original__Contrato 00047-2026.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:11:54.425509+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498733000148-2-000841/2026",
+    "cnpjOrgao": "42498733000148",
+    "anoContrato": 2026,
+    "sequencialContrato": 841,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/42498733000148/contratos/2026/841/arquivos/1",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/42498733000148/contratos/2026/841/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T18:11:29",
+        "cnpj": "42498733000148",
+        "anoCompra": 2026,
+        "sequencialCompra": 841,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO092026INATOSassinado.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+          "formato": "PDF"
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "42498733000148-2-000841/2026",
+            "tipoFonte": "pdf_original",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\CONTRATO092026INATOSassinado.pdf",
+            "tituloDocumentoPncp": "CONTRATO092026INATOSassinado.pdf",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.txt",
+              "quantidadeCaracteres": 0,
+              "quantidadeLinhas": 48,
+              "executadoEm": "2026-09-28T17:45:36.334738+00:00",
+              "tempoSegundos": 0.05
+            },
+            "docling": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md",
+              "quantidadeCaracteres": 45923,
+              "quantidadeLinhas": 412,
+              "executadoEm": "2026-09-28T17:58:14.524992+00:00",
+              "tempoSegundos": 455.3
+            },
+            "textoAtivo": {
+              "origem": "docling",
+              "caminho": "data\\extracted\\docling\\contratos\\42498733000148-2-000841-2026\\pdf_original__CONTRATO092026INATOSassinado.md"
+            }
+          }
+        ]
+      },
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/42498733000148/contratos/2026/841/arquivos/2",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/42498733000148/contratos/2026/841/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-02T18:11:31",
+        "cnpj": "42498733000148",
+        "anoCompra": 2026,
+        "sequencialCompra": 841,
+        "sequencialDocumento": 2,
+        "titulo": "2026NE000123INATOS.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\2026NE000123INATOS.pdf",
+          "formato": "PDF"
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "42498733000148-2-000841/2026",
+            "tipoFonte": "pdf_original",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\original\\contratos\\42498733000148-2-000841-2026\\2026NE000123INATOS.pdf",
+            "tituloDocumentoPncp": "2026NE000123INATOS.pdf",
+            "sequencialDocumento": 2,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__2026NE000123INATOS.txt",
+              "quantidadeCaracteres": 2800,
+              "quantidadeLinhas": 58,
+              "executadoEm": "2026-09-28T17:45:36.411501+00:00",
+              "tempoSegundos": 0.08
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\42498733000148-2-000841-2026\\pdf_original__2026NE000123INATOS.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:11:54.478349+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000231/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 231,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/231/arquivos/1",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/231/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:03:58",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 231,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0268/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000231-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000231-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000231-2026\\268_2026 - Contrato Assinado.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000231/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000231-2026\\268_2026 - Contrato Assinado.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0268/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000231-2026\\pdf_expandido_de_zip__268_2026 - Contrato Assinado.txt",
+              "quantidadeCaracteres": 190087,
+              "quantidadeLinhas": 4279,
+              "executadoEm": "2026-09-28T17:45:41.629659+00:00",
+              "tempoSegundos": 5.22
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000231-2026\\pdf_expandido_de_zip__268_2026 - Contrato Assinado.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:11:55.192235+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000232/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 232,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/232/arquivos/1",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/232/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:03:58",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 232,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0269/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000232-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000232-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000232-2026\\269_ 2026 - Contrato Assinado.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000232/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000232-2026\\269_ 2026 - Contrato Assinado.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0269/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000232-2026\\pdf_expandido_de_zip__269_ 2026 - Contrato Assinado.txt",
+              "quantidadeCaracteres": 115730,
+              "quantidadeLinhas": 2090,
+              "executadoEm": "2026-09-28T17:45:44.935909+00:00",
+              "tempoSegundos": 3.31
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000232-2026\\pdf_expandido_de_zip__269_ 2026 - Contrato Assinado.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:11:55.227937+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000233/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 233,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/233/arquivos/1",
+        "url": "https://pncp.gov.br:50743/pncp-api/v1/orgaos/33657248000189/contratos/2026/233/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:03:59",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 233,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0270/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000233-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000233-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000233-2026\\270_2026 contrato.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000233/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000233-2026\\270_2026 contrato.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0270/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000233-2026\\pdf_expandido_de_zip__270_2026 contrato.txt",
+              "quantidadeCaracteres": 114170,
+              "quantidadeLinhas": 2178,
+              "executadoEm": "2026-09-28T17:45:47.793372+00:00",
+              "tempoSegundos": 2.86
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000233-2026\\pdf_expandido_de_zip__270_2026 contrato.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:11:55.267784+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000234/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 234,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/234/arquivos/1",
+        "url": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/234/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:03:59",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 234,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0271/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000234-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026\\271_2026 Contrato.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000234/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000234-2026\\271_2026 Contrato.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0271/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000234-2026\\pdf_expandido_de_zip__271_2026 Contrato.txt",
+              "quantidadeCaracteres": 113156,
+              "quantidadeLinhas": 2054,
+              "executadoEm": "2026-09-28T17:45:50.472400+00:00",
+              "tempoSegundos": 2.68
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000234-2026\\pdf_expandido_de_zip__271_2026 Contrato.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:14:22.357128+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000235/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 235,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/235/arquivos/1",
+        "url": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/235/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:00",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 235,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0280/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000235-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026\\4400007122.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000235/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000235-2026\\4400007122.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0280/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000235-2026\\pdf_expandido_de_zip__4400007122.txt",
+              "quantidadeCaracteres": 2608,
+              "quantidadeLinhas": 48,
+              "executadoEm": "2026-09-28T17:45:50.522467+00:00",
+              "tempoSegundos": 0.05
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000235-2026\\pdf_expandido_de_zip__4400007122.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:14:22.392846+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000236/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 236,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/236/arquivos/1",
+        "url": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/236/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:01",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 236,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0282/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000236-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026\\4400007124.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000236/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000236-2026\\4400007124.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0282/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000236-2026\\pdf_expandido_de_zip__4400007124.txt",
+              "quantidadeCaracteres": 2596,
+              "quantidadeLinhas": 49,
+              "executadoEm": "2026-09-28T17:45:50.570428+00:00",
+              "tempoSegundos": 0.05
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000236-2026\\pdf_expandido_de_zip__4400007124.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:14:22.433296+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000237/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 237,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/237/arquivos/1",
+        "url": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/237/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:02",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 237,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0283/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000237-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026\\4400007126.pdf"
+          ]
+        },
+        "processamentoTexto": [
+          {
+            "origem": "contratos",
+            "numeroControlePNCP": "33657248000189-2-000237/2026",
+            "tipoFonte": "pdf_expandido_de_zip",
+            "caminhoFonte": "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000237-2026\\4400007126.pdf",
+            "tituloDocumentoPncp": "Contrato OCS No. 0283/2026",
+            "sequencialDocumento": 1,
+            "rapido": {
+              "status": "concluida",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000237-2026\\pdf_expandido_de_zip__4400007126.txt",
+              "quantidadeCaracteres": 2726,
+              "quantidadeLinhas": 51,
+              "executadoEm": "2026-09-28T17:45:50.619824+00:00",
+              "tempoSegundos": 0.05
+            },
+            "docling": {
+              "status": "nao_necessario"
+            },
+            "textoAtivo": {
+              "origem": "rapido",
+              "caminho": "data\\extracted\\rapido\\contratos\\33657248000189-2-000237-2026\\pdf_expandido_de_zip__4400007126.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:14:22.471593+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000238/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 238,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/238/arquivos/1",
+        "url": "https://pncp.gov.br:49898/pncp-api/v1/orgaos/33657248000189/contratos/2026/238/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:02",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 238,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0284/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000238-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000238-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000238-2026\\284_2026 contrato.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T12:14:22.512850+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000239/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 239,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/239/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/239/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:03",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 239,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0285/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000239-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000239-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000239-2026\\4400007127.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.113089+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000240/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 240,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/240/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/240/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:03",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 240,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0286/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000240-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000240-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000240-2026\\4400007128.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.156789+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000241/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 241,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/241/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/241/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:04",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 241,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0288/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000241-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000241-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000241-2026\\4400007129.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.197428+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000242/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 242,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/242/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/242/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:05",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 242,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0289/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000242-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000242-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000242-2026\\4400007117.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.231054+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000243/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 243,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/243/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/243/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:05",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 243,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0291/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000243-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000243-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000243-2026\\4400007119.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.267860+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000244/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 244,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/244/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/244/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:08",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 244,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0292/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000244-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000244-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000244-2026\\4400007130.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.305372+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000245/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 245,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/245/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/245/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:08",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 245,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0293/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000245-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000245-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000245-2026\\4400007131.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.339713+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33657248000189-2-000246/2026",
+    "cnpjOrgao": "33657248000189",
+    "anoContrato": 2026,
+    "sequencialContrato": 246,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/246/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33657248000189/contratos/2026/246/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T20:04:09",
+        "cnpj": "33657248000189",
+        "anoCompra": 2026,
+        "sequencialCompra": 246,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato OCS No. 0294/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33657248000189-2-000246-2026\\Contrato OCS No.zip",
+          "formato": "ZIP"
+        },
+        "extracao": {
+          "status": "extraido",
+          "caminho": "data\\documents\\expanded\\contratos\\33657248000189-2-000246-2026",
+          "arquivos": [
+            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\expanded\\contratos\\33657248000189-2-000246-2026\\4400007132.pdf"
+          ]
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.381537+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "34906284000100-2-000008/2026",
+    "cnpjOrgao": "34906284000100",
+    "anoContrato": 2026,
+    "sequencialContrato": 8,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/34906284000100/contratos/2026/8/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/34906284000100/contratos/2026/8/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-02T23:25:54",
+        "cnpj": "34906284000100",
+        "anoCompra": 2026,
+        "sequencialCompra": 8,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato005.2026Gs.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\34906284000100-2-000008-2026\\Contrato005.2026Gs.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.420864+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394494000136-2-001481/2026",
+    "cnpjOrgao": "00394494000136",
+    "anoContrato": 2026,
+    "sequencialContrato": 1481,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394494000136/contratos/2026/1481/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394494000136/contratos/2026/1481/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T00:16:54",
+        "cnpj": "00394494000136",
+        "anoCompra": 2026,
+        "sequencialCompra": 1481,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00028/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394494000136-2-001481-2026\\Contrato 00028-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.468080+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "15126437000143-2-000675/2026",
+    "cnpjOrgao": "15126437000143",
+    "anoContrato": 2026,
+    "sequencialContrato": 675,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/15126437000143/contratos/2026/675/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/15126437000143/contratos/2026/675/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T07:21:09",
+        "cnpj": "15126437000143",
+        "anoCompra": 2026,
+        "sequencialCompra": 675,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00010/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\15126437000143-2-000675-2026\\Contrato 00010-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.503617+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004269/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4269,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33781055000135/contratos/2026/4269/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33781055000135/contratos/2026/4269/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T08:49:51",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4269,
+        "sequencialDocumento": 1,
+        "titulo": "OF 610/2026-SIMUNO CH",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33781055000135-2-004269-2026\\OF 610-2026-SIMUNO CH.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.543272+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-007041/2025",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2025,
+    "sequencialContrato": 7041,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2025/7041/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2025/7041/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T08:55:03",
+        "cnpj": "42498600000171",
+        "anoCompra": 2025,
+        "sequencialCompra": 7041,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO_068_2025___ONKO_SOL__assinado.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-007041-2025\\CONTRATO_068_2025___ONKO_SOL__assinado.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2025/7041/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2025/7041/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T08:55:04",
+        "cnpj": "42498600000171",
+        "anoCompra": 2025,
+        "sequencialCompra": 7041,
+        "sequencialDocumento": 2,
+        "titulo": "2025NE01830 ONKOSOL.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-007041-2025\\2025NE01830 ONKOSOL.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.580504+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "29076130000190-2-000136/2026",
+    "cnpjOrgao": "29076130000190",
+    "anoContrato": 2026,
+    "sequencialContrato": 136,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/29076130000190/contratos/2026/136/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/29076130000190/contratos/2026/136/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:03:03",
+        "cnpj": "29076130000190",
+        "anoCompra": 2026,
+        "sequencialCompra": 136,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATON1502026Assinadosignedassinado01082026120832.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\29076130000190-2-000136-2026\\CONTRATON1502026Assinadosignedassinado01082026120832.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.614939+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003335/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3335,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3335/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3335/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:06:04",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3335,
+        "sequencialDocumento": 1,
+        "titulo": "2026NE00458 ASS BRASILEIRA DE ESTUDOS E PREVENCAO DO SUICIDIO.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003335-2026\\2026NE00458 ASS BRASILEIRA DE ESTUDOS E PREVENCAO DO SUICIDIO.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3335/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3335/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:06:05",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3335,
+        "sequencialDocumento": 2,
+        "titulo": "CTT_076_assinado.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003335-2026\\CTT_076_assinado.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.658743+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "10779511000107-2-000425/2026",
+    "cnpjOrgao": "10779511000107",
+    "anoContrato": 2026,
+    "sequencialContrato": 425,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/425/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/425/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:11:57",
+        "cnpj": "10779511000107",
+        "anoCompra": 2026,
+        "sequencialCompra": 425,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00072/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000425-2026\\Contrato 00072-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.693836+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00444232000139-2-000909/2026",
+    "cnpjOrgao": "00444232000139",
+    "anoContrato": 2026,
+    "sequencialContrato": 909,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/909/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/909/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:12:47",
+        "cnpj": "00444232000139",
+        "anoCompra": 2026,
+        "sequencialCompra": 909,
+        "sequencialDocumento": 1,
+        "titulo": "2026NC000093. ATENDENDO A SC: 70.784. RESERVA DE RECURSO PARA PAGAMENTO DO SERVIÇO DE MANUTENÇÃO DE CATRACAS E CONTROLADORES DE ACESSO, COM O FORNECIMENTO DE SOFTWARE. CONSULTORIA02@LABORINFO.COM.BR.",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000909-2026\\2026NC000093. ATENDENDO A SC- 70.784. RESERVA DE RECURSO PARA PAGAMENTO DO SERVIÇO DE MANUTENÇÃO DE CATRACAS E CONTROLADORES DE ACESSO, COM O FORNECIMENTO DE SOFTWARE. CONSULTORIA02@LABORINFO.COM.BR.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.734893+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "10779511000107-2-000426/2026",
+    "cnpjOrgao": "10779511000107",
+    "anoContrato": 2026,
+    "sequencialContrato": 426,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/426/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/426/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:17:07",
+        "cnpj": "10779511000107",
+        "anoCompra": 2026,
+        "sequencialCompra": 426,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00073/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000426-2026\\Contrato 00073-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.768365+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004270/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4270,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33781055000135/contratos/2026/4270/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33781055000135/contratos/2026/4270/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:21:37",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4270,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 2026NE000745",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33781055000135-2-004270-2026\\Contrato 2026NE000745.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.805146+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00402552000126-2-000302/2026",
+    "cnpjOrgao": "00402552000126",
+    "anoContrato": 2026,
+    "sequencialContrato": 302,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00402552000126/contratos/2026/302/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00402552000126/contratos/2026/302/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:22:04",
+        "cnpj": "00402552000126",
+        "anoCompra": 2026,
+        "sequencialCompra": 302,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00018/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00402552000126-2-000302-2026\\Contrato 00018-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.840151+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "10779511000107-2-000427/2026",
+    "cnpjOrgao": "10779511000107",
+    "anoContrato": 2026,
+    "sequencialContrato": 427,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/427/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/10779511000107/contratos/2026/427/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:23:16",
+        "cnpj": "10779511000107",
+        "anoCompra": 2026,
+        "sequencialCompra": 427,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00074/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\10779511000107-2-000427-2026\\Contrato 00074-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.876422+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28645786000113-2-000015/2026",
+    "cnpjOrgao": "28645786000113",
+    "anoContrato": 2026,
+    "sequencialContrato": 15,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/28645786000113/contratos/2026/15/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/28645786000113/contratos/2026/15/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:26:19",
+        "cnpj": "28645786000113",
+        "anoCompra": 2026,
+        "sequencialCompra": 15,
+        "sequencialDocumento": 1,
+        "titulo": "202026  L T DAFLON TRANSPORTES LTDAassinado",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\28645786000113-2-000015-2026\\202026  L T DAFLON TRANSPORTES LTDAassinado.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.910607+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00444232000139-2-000910/2026",
+    "cnpjOrgao": "00444232000139",
+    "anoContrato": 2026,
+    "sequencialContrato": 910,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/910/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/910/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:35:17",
+        "cnpj": "00444232000139",
+        "anoCompra": 2026,
+        "sequencialCompra": 910,
+        "sequencialDocumento": 1,
+        "titulo": "AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010/2025 - SEI Nº 65509.001891/2026-93 - DFD Nº 628/2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.010/2025 - 2026NC000159 - 2026RO000842",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000910-2026\\AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010-2025 - SEI Nº 65509.001891-2026-93 - DFD Nº 628-2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.945355+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00444232000139-2-000911/2026",
+    "cnpjOrgao": "00444232000139",
+    "anoContrato": 2026,
+    "sequencialContrato": 911,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/911/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/911/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:35:28",
+        "cnpj": "00444232000139",
+        "anoCompra": 2026,
+        "sequencialCompra": 911,
+        "sequencialDocumento": 1,
+        "titulo": "AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010/2025 - SEI Nº 65509.001891/2026-93 - DFD Nº 628/2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.010/2025 - 2026NC000159 - 2026RO000842",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000911-2026\\AQUISIÇÃO DE MATERIAIS DE MANUTENÇÃO CIVIL - SI 24 - PR 010-2025 - SEI Nº 65509.001891-2026-93 - DFD Nº 628-2026-SESG FE, DE 19JUN26 - SIORG 319885 - ATA 07.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:17.982611+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00444232000139-2-000912/2026",
+    "cnpjOrgao": "00444232000139",
+    "anoContrato": 2026,
+    "sequencialContrato": 912,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/912/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00444232000139/contratos/2026/912/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:35:35",
+        "cnpj": "00444232000139",
+        "anoCompra": 2026,
+        "sequencialCompra": 912,
+        "sequencialDocumento": 1,
+        "titulo": "AQUISIÇÃO DE MATERIAIS PARA MANUTENÇÃO INDUSTRIAL NAS AREAS FABRIS DA FE  -  SI 24  -  (DFD) Nº 706/2026?(SESG FE) DE 01/07/2026 - SIORG 319903.",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00444232000139-2-000912-2026\\AQUISIÇÃO DE MATERIAIS PARA MANUTENÇÃO INDUSTRIAL NAS AREAS FABRIS DA FE  -  SI 24  -  (DFD) Nº 706-2026-(SESG FE) DE 01-07-2026 - SIORG 319903.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.025037+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "04892707001425-2-000007/2026",
+    "cnpjOrgao": "04892707001425",
+    "anoContrato": 2026,
+    "sequencialContrato": 7,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/04892707001425/contratos/2026/7/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/04892707001425/contratos/2026/7/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:36:31",
+        "cnpj": "04892707001425",
+        "anoCompra": 2026,
+        "sequencialCompra": 7,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00485/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\04892707001425-2-000007-2026\\Contrato 00485-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.069276+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008205/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8205,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8205/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8205/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:37:47",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8205,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO  91084/2025 - UASG: 250052 - INSTITUTO NACIONAL DO CÂNCER/RJ //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056577976",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008205-2026\\PREGÃO  91084-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.114358+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008206/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8206,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8206/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8206/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:37:50",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8206,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO  91084/2025 - UASG: 250052 - INSTITUTO NACIONAL DO CÂNCER/RJ //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056577976",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008206-2026\\PREGÃO  91084-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.158971+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008207/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8207,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8207/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8207/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:37:52",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8207,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO  90042/2025 - UASG: 254447 - MS-INSTITUTO FERNANDES FIGUEIRA/FIOCRUZ/RJ - //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056578254",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008207-2026\\PREGÃO  90042-2025 - UASG- 254447 - MS-INSTITUTO FERNANDES FIGUEIRA-FIOCRUZ-RJ - --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.194757+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008208/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8208,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8208/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8208/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:37:55",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8208,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO  90023/2025 - UASG: 160020 - HOSPITAL MILITAR DE ÁREA DE MANAUS //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056776066",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008208-2026\\PREGÃO  90023-2025 - UASG- 160020 - HOSPITAL MILITAR DE ÁREA DE MANAUS --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.230520+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008209/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8209,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8209/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8209/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:01",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8209,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO   90042/2025 - UASG: 254447 - MS-INSTITUTO FERNANDES FIGUEIRA/FIOCRUZ/RJ //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056776045",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008209-2026\\PREGÃO   90042-2025 - UASG- 254447 - MS-INSTITUTO FERNANDES FIGUEIRA-FIOCRUZ-RJ --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.266263+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008210/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8210,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8210/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8210/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:04",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8210,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90023/2026 - UASG: 250103 - HOSPITAL FEDERAL DE IPANEMA // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056789541",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008210-2026\\PREGÃO- 90023-2026 - UASG- 250103 - HOSPITAL FEDERAL DE IPANEMA -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.303254+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008211/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8211,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8211/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8211/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:07",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8211,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO   90023/2025 - UASG: 765720 - HOSPITAL NAVAL MARCÍLIO DIAS  - MM //PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO //ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056789420",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008211-2026\\PREGÃO   90023-2025 - UASG- 765720 - HOSPITAL NAVAL MARCÍLIO DIAS  - MM --PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO --ENVIAR ARQUIVO XML PARA NFE@HGL.RJ.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.353191+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008212/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8212,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8212/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8212/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:10",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8212,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 91222/2025 - UASG: 250052 - INSTITUTO NACIONAL DO CÂNCER/RJ // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056789541",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008212-2026\\PREGÃO- 91222-2025 - UASG- 250052 - INSTITUTO NACIONAL DO CÂNCER-RJ -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.394119+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008213/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8213,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8213/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8213/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:12",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8213,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90036/2025 - UASG: 160399 - HOSPITAL MILITAR DE ÁREA DE PORTO ALEGRE // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056789541",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008213-2026\\PREGÃO- 90036-2025 - UASG- 160399 - HOSPITAL MILITAR DE ÁREA DE PORTO ALEGRE -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.434536+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008214/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8214,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8214/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/00394544000185/contratos/2026/8214/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:38:15",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8214,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90018/2025 - UASG: 160039 - HOSPITAL GERAL DE SALVADOR // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056789541",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\00394544000185-2-008214-2026\\PREGÃO- 90018-2025 - UASG- 160039 - HOSPITAL GERAL DE SALVADOR -- PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO -- ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.480927+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003336/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3336,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3336/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3336/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:40:21",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3336,
+        "sequencialDocumento": 1,
+        "titulo": "NE 2026NE13505 MASTERCLASS.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003336-2026\\NE 2026NE13505 MASTERCLASS.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.515631+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003337/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3337,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3337/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3337/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:41:40",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3337,
+        "sequencialDocumento": 1,
+        "titulo": "2026NE01533 MEDMACH SOLUCOES.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003337-2026\\2026NE01533 MEDMACH SOLUCOES.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.558025+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003338/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3338,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3338/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3338/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:48:27",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3338,
+        "sequencialDocumento": 1,
+        "titulo": "3890 NOVA LINEA.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003338-2026\\3890 NOVA LINEA.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3338/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3338/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:48:27",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3338,
+        "sequencialDocumento": 2,
+        "titulo": "CONTRATO 126 2026 NOVA LINEA 21797 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003338-2026\\CONTRATO 126 2026 NOVA LINEA 21797 2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.599274+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003339/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3339,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3339/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3339/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:48:56",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3339,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 125 2026 COTACAO 21797 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003339-2026\\CONTRATO 125 2026 COTACAO 21797 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3339/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3339/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:48:57",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3339,
+        "sequencialDocumento": 2,
+        "titulo": "3891 COTACAO.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003339-2026\\3891 COTACAO.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.657837+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003340/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3340,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3340/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3340/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:49:23",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3340,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 124 2026 SAMTRONIC 21797 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003340-2026\\CONTRATO 124 2026 SAMTRONIC 21797 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3340/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3340/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:49:24",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3340,
+        "sequencialDocumento": 2,
+        "titulo": "3892 SAMTRONIC.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003340-2026\\3892 SAMTRONIC.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.699266+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003341/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3341,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3341/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3341/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:50:07",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3341,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 114 2026 CRISTALIA 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003341-2026\\CONTRATO 114 2026 CRISTALIA 15354 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3341/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3341/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:50:08",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3341,
+        "sequencialDocumento": 2,
+        "titulo": "3874 CRIS.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003341-2026\\3874 CRIS.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.734067+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003342/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3342,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3342/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3342/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:50:31",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3342,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 113 2026 MEDKA 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003342-2026\\CONTRATO 113 2026 MEDKA 15354 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3342/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3342/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:50:32",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3342,
+        "sequencialDocumento": 2,
+        "titulo": "3872 MEDKA.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003342-2026\\3872 MEDKA.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.771384+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003343/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3343,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3343/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3343/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:51:03",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3343,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 112 2026 SMART 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003343-2026\\CONTRATO 112 2026 SMART 15354 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3343/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3343/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:51:04",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3343,
+        "sequencialDocumento": 2,
+        "titulo": "3873 SMART.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003343-2026\\3873 SMART.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.807381+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003344/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3344,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3344/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3344/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:51:28",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3344,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 111 2026 NOVA LINEA 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003344-2026\\CONTRATO 111 2026 NOVA LINEA 15354 2026.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3344/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3344/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:51:29",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3344,
+        "sequencialDocumento": 2,
+        "titulo": "3871 NOVA.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003344-2026\\3871 NOVA.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.844437+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003345/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3345,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3345/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3345/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:51:59",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3345,
+        "sequencialDocumento": 1,
+        "titulo": "3869 MULT.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003345-2026\\3869 MULT.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      },
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3345/arquivos/2",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3345/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T09:52:00",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3345,
+        "sequencialDocumento": 2,
+        "titulo": "CONTRATO 110 2026 MULTIFARMA 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003345-2026\\CONTRATO 110 2026 MULTIFARMA 15354 2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.878823+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "30892350000170-2-000019/2026",
+    "cnpjOrgao": "30892350000170",
+    "anoContrato": 2026,
+    "sequencialContrato": 19,
+    "documentos": [],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.912307+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "50634611000160-2-000017/2026",
+    "cnpjOrgao": "50634611000160",
+    "anoContrato": 2026,
+    "sequencialContrato": 17,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/50634611000160/contratos/2026/17/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/50634611000160/contratos/2026/17/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:57:22",
+        "cnpj": "50634611000160",
+        "anoCompra": 2026,
+        "sequencialCompra": 17,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO N 38",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\50634611000160-2-000017-2026\\CONTRATO N 38.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.950670+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003346/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3346,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3346/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/42498600000171/contratos/2026/3346/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:58:50",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3346,
+        "sequencialDocumento": 1,
+        "titulo": "NE 43779.pdf",
+        "tipoDocumentoNome": "Nota de Empenho",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\42498600000171-2-003346-2026\\NE 43779.pdf",
+          "formato": "PDF",
+          "codificacaoOrigem": "base64"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:18.997233+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33663683000116-2-000417/2026",
+    "cnpjOrgao": "33663683000116",
+    "anoContrato": 2026,
+    "sequencialContrato": 417,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33663683000116/contratos/2026/417/arquivos/1",
+        "url": "https://pncp.gov.br:50368/pncp-api/v1/orgaos/33663683000116/contratos/2026/417/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T09:59:14",
+        "cnpj": "33663683000116",
+        "anoCompra": 2026,
+        "sequencialCompra": 417,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00028/2026",
+        "tipoDocumentoNome": "Contrato",
+        "download": {
+          "status": "identificado",
+          "caminho": "data\\documents\\original\\contratos\\33663683000116-2-000417-2026\\Contrato 00028-2026.pdf",
+          "formato": "PDF"
+        }
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T15:32:19.045955+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "27792373000107-2-000166/2026",
+    "cnpjOrgao": "27792373000107",
+    "anoContrato": 2026,
+    "sequencialContrato": 166,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/27792373000107/contratos/2026/166/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/27792373000107/contratos/2026/166/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:00:20",
+        "cnpj": "27792373000107",
+        "anoCompra": 2026,
+        "sequencialCompra": 166,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO.pdf",
+        "tipoDocumentoNome": "Contrato"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/27792373000107/contratos/2026/166/arquivos/2",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/27792373000107/contratos/2026/166/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-10T15:31:09",
+        "cnpj": "27792373000107",
+        "anoCompra": 2026,
+        "sequencialCompra": 166,
+        "sequencialDocumento": 2,
+        "titulo": "ERRATACONTRATO1072026.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.775561+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003347/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3347,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3347/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3347/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:00:44",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3347,
+        "sequencialDocumento": 1,
+        "titulo": "CTT 69 2026.pdf",
+        "tipoDocumentoNome": "Contrato"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3347/arquivos/2",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3347/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T10:00:45",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3347,
+        "sequencialDocumento": 2,
+        "titulo": "Nota de Empenho.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.813876+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28543098000142-2-000061/2026",
+    "cnpjOrgao": "28543098000142",
+    "anoContrato": 2026,
+    "sequencialContrato": 61,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28543098000142/contratos/2026/61/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28543098000142/contratos/2026/61/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:05:54",
+        "cnpj": "28543098000142",
+        "anoCompra": 2026,
+        "sequencialCompra": 61,
+        "sequencialDocumento": 1,
+        "titulo": "NotadeEmpenho204.2026.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.850784+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28543098000142-2-000062/2026",
+    "cnpjOrgao": "28543098000142",
+    "anoContrato": 2026,
+    "sequencialContrato": 62,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28543098000142/contratos/2026/62/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28543098000142/contratos/2026/62/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:07:53",
+        "cnpj": "28543098000142",
+        "anoCompra": 2026,
+        "sequencialCompra": 62,
+        "sequencialDocumento": 1,
+        "titulo": "NotadeEmpenho204.2026.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.885286+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "39754247000139-2-000009/2026",
+    "cnpjOrgao": "39754247000139",
+    "anoContrato": 2026,
+    "sequencialContrato": 9,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/39754247000139/contratos/2026/9/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/39754247000139/contratos/2026/9/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:09:25",
+        "cnpj": "39754247000139",
+        "anoCompra": 2026,
+        "sequencialCompra": 9,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO072026DGITEM2Escaneado.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.926360+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33663683000116-2-001464/2024",
+    "cnpjOrgao": "33663683000116",
+    "anoContrato": 2024,
+    "sequencialContrato": 1464,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2024/1464/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2024/1464/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:09:41",
+        "cnpj": "33663683000116",
+        "anoCompra": 2024,
+        "sequencialCompra": 1464,
+        "sequencialDocumento": 1,
+        "titulo": "COMPRA DA RADIOLOGIA  ENTREGA NO ALMOXAR4IFADO DA MEDICINA RESPONSÁVEL PELO RECEBIMENTO: ELAINE SOARES - TELEFONE/WHATSAPP: 3938-6682",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:13.964003+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "29172467000109-2-000117/2025",
+    "cnpjOrgao": "29172467000109",
+    "anoContrato": 2025,
+    "sequencialContrato": 117,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29172467000109/contratos/2025/117/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29172467000109/contratos/2025/117/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:10:11",
+        "cnpj": "29172467000109",
+        "anoCompra": 2025,
+        "sequencialCompra": 117,
+        "sequencialDocumento": 1,
+        "titulo": "1681.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.000823+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42441758000105-2-000129/2026",
+    "cnpjOrgao": "42441758000105",
+    "anoContrato": 2026,
+    "sequencialContrato": 129,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/129/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/129/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:13:05",
+        "cnpj": "42441758000105",
+        "anoCompra": 2026,
+        "sequencialCompra": 129,
+        "sequencialDocumento": 1,
+        "titulo": "MAT. EXPEDIENTE SRP 2025/2026 - NIG",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.036246+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "29115441000110-2-000149/2026",
+    "cnpjOrgao": "29115441000110",
+    "anoContrato": 2026,
+    "sequencialContrato": 149,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29115441000110/contratos/2026/149/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29115441000110/contratos/2026/149/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:14:21",
+        "cnpj": "29115441000110",
+        "anoCompra": 2026,
+        "sequencialCompra": 149,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO_ADMINISTRATIVO_assinado_assinado_260803_085752.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.072510+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003348/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3348,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3348/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3348/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:15:01",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3348,
+        "sequencialDocumento": 1,
+        "titulo": "4232.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.110937+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "12995547000153-2-000056/2026",
+    "cnpjOrgao": "12995547000153",
+    "anoContrato": 2026,
+    "sequencialContrato": 56,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/56/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/56/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:17:34",
+        "cnpj": "12995547000153",
+        "anoCompra": 2026,
+        "sequencialCompra": 56,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 1.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.147792+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004272/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4272,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4272/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4272/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:18:09",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4272,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATAÇÃO DE LICENÇA DE SOFTWARE ADOBE ACROBAT PRO DC VIP TEAMS SINGLE APP PELO PERIODO DE 12 MESES // OF 2026 0500 (R) // PREGAO 90001/2024 // VIGENCIA: DE 07/08/2024 A 07/08/2026 // VALOR TOTAL DA OF R$ 1.239,07 // UASG 201057",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.182711+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004273/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4273,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4273/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4273/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:18:13",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4273,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATAÇÃO DE LICENÇA DE SOFTWARE ADOBE ACROBAT PRO DC VIP TEAMS SINGLE APP PELO PERIODO DE 12 MESES // OF 2026 0500 (R) // PREGAO 90001/2024 // VIGENCIA: DE 07/08/2024 A 07/08/2026 // VALOR TOTAL DA OF R$ 1.239,07 // UASG 201057",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.220202+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003349/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3349,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3349/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3349/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:18:17",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3349,
+        "sequencialDocumento": 1,
+        "titulo": "NE 2026NE13305.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.255486+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "34143842000114-2-000035/2026",
+    "cnpjOrgao": "34143842000114",
+    "anoContrato": 2026,
+    "sequencialContrato": 35,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/34143842000114/contratos/2026/35/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/34143842000114/contratos/2026/35/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:18:51",
+        "cnpj": "34143842000114",
+        "anoCompra": 2026,
+        "sequencialCompra": 35,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 2026NE400097",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.289396+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "34143842000114-2-000036/2026",
+    "cnpjOrgao": "34143842000114",
+    "anoContrato": 2026,
+    "sequencialContrato": 36,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/34143842000114/contratos/2026/36/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/34143842000114/contratos/2026/36/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:21:22",
+        "cnpj": "34143842000114",
+        "anoCompra": 2026,
+        "sequencialCompra": 36,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 2026NE400099",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.326263+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003350/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3350,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3350/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3350/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:22:42",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3350,
+        "sequencialDocumento": 1,
+        "titulo": "06375.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.364112+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003351/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3351,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3351/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3351/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:23:52",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3351,
+        "sequencialDocumento": 1,
+        "titulo": "06370.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.401100+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28615557000156-2-000012/2024",
+    "cnpjOrgao": "28615557000156",
+    "anoContrato": 2024,
+    "sequencialContrato": 12,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28615557000156/contratos/2024/12/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28615557000156/contratos/2024/12/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:24:55",
+        "cnpj": "28615557000156",
+        "anoCompra": 2024,
+        "sequencialCompra": 12,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO PABX NUVEM - PREFEITURA DE ITAOCARA",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.438391+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "12995547000153-2-000057/2026",
+    "cnpjOrgao": "12995547000153",
+    "anoContrato": 2026,
+    "sequencialContrato": 57,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/57/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/57/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:27:00",
+        "cnpj": "12995547000153",
+        "anoCompra": 2026,
+        "sequencialCompra": 57,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 452026 SAUDE.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.477488+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004274/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4274,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4274/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4274/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:27:25",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4274,
+        "sequencialDocumento": 1,
+        "titulo": "AQUISIÇÃO  MONITOR BASICO, VIDEO COM TECNOLOGIA LED, OF.21162",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.512738+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "02313673000127-2-000101/2026",
+    "cnpjOrgao": "02313673000127",
+    "anoContrato": 2026,
+    "sequencialContrato": 101,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/02313673000127/contratos/2026/101/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/02313673000127/contratos/2026/101/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:37:58",
+        "cnpj": "02313673000127",
+        "anoCompra": 2026,
+        "sequencialCompra": 101,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 2026NE000633",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.550442+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008215/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8215,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8215/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8215/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:40:23",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8215,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90127/2025 UASG: 250103 - HOSPITAL GERAL DE IPANEMA // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056584966",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.595064+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33663683000116-2-000418/2026",
+    "cnpjOrgao": "33663683000116",
+    "anoContrato": 2026,
+    "sequencialContrato": 418,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/418/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/418/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:41:48",
+        "cnpj": "33663683000116",
+        "anoCompra": 2026,
+        "sequencialCompra": 418,
+        "sequencialDocumento": 1,
+        "titulo": "A/C: SRA. WALDILENE TELEFONE: (21) 3938-2031 / (21) 99176-1197 HORARIO PARA RECEBIMENTO DE MATERIAIS: DAS 9H AS 15H.",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.631056+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42441758000105-2-000130/2026",
+    "cnpjOrgao": "42441758000105",
+    "anoContrato": 2026,
+    "sequencialContrato": 130,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/130/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/130/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:43:18",
+        "cnpj": "42441758000105",
+        "anoCompra": 2026,
+        "sequencialCompra": 130,
+        "sequencialDocumento": 1,
+        "titulo": "EQUIP. AUDIO E VIDEO ITA - IRP 06/2025 UFF (UASG 150182)",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.669352+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008216/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8216,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8216/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8216/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:43:55",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8216,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90010/2026 - UASG: 112408 - HOSPITAL DAS FORÇAS ARMADAS // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056584089",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.703413+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004275/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4275,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4275/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4275/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:45:28",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4275,
+        "sequencialDocumento": 1,
+        "titulo": "PARA ATENDER A AQUISIÇÃO DE SACO PLÁSTICO TRANSPARENTE EM ROLO  E  BOBINA DE SACO PLÁSTICOS - PROCESSO  25384.000634/2026-73",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.740382+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004276/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4276,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4276/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4276/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:49:41",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4276,
+        "sequencialDocumento": 1,
+        "titulo": "PARA ATENDER DESPESA COM AQUISIÇÃO DE ATADURA DE CREPOM 30CM X 1,80M E LANCETA PARA COLETA DE SANGUE. SEI Nº 25384.000644/2026-17",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.773022+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003352/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3352,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3352/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3352/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:49:57",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3352,
+        "sequencialDocumento": 1,
+        "titulo": "3870 JRG.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3352/arquivos/2",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3352/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T10:49:57",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3352,
+        "sequencialDocumento": 2,
+        "titulo": "CONTRATO 109 2026 JRG 15354 2026.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.807635+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33781055000135-2-004277/2026",
+    "cnpjOrgao": "33781055000135",
+    "anoContrato": 2026,
+    "sequencialContrato": 4277,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4277/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33781055000135/contratos/2026/4277/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:53:09",
+        "cnpj": "33781055000135",
+        "anoCompra": 2026,
+        "sequencialCompra": 4277,
+        "sequencialDocumento": 1,
+        "titulo": "OF 663/2026 - SIMUNO CH",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.841757+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "29115474000160-2-000470/2026",
+    "cnpjOrgao": "29115474000160",
+    "anoContrato": 2026,
+    "sequencialContrato": 470,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29115474000160/contratos/2026/470/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29115474000160/contratos/2026/470/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:54:05",
+        "cnpj": "29115474000160",
+        "anoCompra": 2026,
+        "sequencialCompra": 470,
+        "sequencialDocumento": 1,
+        "titulo": "Proc.SEI0264332026INEXIGIBILIDADEVALERIOTEEMPEMHO.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.875453+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394429000100-2-000665/2026",
+    "cnpjOrgao": "00394429000100",
+    "anoContrato": 2026,
+    "sequencialContrato": 665,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394429000100/contratos/2026/665/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394429000100/contratos/2026/665/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T10:55:31",
+        "cnpj": "00394429000100",
+        "anoCompra": 2026,
+        "sequencialCompra": 665,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00528/2026",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.910447+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003353/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3353,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3353/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3353/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:03:42",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3353,
+        "sequencialDocumento": 1,
+        "titulo": "2026NE01700 CONSULTRE CONSULTORIA E TREINAMENTO.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3353/arquivos/2",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3353/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T11:03:44",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3353,
+        "sequencialDocumento": 2,
+        "titulo": "075.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.957185+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394445000101-2-000166/2026",
+    "cnpjOrgao": "00394445000101",
+    "anoContrato": 2026,
+    "sequencialContrato": 166,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394445000101/contratos/2026/166/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394445000101/contratos/2026/166/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:09:38",
+        "cnpj": "00394445000101",
+        "anoCompra": 2026,
+        "sequencialCompra": 166,
+        "sequencialDocumento": 1,
+        "titulo": "VALOR QUE SE EMPENHA PARA ATENDER AQUISIÇÃO DE INSUMOS  (COLAS, PAPÉIS, BOTÕES,  ENTRE OUTROS), PARA ATENDIMENTO DAS NECESSIDADES DA DIVISÃO DE DESENVOLVIMENTO E PRODUÇÃO DE MATERIAL ESPECIALIZADO (DPME) DO DEPARTAMENTO TÉCNICO ESPECIALIZADO DO IBC,",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:14.995123+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "29880739000117-2-000015/2026",
+    "cnpjOrgao": "29880739000117",
+    "anoContrato": 2026,
+    "sequencialContrato": 15,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29880739000117/contratos/2026/15/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/29880739000117/contratos/2026/15/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:10:29",
+        "cnpj": "29880739000117",
+        "anoCompra": 2026,
+        "sequencialCompra": 15,
+        "sequencialDocumento": 1,
+        "titulo": "contrato_011_2026_elevador_vile_construco.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.032629+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "53970845000176-2-000006/2026",
+    "cnpjOrgao": "53970845000176",
+    "anoContrato": 2026,
+    "sequencialContrato": 6,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/53970845000176/contratos/2026/6/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/53970845000176/contratos/2026/6/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:12:32",
+        "cnpj": "53970845000176",
+        "anoCompra": 2026,
+        "sequencialCompra": 6,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO ADMINISTRATIVO N 532026 PA N 1096",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.068037+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42441758000105-2-000131/2026",
+    "cnpjOrgao": "42441758000105",
+    "anoContrato": 2026,
+    "sequencialContrato": 131,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/131/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42441758000105/contratos/2026/131/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:12:37",
+        "cnpj": "42441758000105",
+        "anoCompra": 2026,
+        "sequencialCompra": 131,
+        "sequencialDocumento": 1,
+        "titulo": "MATERIAIS AUDIO E VIDEO ITA - IRP 06/2025 UFF (UASG 150182)",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.104878+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "12995547000153-2-000058/2026",
+    "cnpjOrgao": "12995547000153",
+    "anoContrato": 2026,
+    "sequencialContrato": 58,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/58/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12995547000153/contratos/2026/58/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:14:55",
+        "cnpj": "12995547000153",
+        "anoCompra": 2026,
+        "sequencialCompra": 58,
+        "sequencialDocumento": 1,
+        "titulo": "CONTRATO 2.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.141341+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33663683000116-2-000419/2026",
+    "cnpjOrgao": "33663683000116",
+    "anoContrato": 2026,
+    "sequencialContrato": 419,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/419/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/419/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:23:20",
+        "cnpj": "33663683000116",
+        "anoCompra": 2026,
+        "sequencialCompra": 419,
+        "sequencialDocumento": 1,
+        "titulo": "A/C: SRA. WALDILENE TELEFONE: (21) 3938-2031 / (21) 99176-1197 HORARIO PARA RECEBIMENTO DE MATERIAIS: DAS 9H AS 15H.",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.179851+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394544000185-2-008217/2026",
+    "cnpjOrgao": "00394544000185",
+    "anoContrato": 2026,
+    "sequencialContrato": 8217,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8217/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394544000185/contratos/2026/8217/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:40:22",
+        "cnpj": "00394544000185",
+        "anoCompra": 2026,
+        "sequencialCompra": 8217,
+        "sequencialDocumento": 1,
+        "titulo": "PREGÃO: 90076/2025 - UASG: 160322   HOSPITAL CENTRAL DO EXÉRCITO // PRAZO DE VALIDADE MINIMA DO PRODUTO DE 1 ANO // ENVIAR ARQUIVO XML PARA NFE@HGL.SAUDE.GOV.BR //AUTORIZAÇÃO DO ORDENADOR DE DESPESA DOC SEI: 0056583679",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.220808+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28521748000159-2-000108/2026",
+    "cnpjOrgao": "28521748000159",
+    "anoContrato": 2026,
+    "sequencialContrato": 108,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28521748000159/contratos/2026/108/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28521748000159/contratos/2026/108/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:40:44",
+        "cnpj": "28521748000159",
+        "anoCompra": 2026,
+        "sequencialCompra": 108,
+        "sequencialDocumento": 1,
+        "titulo": "ContratoNiteriCampe.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.256713+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394445000101-2-000167/2026",
+    "cnpjOrgao": "00394445000101",
+    "anoContrato": 2026,
+    "sequencialContrato": 167,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394445000101/contratos/2026/167/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394445000101/contratos/2026/167/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:41:15",
+        "cnpj": "00394445000101",
+        "anoCompra": 2026,
+        "sequencialCompra": 167,
+        "sequencialDocumento": 1,
+        "titulo": "VALOR QUE SE EMPENHA PARA ATENDER OFÍCIO Nº 003/2026/DMP/DADM DE 14 DE ABRIL DE 2026, REFERENTE  AQUISIÇÃO DE MATERIAL DE CONSUMO PARA EXPEDIENTE, VISANDO ATENDER A DEMANDA DO(A) DIVISÃO DE MATERIAL E PATRIMÔNIO, E DEMAIS SETORES DO IBC (GARRAFA TÉRM",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.292656+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394452000103-2-005607/2026",
+    "cnpjOrgao": "00394452000103",
+    "anoContrato": 2026,
+    "sequencialContrato": 5607,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394452000103/contratos/2026/5607/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394452000103/contratos/2026/5607/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:48:24",
+        "cnpj": "00394452000103",
+        "anoCompra": 2026,
+        "sequencialCompra": 5607,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00006/2026",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.327255+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "12292556000188-2-000006/2026",
+    "cnpjOrgao": "12292556000188",
+    "anoContrato": 2026,
+    "sequencialContrato": 6,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12292556000188/contratos/2026/6/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/12292556000188/contratos/2026/6/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:48:47",
+        "cnpj": "12292556000188",
+        "anoCompra": 2026,
+        "sequencialCompra": 6,
+        "sequencialDocumento": 1,
+        "titulo": "ctt_n_090_2026_1785768511.pdf",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.365699+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "00394502000144-2-001212/2026",
+    "cnpjOrgao": "00394502000144",
+    "anoContrato": 2026,
+    "sequencialContrato": 1212,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394502000144/contratos/2026/1212/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/00394502000144/contratos/2026/1212/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:49:31",
+        "cnpj": "00394502000144",
+        "anoCompra": 2026,
+        "sequencialCompra": 1212,
+        "sequencialDocumento": 1,
+        "titulo": "Contrato 00018/2026",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.399882+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "33663683000116-2-000420/2026",
+    "cnpjOrgao": "33663683000116",
+    "anoContrato": 2026,
+    "sequencialContrato": 420,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/420/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/33663683000116/contratos/2026/420/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:49:47",
+        "cnpj": "33663683000116",
+        "anoCompra": 2026,
+        "sequencialCompra": 420,
+        "sequencialDocumento": 1,
+        "titulo": "O RECEBIMENTO FICARÁ AOS CUIDADOS DE JÉSSICA MELO, TELEFONE/WHATSAPP: (21) 97273-039",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.438700+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28523215000106-2-000540/2026",
+    "cnpjOrgao": "28523215000106",
+    "anoContrato": 2026,
+    "sequencialContrato": 540,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28523215000106/contratos/2026/540/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28523215000106/contratos/2026/540/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:51:55",
+        "cnpj": "28523215000106",
+        "anoCompra": 2026,
+        "sequencialCompra": 540,
+        "sequencialDocumento": 1,
+        "titulo": "SIA 20411 EGG",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.476872+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498733000148-2-000842/2026",
+    "cnpjOrgao": "42498733000148",
+    "anoContrato": 2026,
+    "sequencialContrato": 842,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:53:54",
+        "cnpj": "42498733000148",
+        "anoCompra": 2026,
+        "sequencialCompra": 842,
+        "sequencialDocumento": 1,
+        "titulo": "SEI5114968ContratoAdministrativo20.pdf",
+        "tipoDocumentoNome": "Contrato"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/2",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/2",
+        "dataPublicacaoPncp": "2026-08-03T11:53:55",
+        "cnpj": "42498733000148",
+        "anoCompra": 2026,
+        "sequencialCompra": 842,
+        "sequencialDocumento": 2,
+        "titulo": "Extrato.pdf",
+        "tipoDocumentoNome": "Outros Documentos"
+      },
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/3",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498733000148/contratos/2026/842/arquivos/3",
+        "dataPublicacaoPncp": "2026-08-03T11:53:56",
+        "cnpj": "42498733000148",
+        "anoCompra": 2026,
+        "sequencialCompra": 842,
+        "sequencialDocumento": 3,
+        "titulo": "4300012026NE000289ECOLONIA.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.526060+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "28523215000106-2-000541/2026",
+    "cnpjOrgao": "28523215000106",
+    "anoContrato": 2026,
+    "sequencialContrato": 541,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28523215000106/contratos/2026/541/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/28523215000106/contratos/2026/541/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:56:05",
+        "cnpj": "28523215000106",
+        "anoCompra": 2026,
+        "sequencialCompra": 541,
+        "sequencialDocumento": 1,
+        "titulo": "SIACOMPRAS 20252 IME, AQUISIÇÃO DE APARELHO DE AR CONDICIONADO",
+        "tipoDocumentoNome": "Contrato"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.571547+00:00",
+      "erro": null
+    }
+  },
+  {
+    "numeroControlePNCP": "42498600000171-2-003354/2026",
+    "cnpjOrgao": "42498600000171",
+    "anoContrato": 2026,
+    "sequencialContrato": 3354,
+    "documentos": [
+      {
+        "uri": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3354/arquivos/1",
+        "url": "https://pncp.gov.br:50205/pncp-api/v1/orgaos/42498600000171/contratos/2026/3354/arquivos/1",
+        "dataPublicacaoPncp": "2026-08-03T11:56:38",
+        "cnpj": "42498600000171",
+        "anoCompra": 2026,
+        "sequencialCompra": 3354,
+        "sequencialDocumento": 1,
+        "titulo": "2026NE01678 HOSPINOVA.pdf",
+        "tipoDocumentoNome": "Nota de Empenho"
+      }
+    ],
+    "listagem": {
+      "status": "concluida",
+      "consultadaEm": "2026-09-27T19:48:15.605860+00:00",
+      "erro": null
+    }
+  }
+]

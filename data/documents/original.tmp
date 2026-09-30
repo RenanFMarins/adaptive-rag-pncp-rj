@@ -16,16 +16,8 @@
         "titulo": "Contrato OCS No. 0226/2021",
         "tipoDocumentoNome": "Contrato",
         "download": {
-          "status": "identificado",
-          "caminho": "data\\documents\\original\\33657248000189-2-000001-2021\\documento_1.zip",
-          "formato": "ZIP"
-        },
-        "extracao": {
-          "status": "extraido",
-          "caminho": "data\\documents\\extracted\\33657248000189-2-000001-2021\\documento_1",
-          "arquivos": [
-            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\extracted\\33657248000189-2-000001-2021\\documento_1\\226_2021 Aditivo epistolar 02 - sucessão contratual.pdf"
-          ]
+          "status": "baixado",
+          "caminho": "data\\documents\\original\\33657248000189-2-000001-2021\\documento_1.bin"
         }
       }
     ]
@@ -47,16 +39,8 @@
         "titulo": "Contrato OCS No. 0344/2026",
         "tipoDocumentoNome": "Contrato",
         "download": {
-          "status": "identificado",
-          "caminho": "data\\documents\\original\\33657248000189-2-000308-2026\\documento_1.zip",
-          "formato": "ZIP"
-        },
-        "extracao": {
-          "status": "extraido",
-          "caminho": "data\\documents\\extracted\\33657248000189-2-000308-2026\\documento_1",
-          "arquivos": [
-            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\extracted\\33657248000189-2-000308-2026\\documento_1\\0344_2026 contrato.pdf"
-          ]
+          "status": "baixado",
+          "caminho": "data\\documents\\original\\33657248000189-2-000308-2026\\documento_1.bin"
         }
       }
     ]
@@ -78,16 +62,8 @@
         "titulo": "Contrato OCS No. 0360/2026",
         "tipoDocumentoNome": "Contrato",
         "download": {
-          "status": "identificado",
-          "caminho": "data\\documents\\original\\33657248000189-2-000309-2026\\documento_1.zip",
-          "formato": "ZIP"
-        },
-        "extracao": {
-          "status": "extraido",
-          "caminho": "data\\documents\\extracted\\33657248000189-2-000309-2026\\documento_1",
-          "arquivos": [
-            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\extracted\\33657248000189-2-000309-2026\\documento_1\\0360_2026_Contrato.pdf"
-          ]
+          "status": "baixado",
+          "caminho": "data\\documents\\original\\33657248000189-2-000309-2026\\documento_1.bin"
         }
       }
     ]
@@ -109,16 +85,8 @@
         "titulo": "Contrato OCS No. 0361/2026",
         "tipoDocumentoNome": "Contrato",
         "download": {
-          "status": "identificado",
-          "caminho": "data\\documents\\original\\33657248000189-2-000310-2026\\documento_1.zip",
-          "formato": "ZIP"
-        },
-        "extracao": {
-          "status": "extraido",
-          "caminho": "data\\documents\\extracted\\33657248000189-2-000310-2026\\documento_1",
-          "arquivos": [
-            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\extracted\\33657248000189-2-000310-2026\\documento_1\\4400007221.pdf"
-          ]
+          "status": "baixado",
+          "caminho": "data\\documents\\original\\33657248000189-2-000310-2026\\documento_1.bin"
         }
       }
     ]
@@ -140,16 +108,8 @@
         "titulo": "Contrato OCS No. 0362/2026",
         "tipoDocumentoNome": "Contrato",
         "download": {
-          "status": "identificado",
-          "caminho": "data\\documents\\original\\33657248000189-2-000311-2026\\documento_1.zip",
-          "formato": "ZIP"
-        },
-        "extracao": {
-          "status": "extraido",
-          "caminho": "data\\documents\\extracted\\33657248000189-2-000311-2026\\documento_1",
-          "arquivos": [
-            "C:\\Users\\Luciano\\Documents\\Residencia em Inteligencia Artificial e RAG\\projeto-final\\rag-grande-desafio-grupo03-contratacoes-publicas\\data\\documents\\extracted\\33657248000189-2-000311-2026\\documento_1\\4400007217.pdf"
-          ]
+          "status": "baixado",
+          "caminho": "data\\documents\\original\\33657248000189-2-000311-2026\\documento_1.bin"
         }
       }
     ]
