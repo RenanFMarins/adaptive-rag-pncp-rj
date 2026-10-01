@@ -405,10 +405,11 @@ if __name__ == "__main__":
     LIMITE_DOCUMENTOS = 500
     TIPOS_PERMITIDOS = TIPOS_TESTE_EXTRACAO
 
-    # Opções: criar_e_baixar, reprocessar_erros, gerar_zip.
+    # Opções: criar, criar_e_baixar, reprocessar_erros, gerar_zip.
+    # "criar" apenas congela a lista; é útil para preparar o trabalho da equipe.
     ACAO = "criar_e_baixar"
 
-    if ACAO == "criar_e_baixar":
+    if ACAO in {"criar", "criar_e_baixar"}:
         lote = criar_lote_documentos(
             periodo=PERIODO,
             nome_lote=NOME_LOTE,
@@ -416,8 +417,9 @@ if __name__ == "__main__":
             tipos_permitidos=TIPOS_PERMITIDOS,
         )
         print(f"Lote criado/carregado | documentos={lote['quantidadeSelecionada']}")
-        print(baixar_lote_documentos(PERIODO, NOME_LOTE))
-        print(gerar_zip_lote(PERIODO, NOME_LOTE))
+        if ACAO == "criar_e_baixar":
+            print(baixar_lote_documentos(PERIODO, NOME_LOTE))
+            print(gerar_zip_lote(PERIODO, NOME_LOTE))
     elif ACAO == "reprocessar_erros":
         print(baixar_lote_documentos(PERIODO, NOME_LOTE, somente_erros=True))
         print(gerar_zip_lote(PERIODO, NOME_LOTE))

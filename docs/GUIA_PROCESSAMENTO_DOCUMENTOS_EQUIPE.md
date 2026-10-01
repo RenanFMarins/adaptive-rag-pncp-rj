@@ -68,6 +68,17 @@ data/documents/expanded/         # conteúdo de ZIP/RAR expandido
 
 Não altere manualmente o manifesto retornado pelo PNCP. Status de download, expansão e erros ficam nos checkpoints.
 
+### Preparação antecipada pelo responsável pela base
+
+É permitido gerar a **listagem de documentos** de todos os meses antes de
+distribuir o trabalho. Essa etapa consulta o PNCP e salva somente os
+manifestos; ela não baixa PDFs, ZIPs ou RARs.
+
+Também é possível pré-criar lotes com `ACAO = "criar"` em
+`pipeline_lotes_documentos.py`. Isso congela, por exemplo, os 500 documentos
+de `lote_001` sem iniciar downloads. Outro integrante pode executar depois o
+mesmo `lote_001` com `ACAO = "criar_e_baixar"`.
+
 ## Etapa 2 — preparar o lote para o Colab
 
 Para um período, por exemplo `2026_08`:
