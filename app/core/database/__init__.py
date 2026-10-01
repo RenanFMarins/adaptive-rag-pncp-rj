@@ -1,24 +1,31 @@
-from __future__ import annotations
+from collections.abc import Generator
+
+from sqlalchemy.orm import Session
 
 from .connection import connect_database, database_path, get_connection
-from .init_db import init_db, initialize_database
+from .init_db import initialize_database
+from .orm import (
+    Base,
+    SessionLocal,
+    create_sqlite_engine,
+    engine,
+    init_db,
+)
 
 
-_LAZY_ORM_NAMES = {"Base", "SessionLocal", "engine", "get_db"}
-
-
-def __getattr__(name: str):
-    if name in _LAZY_ORM_NAMES:
-        from . import orm
-
-        return getattr(orm, name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 __all__ = [
     "Base",
     "SessionLocal",
     "connect_database",
+    "create_sqlite_engine",
     "database_path",
     "engine",
     "get_connection",
