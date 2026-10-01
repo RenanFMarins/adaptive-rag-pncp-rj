@@ -393,7 +393,7 @@ def processar_documentos(
 
 if __name__ == "__main__":
     # Mude somente ano e mês para fazer outra coleta mensal.
-    PERIODO = PeriodoColeta(ano=2026, mes=4)
+    PERIODO = PeriodoColeta(ano=2026, mes=1)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Valores seguros para teste. Para percorrer o mês inteiro, mude o
