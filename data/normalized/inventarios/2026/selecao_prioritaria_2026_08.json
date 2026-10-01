@@ -1,13 +1,13 @@
 {
   "schemaVersion": "selecao_documentos_pncp_v1",
-  "geradoEm": "2026-09-30T12:11:43.103053+00:00",
+  "geradoEm": "2026-10-01T08:50:33.116039+00:00",
   "periodo": "2026_08",
   "porOrigem": {
     "contratos": {
-      "entidadesNoManifesto": 20,
-      "documentosListados": 21,
-      "documentosSelecionados": 20,
-      "entidadesComDocumentoSelecionado": 20,
+      "entidadesNoManifesto": 520,
+      "documentosListados": 614,
+      "documentosSelecionados": 461,
+      "entidadesComDocumentoSelecionado": 455,
       "tiposSolicitados": [
         "Ata de Registro de Preços",
         "Contrato",
@@ -16,13 +16,15 @@
       ],
       "selecionadosPorTipo": {
         "Ata de Registro de Preços": 0,
-        "Contrato": 20,
+        "Contrato": 461,
         "Edital": 0,
         "Termo de Referência": 0
       },
       "todosPorTipo": {
-        "Contrato": 20,
-        "Nota de Empenho": 1
+        "Contrato": 461,
+        "Nota de Empenho": 108,
+        "Outros Documentos": 44,
+        "Termo Aditivo": 1
       }
     },
     "contratacoes": {
@@ -54,5 +56,5 @@
       }
     }
   },
-  "totalSelecionado": 51
+  "totalSelecionado": 492
 }
