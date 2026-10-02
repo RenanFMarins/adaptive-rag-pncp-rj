@@ -530,7 +530,94 @@ Os testes foram de 31 para 37.
 
 ---
 
-## Encontro 8 · DD/MM/AAAA
+## Encontro 8 · 02/10/2026
+
+### O que eu fiz hoje
+
+Hoje fechei o último item do enunciado que ainda faltava na nossa base
+normativa: os logs estruturados, do item 2.4.
+
+O `app/core/logging.py` estava no repositório com 0 bytes desde o começo do
+projeto. Como ele é o lugar que o README aponta e a nossa coleta e ingestão já
+estavam prontas para serem instrumentadas, escrevi. São cerca de 40 linhas: uma
+função que grava o evento em `logs/pipeline-AAAA-MM-DD.jsonl` e um gerenciador
+de contexto que mede a duração da etapa.
+
+Instrumentei as duas pontas. Cada execução recebe um `run_id`, que é o que
+amarra os eventos de uma mesma rodada — sem ele, como diz o enunciado, os logs
+são ruído. A coleta emite um evento de resumo mais um por documento; a
+ingestão, um por documento. Numa execução completa saem 27 eventos. Usei os
+stages `coleta` e `ingestao`.
+
+Duas decisões que tomei e que vale explicar: o campo `tokens` fica zerado
+nessas duas etapas, porque nenhuma delas chama o LLM, mas existe para que toda
+etapa tenha o mesmo formato; e o log não engole falha — uma URL morta vira um
+evento com status `falhou` sem abortar a coleta, e uma exceção vira status
+`erro` e continua subindo.
+
+Depois disso encontrei um bug nosso, e esse foi o aprendizado do dia.
+
+Eu tinha deixado anotada uma melhoria pequena: o `coletado_em` do inventário
+carimbava a hora da execução, então toda recoleta dizia que os documentos
+tinham sido coletados hoje, mesmo sem baixar nada. Fui corrigir isso, o que me
+obrigou a rodar o `fetch` duas vezes seguidas — e aí apareceu.
+
+Desde segunda-feira, quando a coleta passou a gravar uma ficha `.meta.json` ao
+lado de cada edital para pegar a data de vigência, a função que garante a
+idempotência procurava o documento com `glob(nome + ".*")` e pegava o primeiro
+resultado. Na segunda execução, ela encontrava a ficha antes do PDF. O
+inventário passava a registrar um arquivo de 223 bytes no lugar de um edital de
+560 KB, com o tipo e o hash errados.
+
+O que me marcou é que nada denunciava: o `volume_alvo` continuava batendo 13 e
+as falhas continuavam zero. Só apareceria lá na frente, quando alguém tentasse
+indexar e encontrasse um JSON minúsculo esperando um edital. E não foi
+encontrado por acaso — apareceu porque fui mexer num detalhe que parecia menor.
+
+Corrigi, travei com dois testes, e commitei separado da melhoria, para o bug
+ficar visível no histórico com a explicação de como nasceu.
+
+Ainda fiz a duração de cada download no log (o evento por documento saía sem
+latência, e agora o 422 intermitente do PNCP vai aparecer como uma latência
+alta em vez de sumir na média).
+
+Os testes foram de 37 para 50.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o módulo de log, instrumentar a coleta e a ingestão,
+  diagnosticar o bug da ficha e montar o roteiro de apresentação.
+- **O que eu conferi / mudei:** não aceitei a primeira conferência do log, que
+  mostrava os eventos com latência nula, e fui atrás de por quê — era porque
+  nada tinha sido baixado; apaguei um edital de propósito para provar num
+  download real, e o evento registrou 3.584 ms; decidi não inventar duração
+  para documento que já estava no disco, porque estimar número num log é pior
+  do que registrar que não se aplica.
+
+### O que travou
+
+- Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
+  máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
+  edital estavam sem data de vigência. A capacidade estava certa e testada; o
+  arquivo é que estava velho. Reprocessei e voltou para 794 de 794.
+
+### Próximo passo
+
+- Continuar o trabalho em grupo.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
+- **Travou:** Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
+  máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
+  edital estavam sem data de vigência. A capacidade estava certa e testada; o
+  arquivo é que estava velho. Reprocessei e voltou para 794 de 794.
+- **Próximo passo:** Continuar o trabalho em grupo.
+
+---
+
+## Encontro 9 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
@@ -538,9 +625,9 @@ Os testes foram de 31 para 37.
 
 ### Onde usei IA e o que mudei no resultado
 
-- **Ferramenta:**
-- **Para quê:**
-- **O que eu conferi / mudei:**
+- **Ferramenta:** 
+- **Para quê:** 
+- **O que eu conferi / mudei:** 
 
 ### O que travou
 
