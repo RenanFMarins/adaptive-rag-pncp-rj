@@ -98,6 +98,25 @@ def caminhos_do_periodo(periodo: PeriodoColeta) -> dict[str, Path]:
             f"data/checkpoints/documentos/contratacoes/{ano}/"
             f"estado_documentos_{identificador}.json"
         ),
+        # A extracao de texto tem checkpoint proprio. Assim, a resposta
+        # original da listagem do PNCP nunca recebe status de Docling.
+        "fila_extracao_docling": Path(
+            f"data/checkpoints/extracao/{ano}/"
+            f"fila_docling_{identificador}.json"
+        ),
+        "checkpoint_extracao_docling": Path(
+            f"data/checkpoints/extracao/{ano}/"
+            f"estado_docling_{identificador}.json"
+        ),
+        "relatorio_extracao_docling": Path(
+            f"data/normalized/inventarios/{ano}/"
+            f"extracao_docling_{identificador}.json"
+        ),
+        # Esta pasta e' portavel: pode ser gravada no Drive pelo Colab e
+        # depois copiada de volta sem alterar os caminhos dos metadados.
+        "pasta_textos_docling": Path(
+            f"data/extracted/docling/{ano}/{periodo.mes:02d}"
+        ),
     }
 
 
@@ -374,7 +393,7 @@ def processar_documentos(
 
 if __name__ == "__main__":
     # Mude somente ano e mês para fazer outra coleta mensal.
-    PERIODO = PeriodoColeta(ano=2026, mes=4)
+    PERIODO = PeriodoColeta(ano=2026, mes=1)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Valores seguros para teste. Para percorrer o mês inteiro, mude o
