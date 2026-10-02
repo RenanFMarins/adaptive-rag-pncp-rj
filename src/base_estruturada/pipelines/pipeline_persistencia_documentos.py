@@ -9,6 +9,10 @@ from src.base_estruturada.pipelines.pipeline_documentos import (
     PeriodoColeta,
     caminhos_do_periodo,
 )
+from src.base_estruturada.pipelines.pipeline_chunks import (
+    aplicar_estado_docling,
+    carregar_estados_docling_do_periodo,
+)
 from src.base_estruturada.pncp.repository import (
     carregar_checkpoint_documentos,
     carregar_json,
@@ -58,6 +62,16 @@ if __name__ == "__main__":
             ),
         ),
     }
+    # Os manifestos preservam a resposta original do PNCP. Os resultados do
+    # Docling ficam em checkpoints separados, gerados por lote no Colab.
+    # Aplicamos esse estado somente em memoria para que ``textoAtivo`` aponte
+    # para os Markdown que devem ser persistidos no banco.
+    estado_docling, arquivos_estado = carregar_estados_docling_do_periodo(
+        PERIODO
+    )
+    aplicar_estado_docling(manifestos, estado_docling)
+    print(f"Checkpoints Docling encontrados: {len(arquivos_estado)}")
+
     if args.tipo in {"contratos", "contratacoes"}:
         manifestos = {args.tipo: manifestos[args.tipo]}
     bases = {
