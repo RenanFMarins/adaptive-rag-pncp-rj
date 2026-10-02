@@ -92,6 +92,36 @@ def aplicar_estado_docling(
                 break
 
 
+def carregar_estados_docling_do_periodo(
+    periodo: PeriodoColeta,
+) -> tuple[dict[str, Any], list[Path]]:
+    """Combina o checkpoint mensal legado e os checkpoints por lote.
+
+    O Docling é executado no Colab por lote, mas os chunks são gerados uma vez
+    por período no VS Code. Por isso esta função reúne todos os documentos
+    concluídos em ``estado_docling_<período>_lote_*.json``.
+    """
+
+    pasta = Path("data/checkpoints/extracao") / str(periodo.ano)
+    arquivos = []
+    legado = pasta / f"estado_docling_{periodo.identificador}.json"
+    if legado.is_file():
+        arquivos.append(legado)
+    arquivos.extend(sorted(
+        pasta.glob(f"estado_docling_{periodo.identificador}_lote_*.json")
+    ))
+
+    estado_combinado: dict[str, Any] = {"documentos": {}}
+    for caminho in arquivos:
+        estado = carregar_json(caminho, padrao={})
+        if not isinstance(estado, dict):
+            continue
+        documentos = estado.get("documentos")
+        if isinstance(documentos, dict):
+            estado_combinado["documentos"].update(documentos)
+    return estado_combinado, arquivos
+
+
 def _indice_por_controle(registros: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {
         str(registro["numeroControlePNCP"]): registro
@@ -235,12 +265,10 @@ if __name__ == "__main__":
     }
     # O checkpoint do Colab e' uma camada separada do manifesto original.
     # Aplicamos seus Markdown apenas em memoria para esta geracao de chunks.
-    estado_docling = carregar_json(
-        CAMINHOS["checkpoint_extracao_docling"],
-        padrao={"documentos": {}},
+    estado_docling, arquivos_estado = carregar_estados_docling_do_periodo(
+        PERIODO
     )
-    if not isinstance(estado_docling, dict):
-        raise RuntimeError("Checkpoint de extracao Docling invalido.")
+    print(f"Checkpoints Docling encontrados: {len(arquivos_estado)}")
     aplicar_estado_docling(manifestos, estado_docling)
     bases = {
         "contratos": carregar_json(CAMINHOS["contratos"], padrao=[]),
