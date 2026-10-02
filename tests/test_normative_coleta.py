@@ -206,3 +206,25 @@ def test_base_ainda_nao_coletada_nao_aparece_no_inventario(tmp_path, monkeypatch
                        .read_text(encoding="utf-8"))
 
     assert [b["base_id"] for b in dados["por_base"]] == [services.BASE_ID]
+
+# --- a ficha do PNCP não pode ser confundida com o documento ---------------
+
+def test_ficha_do_pncp_nao_e_confundida_com_o_documento(tmp_path):
+    # A coleta grava <nome>.meta.json ao lado do PDF. Na segunda execução, a
+    # ficha podia ser encontrada antes do documento e entrar no inventário no
+    # lugar dele, com o tamanho e o hash errados.
+    nome = "pncp_42498600000171_2025_921_arq1"
+    (tmp_path / f"{nome}.meta.json").write_text('{"data_publicacao": "2025-02-24"}')
+    (tmp_path / f"{nome}.pdf").write_bytes(b"%PDF-1.4 edital")
+
+    encontrado = services.ja_baixado(tmp_path, nome)
+
+    assert encontrado is not None
+    assert encontrado.suffix == ".pdf"
+
+
+def test_documento_que_so_tem_ficha_nao_conta_como_baixado(tmp_path):
+    nome = "pncp_42498600000171_2025_921_arq1"
+    (tmp_path / f"{nome}.meta.json").write_text('{"data_publicacao": "2025-02-24"}')
+
+    assert services.ja_baixado(tmp_path, nome) is None

@@ -96,8 +96,14 @@ def nome_do_arquivo(url: str) -> str:
 
 
 def ja_baixado(pasta: Path, nome: str) -> Path | None:
-    """Idempotência: procura o arquivo com qualquer extensão."""
-    encontrados = list(pasta.glob(nome + ".*"))
+    """
+    Idempotência: procura o documento com qualquer extensão.
+
+    Ignora o `<nome>.meta.json` gravado ao lado dos editais do PNCP. Sem isso,
+    na segunda coleta a ficha podia ser encontrada antes do PDF e entrar no
+    inventário no lugar do documento, com o tamanho e o hash errados.
+    """
+    encontrados = [p for p in pasta.glob(nome + ".*") if not p.name.endswith(".meta.json")]
     return encontrados[0] if encontrados else None
 
 
