@@ -37,6 +37,7 @@ def baixar_e_extrair_manifesto(
     limite_entidades: int | None,
     limite_documentos_por_entidade: int | None,
     somente_tipos_prioritarios: bool,
+    tipos_permitidos: set[str] | None = None,
 ) -> dict[str, int]:
     """Baixa novos documentos, identifica o formato e extrai apenas ZIPs."""
 
@@ -60,6 +61,7 @@ def baixar_e_extrair_manifesto(
         limite_contratos=limite_entidades,
         limite_documentos_por_contrato=limite_documentos_por_entidade,
         somente_tipos_prioritarios=somente_tipos_prioritarios,
+        tipos_permitidos=tipos_permitidos,
     )
     identificados = identificar_arquivos_do_manifesto(manifesto)
     extraidos = extrair_zips_do_manifesto(
@@ -100,8 +102,8 @@ if __name__ == "__main__":
 
     # Configuracao inicial de teste. None percorre tudo que ainda nao tiver
     # sido baixado no manifesto.
-    LIMITE_NOVOS_CONTRATOS = 50
-    LIMITE_NOVAS_CONTRATACOES = 0
+    LIMITE_NOVOS_CONTRATOS = 20
+    LIMITE_NOVAS_CONTRATACOES = 20
     LIMITE_DOCUMENTOS_POR_ENTIDADE = None
     if args.limite is not None:
         LIMITE_NOVOS_CONTRATOS = args.limite
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     if args.somente_tipos_prioritarios:
         SOMENTE_TIPOS_PRIORITARIOS = True
 
-    EXECUTAR_CONTRATOS = False
+    EXECUTAR_CONTRATOS = True
     EXECUTAR_CONTRATACOES = True
     if args.tipo == "contratos":
         EXECUTAR_CONTRATOS = True
