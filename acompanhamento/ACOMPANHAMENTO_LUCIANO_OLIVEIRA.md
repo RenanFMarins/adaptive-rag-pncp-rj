@@ -67,3 +67,13 @@ Também comecei a estruturar uma documentação com orientações sobre esse pro
 Além disso, dediquei parte do tempo à revisão da arquitetura do projeto, principalmente em relação ao fluxo de processamento da base que estou desenvolvendo. Fiz algumas modificações e testes buscando melhorar essa estrutura antes de integrar definitivamente as alterações ao projeto principal.
 
 Dessa forma, o trabalho de hoje ficou concentrado principalmente na refatoração do código, validação do fluxo, análise de desempenho e organização da arquitetura para posteriormente implementar essas melhorias no projeto.
+
+## Encontro 7 - 2026-10-02
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade à coleta e à extração dos documentos, utilizando o Google Colab para realizar o processamento. Também trabalhei na persistência dos dados de contratos e contratações referentes ao período de janeiro a agosto no banco estruturado.
+
+Com base na estrutura e nos códigos que já haviam sido desenvolvidos pela equipe, criei a tabela raw_asset e desenvolvi uma pipeline para realizar a persistência desses dados no banco. Para isso, adaptei e integrei o que já havia sido implementado pelos demais integrantes ao fluxo de contratos e contratações que estou desenvolvendo.
+
+Dessa forma, o trabalho de hoje ficou concentrado na continuidade da coleta e extração dos documentos e na estruturação do fluxo para armazenamento dos dados no banco estruturado.
