@@ -4,6 +4,7 @@ Esta etapa nao consulta contratos nem monta o manifesto: ela trabalha somente
 com os documentos que ja foram listados em ``pipeline_listagem_documentos``.
 """
 
+import argparse
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,11 @@ from src.base_estruturada.pncp.repository import (
     salvar_estado_documentos,
 )
 from src.base_estruturada.pncp.service import baixar_documentos_lista
+
+
+def _periodo(valor: str) -> PeriodoColeta:
+    ano, mes = valor.replace("-", "/").split("/", maxsplit=1)
+    return PeriodoColeta(ano=int(ano), mes=int(mes))
 
 
 def baixar_e_extrair_manifesto(
@@ -78,8 +84,20 @@ def baixar_e_extrair_manifesto(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Baixa documentos PNCP listados nos manifestos mensais."
+    )
+    parser.add_argument("--tipo", choices=["contratos", "contratacoes", "todos"])
+    parser.add_argument("--periodo")
+    parser.add_argument("--limite", type=int)
+    parser.add_argument("--limite-documentos-por-entidade", type=int)
+    parser.add_argument("--somente-tipos-prioritarios", action="store_true")
+    args = parser.parse_args()
+
     # Deve ser o mesmo mes ja usado na coleta e na listagem.
     PERIODO = PeriodoColeta(ano=2026, mes=8)
+    if args.periodo:
+        PERIODO = _periodo(args.periodo)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Configuracao inicial de teste. None percorre tudo que ainda nao tiver
@@ -87,13 +105,29 @@ if __name__ == "__main__":
     LIMITE_NOVOS_CONTRATOS = 20
     LIMITE_NOVAS_CONTRATACOES = 20
     LIMITE_DOCUMENTOS_POR_ENTIDADE = None
+    if args.limite is not None:
+        LIMITE_NOVOS_CONTRATOS = args.limite
+        LIMITE_NOVAS_CONTRATACOES = args.limite
+    if args.limite_documentos_por_entidade is not None:
+        LIMITE_DOCUMENTOS_POR_ENTIDADE = args.limite_documentos_por_entidade
 
     # False baixa todos os tipos listados, inclusive DWG e outros formatos.
     # O filtro para texto/FAISS sera aplicado somente em etapa futura.
     SOMENTE_TIPOS_PRIORITARIOS = False
+    if args.somente_tipos_prioritarios:
+        SOMENTE_TIPOS_PRIORITARIOS = True
 
     EXECUTAR_CONTRATOS = True
     EXECUTAR_CONTRATACOES = True
+    if args.tipo == "contratos":
+        EXECUTAR_CONTRATOS = True
+        EXECUTAR_CONTRATACOES = False
+    elif args.tipo == "contratacoes":
+        EXECUTAR_CONTRATOS = False
+        EXECUTAR_CONTRATACOES = True
+    elif args.tipo == "todos":
+        EXECUTAR_CONTRATOS = True
+        EXECUTAR_CONTRATACOES = True
 
     # O ano/mes representam o lote de coleta. O servico de download continua
     # acrescentando abaixo dessas pastas a entidade ``numeroControlePNCP`` e

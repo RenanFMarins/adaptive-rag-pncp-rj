@@ -8,23 +8,7 @@
 
 ---
 
-## Como preencher
 
-- Um bloco por encontro, em **ordem cronológica** - o encontro mais recente vai no **fim** do arquivo.
-- O relato individual é escrito **pelo próprio integrante**, em primeira pessoa. Não escreva pelo colega.
-- Escrever entre **17:30 e 17:40**. `commit` + `push` até as **18:00**, mesmo que o dia não tenha fechado.
-- Mensagem de commit: `acompanhamento: AAAA-MM-DD`
-
-**Um relato útil responde:** o que eu implementei, qual decisão técnica eu tomei e por quê, onde travei, e como (ou se) resolvi.
-
-<details>
-<summary>Exemplo de relato individual bom × ruim</summary>
-
-❌ *"Trabalhei na parte de ingestão junto com meu colega. Avançamos bastante e conseguimos carregar os arquivos."*
-
-✅ *"Implementei os loaders de CSV e JSONL em `src/ingest.py`. Decidi serializar cada linha do `customers.csv` como frase em linguagem natural em vez de manter o formato separado por vírgula, porque nos primeiros testes de similaridade os chunks CSV crus não recuperavam nada - o embedding não separa campo de valor. Travei ~40 min no `tickets.jsonl`: o `state` estava indo para o texto do chunk mas não para os metadados, então o filtro voltava vazio. Resolvi movendo a extração para antes da criação do `Document`. Usei o Claude para gerar o esqueleto do parser de JSONL; ajustei o schema de metadados na mão."*
-
-</details>
 
 ---
 
@@ -1156,3 +1140,318 @@ LLM
 ```
 
 A próxima etapa deverá verificar principalmente se os documentos associados aos contratos estão sendo corretamente recuperados a partir do banco e encaminhados para o processamento, permitindo posteriormente a geração dos chunks e sua indexação nos mecanismos de recuperação do RAG.
+## Encontro 6 - 2026-09-28
+
+### Relato individual - Alisson Lima de Souza (4h)
+
+Hoje concentrei o trabalho na evolução do **processo de ingestão e recuperação de informações do RAG**, dando continuidade à estrutura de persistência dos documentos provenientes do Portal Nacional de Contratações Públicas (PNCP).
+
+O objetivo principal foi conectar os documentos e chunks persistidos à camada de recuperação, preparando o sistema para realizar buscas híbridas sobre o conteúdo dos contratos.
+
+### Implementação do retrieval híbrido
+
+Foi implementado o fluxo responsável por recuperar os chunks mais relevantes armazenados no banco de dados.
+
+A estrutura passou a seguir o fluxo:
+
+```text
+DocumentChunk
+      ↓
+┌──────────────┐
+│              │
+▼              ▼
+BM25          Dense
+               ↓
+             FAISS
+│              │
+└──────┬───────┘
+       ↓
+      RRF
+       ↓
+Chunks ranqueados
+```
+
+O **BM25** passou a realizar a recuperação lexical sobre o conteúdo armazenado em `DocumentChunk.content`, permitindo localizar documentos a partir da ocorrência e relevância dos termos da pergunta.
+
+Em paralelo, foi implementada a recuperação densa utilizando embeddings e **FAISS**, permitindo comparar semanticamente a pergunta com o conteúdo dos chunks.
+
+### Integração com embeddings e FAISS
+
+Para a busca densa, foi reutilizada a geração de embeddings já existente no projeto.
+
+O fluxo implementado ficou:
+
+```text
+DocumentChunk.content
+        ↓
+   Embedding
+        ↓
+ Índice FAISS
+        ↓
+Pergunta
+        ↓
+   Embedding
+        ↓
+Busca vetorial
+        ↓
+Chunks similares
+```
+
+Essa estrutura permite que a recuperação não dependa somente da correspondência exata de palavras, complementando a busca lexical realizada pelo BM25.
+
+### Fusão dos resultados com RRF
+
+Também foi implementado o **Reciprocal Rank Fusion (RRF)** para combinar os rankings provenientes do BM25 e da recuperação densa.
+
+O fluxo passou a ser:
+
+```text
+Ranking BM25 ──────┐
+                   │
+                   ├──→ RRF → Ranking final
+                   │
+Ranking Dense ─────┘
+```
+
+Cada resultado recuperado mantém informações como:
+
+- identificador do chunk;
+- conteúdo;
+- posição no BM25;
+- score do BM25;
+- posição na busca densa;
+- score da busca densa;
+- score final do RRF;
+- metadados associados ao documento.
+
+### Testes do retrieval
+
+Foram criados testes para validar separadamente os principais componentes do retrieval híbrido:
+
+```text
+BM25
+Dense / FAISS
+RRF
+```
+
+Os testes permitiram verificar que os chunks armazenados podem ser recuperados, ranqueados e combinados corretamente.
+
+### Resumo do dia
+
+**Entreguei hoje:**
+
+- integração de `DocumentChunk` com a camada de recuperação;
+- implementação da busca lexical com BM25;
+- implementação da busca densa utilizando embeddings;
+- criação e utilização do índice FAISS;
+- geração de embedding da pergunta;
+- implementação da fusão dos rankings com RRF;
+- retorno dos chunks ranqueados com scores e metadados;
+- criação de testes para BM25, Dense/FAISS e RRF;
+- preparação do retrieval para integração com a geração de respostas.
+
+### Próximo passo
+
+O próximo passo será validar o fluxo completo utilizando documentos reais provenientes do PNCP e conectar os chunks recuperados à geração de respostas pela LLM.
+
+O fluxo esperado será:
+
+```text
+PNCP
+ ↓
+Documento
+ ↓
+Extração
+ ↓
+DocumentChunk
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Top-K chunks
+ ↓
+Contexto
+ ↓
+LLM
+ ↓
+Resposta fundamentada
+```
+
+
+---
+
+## Encontro 7 - 2026-09-30
+
+### Relato individual - Alisson Lima de Souza (4h)
+
+Hoje concentrei o trabalho na **validação do fluxo completo de ingestão e na integração do retrieval híbrido com a geração e persistência das respostas do RAG**.
+
+O objetivo foi executar o processo com documentos reais provenientes do PNCP, desde o download e extração do conteúdo até a geração de uma resposta fundamentada e rastreável.
+
+### Download e processamento de documentos reais
+
+Inicialmente foi executado o pipeline de download para contratos do período de agosto de 2026.
+
+Foram baixados documentos associados aos contratos e realizada a identificação dos formatos encontrados, incluindo arquivos PDF e ZIP.
+
+O fluxo utilizado foi:
+
+```text
+PNCP
+ ↓
+Contrato
+ ↓
+Download do documento
+ ↓
+Identificação do formato
+ ↓
+PDF / ZIP
+ ↓
+Extração de texto
+```
+
+A extração rápida identificou documentos que necessitavam de processamento mais completo. Para esses casos foi utilizado o **Docling**, incluindo OCR, permitindo extrair o conteúdo dos PDFs.
+
+Dois documentos foram processados com sucesso pelo Docling, produzindo textos com dezenas de milhares de caracteres.
+
+### Persistência de Document e DocumentChunk
+
+Após a extração, os textos ativos foram encaminhados para o pipeline de persistência.
+
+Foi criada uma versão do corpus para garantir o relacionamento correto dos documentos no banco.
+
+Durante essa etapa também foi corrigido o tratamento de chunks duplicados dentro da mesma execução, mantendo o `chunk_id` determinístico e tornando a ingestão idempotente.
+
+O resultado da persistência foi:
+
+```text
+textos lidos:             3
+documentos criados:       2
+chunks criados:          55
+chunks reutilizados:     34
+```
+
+Com isso, o banco passou a possuir conteúdo real para utilização pelo RAG.
+
+### Validação do retrieval híbrido
+
+Com os chunks persistidos, foi validado o fluxo:
+
+```text
+DocumentChunk
+      ↓
+┌──────────────┐
+│              │
+▼              ▼
+BM25          FAISS
+│              │
+└──────┬───────┘
+       ↓
+      RRF
+       ↓
+Top-K chunks
+```
+
+Os testes do retrieval híbrido foram executados com sucesso, confirmando o funcionamento do BM25, da busca densa e da fusão RRF.
+
+### Geração de resposta fundamentada
+
+A etapa seguinte foi conectar os chunks recuperados à LLM.
+
+Foi implementada a montagem de um contexto contendo evidências numeradas e seus respectivos metadados.
+
+O prompt orienta a LLM a responder somente com base nas evidências recuperadas e a citar as evidências utilizadas.
+
+O fluxo passou a funcionar da seguinte maneira:
+
+```text
+Pergunta
+ ↓
+BM25 + FAISS
+ ↓
+RRF
+ ↓
+Top-K
+ ↓
+Contexto com evidências
+ ↓
+Prompt fundamentado
+ ↓
+LLM
+ ↓
+Resposta
+```
+
+Foi realizada uma consulta real sobre o objeto do contrato 09/2026 e o sistema conseguiu recuperar as evidências correspondentes e gerar uma resposta fundamentada no conteúdo do contrato.
+
+### Persistência e rastreabilidade da resposta
+
+Também foi implementada a persistência do resultado da consulta.
+
+A estrutura utilizada foi:
+
+```text
+Query
+ ↓
+Response
+ ↓
+ResponseSource
+ ↓
+DocumentChunk
+```
+
+Cada consulta gera um registro `Query`, enquanto a resposta da LLM é armazenada em `Response`.
+
+As evidências utilizadas são registradas em `ResponseSource`, mantendo a relação com o `DocumentChunk` original.
+
+Também são preservados:
+
+- posição do chunk no ranking;
+- identificador interno do `DocumentChunk`;
+- score final do RRF;
+- relação entre pergunta, resposta e evidências.
+
+A validação confirmou a persistência dos cinco chunks utilizados na resposta, mantendo exatamente a ordem produzida pelo ranking RRF.
+
+### Testes realizados
+
+Foram executados testes para validar as novas etapas:
+
+```text
+tests.integration.test_hybrid_retrieval
+tests.integration.test_generate
+tests.integration.test_query_services
+```
+
+Os testes executados foram concluídos com sucesso.
+
+Também foi realizado um teste manual completo utilizando uma pergunta real sobre um contrato armazenado no sistema.
+
+### Fluxo alcançado
+
+Ao final do trabalho, o sistema passou a executar o seguinte fluxo:
+
+```text
+PNCP
+ ↓
+Contrato
+ ↓
+Download do documento
+ ↓
+PDF
+ ↓
+Docling / extração
+ ↓
+Document
+ ↓
+DocumentChunk
+ ↓
+┌──────────────┐
+│              │
+▼              ▼
+BM25          FAISS
+│              │
+└──────┬───────┘
+       ↓
+     
