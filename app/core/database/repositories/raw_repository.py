@@ -69,6 +69,61 @@ class RawRepository:
             for row in rows
         ]
 
+    def iter_latest_target_values(
+        self,
+        source: str,
+        resource_type: str,
+        field_paths: Mapping[str, str],
+    ):
+        """Extrai somente campos de alvo, sem carregar cada payload completo."""
+        expressions = ["asset.external_id"]
+        parameters: list[Any] = []
+        json_fields: list[tuple[str, str, str]] = []
+        for index, (name, path) in enumerate(field_paths.items()):
+            if path.startswith("@"):
+                continue
+            value_alias = f"target_value_{index}"
+            type_alias = f"target_type_{index}"
+            json_path = "$." + path
+            expressions.extend(
+                (
+                    f"json_extract(asset.payload, ?) AS {value_alias}",
+                    f"json_type(asset.payload, ?) AS {type_alias}",
+                )
+            )
+            parameters.extend((json_path, json_path))
+            json_fields.append((name, value_alias, type_alias))
+
+        query = (
+            f"SELECT {', '.join(expressions)} FROM raw_asset AS asset "
+            "JOIN ("
+            "  SELECT external_id, MAX(rowid) AS latest_rowid "
+            "  FROM raw_asset WHERE source = ? AND resource_type = ? "
+            "  GROUP BY external_id"
+            ") AS latest ON latest.latest_rowid = asset.rowid "
+            "ORDER BY asset.external_id"
+        )
+        parameters.extend((source, resource_type))
+        cursor = self.connection.execute(query, parameters)
+        for row in cursor:
+            target = {}
+            external_id = row["external_id"]
+            for name, path in field_paths.items():
+                if path == "@external_id":
+                    target[name] = external_id
+                elif path == "@parent_external_id":
+                    parent, separator, _ = external_id.rpartition("|")
+                    target[name] = parent if separator else None
+            for name, value_alias, type_alias in json_fields:
+                value = row[value_alias]
+                json_type = row[type_alias]
+                if json_type == "true":
+                    value = True
+                elif json_type == "false":
+                    value = False
+                target[name] = value
+            yield target
+
     def insert_raw(
         self,
         run_id: str,

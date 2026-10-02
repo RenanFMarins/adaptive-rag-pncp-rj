@@ -33,27 +33,39 @@ def resolve_source_targets(
     if not target_source_ids or not source.target_resource_type:
         return source
 
-    assets = []
-    for target_source_id in target_source_ids:
-        assets.extend(
-            repository.latest_assets(
-                target_source_id, source.target_resource_type
-            )
-        )
-    if not assets:
-        return source
     if not source.target_field_paths:
         raise ValueError("Fonte dependente sem target_field_paths")
 
     targets = []
     seen = set()
-    for asset in sorted(assets, key=lambda item: item["external_id"]):
-        payload = asset["payload"]
-        external_id = asset["external_id"]
-        target = {
-            name: _target_value(payload, external_id, path)
-            for name, path in source.target_field_paths.items()
-        }
+    if len(target_source_ids) == 1 and hasattr(
+        repository, "latest_targets"
+    ):
+        resolved = repository.latest_targets(
+            target_source_ids[0],
+            source.target_resource_type,
+            dict(source.target_field_paths),
+        )
+    else:
+        assets = []
+        for target_source_id in target_source_ids:
+            assets.extend(
+                repository.latest_assets(
+                    target_source_id, source.target_resource_type
+                )
+            )
+        resolved = (
+            {
+                name: _target_value(
+                    asset["payload"], asset["external_id"], path
+                )
+                for name, path in source.target_field_paths.items()
+            }
+            for asset in sorted(
+                assets, key=lambda item: item["external_id"]
+            )
+        )
+    for target in resolved:
         missing = [
             name for name, value in target.items() if value in (None, "")
         ]
@@ -66,6 +78,8 @@ def resolve_source_targets(
         if identity not in seen:
             seen.add(identity)
             targets.append(target)
+    if not targets:
+        return source
     return replace(source, targets=tuple(targets))
 
 

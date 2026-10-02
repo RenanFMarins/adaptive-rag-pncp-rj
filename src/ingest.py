@@ -90,6 +90,16 @@ class RawRepository:
     ) -> list[dict]:
         return self.assets.list_latest_with_payload(source_id, resource_type)
 
+    def latest_targets(
+        self,
+        source_id: str,
+        resource_type: str,
+        field_paths: dict[str, str],
+    ):
+        return self.assets.iter_latest_target_values(
+            source_id, resource_type, field_paths
+        )
+
     def persist_record(
         self,
         run_id: str,

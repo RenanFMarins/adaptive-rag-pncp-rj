@@ -154,6 +154,64 @@ class RawIngestionTests(unittest.TestCase):
         self.assertEqual(payloads, [{"numeroControlePNCP": "compra-1", "versao": 2}])
         repository.close()
 
+    def test_latest_targets_extracts_only_latest_fields_and_keeps_booleans(self):
+        repository = RawRepository(self.database_url)
+        run_id = repository.start_run(
+            "pncp_itens_contratacao", "contratacao_item"
+        )
+        first = CollectedRecord(
+            "pncp_itens_contratacao",
+            {"numeroItem": 1, "temResultado": True, "extra": "antigo"},
+            "url",
+            "1",
+            1,
+            external_id="compra-1|1",
+        )
+        changed = CollectedRecord(
+            "pncp_itens_contratacao",
+            {"numeroItem": 1, "temResultado": False, "extra": "novo"},
+            "url",
+            "1",
+            2,
+            external_id="compra-1|1",
+        )
+        repository.persist_record(
+            run_id,
+            first,
+            ("numeroItem",),
+            resource_type="contratacao_item",
+        )
+        repository.persist_record(
+            run_id,
+            changed,
+            ("numeroItem",),
+            resource_type="contratacao_item",
+        )
+
+        targets = list(
+            repository.latest_targets(
+                "pncp_itens_contratacao",
+                "contratacao_item",
+                {
+                    "numero_controle": "@parent_external_id",
+                    "numero_item": "numeroItem",
+                    "tem_resultado": "temResultado",
+                },
+            )
+        )
+
+        self.assertEqual(
+            targets,
+            [
+                {
+                    "numero_controle": "compra-1",
+                    "numero_item": 1,
+                    "tem_resultado": False,
+                }
+            ],
+        )
+        repository.close()
+
     def test_same_pca_in_multiple_pages_is_idempotent(self):
         repository = RawRepository(self.database_url)
         page_one = CollectedRecord(
