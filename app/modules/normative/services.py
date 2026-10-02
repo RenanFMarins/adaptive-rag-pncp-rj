@@ -29,6 +29,8 @@ import requests
 import truststore
 import yaml
 
+from app.core import logging as obs
+
 # Os sites do governo (Planalto, PNCP) usam certificados da ICP-Brasil, que o
 # Python não reconhece sozinho (dá SSLError). O truststore faz o Python usar os
 # certificados do Windows, que já confiam na ICP-Brasil.
@@ -37,6 +39,7 @@ truststore.inject_into_ssl()
 BASE_ID = "editais_normativo"
 TENTATIVAS = 3              # o PNCP às vezes responde 422 e funciona segundos depois
 ESPERA_ENTRE_TENTATIVAS = 5  # segundos
+STAGE = obs.STAGE_COLETA
 
 sessao = requests.Session()
 # O Planalto não responde se o programa não se identificar como navegador.
@@ -304,13 +307,23 @@ def coletar(caminho_manifesto="corpus_manifest.yaml", versao="v1", raiz="data/ra
     pasta.mkdir(parents=True, exist_ok=True)
 
     print(f"Coletando {BASE_ID} em {pasta}")
-    registros = coletar_urls(acesso.get("urls", []), pasta, acesso.get("rate_limit_seg", 1.0))
-    registros += coletar_arquivos_locais(acesso.get("arquivos_locais"), pasta)
+    run_id = obs.novo_run_id()
+    with obs.etapa(run_id, STAGE, entrada=str(pasta),
+                   base_id=BASE_ID, versao=versao) as ev:
+        registros = coletar_urls(acesso.get("urls", []), pasta, acesso.get("rate_limit_seg", 1.0))
+        registros += coletar_arquivos_locais(acesso.get("arquivos_locais"), pasta)
+        ok = sum(r["status"] == "ok" for r in registros)
+        falhas = len(registros) - ok
+        ev["saida"] = f"{ok} ok, {falhas} falhas de {len(registros)}"
 
-    ok = sum(r["status"] == "ok" for r in registros)
-    falhas = len(registros) - ok
+    # Uma linha por documento: dá para saber qual falhou sem abrir o inventário
+    for r in registros:
+        obs.registrar(run_id, STAGE, r["status"], entrada=r["origem"], saida=r["path"],
+                      base_id=BASE_ID, bytes=r["bytes"], erro=r.get("erro"))
+
     print(f"Resumo: {ok} ok, {falhas} falhas | volume_alvo {base['volume_alvo']} "
           f"| divergência {base['volume_alvo'] - ok}")
+    print(f"Log em logs/ · run_id {run_id}")
 
     # Guarda os registros para quem monta o inventário (data/inventory/)
     pasta_inventario = Path("data/inventory")
