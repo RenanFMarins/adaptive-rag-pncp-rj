@@ -1064,6 +1064,7 @@ class PurchaseItemCollector:
                 headers=source.headers,
                 max_retries=source.max_retries,
                 retry_backoff_seconds=source.retry_backoff_seconds,
+                not_found_as_empty=True,
             )
             return (
                 target_index,
@@ -1179,6 +1180,7 @@ class ItemResultCollector:
                 headers=source.headers,
                 max_retries=source.max_retries,
                 retry_backoff_seconds=source.retry_backoff_seconds,
+                not_found_as_empty=True,
             )
             return (
                 target_index,

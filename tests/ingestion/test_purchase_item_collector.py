@@ -13,7 +13,7 @@ class FakePNCPClient:
         return f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
     def get(self, endpoint, params=None, **kwargs):
-        self.requests.append((endpoint, params))
+        self.requests.append((endpoint, params, kwargs))
         return [
             {
                 "numeroItem": 1,
@@ -71,6 +71,7 @@ class PurchaseItemCollectorTests(unittest.TestCase):
 
         self.assertEqual(len(client.requests), 1)
         self.assertIsNone(client.requests[0][1])
+        self.assertTrue(client.requests[0][2]["not_found_as_empty"])
 
     def test_parallel_requests_keep_target_checkpoint_order(self):
         class ConcurrentClient(FakePNCPClient):
@@ -79,7 +80,7 @@ class PurchaseItemCollectorTests(unittest.TestCase):
                 self.barrier = threading.Barrier(2)
 
             def get(self, endpoint, params=None, **kwargs):
-                self.requests.append((endpoint, params))
+                self.requests.append((endpoint, params, kwargs))
                 self.barrier.wait(timeout=1)
                 return [{"numeroItem": 1, "temResultado": False}]
 
