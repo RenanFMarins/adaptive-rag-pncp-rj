@@ -129,8 +129,8 @@ sources:
     pagination:
       page_param: pagina
       page_size_param: tamanhoPagina
-      page_size: 10
-      max_pages: 2
+      page_size: 500
+      max_pages: 1
     request:
       timeout_seconds: 30
       rate_limit_seconds: 0.2
