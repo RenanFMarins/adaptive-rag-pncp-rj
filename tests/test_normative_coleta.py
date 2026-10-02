@@ -228,3 +228,54 @@ def test_documento_que_so_tem_ficha_nao_conta_como_baixado(tmp_path):
     (tmp_path / f"{nome}.meta.json").write_text('{"data_publicacao": "2025-02-24"}')
 
     assert services.ja_baixado(tmp_path, nome) is None
+
+
+# --- data da coleta: o carimbo não muda se o documento não mudou ----------
+
+def _reg(origem, sha, coletado_em):
+    return {"path": "data/raw/v1/a.pdf", "origem": origem, "sha256": sha,
+            "sha256_conteudo": sha, "status": "ok", "bytes": 10, "tipo": "pdf",
+            "coletado_em": coletado_em}
+
+
+def test_coletado_em_e_preservado_quando_o_documento_nao_mudou(tmp_path, monkeypatch):
+    # O fetch é idempotente: arquivo já baixado não é baixado de novo, então o
+    # inventário não pode dizer que ele foi coletado hoje.
+    _inventario(tmp_path, "v1", [_reg("u/a", "aaa", "2026-09-25T10:00:00-03:00")], monkeypatch)
+    novos = [_reg("u/a", "aaa", "2026-10-02T15:00:00-03:00")]
+
+    services.preservar_coletado_em(novos, "v1")
+
+    assert novos[0]["coletado_em"] == "2026-09-25T10:00:00-03:00"
+
+
+def test_coletado_em_muda_quando_o_documento_mudou(tmp_path, monkeypatch):
+    _inventario(tmp_path, "v1", [_reg("u/a", "aaa", "2026-09-25T10:00:00-03:00")], monkeypatch)
+    novos = [_reg("u/a", "zzz", "2026-10-02T15:00:00-03:00")]
+
+    services.preservar_coletado_em(novos, "v1")
+
+    assert novos[0]["coletado_em"] == "2026-10-02T15:00:00-03:00"
+
+
+def test_primeira_coleta_da_versao_mantem_a_data_de_agora(tmp_path, monkeypatch):
+    monkeypatch.setattr(services, "PASTA_INVENTARIO", tmp_path)
+    novos = [_reg("u/a", "aaa", "2026-10-02T15:00:00-03:00")]
+
+    services.preservar_coletado_em(novos, "v9")
+
+    assert novos[0]["coletado_em"] == "2026-10-02T15:00:00-03:00"
+
+
+def test_planalto_mantem_a_data_apesar_do_script_mudar_o_sha256(tmp_path, monkeypatch):
+    # O sha256 bruto do HTML do Planalto muda a cada download por causa do
+    # script de segurança do site. A comparação usa o sha256_conteudo.
+    antigo = _reg("planalto", "bruto_a", "2026-09-25T10:00:00-03:00")
+    antigo["sha256_conteudo"] = "conteudo_igual"
+    _inventario(tmp_path, "v1", [antigo], monkeypatch)
+
+    novo = _reg("planalto", "bruto_b", "2026-10-02T15:00:00-03:00")
+    novo["sha256_conteudo"] = "conteudo_igual"
+    services.preservar_coletado_em([novo], "v1")
+
+    assert novo["coletado_em"] == "2026-09-25T10:00:00-03:00"

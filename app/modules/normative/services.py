@@ -322,6 +322,8 @@ def coletar(caminho_manifesto="corpus_manifest.yaml", versao="v1", raiz="data/ra
         falhas = len(registros) - ok
         ev["saida"] = f"{ok} ok, {falhas} falhas de {len(registros)}"
 
+    preservar_coletado_em(registros, versao)
+
     # Uma linha por documento: dá para saber qual falhou sem abrir o inventário
     for r in registros:
         obs.registrar(run_id, STAGE, r["status"], entrada=r["origem"], saida=r["path"],
@@ -368,6 +370,36 @@ def carregar_registros(versao):
     if not caminho.exists():
         raise FileNotFoundError(f"Inventário não encontrado: {caminho}")
     return json.loads(caminho.read_text(encoding="utf-8"))
+
+
+def preservar_coletado_em(registros, versao):
+    """
+    Mantém a data da coleta original quando o documento não mudou.
+
+    O `registro()` carimba a hora da execução. Como o fetch é idempotente, um
+    arquivo já baixado não é baixado de novo — mas o carimbo mudava assim
+    mesmo, e o inventário passava a dizer que o documento tinha sido coletado
+    hoje. Aqui a data anterior é restaurada quando a origem e o sha256 batem.
+
+    Só vale dentro da mesma versão: numa versão nova, a coleta é outra e a data
+    é a de agora, mesmo que o conteúdo seja idêntico.
+
+    A comparação usa o `sha256_conteudo`, como o diff entre versões: o sha256
+    bruto do HTML do Planalto muda a cada download por causa do script de
+    segurança do site, e por isso difere até entre duas máquinas do time.
+    """
+    def _hash(r):
+        return r.get("sha256_conteudo") or r.get("sha256")
+
+    try:
+        anteriores = _por_origem(carregar_registros(versao))
+    except FileNotFoundError:
+        return registros          # primeira coleta desta versão
+    for r in registros:
+        antigo = anteriores.get(r["origem"])
+        if antigo and _hash(antigo) == _hash(r) and antigo.get("coletado_em"):
+            r["coletado_em"] = antigo["coletado_em"]
+    return registros
 
 
 def _por_origem(registros):
