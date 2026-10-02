@@ -402,12 +402,13 @@ if __name__ == "__main__":
         LIMITE_ARQUIVOS_RAPIDOS = args.limite
         LIMITE_CANDIDATOS_DOCLING = args.limite
 
+    # Pipeline arquivada: seus artefatos nao devem se misturar ao corpus oficial.
     ARQUIVO_CHECKPOINT = Path(
-        f"data/checkpoints/extracao/{PERIODO.ano}/"
+        f"data/experiments/checkpoints/{PERIODO.ano}/"
         f"candidatos_docling_{PERIODO.identificador}.json"
     )
-    PASTA_RAPIDO = Path("data/extracted/rapido")
-    PASTA_DOCLING = Path("data/extracted/docling")
+    PASTA_RAPIDO = Path("data/experiments/extracoes_legadas/rapido")
+    PASTA_DOCLING = Path("data/experiments/extracoes_legadas/docling")
 
     manifestos_originais = {
         "contratos": carregar_json(CAMINHOS["manifesto_contratos"], padrao=[]),

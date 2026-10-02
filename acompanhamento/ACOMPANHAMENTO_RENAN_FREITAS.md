@@ -1,4 +1,4 @@
-# Acompanhamento - Mini Desafio RAG VendeFácil
+# Acompanhamento - grande desafio - contrataçoes do estado do Rio de janeiro
 
 **Integrante 1:** José Renan Freita Marins - [@RenanFMarins](https://github.com/RenanFMarins)
 
@@ -1089,3 +1089,74 @@ Os próximos passos serão:
 - refazer a coleta de atas com todas as unidades descobertas;
 - iniciar a camada normalizada a partir do snapshot do primeiro trimestre;
 - criar snapshots e Releases separados para os próximos trimestres.
+
+
+---
+
+## Encontro 8 - 2026-10-02
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei o trabalho na atualização do repositório e na
+auditoria técnica dos dados necessários para preparar o snapshot RAW do segundo
+trimestre de 2023. O objetivo foi confirmar o estado das branches, medir a
+cobertura real do período de 1º de abril a 30 de junho de 2023 e identificar o
+que ainda precisa ser coletado antes da próxima Release.
+
+### Situação dos resultados homologados
+
+A coleta histórica de `resultado_item` foi interrompida com checkpoint no alvo
+61.918 de 540.791 itens, equivalente a 11,45% da fila histórica. Não havia
+processo de coleta ativo durante a auditoria, embora a execução permanecesse
+registrada como `RUNNING`.
+
+Para o segundo trimestre, já foram preservados 2.460 registros de resultado,
+pertencentes a 2.437 itens diferentes. Considerando os 10.122 itens marcados
+como possuindo resultado, a cobertura atual é de aproximadamente 24,08%,
+restando 7.685 itens a consultar.
+
+### Recursos ainda necessários
+
+Foi consolidado o seguinte diagnóstico para a futura Release do segundo
+trimestre:
+
+- contratações: coleta concluída;
+- itens de contratação: coleta concluída;
+- resultados homologados: coleta parcial;
+- contratos formais: ainda não coletados para o segundo trimestre;
+- empenhos: dependem da futura coleta dos contratos do segundo trimestre;
+- PCA: já disponível como contexto anual de 2023;
+- atas de registro de preços: continuam fora do snapshot trimestral, pois a
+  coleta existente não cobre todas as unidades descobertas posteriormente.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+- elaborar consultas de auditoria sobre o banco SQLite;
+- calcular a cobertura do segundo trimestre por recurso e por mês;
+- verificar integridade, duplicidades e relacionamentos entre contratações,
+  itens e resultados;
+- organizar a ordem segura das próximas coletas e da futura Release.
+
+### Resultado do encontro
+
+Ao final do encontro, a branch principal foi confirmada como sincronizada com
+o GitHub e foi produzido um diagnóstico objetivo do segundo trimestre de 2023.
+As contratações e seus itens estão completos, mas os resultados homologados
+ainda precisam ser concluídos. Também será necessário coletar contratos e
+empenhos do período caso a próxima Release mantenha o mesmo escopo do snapshot
+do primeiro trimestre.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- retornar para a branch `feature/agregate-pncp-raw` antes de retomar a coleta;
+- continuar `pncp_resultado_item_rj_2023_t2_ate_hoje` a partir do checkpoint;
+- concluir e auditar os resultados homologados do segundo trimestre;
+- configurar e executar a coleta de contratos entre 01/04/2023 e 30/06/2023;
+- coletar os empenhos vinculados aos contratos encontrados;
+- resolver de forma auditável a execução interrompida que permaneceu como
+  `RUNNING`;
+- gerar um snapshot filtrado e reproduzível do segundo trimestre;
+- publicar os artefatos com inventário e hashes SHA-256 em uma nova Release.

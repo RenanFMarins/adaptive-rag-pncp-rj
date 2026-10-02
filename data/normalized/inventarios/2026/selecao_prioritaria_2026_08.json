@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "selecao_documentos_pncp_v1",
+  "geradoEm": "2026-10-01T20:16:22.831055+00:00",
+  "periodo": "2026_08",
+  "porOrigem": {
+    "contratos": {
+      "entidadesNoManifesto": 6021,
+      "documentosListados": 6975,
+      "documentosSelecionados": 5323,
+      "entidadesComDocumentoSelecionado": 5269,
+      "tiposSolicitados": [
+        "Ata de Registro de Preços",
+        "Contrato",
+        "Edital",
+        "Termo de Referência"
+      ],
+      "selecionadosPorTipo": {
+        "Ata de Registro de Preços": 0,
+        "Contrato": 5323,
+        "Edital": 0,
+        "Termo de Referência": 0
+      },
+      "todosPorTipo": {
+        "Contrato": 5323,
+        "Nota de Empenho": 1190,
+        "Outros Documentos": 454,
+        "Relatório Final de Contrato": 1,
+        "Termo Aditivo": 7
+      }
+    },
+    "contratacoes": {
+      "entidadesNoManifesto": 5424,
+      "documentosListados": 14806,
+      "documentosSelecionados": 3993,
+      "entidadesComDocumentoSelecionado": 3254,
+      "tiposSolicitados": [
+        "Ata de Registro de Preços",
+        "Contrato",
+        "Edital",
+        "Termo de Referência"
+      ],
+      "selecionadosPorTipo": {
+        "Ata de Registro de Preços": 0,
+        "Contrato": 0,
+        "Edital": 2024,
+        "Termo de Referência": 1969
+      },
+      "todosPorTipo": {
+        "Anteprojeto": 1,
+        "Ato que autoriza a Contratação Direta": 2880,
+        "Aviso de Contratação Direta": 2166,
+        "Documento de Formalização da Demanda - DFD": 506,
+        "Edital": 2024,
+        "Estudo Técnico Preliminar": 773,
+        "Mapa de Riscos": 275,
+        "Minuta de Ata de Registro de Preços": 124,
+        "Minuta do Contrato": 208,
+        "Outros Documentos": 3840,
+        "Projeto Básico": 37,
+        "Projeto Executivo": 3,
+        "Termo de Referência": 1969
+      }
+    }
+  },
+  "totalSelecionado": 9316
+}

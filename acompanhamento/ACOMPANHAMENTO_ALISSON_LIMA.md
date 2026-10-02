@@ -1454,4 +1454,319 @@ BM25          FAISS
 │              │
 └──────┬───────┘
        ↓
-     
+  ## Encontro 8 - 2026-10-02
+
+### Relato individual - Alisson Lima de Souza (4h)
+
+Hoje concentrei o trabalho na **integração do fluxo RAG com a API FastAPI**, permitindo que perguntas sejam enviadas por meio de um endpoint HTTP e que o sistema execute o processo completo de recuperação, geração da resposta, persistência e retorno das fontes utilizadas.
+
+O trabalho foi realizado na branch:
+
+```text
+feature/geracao-resposta-rag
+```
+
+O objetivo principal foi disponibilizar pela API o fluxo RAG que anteriormente já funcionava internamente por meio do `src.generate`.
+
+### Criação do endpoint para geração de respostas RAG
+
+Foi criado o endpoint:
+
+```text
+POST /query/generate
+```
+
+Esse endpoint recebe uma pergunta e a quantidade de chunks que devem ser recuperados pelo RAG.
+
+Exemplo de requisição:
+
+```json
+{
+  "pergunta": "qual é o objeto do contrato 09/2026?",
+  "top_k": 5
+}
+```
+
+A rota reutiliza o fluxo já implementado em `gerar_resposta_rag()`, evitando duplicação da lógica existente.
+
+Com isso, o fluxo passou a ser:
+
+```text
+Cliente / Swagger
+       ↓
+POST /query/generate
+       ↓
+FastAPI
+       ↓
+gerar_resposta_rag()
+       ↓
+Retrieval híbrido
+       ↓
+BM25 + FAISS
+       ↓
+RRF
+       ↓
+Top-K
+       ↓
+Contexto com evidências
+       ↓
+LLM
+       ↓
+Resposta fundamentada
+```
+
+### Criação dos schemas da API
+
+Foram implementados os schemas necessários para representar a entrada e a saída do novo endpoint.
+
+Foram definidos:
+
+```text
+GenerateRequest
+SourceResponse
+GenerateResponse
+```
+
+O `GenerateRequest` recebe a pergunta e o parâmetro `top_k`.
+
+O retorno da API contém a resposta produzida pelo RAG e as fontes recuperadas, incluindo informações como:
+
+```text
+rank
+chunk_id
+relevance_score
+metadata
+```
+
+Dessa forma, além da resposta textual, o cliente consegue identificar quais evidências foram recuperadas pelo sistema.
+
+### Integração da rota com o FastAPI
+
+O módulo de rotas de `query` foi integrado ao `app/main.py`, disponibilizando o novo endpoint na aplicação e também na documentação automática do Swagger.
+
+Com isso, tornou-se possível realizar consultas diretamente pela interface:
+
+```text
+Swagger
+   ↓
+/query/generate
+   ↓
+RAG
+```
+
+A implementação reutiliza o banco de dados por meio da sessão da aplicação e chama:
+
+```text
+gerar_resposta_rag(..., persistir=True)
+```
+
+Isso permite que a mesma operação execute tanto a geração da resposta quanto sua persistência.
+
+### Validação pelo Swagger
+
+Foi realizado um teste real pelo Swagger utilizando a pergunta:
+
+```text
+qual é o objeto do contrato 09/2026?
+```
+
+O sistema retornou corretamente:
+
+```text
+O objeto do contrato 09/2026 é
+"Prestação de serviços de apoio operacional"
+```
+
+A resposta foi fundamentada nas evidências recuperadas pelo RAG e apresentou referências como `[1]` e `[2]`.
+
+Além da resposta, a API retornou os cinco chunks recuperados pelo ranking, juntamente com seus metadados.
+
+Entre as informações retornadas estavam:
+
+```text
+órgão
+município
+fornecedor
+objeto
+valor
+ano
+data de publicação
+vigência
+document_id
+```
+
+Isso confirmou que o endpoint HTTP consegue executar o RAG utilizando os documentos reais anteriormente ingeridos do PNCP.
+
+### Validação da persistência
+
+Após a execução pelo Swagger, também foi realizada uma consulta diretamente no banco SQLite para verificar se a operação havia sido persistida.
+
+Foi confirmada a criação dos registros relacionados:
+
+```text
+Query
+  ↓
+Response
+  ↓
+ResponseSource
+  ↓
+DocumentChunk
+```
+
+A consulta utilizada recebeu o registro `Query` de ID `7` e sua respectiva `Response` também foi persistida.
+
+Foram registrados cinco `ResponseSource`, correspondentes aos cinco chunks recuperados:
+
+```text
+rank 1 → DocumentChunk 24
+rank 2 → DocumentChunk 22
+rank 3 → DocumentChunk 2
+rank 4 → DocumentChunk 49
+rank 5 → DocumentChunk 38
+```
+
+Os scores armazenados corresponderam aos valores produzidos pelo ranking RRF.
+
+Dessa forma, foi confirmada a rastreabilidade entre:
+
+```text
+Pergunta
+   ↓
+Resposta
+   ↓
+Evidências
+   ↓
+DocumentChunk
+   ↓
+Documento original
+```
+
+### Testes automatizados
+
+Também foram criados testes específicos para o novo endpoint em:
+
+```text
+tests/integration/test_query_routes.py
+```
+
+Os testes verificam o comportamento da rota, incluindo requisição, geração da resposta, fontes retornadas e utilização da persistência.
+
+Além dos novos testes, foram executados novamente os testes das principais etapas do RAG:
+
+```text
+tests.integration.test_hybrid_retrieval
+tests.integration.test_generate
+tests.integration.test_query_services
+tests.integration.test_query_routes
+```
+
+Os resultados foram:
+
+```text
+Hybrid Retrieval     3 testes → OK
+Generate             4 testes → OK
+Query Services       1 teste  → OK
+Query Routes         4 testes → OK
+```
+
+Total:
+
+```text
+12 testes executados
+12 testes aprovados
+```
+
+### Fluxo alcançado
+
+Ao final do trabalho de hoje, o projeto passou a possuir um fluxo completo acessível pela API:
+
+```text
+PNCP
+ ↓
+Contrato
+ ↓
+Documento
+ ↓
+Extração de texto
+ ↓
+Document
+ ↓
+DocumentChunk
+ ↓
+┌──────────────┐
+│              │
+▼              ▼
+BM25          FAISS
+│              │
+└──────┬───────┘
+       ↓
+      RRF
+       ↓
+     Top-K
+       ↓
+Contexto com evidências
+       ↓
+      LLM
+       ↓
+Resposta fundamentada
+       ↓
+Query + Response
+       ↓
+ResponseSource
+       ↓
+Resposta HTTP
+       ↓
+Swagger / Cliente
+```
+
+### Arquivos trabalhados
+
+Nesta etapa foram trabalhados principalmente:
+
+```text
+app/main.py
+app/modules/query/routes.py
+app/modules/query/schemas.py
+tests/integration/test_query_routes.py
+```
+
+A implementação aproveitou os componentes já existentes de retrieval, geração e persistência, evitando alterações desnecessárias no BM25, FAISS e RRF.
+
+### Resumo do dia
+
+**Entreguei hoje:**
+
+- criação do endpoint `POST /query/generate`;
+- integração do RAG com a API FastAPI;
+- criação dos schemas de entrada e saída da consulta;
+- integração da rota de `query` ao `app/main.py`;
+- reutilização de `gerar_resposta_rag()` pelo endpoint;
+- execução do retrieval híbrido BM25 + FAISS + RRF pela API;
+- geração de resposta fundamentada pela LLM;
+- retorno das fontes e metadados utilizados;
+- persistência de `Query`, `Response` e `ResponseSource`;
+- validação da rastreabilidade até o `DocumentChunk`;
+- teste real do endpoint utilizando o Swagger;
+- criação de testes automatizados da nova rota;
+- validação dos testes de retrieval, geração, persistência e API;
+- conclusão de **12 testes com sucesso**.
+
+### Próximo passo
+
+O próximo passo será finalizar o versionamento das alterações realizadas na branch `feature/geracao-resposta-rag`, realizar o push para o repositório remoto e posteriormente integrar a funcionalidade à branch default do projeto.
+
+Após essa integração, poderá ser iniciada uma nova etapa de evolução do RAG, mantendo como base o fluxo completo que agora já pode ser utilizado por meio da API:
+
+```text
+Pergunta HTTP
+      ↓
+Retrieval híbrido
+      ↓
+Evidências
+      ↓
+LLM
+      ↓
+Persistência
+      ↓
+Resposta + fontes
+```   

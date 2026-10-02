@@ -274,10 +274,10 @@ if __name__ == "__main__":
     EXECUTAR_DOCLING = True
 
     PASTA_SAIDA = Path(
-        f"data/extraction_tests/{PERIODO.ano}_{PERIODO.mes:02d}"
+        f"data/experiments/comparacoes/{PERIODO.ano}_{PERIODO.mes:02d}/pypdf_docling"
     )
     ARQUIVO_RELATORIO = Path(
-        f"data/normalized/inventarios/{PERIODO.ano}/"
+        f"data/experiments/relatorios/{PERIODO.ano}/"
         f"teste_extracao_{PERIODO.identificador}.json"
     )
 

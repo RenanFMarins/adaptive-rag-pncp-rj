@@ -1,6 +1,7 @@
 from urllib.parse import urlsplit, urlunsplit, urlparse
 from pathlib import Path
 import re
+import unicodedata
 from typing import Any
 
 
@@ -44,6 +45,24 @@ TIPOS_PRIORITARIOS_ESTRUTURADOS = {
 # Compatibilidade com a funcao de filtro ja existente. Quando o filtro for
 # ativado no futuro, ele usara a selecao semantica/RAG por padrao.
 TIPOS_PRIORITARIOS = TIPOS_PRIORITARIOS_RAG
+
+# Recorte inicial para validar extracao, qualidade do Markdown e chunking.
+# Esta lista nao substitui TIPOS_PRIORITARIOS_RAG; ela e' usada somente quando
+# uma pipeline informa explicitamente ``tipos_permitidos``.
+TIPOS_TESTE_EXTRACAO = {
+    "Contrato",
+    "Edital",
+    "Termo de Referência",
+    "Ata de Registro de Preços",
+}
+
+
+def normalizar_tipo_documento(tipo: str | None) -> str:
+    """Compara tipos sem depender de acento, caixa ou espacos extras."""
+
+    texto = unicodedata.normalize("NFKD", str(tipo or ""))
+    texto = "".join(caractere for caractere in texto if not unicodedata.combining(caractere))
+    return " ".join(texto.casefold().split())
 
 
 def url_pura(url: str) -> str:
@@ -136,6 +155,7 @@ def obter_tipo_documento(
 def deve_baixar_documento(
     documento: dict[str, Any],
     tipos_por_id: dict[int, str],
+    tipos_permitidos: set[str] | None = None,
 ) -> bool:
 
     tipo = obter_tipo_documento(
@@ -146,4 +166,6 @@ def deve_baixar_documento(
     if not tipo:
         return False
 
-    return tipo in TIPOS_PRIORITARIOS
+    tipos = tipos_permitidos if tipos_permitidos is not None else TIPOS_PRIORITARIOS
+    tipos_normalizados = {normalizar_tipo_documento(item) for item in tipos}
+    return normalizar_tipo_documento(tipo) in tipos_normalizados
