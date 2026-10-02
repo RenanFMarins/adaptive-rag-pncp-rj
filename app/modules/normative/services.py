@@ -234,7 +234,21 @@ def carregar_bloco_normativo(caminho_manifesto: str) -> dict:
     raise ValueError(f"Base {BASE_ID} não encontrada no manifesto")
 
 
-def coletar_urls(urls, pasta, rate_limit):
+def _registrar_documento(run_id, r, latencia_ms=None, **extra):
+    """
+    Uma linha de log por documento, emitida onde o trabalho acontece.
+
+    Sem `run_id` não registra nada: é assim que os testes chamam a coleta sem
+    escrever na pasta logs/ do projeto.
+    """
+    if run_id is None:
+        return
+    obs.registrar(run_id, STAGE, r["status"], latencia_ms, entrada=r["origem"],
+                  saida=r["path"], base_id=BASE_ID, bytes=r["bytes"],
+                  erro=r.get("erro"), **extra)
+
+
+def coletar_urls(urls, pasta, rate_limit, run_id=None):
     """Parte 1: documentos baixados por URL (Lei 14.133 e editais do PNCP)."""
     registros = []
     for url in urls:
@@ -244,36 +258,50 @@ def coletar_urls(urls, pasta, rate_limit):
         if existente:
             conteudo = existente.read_bytes()
             print(f"  [já existe] {existente.name}")
-            registros.append(registro(existente, existente.suffix[1:], conteudo, url))
+            r = registro(existente, existente.suffix[1:], conteudo, url)
+            registros.append(r)
+            # Sem duração: nada foi baixado, o arquivo já estava aqui.
+            _registrar_documento(run_id, r, baixado=False)
             salvar_ficha(pasta, nome, url)
             continue
 
+        inicio = time.perf_counter()
         try:
             conteudo = baixar_com_retentativa(url)
         except RuntimeError as erro:
+            ms = int((time.perf_counter() - inicio) * 1000)
             print(f"  [FALHOU]    {url} -> {erro}")
-            registros.append(registro(None, None, None, url, "falhou", str(erro)))
+            r = registro(None, None, None, url, "falhou", str(erro))
+            registros.append(r)
+            # A duração aqui inclui as 3 tentativas e as pausas entre elas:
+            # é o que denuncia o 422 intermitente do PNCP.
+            _registrar_documento(run_id, r, ms, baixado=True)
             time.sleep(rate_limit)
             continue
+        ms = int((time.perf_counter() - inicio) * 1000)
 
         tipo = detectar_tipo(conteudo)
         if tipo not in ("pdf", "html", "zip"):
             # Veio uma página de erro ou algo inesperado: não salva como documento
             print(f"  [FALHOU]    {url} -> conteúdo não é PDF/HTML/ZIP")
-            registros.append(registro(None, None, None, url, "falhou",
-                                      "conteúdo inesperado (não é PDF/HTML/ZIP)"))
+            r = registro(None, None, None, url, "falhou",
+                         "conteúdo inesperado (não é PDF/HTML/ZIP)")
+            registros.append(r)
+            _registrar_documento(run_id, r, ms, baixado=True)
         else:
             destino = pasta / f"{nome}.{tipo}"
             destino.write_bytes(conteudo)
             print(f"  [baixado]   {destino.name} ({len(conteudo):,} bytes)")
-            registros.append(registro(destino, tipo, conteudo, url))
+            r = registro(destino, tipo, conteudo, url)
+            registros.append(r)
+            _registrar_documento(run_id, r, ms, baixado=True)
             salvar_ficha(pasta, nome, url)
 
         time.sleep(rate_limit)  # respeita o site entre um download e outro
     return registros
 
 
-def coletar_arquivos_locais(bloco, pasta):
+def coletar_arquivos_locais(bloco, pasta, run_id=None):
     """
     Parte 2: decretos baixados à mão (data/manual/...). Copia para a versão
     e confere o sha256 anotado no manifesto. Hash diferente vira falha.
@@ -286,13 +314,17 @@ def coletar_arquivos_locais(bloco, pasta):
         origem = origem_pasta / item["arquivo"]
         if not origem.exists():
             print(f"  [FALHOU]    {origem} não encontrado")
-            registros.append(registro(None, None, None, item["origem"], "falhou", "arquivo local não encontrado"))
+            r = registro(None, None, None, item["origem"], "falhou", "arquivo local não encontrado")
+            registros.append(r)
+            _registrar_documento(run_id, r, local=True)
             continue
 
         conteudo = origem.read_bytes()
         if sha256_de(conteudo) != item["sha256"].lower():
             print(f"  [FALHOU]    {origem.name}: sha256 diferente do manifesto")
-            registros.append(registro(None, None, None, item["origem"], "falhou", "sha256 diferente do manifesto"))
+            r = registro(None, None, None, item["origem"], "falhou", "sha256 diferente do manifesto")
+            registros.append(r)
+            _registrar_documento(run_id, r, local=True)
             continue
 
         destino = pasta / item["arquivo"]
@@ -301,7 +333,10 @@ def coletar_arquivos_locais(bloco, pasta):
             print(f"  [copiado]   {destino.name}")
         else:
             print(f"  [já existe] {destino.name}")
-        registros.append(registro(destino, detectar_tipo(conteudo), conteudo, item["origem"]))
+        # Sem duração: vem do disco, não da rede.
+        r = registro(destino, detectar_tipo(conteudo), conteudo, item["origem"])
+        registros.append(r)
+        _registrar_documento(run_id, r, local=True)
     return registros
 
 
@@ -316,18 +351,14 @@ def coletar(caminho_manifesto="corpus_manifest.yaml", versao="v1", raiz="data/ra
     run_id = obs.novo_run_id()
     with obs.etapa(run_id, STAGE, entrada=str(pasta),
                    base_id=BASE_ID, versao=versao) as ev:
-        registros = coletar_urls(acesso.get("urls", []), pasta, acesso.get("rate_limit_seg", 1.0))
-        registros += coletar_arquivos_locais(acesso.get("arquivos_locais"), pasta)
+        registros = coletar_urls(acesso.get("urls", []), pasta,
+                                 acesso.get("rate_limit_seg", 1.0), run_id)
+        registros += coletar_arquivos_locais(acesso.get("arquivos_locais"), pasta, run_id)
         ok = sum(r["status"] == "ok" for r in registros)
         falhas = len(registros) - ok
         ev["saida"] = f"{ok} ok, {falhas} falhas de {len(registros)}"
 
     preservar_coletado_em(registros, versao)
-
-    # Uma linha por documento: dá para saber qual falhou sem abrir o inventário
-    for r in registros:
-        obs.registrar(run_id, STAGE, r["status"], entrada=r["origem"], saida=r["path"],
-                      base_id=BASE_ID, bytes=r["bytes"], erro=r.get("erro"))
 
     print(f"Resumo: {ok} ok, {falhas} falhas | volume_alvo {base['volume_alvo']} "
           f"| divergência {base['volume_alvo'] - ok}")

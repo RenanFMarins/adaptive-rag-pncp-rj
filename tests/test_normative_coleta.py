@@ -279,3 +279,49 @@ def test_planalto_mantem_a_data_apesar_do_script_mudar_o_sha256(tmp_path, monkey
     services.preservar_coletado_em([novo], "v1")
 
     assert novo["coletado_em"] == "2026-09-25T10:00:00-03:00"
+
+
+# --- latência por documento no log ---------------------------------------
+
+def _log_de(tmp_path):
+    arquivos = list(tmp_path.glob("pipeline-*.jsonl"))
+    if not arquivos:
+        return []
+    return [json.loads(l) for l in arquivos[0].read_text(encoding="utf-8").splitlines()]
+
+
+def test_evento_do_documento_traz_a_duracao_do_download(tmp_path, monkeypatch):
+    monkeypatch.setattr(services.obs, "PASTA_LOGS", tmp_path)
+    r = {"origem": "https://pncp.gov.br/a", "path": "data/raw/v1/a.pdf",
+         "status": "ok", "bytes": 560992}
+
+    services._registrar_documento("abc12345", r, 1234, baixado=True)
+
+    evento = _log_de(tmp_path)[0]
+    assert evento["stage"] == "coleta"
+    assert evento["latencia_ms"] == 1234
+    assert evento["extra"]["baixado"] is True
+    assert evento["extra"]["bytes"] == 560992
+
+
+def test_documento_que_ja_estava_no_disco_nao_tem_duracao(tmp_path, monkeypatch):
+    # Nada foi baixado: inventar uma duração aqui seria mentir no log.
+    monkeypatch.setattr(services.obs, "PASTA_LOGS", tmp_path)
+    r = {"origem": "https://pncp.gov.br/a", "path": "data/raw/v1/a.pdf",
+         "status": "ok", "bytes": 560992}
+
+    services._registrar_documento("abc12345", r, baixado=False)
+
+    evento = _log_de(tmp_path)[0]
+    assert evento["latencia_ms"] is None
+    assert evento["extra"]["baixado"] is False
+
+
+def test_sem_run_id_a_coleta_nao_escreve_log(tmp_path, monkeypatch):
+    # É assim que os testes rodam a coleta sem sujar a pasta logs/ do projeto.
+    monkeypatch.setattr(services.obs, "PASTA_LOGS", tmp_path)
+    r = {"origem": "u/a", "path": None, "status": "ok", "bytes": 0}
+
+    services._registrar_documento(None, r, 100)
+
+    assert _log_de(tmp_path) == []
