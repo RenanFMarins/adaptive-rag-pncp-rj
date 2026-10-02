@@ -9,14 +9,17 @@ from app.core.config import settings
 
 
 def create_sqlite_engine(database_url: str) -> Engine:
-    """Create an engine with SQLite referential integrity enabled."""
+    """Create a SQLite engine with foreign-key enforcement enabled."""
     db_engine = create_engine(
         database_url,
         connect_args={"check_same_thread": False},
     )
 
     @event.listens_for(db_engine, "connect")
-    def enable_foreign_keys(connection: sqlite3.Connection, _record: object) -> None:
+    def enable_foreign_keys(
+        connection: sqlite3.Connection,
+        _record: object,
+    ) -> None:
         cursor = connection.cursor()
         try:
             cursor.execute("PRAGMA foreign_keys=ON")
@@ -31,7 +34,7 @@ engine = create_sqlite_engine(settings.database_url)
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
-    autocommit=False
+    autocommit=False,
 )
 
 
@@ -40,9 +43,17 @@ class Base(DeclarativeBase):
 
 
 def init_db(bind: Engine | None = None) -> None:
-    """Register domain models and create missing tables; not a migration tool."""
-    for module in ("corpus", "documents", "query", "feedback", "rag", "auth"):
+    """Register domain models and create missing ORM tables."""
+    for module in (
+        "corpus",
+        "documents",
+        "query",
+        "feedback",
+        "rag",
+        "auth",
+    ):
         import_module(f"app.modules.{module}.model")
+
     Base.metadata.create_all(bind=engine if bind is None else bind)
 
 
