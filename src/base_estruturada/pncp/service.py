@@ -1910,6 +1910,7 @@ def baixar_documentos_lista(
     limite_contratos: int | None = 5,
     limite_documentos_por_contrato: int | None = 1,
     somente_tipos_prioritarios: bool = False,
+    tipos_permitidos: set[str] | None = None,
 ) -> int:
 
     tipos_por_id = carregar_tipos_documento()
@@ -1934,9 +1935,13 @@ def baixar_documentos_lista(
 
         documentos_selecionados = []
         for documento in documentos:
-            if somente_tipos_prioritarios and not deve_baixar_documento(
+            # ``tipos_permitidos`` tem precedencia para permitir campanhas
+            # pequenas sem alterar a lista global de prioridades do projeto.
+            aplicar_filtro = somente_tipos_prioritarios or tipos_permitidos is not None
+            if aplicar_filtro and not deve_baixar_documento(
                 documento,
                 tipos_por_id,
+                tipos_permitidos=tipos_permitidos,
             ):
                 continue
 

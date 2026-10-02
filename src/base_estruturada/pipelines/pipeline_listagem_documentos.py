@@ -78,10 +78,10 @@ if __name__ == "__main__":
 
     # Número de novas consultas por execução. Ao rodar novamente, o pipeline
     # pula itens que já estão no manifesto e avança para os próximos.
-    LIMITE_NOVOS_CONTRATOS = 50
-    LIMITE_NOVAS_CONTRATACOES = 50
+    LIMITE_NOVOS_CONTRATOS = 500
+    LIMITE_NOVAS_CONTRATACOES = 1000
 
-    EXECUTAR_CONTRATOS = True
+    EXECUTAR_CONTRATOS = False
     EXECUTAR_CONTRATACOES = True
 
     if EXECUTAR_CONTRATOS:
