@@ -1228,13 +1228,13 @@ legível.
 python -m app.modules.ingest.services --versao v1
 ```
 
-Gera `data/processed/v1_editais_normativo.jsonl` com 796 trechos, pronto para a
+Gera `data/processed/v1_editais_normativo.jsonl` com 794 trechos, pronto para a
 indexação.
 
-**5. Testes** — 35, todos offline, em segundos:
+**5. Testes** — 41, todos offline, em segundos:
 
 ```bash
-python -m pytest tests/test_normative_coleta.py tests/test_ingest_normativa.py -v
+python -m pytest tests/test_normative_coleta.py tests/test_ingest_normativa.py tests/test_logging.py -v
 ```
 
 ### Como o texto é dividido
@@ -1288,6 +1288,63 @@ falível.
 Os e-mails encontrados são de setores (`licitacao.bomjardim@`), não de pessoas
 físicas. Por isso foram mantidos e sinalizados, para o time decidir. Depois do
 processamento não há nenhum CPF ou telefone visível no corpus.
+
+### Logs
+
+A coleta e a ingestão emitem log estruturado em JSONL, em
+`logs/pipeline-AAAA-MM-DD.jsonl`, uma linha por evento, pelo módulo
+[`app/core/logging.py`](app/core/logging.py).
+
+Cada execução recebe um `run_id`, impresso no fim do comando. É ele que amarra
+os eventos de uma mesma execução: sem isso, os logs são ruído.
+
+| Stage | Quando é emitido |
+| --- | --- |
+| `coleta` | um evento de resumo por execução + um por documento baixado |
+| `ingestao` | um evento por documento processado |
+
+> Esses dois nomes complementam o `PIPELINE_STAGES`
+> (`app/modules/rag/model.py`), que hoje cobre só a fase de consulta
+> (`query_analysis`, `roteamento`, `retrieval_denso`, `retrieval_bm25`,
+> `fusao_rrf`, `rerank`, `geracao`, `validacao`, `feedback`). **Proposta ao
+> time:** acrescentar `coleta` e `ingestao` à lista canônica. Enquanto não há
+> decisão, eles ficam declarados em `app/core/logging.py`.
+
+Um evento tem esta forma:
+
+```json
+{
+  "ts": "2026-10-02T15:29:26-03:00",
+  "run_id": "a15bffbe",
+  "query_id": null,
+  "stage": "coleta",
+  "status": "ok",
+  "latencia_ms": 2482,
+  "input": "data/raw/v1/editais_normativo",
+  "output": "13 ok, 0 falhas de 13",
+  "tokens": { "prompt": 0, "completion": 0, "total": 0 },
+  "modelo": null,
+  "extra": { "base_id": "editais_normativo", "versao": "v1" }
+}
+```
+
+Três decisões que valem saber:
+
+- **`tokens` fica zerado nestas duas etapas**, porque nenhuma delas chama o LLM.
+  O campo existe mesmo assim, para que toda etapa tenha o mesmo formato e quem
+  instrumentar a geração só precise preencher.
+- **O log não engole falha.** Uma URL morta vira um evento com
+  `status: "falhou"` e o erro no `extra`, sem abortar a coleta. Uma exceção vira
+  `status: "erro"` e **continua subindo** — um log que esconde problema é pior
+  do que não ter log.
+- **A pasta `logs/` é ignorada pelo Git**, e os testes do módulo nunca escrevem
+  nela: eles apontam para um diretório temporário.
+
+Para ler o log da última execução:
+
+```bash
+python -c "import json,glob;p=sorted(glob.glob('logs/pipeline-*.jsonl'))[-1];[print(json.loads(l)['stage'],'|',json.loads(l)['status'],'|',json.loads(l)['latencia_ms'],'ms |',json.loads(l)['input']) for l in open(p,encoding='utf-8')]"
+```
 
 ### O que vai para o Git
 

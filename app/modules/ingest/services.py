@@ -23,10 +23,13 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+from app.core import logging as obs
+
 BASE_ID = "editais_normativo"
 SENSITIVITY = "publico"   # definido na ingestão, como o enunciado exige
 MAX_CARACTERES = 4000     # acima disso, o artigo/cláusula é dividido em partes
 OVERLAP_CARACTERES = 200  # trecho do fim da parte anterior repetido na seguinte
+STAGE = obs.STAGE_INGESTAO
 
 # ---------------------------------------------------------------------------
 # 1. Extração de texto
@@ -347,12 +350,16 @@ def processar(versao="v1", raiz="data/raw", saida=None):
     """Processa todos os documentos da base e grava os chunks em JSONL."""
     pasta = Path(raiz) / versao / BASE_ID
     todos = []
+    run_id = obs.novo_run_id()
     for caminho in sorted(pasta.iterdir()):
         if caminho.suffix.lower() not in (".pdf", ".html", ".htm"):
             continue
-        chunks = gerar_chunks(caminho)
-        m = chunks[0]["metadata"]
-        mascarados = sum(1 for c in chunks if "dados_pessoais" in c["metadata"])
+        with obs.etapa(run_id, STAGE, entrada=caminho.name,
+                       base_id=BASE_ID, versao=versao) as ev:
+            chunks = gerar_chunks(caminho)
+            m = chunks[0]["metadata"]
+            mascarados = sum(1 for c in chunks if "dados_pessoais" in c["metadata"])
+            ev["saida"] = f"{len(chunks)} chunks; {m['doc_type']}; {mascarados} mascarado(s)"
         aviso = f" | {mascarados} chunk(s) com dado pessoal mascarado" if mascarados else ""
         print(f"  {caminho.name}: {m['doc_type']} | {len(chunks)} chunks{aviso}")
         todos.extend(chunks)
@@ -368,6 +375,7 @@ def processar(versao="v1", raiz="data/raw", saida=None):
         for c in todos:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
     print(f"Total: {len(todos)} chunks em {saida}")
+    print(f"Log em logs/ · run_id {run_id}")
     return todos
 
 
