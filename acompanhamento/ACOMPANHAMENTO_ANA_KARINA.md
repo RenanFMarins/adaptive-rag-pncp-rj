@@ -356,3 +356,159 @@ para 37.
 - **Travou:** os logs dependem de definição do time, ainda estamos decidindo 
 - **Próximo passo:** logs, pull request e o arquivo de teste duplicado na branch
   principal.
+
+  ## Encontro 8 · 02/10/2026
+
+### O que eu fiz hoje
+
+Hoje fechei o último item do enunciado que ainda faltava na nossa base
+normativa: os logs estruturados, do item 2.4.
+
+O `app/core/logging.py` estava no repositório com 0 bytes desde o começo do
+projeto. Como ele é o lugar que o README aponta e a nossa coleta e ingestão já
+estavam prontas para serem instrumentadas, escrevi. São cerca de 40 linhas: uma
+função que grava o evento em `logs/pipeline-AAAA-MM-DD.jsonl` e um gerenciador
+de contexto que mede a duração da etapa.
+
+Instrumentei as duas pontas. Cada execução recebe um `run_id`, que é o que
+amarra os eventos de uma mesma rodada — sem ele, como diz o enunciado, os logs
+são ruído. A coleta emite um evento de resumo mais um por documento; a
+ingestão, um por documento. Numa execução completa saem 27 eventos. Usei os
+stages `coleta` e `ingestao`.
+
+Duas decisões que tomei e que vale explicar: o campo `tokens` fica zerado
+nessas duas etapas, porque nenhuma delas chama o LLM, mas existe para que toda
+etapa tenha o mesmo formato; e o log não engole falha — uma URL morta vira um
+evento com status `falhou` sem abortar a coleta, e uma exceção vira status
+`erro` e continua subindo.
+
+Depois disso encontrei um bug nosso, e esse foi o aprendizado do dia.
+
+Eu tinha deixado anotada uma melhoria pequena: o `coletado_em` do inventário
+carimbava a hora da execução, então toda recoleta dizia que os documentos
+tinham sido coletados hoje, mesmo sem baixar nada. Fui corrigir isso, o que me
+obrigou a rodar o `fetch` duas vezes seguidas — e aí apareceu.
+
+Desde segunda-feira, quando a coleta passou a gravar uma ficha `.meta.json` ao
+lado de cada edital para pegar a data de vigência, a função que garante a
+idempotência procurava o documento com `glob(nome + ".*")` e pegava o primeiro
+resultado. Na segunda execução, ela encontrava a ficha antes do PDF. O
+inventário passava a registrar um arquivo de 223 bytes no lugar de um edital de
+560 KB, com o tipo e o hash errados.
+
+O que me marcou é que nada denunciava: o `volume_alvo` continuava batendo 13 e
+as falhas continuavam zero. Só apareceria lá na frente, quando alguém tentasse
+indexar e encontrasse um JSON minúsculo esperando um edital. E não foi
+encontrado por acaso — apareceu porque fui mexer num detalhe que parecia menor.
+
+Corrigi, travei com dois testes, e commitei separado da melhoria, para o bug
+ficar visível no histórico com a explicação de como nasceu.
+
+Ainda fiz a duração de cada download no log (o evento por documento saía sem
+latência, e agora o 422 intermitente do PNCP vai aparecer como uma latência
+alta em vez de sumir na média).
+
+Os testes foram de 37 para 50.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o módulo de log, instrumentar a coleta e a ingestão,
+  diagnosticar o bug da ficha e montar o roteiro de apresentação.
+- **O que eu conferi / mudei:** não aceitei a primeira conferência do log, que
+  mostrava os eventos com latência nula, e fui atrás de por quê — era porque
+  nada tinha sido baixado; apaguei um edital de propósito para provar num
+  download real, e o evento registrou 3.584 ms; decidi não inventar duração
+  para documento que já estava no disco, porque estimar número num log é pior
+  do que registrar que não se aplica.
+
+### O que travou
+
+- Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
+  máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
+  edital estavam sem data de vigência. A capacidade estava certa e testada; o
+  arquivo é que estava velho. Reprocessei e voltou para 794 de 794.
+
+### Próximo passo
+
+- Continuar o trabalho em grupo.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
+- **Travou:** Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
+  máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
+  edital estavam sem data de vigência. A capacidade estava certa e testada; o
+  arquivo é que estava velho. Reprocessei e voltou para 794 de 794.
+- **Próximo passo:** Continuar o trabalho em grupo.
+
+  ## Encontro 9 · 05/10/2026
+
+### O que eu fiz hoje
+
+Trabalhamos juntas o dia todo. Foi o dia em que o nosso pull request foi
+aprovado e mesclado na branch principal, depois de uma semana aberto.
+
+Para a minha parte isso significa que o processamento que venho cuidando desde o
+começo saiu da nossa branch e entrou no projeto. São 794 trechos, cada um com o
+documento de origem, o artigo ou a cláusula a que pertence, a data de vigência e
+a marca de sensibilidade. Quem for construir a busca já tem acesso a eles.
+
+Atualizei a minha cópia do projeto com o que entrou da principal: a camada
+conversacional com os guardrails de escopo e a pipeline de documentos da base
+estruturada. Rodei os 50 testes para confirmar que o processamento continua
+passando com o código novo.
+
+Fizemos uma auditoria nos 794 trechos, que foi o que mais me interessou, porque
+mexe diretamente com a minha decisão de como dividir o texto. Procuramos textos
+duplicados, trechos acima do limite de 4.000 caracteres e trechos curtos demais.
+Não apareceu nenhum problema: zero duplicados, nenhum acima do limite, e a
+mediana ficou em 1.744 caracteres.
+
+Os seis trechos com menos de 100 caracteres me chamaram atenção no começo, mas
+são legítimos: artigos vetados, como o "Art. 172. (VETADO)", e cláusulas de
+edital que dizem literalmente "não se aplica". São trechos curtos porque o
+documento é curto ali, não porque a divisão errou. [ajustar com a sua visão]
+
+Também decidimos juntas o que ainda faria sentido mexer no processamento, e a
+resposta foi quase nada. A limitação que eu tinha identificado na semana passada
+um documento que venha com o texto todo numa linha só geraria um chunk acima
+do limite não vai acontecer, porque o corpus está congelado desde o fim do
+Sprint 1. Preferimos registrar a decisão de não corrigir a corrigir um problema
+hipotético.
+
+No fim do dia começamos a rascunhar as perguntas de referência da base normativa
+para o benchmark, conferindo no corpus qual artigo responde cada uma.
+
+### Onde usei IA e o que mudei no resultado
+
+- *Ferramenta:* Claude.
+- *Para quê:* conferir o estado do repositório depois dos merges, auditar o
+  corpus, preparar o material de apresentação e localizar no corpus as respostas
+  das perguntas de referência.
+- *O que eu conferi / mudei:* questionei as três melhorias que me foram
+  sugeridas para a base normativa e descartei duas, porque resolviam problemas
+  que não vão acontecer — o corpus está congelado e ninguém está travado
+  esperando documentação. Preferi registrar a decisão de não fazer.
+
+### O que travou
+
+- Nada travou no processamento hoje.
+- O src/router.py está com 0 bytes e o eval/ está vazio. O roteador é o que
+  decide em qual base buscar, e sem ele o sistema não faz o que o enunciado
+  chama de Adaptive RAG.
+
+### Próximo passo
+
+- Terminar o rascunho das perguntas de referência da base normativa.
+- Entender como o módulo de indexação vai consumir os nossos trechos,
+  principalmente o metadado tem_overlap, que marca texto repetido entre partes
+  de um mesmo artigo e não deve ser contado duas vezes.
+
+### Resumo do time no dia
+
+- *Entregamos (base normativa):* o PR foi mesclado e a base está integrada à
+  branch principal, com todos os itens do enunciado cumpridos. Auditoria do
+  corpus sem defeitos encontrados.
+- *Travou:* o roteador e o benchmark continuam vazios.
+- *Próximo passo:* perguntas de referência e alinhar quem assume o roteador.
