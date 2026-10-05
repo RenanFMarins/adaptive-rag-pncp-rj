@@ -77,3 +77,13 @@ Hoje, dei continuidade à coleta e à extração dos documentos, utilizando o Go
 Com base na estrutura e nos códigos que já haviam sido desenvolvidos pela equipe, criei a tabela raw_asset e desenvolvi uma pipeline para realizar a persistência desses dados no banco. Para isso, adaptei e integrei o que já havia sido implementado pelos demais integrantes ao fluxo de contratos e contratações que estou desenvolvendo.
 
 Dessa forma, o trabalho de hoje ficou concentrado na continuidade da coleta e extração dos documentos e na estruturação do fluxo para armazenamento dos dados no banco estruturado.
+
+## Encontro 8 - 2026-10-05
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade ao processamento dos dados e à etapa de ingestão nos bancos. Trabalhei com a ingestão no banco vetorial utilizando o FAISS para testes e também criei um arquivo de teste para realizar buscas e verificar se os dados estavam sendo recuperados corretamente. Esse arquivo ainda é inicial e provavelmente passará por alterações conforme o desenvolvimento do projeto avançar.
+
+Além disso, junto com a equipe, apresentamos o andamento do projeto ao professor e discutimos o que já foi desenvolvido até o momento.
+
+Também continuei o processamento dos documentos em lotes, preparando esses dados para posteriormente realizar a ingestão completa no banco. Dessa forma, o trabalho de hoje ficou concentrado principalmente no processamento, ingestão e nos primeiros testes de recuperação das informações.
