@@ -64,6 +64,7 @@ data/experiments/
 data/lotes_documentos/
 
 
+
 # ==============================
 # IDE / Editor
 # ==============================
@@ -76,3 +77,4 @@ data/lotes_documentos/
 # ==============================
 .DS_Store
 Thumbs.db
+app.db
