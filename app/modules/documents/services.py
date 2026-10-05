@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -199,6 +200,104 @@ def persistir_textos_ativos_pncp(
                         resumo["chunksCriados"] += 1
 
                     resumo["textosLidos"] += 1
+
+    db.commit()
+    return resumo
+
+
+def persistir_chunks_jsonl_pncp(
+    db: Session,
+    corpus_version_id: int,
+    arquivo_chunks: Path,
+    tipos_entidade: set[str] | None = None,
+    limite_chunks_novos: int | None = None,
+    tamanho_commit: int = 500,
+) -> dict[str, int]:
+    """Persiste o JSONL canônico de chunks sem extrair ou dividir texto outra vez.
+
+    O arquivo JSONL é a fronteira entre o processamento documental e o banco.
+    A idempotência é baseada no ``chunk_id``: uma nova execução percorre o
+    arquivo novamente, ignora os chunks existentes e continua nos pendentes.
+    """
+
+    if not arquivo_chunks.is_file():
+        raise FileNotFoundError(f"Arquivo de chunks não encontrado: {arquivo_chunks}")
+    if tamanho_commit <= 0:
+        raise ValueError("tamanho_commit deve ser maior que zero.")
+
+    resumo = {
+        "linhasLidas": 0,
+        "linhasInvalidas": 0,
+        "linhasIgnoradasTipo": 0,
+        "documentosCriados": 0,
+        "documentosReutilizados": 0,
+        "chunksCriados": 0,
+        "chunksReutilizados": 0,
+    }
+    chunk_ids_vistos = set(db.scalars(select(DocumentChunk.chunk_id)).all())
+    documentos_cache: dict[str, Document] = {}
+    novos_desde_commit = 0
+
+    with arquivo_chunks.open(encoding="utf-8") as arquivo:
+        for numero_linha, linha in enumerate(arquivo, start=1):
+            if not linha.strip():
+                continue
+            try:
+                item = json.loads(linha)
+            except json.JSONDecodeError:
+                resumo["linhasInvalidas"] += 1
+                continue
+
+            if not isinstance(item, dict):
+                resumo["linhasInvalidas"] += 1
+                continue
+            chunk_id = item.get("chunk_id")
+            conteudo = item.get("content")
+            metadata = item.get("metadata")
+            if (
+                not isinstance(chunk_id, str)
+                or not chunk_id
+                or not isinstance(conteudo, str)
+                or not isinstance(metadata, dict)
+            ):
+                resumo["linhasInvalidas"] += 1
+                continue
+
+            resumo["linhasLidas"] += 1
+            tipo_entidade = str(metadata.get("tipoEntidade") or "")
+            if tipos_entidade is not None and tipo_entidade not in tipos_entidade:
+                resumo["linhasIgnoradasTipo"] += 1
+                continue
+            if chunk_id in chunk_ids_vistos:
+                resumo["chunksReutilizados"] += 1
+                continue
+            if (
+                limite_chunks_novos is not None
+                and resumo["chunksCriados"] >= limite_chunks_novos
+            ):
+                break
+
+            chave_documento = _document_source_file(metadata)
+            documento = documentos_cache.get(chave_documento)
+            if documento is None:
+                documento, criado = _obter_ou_criar_documento(
+                    db,
+                    corpus_version_id,
+                    metadata,
+                )
+                documentos_cache[chave_documento] = documento
+                if criado:
+                    resumo["documentosCriados"] += 1
+                else:
+                    resumo["documentosReutilizados"] += 1
+
+            db.add(_criar_chunk(documento, chunk_id, conteudo, metadata))
+            chunk_ids_vistos.add(chunk_id)
+            resumo["chunksCriados"] += 1
+            novos_desde_commit += 1
+            if novos_desde_commit >= tamanho_commit:
+                db.commit()
+                novos_desde_commit = 0
 
     db.commit()
     return resumo
