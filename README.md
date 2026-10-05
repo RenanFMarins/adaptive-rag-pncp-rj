@@ -1153,17 +1153,208 @@ dos logs da aplicação.
 
 O projeto foi dividido inicialmente em três bases principais.
 
-## Base Normativa\*\*
+## Base Normativa
 
-Responsáveis:
+**Responsáveis:** Ana Karina e Ester Neves
 
--   Ana Karina
+Leis, decretos estaduais e editais de licitação — o texto que diz *o que a regra
+determina*. É a base que responde perguntas como "posso participar sendo MEI?"
+ou "qual o prazo de vigência do contrato?".
 
--   Ester Neves
+### O que está no corpus
 
-Responsável pelos documentos jurídicos e normativos.
+13 documentos, 8,5 MB, coletados em 25/09/2026, sem falhas:
 
-**---**
+| Fonte | Quantidade | Formato |
+| --- | --- | --- |
+| Lei 14.133/2021 (Planalto, texto compilado) | 1 | HTML |
+| Decretos estaduais do RJ | 7 | PDF |
+| Editais de órgãos do RJ publicados no PNCP | 5 | PDF |
+
+O que **deve** entrar está declarado em [`corpus_manifest.yaml`](corpus_manifest.yaml);
+o que **entrou de fato** está em [`CORPUS_INVENTORY.md`](CORPUS_INVENTORY.md).
+
+### Dependências
+
+```bash
+pip install requests truststore PyYAML pypdf pytest
+```
+
+O `truststore` é necessário porque os sites do governo usam certificados da
+ICP-Brasil, que o Python não reconhece sozinho (dá `SSLError`).
+
+### Como rodar
+
+**1. Coleta inicial** — baixa tudo o que o manifesto declara:
+
+```bash
+python -m app.modules.normative.services fetch --manifest corpus_manifest.yaml --versao v1
+```
+
+Grava em `data/raw/v1/editais_normativo/` e registra cada arquivo em
+`data/inventory/v1_editais_normativo.json`. É idempotente (arquivo já baixado
+não é baixado de novo), retomável (queda de rede não obriga a recomeçar) e
+respeita o `rate_limit_seg` do manifesto. URL com problema vira uma linha com
+status `falhou`, sem abortar a coleta.
+
+**2. Nova versão com diff** — recoleta sem sobrescrever a anterior:
+
+```bash
+python -m app.modules.normative.services update --manifest corpus_manifest.yaml
+```
+
+Cria `v(n+1)` e gera `data/inventory/DIFF_v1_v2.md`, respondendo o que entrou,
+o que saiu, o que mudou de conteúdo e o que permaneceu idêntico. Esse diff é o
+insumo do teste de regressão das próximas sprints.
+
+**3. Inventário** — gera os dois artefatos da versão:
+
+```bash
+python -m app.modules.normative.services inventory --versao v1 --manifest corpus_manifest.yaml
+```
+
+Produz `data/inventory/v1.json` (com `scenario_id`, `manifest_hash`, `totais`,
+`por_base`, `arquivos` e `falhas`) e `data/inventory/v1_editais_normativo.md`,
+legível.
+
+> O `v1.json` é **compartilhado pelas quatro bases**. Ele monta a partir do que
+> cada base gravou em `data/inventory/v1_<base_id>.json`. Base ainda não
+> coletada não aparece e entra sozinha quando a coleta dela rodar — ninguém
+> precisa esperar ninguém.
+
+**4. Processamento** — transforma os documentos em trechos com metadados:
+
+```bash
+python -m app.modules.ingest.services --versao v1
+```
+
+Gera `data/processed/v1_editais_normativo.jsonl` com 794 trechos, pronto para a
+indexação.
+
+**5. Testes** — 41, todos offline, em segundos:
+
+```bash
+python -m pytest tests/test_normative_coleta.py tests/test_ingest_normativa.py tests/test_logging.py -v
+```
+
+### Como o texto é dividido
+
+- **Lei e decretos:** 1 artigo = 1 chunk. O artigo fica inteiro, com seus
+  parágrafos, incisos e alíneas — cortar um artigo ao meio faria a busca
+  devolver metade da regra.
+- **Editais:** 1 cláusula de primeiro nível = 1 chunk.
+- **Trecho acima de 4.000 caracteres** é dividido em partes, e cada parte repete
+  os **200 caracteres finais da anterior** (overlap), cortados em palavra
+  inteira. Não há overlap entre artigos diferentes: artigo é unidade fechada, e
+  misturar dois faria a busca devolver um artigo com o texto do outro.
+
+Dois cuidados que o código trata e valem saber:
+
+- O HTML do Planalto está em **cp1252** e mantém a redação revogada dentro de
+  `<strike>`. O texto riscado é descartado — se entrasse, o sistema responderia
+  com regra que não vale mais.
+- Os decretos são PDFs de impressão, com o rótulo "Art. Xº" numa coluna à
+  esquerda. São lidos com `extraction_mode="layout"`, senão os artigos saem
+  fora de ordem.
+
+### Metadados de cada trecho
+
+Os cinco obrigatórios do enunciado — `source_file`, `doc_type`, `chunk_id`,
+`sensitivity`, `base_id` — mais:
+
+| Metadado | O que é |
+| --- | --- |
+| `data_publicacao` | campo de vigência; nos editais vem da API oficial do PNCP |
+| `fonte_data` | de onde veio a data: `pncp` ou `indisponivel` |
+| `numero_norma` / `numero_edital` | identificação do documento |
+| `artigo` / `clausula` | qual artigo ou cláusula o trecho contém |
+| `parte` / `tem_overlap` | em trecho dividido, qual parte é e se repete texto |
+| `orgao`, `ano`, `altera` | órgão, ano-base e qual decreto este altera |
+| `dados_pessoais` | o que foi encontrado e tratado, quando houver |
+
+### Política de sensibilidade
+
+A classificação é feita **na ingestão**, nunca na hora de responder: filtrar por
+metadado é barato e determinístico; pedir ao LLM que decida depois é caro e
+falível.
+
+| Dado | Tratamento |
+| --- | --- |
+| CPF de pessoa física | **mascarado** (`[CPF MASCARADO]`) |
+| Telefone | **mascarado** (`[TELEFONE MASCARADO]`) |
+| E-mail | mantido e **sinalizado** em `dados_pessoais` |
+| CNPJ, nome de empresa, valores, objeto | mantidos — públicos por lei |
+
+Os e-mails encontrados são de setores (`licitacao.bomjardim@`), não de pessoas
+físicas. Por isso foram mantidos e sinalizados, para o time decidir. Depois do
+processamento não há nenhum CPF ou telefone visível no corpus.
+
+### Logs
+
+A coleta e a ingestão emitem log estruturado em JSONL, em
+`logs/pipeline-AAAA-MM-DD.jsonl`, uma linha por evento, pelo módulo
+[`app/core/logging.py`](app/core/logging.py).
+
+Cada execução recebe um `run_id`, impresso no fim do comando. É ele que amarra
+os eventos de uma mesma execução: sem isso, os logs são ruído.
+
+| Stage | Quando é emitido |
+| --- | --- |
+| `coleta` | um evento de resumo por execução + um por documento baixado |
+| `ingestao` | um evento por documento processado |
+
+> Esses dois nomes complementam o `PIPELINE_STAGES`
+> (`app/modules/rag/model.py`), que hoje cobre só a fase de consulta
+> (`query_analysis`, `roteamento`, `retrieval_denso`, `retrieval_bm25`,
+> `fusao_rrf`, `rerank`, `geracao`, `validacao`, `feedback`). **Proposta ao
+> time:** acrescentar `coleta` e `ingestao` à lista canônica. Enquanto não há
+> decisão, eles ficam declarados em `app/core/logging.py`.
+
+Um evento tem esta forma:
+
+```json
+{
+  "ts": "2026-10-02T15:29:26-03:00",
+  "run_id": "a15bffbe",
+  "query_id": null,
+  "stage": "coleta",
+  "status": "ok",
+  "latencia_ms": 2482,
+  "input": "data/raw/v1/editais_normativo",
+  "output": "13 ok, 0 falhas de 13",
+  "tokens": { "prompt": 0, "completion": 0, "total": 0 },
+  "modelo": null,
+  "extra": { "base_id": "editais_normativo", "versao": "v1" }
+}
+```
+
+Três decisões que valem saber:
+
+- **`tokens` fica zerado nestas duas etapas**, porque nenhuma delas chama o LLM.
+  O campo existe mesmo assim, para que toda etapa tenha o mesmo formato e quem
+  instrumentar a geração só precise preencher.
+- **O log não engole falha.** Uma URL morta vira um evento com
+  `status: "falhou"` e o erro no `extra`, sem abortar a coleta. Uma exceção vira
+  `status: "erro"` e **continua subindo** — um log que esconde problema é pior
+  do que não ter log.
+- **A pasta `logs/` é ignorada pelo Git**, e os testes do módulo nunca escrevem
+  nela: eles apontam para um diretório temporário.
+
+Para ler o log da última execução:
+
+```bash
+python -c "import json,glob;p=sorted(glob.glob('logs/pipeline-*.jsonl'))[-1];[print(json.loads(l)['stage'],'|',json.loads(l)['status'],'|',json.loads(l)['latencia_ms'],'ms |',json.loads(l)['input']) for l in open(p,encoding='utf-8')]"
+```
+
+### O que vai para o Git
+
+`data/raw/` é ignorado — qualquer pessoa reconstrói rodando o `fetch`. Vão para
+o Git o manifesto, o inventário, o diff e `data/manual/`, que guarda os decretos
+baixados à mão, com o `sha256` de cada um declarado no manifesto. Essa é a
+exceção consciente à regra: o site de origem bloqueia download automático
+(HTTP 403), e sem os arquivos versionados ninguém reproduz o corpus.
+
+---
 
 ## Base Estruturada\*\*
 
