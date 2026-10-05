@@ -146,3 +146,213 @@ limpar antes de dividir por artigo. [ajustar com a sua visão]
 - **Travou:** certificados dos sites do governo, erro de colagem e caminho do
   teste.
 - **Próximo passo:** processamento da base normativa e CORPUS_INVENTORY.md.
+
+## Encontro 4 · 23/09/2026
+
+### O que eu fiz hoje
+
+Hoje fiz, com a Ester, o processamento da base normativa, que é a minha frente.
+A coleta já estava pronta da aula passada, então os documentos estavam
+disponíveis para serem tratados.
+
+Criei o módulo `app/modules/ingest/`, com `services.py`, `schemas.py` e
+`routes.py`, como manda a arquitetura do time. O processamento faz quatro
+coisas: extrai o texto dos arquivos (PDF e HTML), limpa o que não é do
+documento, corta em pedaços e coloca os metadados.
+
+O que mais me chamou atenção foram os detalhes de cada formato. A Lei 14.133 vem
+em HTML e precisa ser lida como cp1252, senão os acentos quebram. Além disso, o
+Planalto mantém o texto revogado riscado na página: se ele entrasse, o sistema
+responderia com regra que não vale mais. Nos decretos, o cabeçalho e o rodapé da
+impressão apareciam no meio dos artigos, e os rótulos "Art. Xº" ficam numa
+coluna à esquerda, o que exigiu ler o PDF respeitando a posição do texto na
+página.
+
+Na divisão por artigo, aprendi que não basta procurar "Art." no começo da linha:
+citações como "Art. 2º desta Lei" apareciam no meio de um artigo e quebravam o
+pedaço, e a Lei 14.133 ainda insere artigos no Código Penal, que fogem da
+sequência. O resultado final foram 784 pedaços, com a lei completa em 194
+artigos. [ajustar com a sua visão]
+
+Depois criei os testes em `tests/test_ingest_normativa.py`, com uma lei de
+exemplo bem pequena em `tests/fixtures/lei_trecho.html`, feita de propósito com
+um artigo com parágrafos e incisos, uma citação e um trecho riscado. Os 9 testes
+passaram.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever o processamento e os testes e entender os problemas de
+  formato dos documentos.
+- **O que eu conferi / mudei:** rodei o processamento, conferi os pedaços
+  gerados, ajustei o caminho de saída para `data/processed/` e corrigi o lugar
+  dos arquivos de teste.
+
+### O que travou
+
+- Os arquivos de teste foram parar em `tests/integration/tests/fixtures/` por
+  causa das "pastas compactas" do VS Code, e o pytest não encontrava.
+- O arquivo de exemplo aparece com os acentos errados no editor, porque está em
+  cp1252 de propósito, e não pode ser salvo pelo VS Code.
+
+### Próximo passo
+
+- Entregar o `data/processed/v1_editais_normativo.jsonl` para quem faz a
+  indexação e a busca.
+- Ajudar no CORPUS_INVENTORY.md e abrir o pull request para a main.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** processamento em
+  `app/modules/ingest/services.py` (784 pedaços, Lei 14.133 com 194 artigos) e
+  9 testes passando.
+- **Travou:** caminho das pastas de teste e codificação do arquivo de exemplo.
+- **Próximo passo:** CORPUS_INVENTORY.md e integração com a etapa de busca.
+
+## Encontro 6 · 28/09/2026
+
+### O que eu fiz hoje
+
+Trabalhamos as duas na minha máquina, revisando o que ainda faltava na base
+normativa em relação ao enunciado. Depois da lista pronta, pegamos as duas
+pendências de maior peso.
+
+A primeira foi a *data dos editais*. Eu tinha feito o processamento no
+encontro anterior, e quando conferimos os metadados descobrimos que os 303
+trechos de edital estavam sem data_publicacao a lei e os decretos têm a data
+na linha de título, os editais não têm nada parecido. Tentamos extrair do texto
+e o resultado foi ruim: o que vinha eram as datas das leis citadas dentro do
+edital. Acabamos indo buscar na API do PNCP, que devolve a data oficial de
+publicação de cada arquivo.
+
+Alterei o metadados_do_documento para ler uma ficha gravada pela coleta, em
+vez de consultar a rede na hora de processar. Isso importa para a parte que é
+minha: os testes do processamento continuam rodando offline, sem depender de o
+PNCP estar no ar.
+
+Reprocessei os 13 documentos e confirmei os 784 trechos, agora todos com data.
+Escrevi também o teste que garante que um edital *sem* ficha continua sendo
+processado, em vez de quebrar a ingestão.
+
+A segunda parte foi o inventário em JSON, que passou a ter o envelope exigido
+pelo enunciado, com o manifest_hash amarrando o corpus ao manifesto.
+
+Os testes foram de 27 para 31.
+
+### Onde usei IA e o que mudei no resultado
+
+- *Ferramenta:* Claude.
+- *Para quê:* entender por que os editais estavam sem data de publicação,
+  escrever a função que lê a ficha do PNCP na ingestão e os testes novos, e
+  diagnosticar os erros de indentação e de importação que apareceram no
+  caminho.
+- *O que eu conferi / mudei:* conferi a resposta da API do PNCP antes de
+  aceitar a solução, porque a primeira ideia (extrair a data do texto do PDF)
+  tinha dado resultado errado e eu queria ver a fonte; reprocessei os 13
+  documentos e conferi os metadados dos 784 trechos, em vez de confiar na
+  contagem; e fiz questão de que a ingestão lesse um arquivo local em vez de
+  chamar a rede, para os meus testes continuarem rodando offline.
+
+### O que travou
+
+- Meu ambiente virtual estava sem pypdf, truststore, requests, PyYAML e
+  pytest, e foi preciso instalar um a um conforme os erros apareciam.
+- O requirements.txt do repositório está salvo em UTF-16 e não instala com
+  pip install -r. Qualquer pessoa que clonar vai bater nisso.
+- Colamos os dois testes novos no arquivo errado e eles falharam com
+  NameError, porque dependiam de um helper que estava no outro arquivo.
+- Ao colar blocos de código no VS Code, a primeira linha perdia o recuo e virava
+  IndentationError. Aconteceu três vezes até a gente pegar o jeito de
+  conferir sempre a primeira linha depois de colar.
+
+### Próximo passo
+
+- Overlap entre as partes de um artigo longo, para o código cumprir o que o
+  manifesto promete.
+- Documentar o processamento no README.
+- Entregar o data/processed/v1_editais_normativo.jsonl para a indexação.
+
+### Resumo do time no dia
+
+- *Entregamos (base normativa):* campo_vigencia preenchido nos 784 trechos,
+  com a data vinda da API oficial do PNCP; inventário data/inventory/v1.json
+  no formato do enunciado, com manifest_hash; 31 testes passando.
+- *Travou:* dependências ausentes no ambiente e a codificação do
+  requirements.txt.
+- *Próximo passo:* overlap, README, logs e pull request para a main.
+
+
+## Encontro 7 · 30/09/2026
+
+### O que eu fiz hoje
+
+Hoje mexemos no processamento, que é a parte que eu venho cuidando desde o
+começo.
+
+A primeira mudança foi o **overlap**. O manifesto prometia "split por
+artigo/cláusula, com overlap" e o meu código não fazia isso — quando um artigo
+passava de 4.000 caracteres, eu dividia em partes e a parte seguinte começava
+seca, sem a frase que a introduzia. Agora cada parte repete os 200 caracteres
+finais da anterior, cortados em palavra inteira para não começar no meio de uma
+palavra.
+
+O que eu não quis fazer foi overlap entre artigos diferentes. Para texto
+normativo isso seria ruim: o artigo é uma unidade fechada, e colar o fim do Art.
+74 no começo do Art. 75 faria a busca devolver o artigo errado com um pedaço do
+certo. Deixei isso escrito no manifesto e no comentário do código, porque é o
+tipo de decisão que alguém desfaz sem querer.
+
+Acrescentei também os metadados `parte` e `tem_overlap` em cada trecho, para
+quem for indexar saber quais repetem texto e não contar o mesmo conteúdo duas
+vezes.
+
+Depois veio o **lixo de impressão**. Olhando os trechos, vi que os editais do
+SEI trazem a data da impressão e o link com o número da página no meio das
+cláusulas — 125 linhas em 57 trechos. Eu já tinha um filtro para isso, feito
+para os decretos, mas ele exigia ano de dois dígitos e os editais vêm com
+quatro. A regra estava lá e não pegava.
+
+Reprocessei os 13 documentos depois de cada mudança e conferi os números: o
+corpus foi para 796 com o overlap e voltou para 794 com a limpeza, porque sem o
+lixo alguns trechos deixam de estourar o limite. Conferi também que a Lei 14.133
+continua completa e descobri que ela tem um artigo a mais do que eu contava, o
+Art. 44-A, incluído por uma lei de 2025.
+
+Escrevi quatro testes do overlap e dois do lixo de impressão. O total foi de 31
+para 37.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** escrever a função do overlap, corrigir o filtro de lixo de
+  impressão e escrever os testes.
+- **O que eu conferi / mudei:** reprocessei os 13 documentos a cada alteração e
+  comparei as contagens por arquivo, em vez de aceitar o total; conferi que a
+  mudança do lixo só afetou o edital de 60 páginas, o que confirmou que o filtro
+  não estava comendo texto bom; e conferi a contagem de artigos da lei antes de
+  dar por encerrado.
+
+### O que travou
+
+- Um dos testes do overlap falhava porque o texto de exemplo não tinha quebras
+  de linha, e a minha função divide por linha de propósito, para não cortar no
+  meio de uma frase. Isso mostrou uma limitação real: um documento que viesse
+  todo numa linha só geraria um chunk enorme.
+- A primeira conferência do overlap parecia dizer que ele não estava
+  funcionando, e o problema era o comando de verificação, não o código.
+
+### Próximo passo
+
+- Cobrir o caso do documento sem quebras de linha.
+- Entregar o `data/processed/v1_editais_normativo.jsonl` para quem vai indexar.
+- Logs estruturados, quando o time definir.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** overlap entre partes de artigo longo, com os
+  metadados `parte` e `tem_overlap`; remoção do cabeçalho e rodapé de impressão
+  dos editais; seção da base normativa no README; 37 testes passando. Corpus em
+  794 trechos.
+- **Travou:** os logs dependem de definição do time, ainda estamos decidindo 
+- **Próximo passo:** logs, pull request e o arquivo de teste duplicado na branch
+  principal.
