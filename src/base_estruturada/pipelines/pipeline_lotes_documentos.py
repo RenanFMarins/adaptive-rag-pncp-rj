@@ -58,17 +58,20 @@ def caminhos_do_lote(periodo: PeriodoColeta, nome_lote: str) -> dict[str, Path]:
     if not nome_lote.startswith("lote_"):
         raise ValueError("nome_lote deve seguir o formato 'lote_001'.")
 
-    base_lote = Path("data/checkpoints/lotes_documentos") / periodo.identificador
+    base_lote = Path("data/checkpoints/lotes_documentos") / \
+        periodo.identificador
     base_zip = Path("data/lotes_documentos") / periodo.identificador
     base_extracao = Path("data/checkpoints/extracao") / str(periodo.ano)
     return {
         "lote": base_lote / f"{nome_lote}.json",
         "zip": base_zip / f"documentos_{nome_lote}.zip",
         "fila_docling": (
-            base_extracao / f"fila_docling_{periodo.identificador}_{nome_lote}.json"
+            base_extracao /
+            f"fila_docling_{periodo.identificador}_{nome_lote}.json"
         ),
         "estado_docling": (
-            base_extracao / f"estado_docling_{periodo.identificador}_{nome_lote}.json"
+            base_extracao /
+            f"estado_docling_{periodo.identificador}_{nome_lote}.json"
         ),
         "relatorio_docling": (
             Path("data/normalized/inventarios") / str(periodo.ano)
@@ -107,11 +110,13 @@ def _manifestos_com_estado(periodo: PeriodoColeta) -> dict[str, list[dict[str, A
     resultado: dict[str, list[dict[str, Any]]] = {}
     for origem, chave_manifesto, chave_checkpoint in (
         ("contratos", "manifesto_contratos", "checkpoint_documentos_contratos"),
-        ("contratacoes", "manifesto_contratacoes", "checkpoint_documentos_contratacoes"),
+        ("contratacoes", "manifesto_contratacoes",
+         "checkpoint_documentos_contratacoes"),
     ):
         manifesto = carregar_json(caminhos[chave_manifesto], padrao=[])
         if not isinstance(manifesto, list):
-            raise RuntimeError(f"Manifesto invalido: {caminhos[chave_manifesto]}")
+            raise RuntimeError(
+                f"Manifesto invalido: {caminhos[chave_manifesto]}")
         checkpoint = carregar_checkpoint_documentos(caminhos[chave_checkpoint])
         resultado[origem] = materializar_manifesto_com_checkpoint(
             manifesto,
@@ -296,7 +301,8 @@ def baixar_lote_documentos(
             / f"{periodo.mes:02d}",
         )
         chave_checkpoint = f"checkpoint_documentos_{origem}"
-        checkpoint = carregar_checkpoint_documentos(caminhos_periodo[chave_checkpoint])
+        checkpoint = carregar_checkpoint_documentos(
+            caminhos_periodo[chave_checkpoint])
         salvar_estado_documentos(
             caminhos_periodo[chave_checkpoint],
             checkpoint,
@@ -401,7 +407,7 @@ def gerar_fila_docling_do_lote(
 
 if __name__ == "__main__":
     PERIODO = PeriodoColeta(ano=2026, mes=8)
-    NOME_LOTE = "lote_001"
+    NOME_LOTE = "lote_002"
     LIMITE_DOCUMENTOS = 500
     TIPOS_PERMITIDOS = TIPOS_TESTE_EXTRACAO
 
@@ -416,7 +422,8 @@ if __name__ == "__main__":
             limite_documentos=LIMITE_DOCUMENTOS,
             tipos_permitidos=TIPOS_PERMITIDOS,
         )
-        print(f"Lote criado/carregado | documentos={lote['quantidadeSelecionada']}")
+        print(
+            f"Lote criado/carregado | documentos={lote['quantidadeSelecionada']}")
         if ACAO == "criar_e_baixar":
             print(baixar_lote_documentos(PERIODO, NOME_LOTE))
             print(gerar_zip_lote(PERIODO, NOME_LOTE))
