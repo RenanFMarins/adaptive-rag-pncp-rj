@@ -1160,3 +1160,102 @@ Os próximos passos definidos foram:
   `RUNNING`;
 - gerar um snapshot filtrado e reproduzível do segundo trimestre;
 - publicar os artefatos com inventário e hashes SHA-256 em uma nova Release.
+
+
+---
+
+## Encontro 9 - 2026-10-05
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei o trabalho no fechamento de lacunas da camada RAW
+do segundo trimestre de 2023 e na preparação de uma coleta independente das
+atas de registro de preços do primeiro trimestre. O objetivo foi consolidar
+os dados agregados que dependem de contratações e organizar uma atividade que
+possa ser executada por outro integrante sem perder rastreabilidade ou alterar
+o banco original publicado na Release.
+
+### Fechamento dos resultados homologados do segundo trimestre
+
+Foi executada uma coleta direcionada para os itens do segundo trimestre que
+ainda não possuíam `resultado_item` na camada RAW. Os 101 alvos pendentes
+foram consultados e produziram 102 novos registros, pois um dos itens possuía
+mais de um resultado.
+
+Após a execução, a auditoria confirmou:
+
+- 10.122 itens do segundo trimestre marcados como possuindo resultado;
+- 10.122 itens com resultado coletado;
+- zero itens pendentes nesse recorte;
+- cobertura de 100% dos resultados esperados para o T2.
+
+### Ampliação do PCA para os novos órgãos do T2
+
+Também foi executada a coleta de PCA para 49 novos órgãos identificados nas
+contratações do segundo trimestre.
+
+O processamento foi concluído com sucesso para todos os alvos:
+
+- 49 órgãos consultados;
+- 12 órgãos com PCA retornado pelo PNCP;
+- 37 órgãos sem PCA disponível, tratados corretamente como resposta vazia;
+- 57 novos planos preservados na camada RAW;
+- 9.506 itens mantidos dentro dos payloads originais dos planos;
+- 252 PCAs distintos no conjunto acumulado.
+
+### Preparação da coleta de atas de registro de preços
+
+Foi criada e publicada a branch
+`feature/coleta-atas-registro-precos` para permitir que outro integrante
+execute a coleta das atas sem depender do banco principal de desenvolvimento.
+
+Inicialmente, foi preparado um fluxo ampliado capaz de descobrir as unidades
+do RJ a partir das contratações RAW. Para tornar a execução reproduzível,
+foram definidos:
+
+- seleção determinística de órgãos e unidades administrativas;
+- consulta ao endpoint `/api/consulta/v1/atas`;
+- preservação integral do JSON recebido;
+- `resource_type = ata_registro_preco`;
+- checkpoints por unidade e janela temporal;
+- retomada segura com o comando `update`;
+- logs JSONL específicos para acompanhamento da coleta.
+
+Para a atividade imediata, o escopo foi reduzido corretamente ao primeiro
+trimestre de 2023. Foi criado o perfil `t1-2023`, que utiliza:
+
+- data inicial em 01/01/2023;
+- data final em 31/03/2023;
+- as 233 unidades do RJ encontradas nas contratações do banco T1;
+- checkpoint independente `pncp_atas_rj_2023_t1`;
+- uma janela trimestral por unidade, totalizando 233 alvos.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- organizar a coleta de PCA para os novos órgãos;
+- revisar o isolamento dos checkpoints por período;
+- estruturar a coleta delegada das atas;
+- revisar os comandos de restauração, execução e monitoramento;
+- documentar o procedimento de entrega para outro integrante.
+
+### Resultado do encontro
+
+Ao final do encontro, os resultados homologados do segundo trimestre estavam
+com cobertura completa e os PCAs dos novos órgãos haviam sido processados. A
+branch de atas também ficou publicada, testada e documentada para que outro
+integrante possa adicionar ao banco da Release as atas vigentes no primeiro
+trimestre de 2023.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- acompanhar a execução das 233 consultas de atas do primeiro trimestre;
+- auditar checkpoint, falhas e quantidade de atas distintas ao final;
+- validar a integridade do banco atualizado recebido do colega;
+- gerar um novo artefato compactado com as atas acrescentadas;
+- concluir a coleta de contratos e empenhos necessários ao snapshot T2;
+- gerar o inventário e a Release do segundo trimestre;
+- iniciar a normalização dos dados preservados na camada RAW.
