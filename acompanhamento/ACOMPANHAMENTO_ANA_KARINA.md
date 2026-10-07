@@ -512,3 +512,65 @@ para o benchmark, conferindo no corpus qual artigo responde cada uma.
   corpus sem defeitos encontrados.
 - *Travou:* o roteador e o benchmark continuam vazios.
 - *Próximo passo:* perguntas de referência e alinhar quem assume o roteador.
+
+## Encontro 10 · 07/10/2026
+
+### O que eu fiz hoje
+
+Hoje não foi dia de construir, foi dia de entender para onde o projeto vai.
+
+Atualizamos a nossa branch com a principal e rodou os 50 testes da base
+normativa depois do merge. Entraram nove commits com a busca híbrida do
+time: FTS5 para busca por palavra-chave, FAISS para busca por significado, e
+as duas combinadas por RRF. Nada da nossa parte quebrou.
+
+Lemos juntas os dois documentos que o professor passou. O que entendi é que
+o sistema hoje responde tudo do mesmo jeito: pega a pergunta, busca trechos
+de texto parecidos e manda para a LLM escrever a resposta. Isso funciona bem
+para uma pergunta sobre o que um decreto determina, mas erra feio numa
+pergunta de número. Se alguém pergunta o valor total dos contratos de
+dezembro, buscar cinco trechos de texto e somar o que aparece neles dá uma
+resposta incompleta o certo é fazer uma soma no banco. Por isso entra uma
+etapa nova antes da busca, que lê a pergunta e decide o caminho: banco de
+dados, documentos, ou os dois.
+
+Ficamos com a Etapa 7 — integrar os guardrails. O guardrail é a regra que
+impede o sistema de responder o que ele não deve, como indicar qual empresa
+contratar. Ele já está escrito e testado, mas descobrimos que ele não é
+chamado em nenhum lugar: existe no código e não roda. A nossa parte é
+colocá-lo como a primeira coisa a acontecer, antes de qualquer busca, para
+que uma pergunta proibida não chegue nem ao banco nem aos documentos, e para
+que a recusa fique registrada com o motivo.
+
+Entendi também por que a tabela do professor diz que a base normativa está
+"parcialmente pronta". A busca só encontra o que está numa tabela específica
+do banco, e os nossos 794 trechos estão num arquivo que nunca foi carregado
+nela. Então tudo o que a gente coletou e processou ainda não é encontrável
+por quem faz uma pergunta. É pouco trabalho, mas é o que falta.
+
+### Onde usei IA e o que mudei no resultado
+
+- Ferramenta: Claude.
+- Para quê: entender o que integrar guardrails exige, e descobrir o que ainda falta na base normativa.
+- O que eu conferi / mudei: pedi para me explicarem com exemplo concreto
+
+### O que travou
+
+- Nada travou hoje.
+- As Etapas 1 a 3 (Query Analyzer e Router) vêm antes da nossa e ainda não
+  existem. O src/router.py continua com 0 bytes.
+
+### Próximo passo
+
+- Começar a Etapa 7 com a Ester: o guardrail rodando antes de tudo.
+- Confirmar com o time quem carrega os nossos trechos na tabela que a busca
+  indexa.
+
+### Resumo do time no dia
+
+- Entregamos (base normativa): branch sincronizada com a principal e 50
+  testes passando com o código novo da busca híbrida. Assumimos a Etapa 7.
+- Travou: o Query Analyzer e o Router, que precedem a nossa etapa, ainda
+  não existem.
+- Próximo passo: iniciar a Etapa 7 e confirmar quem indexa os trechos da
+  base normativa.
