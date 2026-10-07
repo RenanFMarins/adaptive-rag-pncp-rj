@@ -42,6 +42,17 @@ def _score_decimal(valor: Decimal | None) -> float | None:
     return float(valor) if valor is not None else None
 
 
+def _numero_controle_pncp(chunk: DocumentChunk) -> str | None:
+    """Recupera o identificador PNCP do formato estável de ``source_file``."""
+
+    if chunk.document.base_id != "pncp_rj_estruturada":
+        return None
+    partes = chunk.document.source_file.split("|")
+    if len(partes) < 4 or not partes[2]:
+        return None
+    return partes[2]
+
+
 def _metadata(chunk: DocumentChunk) -> dict[str, object]:
     return {
         "id": chunk.id,
@@ -60,6 +71,9 @@ def _metadata(chunk: DocumentChunk) -> dict[str, object]:
         else None,
         "vigencia": chunk.vigencia.isoformat() if chunk.vigencia else None,
         "document_id": chunk.document_id,
+        "numeroControlePNCP": _numero_controle_pncp(chunk),
+        "tituloDocumento": chunk.document.title,
+        "urlFontePncp": chunk.document.source_url,
     }
 
 
