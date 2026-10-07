@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
+from rich.console import Console
 from sqlalchemy.orm import Session
 
 from app.modules.query.services import persistir_resultado_rag
@@ -96,7 +98,13 @@ def gerar_resposta_rag(
     llm_fn: Callable[[str], str] = gerar_resposta,
     incluir_prompt: bool = False,
     persistir: bool = False,
+    progresso: Callable[[str], None] | None = None,
 ) -> RagAnswer:
+    def informar(mensagem: str) -> None:
+        if progresso is not None:
+            progresso(mensagem)
+
+    informar("Consultando evidências no FTS5 e no FAISS...")
     chunks = retrieval_fn(
         db=db,
         pergunta=pergunta,
@@ -105,18 +113,22 @@ def gerar_resposta_rag(
     )
 
     if not chunks:
+        informar("Nenhuma evidência foi encontrada.")
         return RagAnswer(
             answer=MENSAGEM_SEM_EVIDENCIA,
             sources=[],
             prompt=None if not incluir_prompt else "",
         )
 
+    informar(f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto...")
     contexto = montar_contexto(chunks)
     prompt = montar_prompt(pergunta, contexto)
 
+    informar("Gerando resposta com a LLM...")
     resposta = llm_fn(prompt)
 
     if persistir:
+        informar("Persistindo a consulta, a resposta e as fontes...")
         persistir_resultado_rag(
             db=db,
             pergunta=pergunta,
@@ -125,6 +137,7 @@ def gerar_resposta_rag(
             is_refusal=False,
         )
 
+    informar("Resposta concluída.")
     return RagAnswer(
         answer=resposta,
         sources=chunks,
@@ -157,17 +170,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    console = Console(stderr=True)
+    inicio = time.perf_counter()
     init_db()
 
-    with SessionLocal() as db:
-        resultado = gerar_resposta_rag(
-            db=db,
-            pergunta=args.pergunta,
-            top_k=args.top_k,
-            cache_dir=Path(args.cache_dir),
-            incluir_prompt=args.mostrar_prompt,
-            persistir=args.persistir,
-        )
+    with console.status("Preparando consulta RAG...", spinner="dots") as status:
+        with SessionLocal() as db:
+            resultado = gerar_resposta_rag(
+                db=db,
+                pergunta=args.pergunta,
+                top_k=args.top_k,
+                cache_dir=Path(args.cache_dir),
+                incluir_prompt=args.mostrar_prompt,
+                persistir=args.persistir,
+                progresso=status.update,
+            )
+
+    tempo_total = time.perf_counter() - inicio
+    console.print(
+        "[green]Consulta concluída[/green] "
+        f"| evidências={len(resultado.sources)} "
+        f"| tempo={tempo_total:.1f}s"
+    )
 
     print(
         json.dumps(
