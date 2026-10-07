@@ -1774,7 +1774,7 @@ Persistência
       ↓
 Resposta + fontes
 ```   
-**Encontro 8 - 05/10/2026**
+## Encontro 8 - 05/10/2026 
 
 Neste encontro, o trabalho foi concentrado na otimização e validação do processo de indexação vetorial com FAISS e na geração de respostas pelo pipeline RAG.
 
@@ -1832,7 +1832,7 @@ Os testes automatizados também foram executados após a integração. Foram val
 
 Com essas implementações, o RAG passou a possuir rastreabilidade das consultas e uma camada inicial de proteção antes da recuperação de informações e da geração de respostas.
 
-## Encontro 10 
+## Encontro 10 - 07/10/26
 
 Neste encontro, foi realizada a continuidade da evolução da arquitetura do sistema RAG para contratações públicas, com foco na validação da auditabilidade e na integração definitiva do Guardrail ao fluxo de geração de respostas.
 
