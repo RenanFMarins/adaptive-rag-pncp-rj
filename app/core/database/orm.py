@@ -43,7 +43,7 @@ class Base(DeclarativeBase):
 
 
 def init_db(bind: Engine | None = None) -> None:
-    """Register domain models and create missing ORM tables."""
+    """Register domain models, create ORM tables and initialize FTS5."""
     for module in (
         "corpus",
         "documents",
@@ -54,7 +54,14 @@ def init_db(bind: Engine | None = None) -> None:
     ):
         import_module(f"app.modules.{module}.model")
 
-    Base.metadata.create_all(bind=engine if bind is None else bind)
+    banco = engine if bind is None else bind
+    Base.metadata.create_all(bind=banco)
+
+    # FTS5 é uma tabela virtual SQLite, portanto não é representada por um
+    # modelo ORM comum. Ela indexa DocumentChunk e é mantida por triggers.
+    from src.fts import inicializar_fts5
+
+    inicializar_fts5(banco)
 
 
 def get_db() -> Generator[Session, None, None]:
