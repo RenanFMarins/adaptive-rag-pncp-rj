@@ -1770,3 +1770,115 @@ Persistência
       ↓
 Resposta + fontes
 ```   
+**Encontro 8 - 05/10/2026**
+
+Neste encontro, o trabalho foi concentrado na otimização e validação do processo de indexação vetorial com FAISS e na geração de respostas pelo pipeline RAG.
+
+Foi realizada a separação entre o processo de consulta e o processo de indexação, evitando que o índice FAISS fosse reconstruído durante uma consulta. A indexação passou a ser executada explicitamente por meio do comando:
+
+`py -m src.index --batch-size 64`
+
+Também foi implementado o processamento dos embeddings em lotes (batches), reduzindo significativamente a quantidade de requisições necessárias ao modelo de embeddings. Para aproximadamente 25.513 chunks, utilizando batches de 64 elementos, o processo passou a exigir aproximadamente 399 chamadas ao serviço de embeddings.
+
+Foi adicionada uma barra de progresso para permitir o acompanhamento da geração dos embeddings e da construção do índice FAISS.
+
+Durante os testes de geração da resposta RAG, foi identificado um problema relacionado ao limite de tokens da LLM. O modelo estava configurado com `max_tokens=1024`, ocasionando interrupção da geração com `finish_reason='length'`. A configuração foi ajustada para `GENERATION_MAX_TOKENS=2048`.
+
+Após os ajustes, foi validado o fluxo completo:
+
+**DocumentChunk → Embeddings → FAISS → BM25 + FAISS → RRF → Top-K/Evidências → Prompt → LLM → Resposta**
+
+Com isso, o processo de indexação ficou separado da consulta, o índice FAISS passou a ser reutilizado durante as perguntas e o pipeline RAG foi validado desde a recuperação híbrida das evidências até a geração da resposta pela LLM.
+
+**Encontro 9 - 07/10/2026**
+
+Neste encontro, o trabalho foi concentrado na implementação da auditabilidade e dos guardrails do pipeline RAG.
+
+Inicialmente foi implementada a primeira fase de auditabilidade do sistema. Foi criada uma camada específica em `src/audit`, responsável por registrar cada execução do RAG de forma independente.
+
+Cada consulta passou a receber um `trace_id` único, permitindo rastrear todo o processamento realizado para determinada pergunta.
+
+Os registros de auditoria são armazenados em arquivos JSON organizados por data:
+
+`logs/queries/AAAA-MM-DD/<trace_id>.json`
+
+A auditoria passou a registrar informações da requisição, recuperação híbrida, chunks recuperados, posições e scores do BM25, FAISS e RRF, contexto utilizado, prompt enviado à LLM, resposta gerada, tempo de execução, persistência e possíveis erros.
+
+Também foi implementada sanitização para evitar o registro de informações sensíveis, como tokens, chaves de API e cabeçalhos de autorização.
+
+Foi validado que o prompt pode permanecer oculto na resposta apresentada ao usuário (`prompt=null`), enquanto o prompt efetivamente enviado à LLM continua registrado internamente no arquivo de auditoria.
+
+Após a implementação da auditabilidade, foram executados testes do pipeline, confirmando o funcionamento do RAG, das rotas de consulta, da recuperação híbrida e da persistência.
+
+Na segunda etapa foi integrado ao pipeline o guardrail já existente no projeto. A verificação passou a ocorrer após a criação do `trace_id` e antes da recuperação das evidências e da chamada à LLM.
+
+O fluxo passou a seguir:
+
+**Pergunta → Trace ID → Guardrail → Retrieval BM25 + FAISS → RRF → Top-K → Prompt → LLM → Resposta → Auditoria**
+
+Quando uma pergunta viola as regras do guardrail, o processamento é interrompido antes do retrieval e da LLM. Nesse caso, o sistema retorna a mensagem de recusa e registra a tentativa no mesmo mecanismo de auditoria.
+
+Foi realizado um teste com a pergunta:
+
+`Qual empresa devo contratar?`
+
+O guardrail identificou a solicitação de recomendação comercial e retornou a mensagem de recusa, com `sources=[]` e `prompt=null`, sem necessidade de consultar as evidências ou acionar a LLM.
+
+Os testes automatizados também foram executados após a integração. Foram validados os testes de geração/auditoria, rotas de consulta, recuperação híbrida e persistência, totalizando 19 testes aprovados.
+
+Com essas implementações, o RAG passou a possuir rastreabilidade das consultas e uma camada inicial de proteção antes da recuperação de informações e da geração de respostas.
+
+**Encontro 10**
+
+Neste encontro, foi realizada a continuidade da evolução da arquitetura do sistema RAG para contratações públicas, com foco na validação da auditabilidade e na integração definitiva do Guardrail ao fluxo de geração de respostas.
+
+A implementação de auditabilidade desenvolvida anteriormente foi organizada em uma branch específica, `feature/auditabilidade-rag`, testada e integrada ao fluxo principal do projeto.
+
+A camada de auditoria utiliza um `trace_id` único para cada consulta e registra os dados da execução em:
+
+`logs/queries/AAAA-MM-DD/<trace_id>.json`
+
+Cada execução pode registrar a pergunta recebida, estratégia de retrieval utilizada, chunks recuperados, posições e scores do BM25 e FAISS, score do RRF, contexto enviado à geração, prompt utilizado, resposta produzida, tempo de processamento, informações de persistência e possíveis erros.
+
+Em seguida, foi criada a branch:
+
+`feature/guardrail-rag`
+
+Nessa branch foi realizada a segunda fase da evolução do pipeline, integrando o Guardrail existente ao processo auditável.
+
+O fluxo passou a funcionar da seguinte forma:
+
+**Pergunta → Trace ID → Guardrail → Retrieval → BM25 + FAISS → RRF → Top-K → Contexto → Prompt → LLM → Resposta → Auditoria**
+
+O Guardrail passou a ser executado antes do retrieval e antes da chamada à LLM. Dessa forma, perguntas que violam as regras definidas podem ser interrompidas antecipadamente, evitando processamento desnecessário.
+
+Foi realizado um teste utilizando a pergunta:
+
+`Qual empresa devo contratar?`
+
+Essa pergunta corresponde a uma das regras de recusa comercial existentes no Guardrail. O sistema bloqueou corretamente a solicitação e retornou a mensagem padrão de recusa.
+
+O resultado apresentou:
+
+`"sources": []`
+
+e:
+
+`"prompt": null`
+
+confirmando que a solicitação foi interrompida antes da recuperação das evidências e da geração pela LLM.
+
+Mesmo quando uma pergunta é bloqueada, a execução continua sendo rastreável pelo mecanismo de auditoria. O trace registra que o Guardrail foi verificado, se houve bloqueio, o motivo da recusa e a mensagem retornada.
+
+Foram mantidas também as regras de sanitização dos registros de auditoria para impedir o armazenamento de informações sensíveis, como tokens, chaves de API e dados de autorização.
+
+Após a implementação, foram executados os testes de integração relacionados à geração de respostas, auditoria, rotas de consulta, recuperação híbrida e persistência. Os testes foram concluídos com sucesso.
+
+Com essa etapa, o pipeline passou a possuir duas características importantes antes da geração da resposta:
+
+**Rastreabilidade**, por meio da camada de auditoria e do `trace_id`.
+
+**Controle de escopo**, por meio do Guardrail executado antes do retrieval e da LLM.
+
+A arquitetura resultante prepara o sistema para as próximas evoluções, principalmente a introdução de mecanismos capazes de analisar a intenção da pergunta e decidir qual estratégia de recuperação deve ser utilizada antes de consultar as fontes de dados.
+
