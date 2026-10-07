@@ -56,7 +56,7 @@ Com os documentos já extraídos, também comecei a trabalhar na etapa de criaç
 
 Além disso, durante o final de semana, aproveitei para realizar novas requisições e downloads de contratos e contratações, com o objetivo de aumentar as bases que serão utilizadas no projeto.
 
-## Encontro 6 - 2026-09-30
+## Encontro 7 - 2026-09-30
 
 ### Relato individual - Luciano Oliveira da Costa (4h)
 
@@ -68,7 +68,7 @@ Além disso, dediquei parte do tempo à revisão da arquitetura do projeto, prin
 
 Dessa forma, o trabalho de hoje ficou concentrado principalmente na refatoração do código, validação do fluxo, análise de desempenho e organização da arquitetura para posteriormente implementar essas melhorias no projeto.
 
-## Encontro 7 - 2026-10-02
+## Encontro 8 - 2026-10-02
 
 ### Relato individual - Luciano Oliveira da Costa (4h)
 
@@ -78,7 +78,7 @@ Com base na estrutura e nos códigos que já haviam sido desenvolvidos pela equi
 
 Dessa forma, o trabalho de hoje ficou concentrado na continuidade da coleta e extração dos documentos e na estruturação do fluxo para armazenamento dos dados no banco estruturado.
 
-## Encontro 8 - 2026-10-05
+## Encontro 9 - 2026-10-05
 
 ### Relato individual - Luciano Oliveira da Costa (4h)
 
@@ -87,3 +87,15 @@ Hoje, dei continuidade ao processamento dos dados e à etapa de ingestão nos ba
 Além disso, junto com a equipe, apresentamos o andamento do projeto ao professor e discutimos o que já foi desenvolvido até o momento.
 
 Também continuei o processamento dos documentos em lotes, preparando esses dados para posteriormente realizar a ingestão completa no banco. Dessa forma, o trabalho de hoje ficou concentrado principalmente no processamento, ingestão e nos primeiros testes de recuperação das informações.
+
+## Encontro 10 - 2026-10-05
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, realizei a implementação do FTS5 para complementar o processo de busca e recuperação das informações no projeto. Após a implementação, fiz testes para verificar o funcionamento da busca e analisar os resultados retornados pelo sistema.
+
+Também realizei alguns ajustes no prompt utilizado pela LLM. Limitei o tamanho das respostas, padronizei as citações para o formato `[1]`, `[2]` e adicionei uma instrução para evitar que evidências de processos diferentes sejam misturadas na mesma resposta.
+
+Além disso, melhorei as informações enviadas no contexto para a LLM, incluindo identificadores mais claros sobre a origem de cada evidência, como o `numeroControlePNCP`, o título do documento e a URL de origem.
+
+O trabalho de hoje ficou concentrado principalmente na implementação do FTS5 e nos ajustes e testes do fluxo de recuperação e geração das respostas.
