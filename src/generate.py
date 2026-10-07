@@ -7,12 +7,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
-from rich.console import Console
 from sqlalchemy.orm import Session
 
 from app.modules.query.services import persistir_resultado_rag
 from app.modules.rag.services import recuperar_chunks_ranqueados
-from llm_ecoa import gerar_resposta
+from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
+from src.audit import new_trace_id, utc_now, write_audit_trace
 from src.retrieve import RankedChunk
 
 
@@ -98,51 +98,119 @@ def gerar_resposta_rag(
     llm_fn: Callable[[str], str] = gerar_resposta,
     incluir_prompt: bool = False,
     persistir: bool = False,
-    progresso: Callable[[str], None] | None = None,
+    trace_id: str | None = None,
+    audit_dir: Path = Path("logs/queries"),
 ) -> RagAnswer:
-    def informar(mensagem: str) -> None:
-        if progresso is not None:
-            progresso(mensagem)
+    trace_started = time.perf_counter()
+    trace = {
+        "trace_id": trace_id or new_trace_id(),
+        "started_at": utc_now(),
+        "finished_at": None,
+        "elapsed_ms": None,
+        "status": "running",
+        "stage": "started",
+        "request": {
+            "question": pergunta,
+            "top_k": top_k,
+            "cache_dir": str(cache_dir),
+        },
+        "retrieval": {
+            "strategy": "hybrid",
+            "chunks": [],
+        },
+        "generation": {
+            "model": GENERATION_MODEL,
+            "max_tokens": GENERATION_MAX_TOKENS,
+            "contexto": None,
+            "prompt": None,
+            "answer": None,
+            "elapsed_ms": None,
+        },
+        "persistence": {
+            "enabled": persistir,
+        },
+        "error": None,
+    }
 
-    informar("Consultando evidências no FTS5 e no FAISS...")
-    chunks = retrieval_fn(
-        db=db,
-        pergunta=pergunta,
-        top_k=top_k,
-        cache_dir=cache_dir,
-    )
-
-    if not chunks:
-        informar("Nenhuma evidência foi encontrada.")
-        return RagAnswer(
-            answer=MENSAGEM_SEM_EVIDENCIA,
-            sources=[],
-            prompt=None if not incluir_prompt else "",
-        )
-
-    informar(f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto...")
-    contexto = montar_contexto(chunks)
-    prompt = montar_prompt(pergunta, contexto)
-
-    informar("Gerando resposta com a LLM...")
-    resposta = llm_fn(prompt)
-
-    if persistir:
-        informar("Persistindo a consulta, a resposta e as fontes...")
-        persistir_resultado_rag(
+    try:
+        trace["stage"] = "retrieval"
+        chunks = retrieval_fn(
             db=db,
             pergunta=pergunta,
-            resposta=resposta,
-            sources=chunks,
-            is_refusal=False,
+            top_k=top_k,
+            cache_dir=cache_dir,
         )
 
-    informar("Resposta concluída.")
-    return RagAnswer(
-        answer=resposta,
-        sources=chunks,
-        prompt=prompt if incluir_prompt else None,
-    )
+        trace["retrieval"]["chunks"] = [
+            {
+                "rank": rank,
+                "chunk_id": chunk.chunk_id,
+                "document_id": chunk.metadata.get("document_id"),
+                "bm25_rank": chunk.bm25_rank,
+                "bm25_score": chunk.bm25_score,
+                "dense_rank": chunk.dense_rank,
+                "dense_score": chunk.dense_score,
+                "rrf_score": chunk.rrf_score,
+                "metadata": chunk.metadata,
+            }
+            for rank, chunk in enumerate(chunks, start=1)
+        ]
+
+        if not chunks:
+            resposta_sem_evidencia = RagAnswer(
+                answer=MENSAGEM_SEM_EVIDENCIA,
+                sources=[],
+                prompt=None if not incluir_prompt else "",
+            )
+            trace["generation"]["answer"] = resposta_sem_evidencia.answer
+            trace["status"] = "success"
+            trace["stage"] = "completed"
+            return resposta_sem_evidencia
+
+        contexto = montar_contexto(chunks)
+        prompt = montar_prompt(pergunta, contexto)
+        trace["generation"]["contexto"] = contexto
+        trace["generation"]["prompt"] = prompt
+
+        trace["stage"] = "generation"
+        generation_started = time.perf_counter()
+        resposta = llm_fn(prompt)
+        trace["generation"]["elapsed_ms"] = int(
+            (time.perf_counter() - generation_started) * 1000
+        )
+        trace["generation"]["answer"] = resposta
+
+        if persistir:
+            trace["stage"] = "persistence"
+            query, response = persistir_resultado_rag(
+                db=db,
+                pergunta=pergunta,
+                resposta=resposta,
+                sources=chunks,
+                is_refusal=False,
+            )
+            trace["persistence"]["query_id"] = query.id
+            trace["persistence"]["response_id"] = response.id
+            trace["persistence"]["run_id"] = query.run_id
+
+        trace["status"] = "success"
+        trace["stage"] = "completed"
+        return RagAnswer(
+            answer=resposta,
+            sources=chunks,
+            prompt=prompt if incluir_prompt else None,
+        )
+    except Exception as error:
+        trace["status"] = "error"
+        trace["error"] = {
+            "type": type(error).__name__,
+            "message": str(error),
+        }
+        raise
+    finally:
+        trace["finished_at"] = utc_now()
+        trace["elapsed_ms"] = int((time.perf_counter() - trace_started) * 1000)
+        write_audit_trace(trace, audit_dir)
 
 
 if __name__ == "__main__":
@@ -170,28 +238,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    console = Console(stderr=True)
-    inicio = time.perf_counter()
     init_db()
 
-    with console.status("Preparando consulta RAG...", spinner="dots") as status:
-        with SessionLocal() as db:
-            resultado = gerar_resposta_rag(
-                db=db,
-                pergunta=args.pergunta,
-                top_k=args.top_k,
-                cache_dir=Path(args.cache_dir),
-                incluir_prompt=args.mostrar_prompt,
-                persistir=args.persistir,
-                progresso=status.update,
-            )
-
-    tempo_total = time.perf_counter() - inicio
-    console.print(
-        "[green]Consulta concluída[/green] "
-        f"| evidências={len(resultado.sources)} "
-        f"| tempo={tempo_total:.1f}s"
-    )
+    with SessionLocal() as db:
+        resultado = gerar_resposta_rag(
+            db=db,
+            pergunta=args.pergunta,
+            top_k=args.top_k,
+            cache_dir=Path(args.cache_dir),
+            incluir_prompt=args.mostrar_prompt,
+            persistir=args.persistir,
+        )
 
     print(
         json.dumps(
