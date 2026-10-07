@@ -13,6 +13,7 @@ from app.modules.query.services import persistir_resultado_rag
 from app.modules.rag.services import recuperar_chunks_ranqueados
 from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
 from src.audit import new_trace_id, utc_now, write_audit_trace
+from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk
 
 
@@ -114,6 +115,12 @@ def gerar_resposta_rag(
             "top_k": top_k,
             "cache_dir": str(cache_dir),
         },
+        "guardrail": {
+            "checked": False,
+            "triggered": False,
+            "reason": None,
+            "message": None,
+        },
         "retrieval": {
             "strategy": "hybrid",
             "chunks": [],
@@ -133,6 +140,25 @@ def gerar_resposta_rag(
     }
 
     try:
+        trace["stage"] = "guardrail"
+        bloqueado, mensagem_guardrail = verificar_guardrails_pergunta(pergunta)
+        trace["guardrail"] = {
+            "checked": True,
+            "triggered": bloqueado,
+            "reason": "commercial_recommendation" if bloqueado else None,
+            "message": mensagem_guardrail,
+        }
+        if bloqueado:
+            resposta_bloqueada = RagAnswer(
+                answer=mensagem_guardrail or "",
+                sources=[],
+                prompt=None if not incluir_prompt else "",
+            )
+            trace["generation"]["answer"] = resposta_bloqueada.answer
+            trace["status"] = "blocked"
+            trace["stage"] = "guardrail"
+            return resposta_bloqueada
+
         trace["stage"] = "retrieval"
         chunks = retrieval_fn(
             db=db,
