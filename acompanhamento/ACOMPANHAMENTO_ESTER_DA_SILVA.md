@@ -608,7 +608,8 @@ Os testes foram de 37 para 50.
 
 ### Resumo do time no dia
 
-- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
+- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha 
+do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
 - **Travou:** Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
   máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
   edital estavam sem data de vigência. A capacidade estava certa e testada; o
@@ -617,7 +618,158 @@ Os testes foram de 37 para 50.
 
 ---
 
-## Encontro 9 · DD/MM/AAAA
+## Encontro 9 · 05/10/2026
+
+### O que eu fiz hoje
+
+Trabalhei com a Ana o dia todo, e foi um dia diferente dos anteriores: em vez de
+construir, foi de integrar e revisar.
+
+O pull request #20 foi aprovado e mesclado hoje. Com isso, tudo o que a
+gente construiu saiu da nossa branch e entrou na branch principal: o módulo de
+log, que estava com 0 bytes no repositório desde o começo do projeto, e os 794
+trechos processados, que agora estão disponíveis para quem for construir a
+busca. 
+
+Depois disso cuidei da parte de integração. Entraram outros dois pull requests
+ao longo do dia — a camada conversacional com os guardrails de escopo, e a
+pipeline de documentos da base estruturada —, então trouxe a principal de volta
+para a nossa branch duas vezes. Rodei os 50 testes depois de cada merge, para
+confirmar que nada da base normativa tinha quebrado com o código novo do time.
+Também conferi que o bloco normativo do manifesto continuava intacto, porque
+numa das vezes anteriores ele tinha vindo com os acentos corrompidos.
+
+Fizemos juntas uma auditoria no corpus, procurando defeito nos 794 trechos:
+textos duplicados, trechos acima do limite de tamanho, trechos curtos demais.
+Não encontramos nenhum problema. Os seis trechos abaixo de 100 caracteres são
+legítimos — artigos vetados, como o "Art. 172. (VETADO)", e cláusulas de edital
+que dizem "não se aplica". Foi bom ter conferido: até então a gente afirmava que
+o corpus estava bom sem nunca ter olhado para ele desse ângulo.
+
+Preparei o material da apresentação: um roteiro com os comandos, a saída
+esperada e o que falar em cada momento, dividido entre eu e a Ana.
+
+Sobrou um ponto real: a pasta data/raw/ é ignorada pelo Git, então as fichas com
+as datas do PNCP não vão para o repositório. Quem clonar o projeto e rodar a
+ingestão sem rodar a coleta antes vai gerar os 313 trechos de edital sem data de
+vigência, e em silêncio. Foi exatamente o que aconteceu comigo na sexta. A
+correção é um aviso no fim do processamento, dizendo quantos trechos ficaram sem
+data.
+
+No fim do dia começamos a rascunhar as perguntas de referência da base normativa
+para o benchmark, conferindo cada uma no corpus para saber qual artigo responde.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** conferir o estado do repositório depois dos merges, auditar o
+  corpus, preparar o material de apresentação e localizar no corpus as respostas
+  das perguntas de referência.
+- **O que eu conferi / mudei:** questionei as três melhorias que me foram
+  sugeridas para a base normativa e descartei duas, porque resolviam problemas
+  que não vão acontecer — o corpus está congelado e ninguém está travado
+  esperando documentação. Preferi registrar a decisão de não fazer.
+
+### O que travou
+
+- Nada travou hoje. Os dois merges passaram sem conflito e os testes continuaram
+  passando depois de cada um.
+- Olhando o projeto, notamos que o src/router.py está com 0 bytes e o eval/ está
+  vazio, a 18 dias do Demo Day. O roteador é o que o enunciado chama de coração
+  do Adaptive RAG. 
+
+### Próximo passo
+
+- Terminar o rascunho das perguntas de referência da base normativa.
+- Acrescentar o aviso de trechos sem data de vigência no fim do processamento.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** o PR #20 foi mesclado e a base normativa está
+  integrada à branch principal, com todos os itens do enunciado cumpridos.
+  Auditoria do corpus sem defeitos encontrados.
+- **Travou:** o roteador (src/router.py) e o benchmark (eval/) continuam vazios.
+- **Próximo passo:** perguntas de referência da base normativa e alinhar com o
+  time quem assume o roteador.
+
+---
+
+## Encontro 10 · 07/10/2026
+
+### O que eu fiz hoje
+
+Dia de alinhamento e planejamento, depois da base normativa ter sido mesclada.
+
+Começamos atualizando a nossa branch com a principal. Entraram nove commits —
+os pull requests #29 a #33 —, trazendo a busca híbrida: FTS5 para busca por
+palavra-chave no SQLite, indexação FAISS incremental, e o retrieve.py e o
+index.py reescritos para combinar as duas com RRF. A pasta docs/ também foi
+renomeada para notas/. Não houve conflito, porque a nossa branch não tinha
+nada a mais que a principal. Rodei os 50 testes da base normativa depois do
+merge, para confirmar que nada quebrou com o código novo, e subi.
+
+Depois nós duas lemos as observações que o professor passou na última
+aula. Primeiro descreve a evolução da arquitetura em dez etapas: a ideia é
+que o sistema pare de tratar toda pergunta como consulta vetorial. Uma
+pergunta como "qual foi o valor total dos contratos em dezembro de 2025?"
+não deve ser respondida recuperando cinco trechos de texto — ela precisa
+virar uma soma na base estruturada. Para isso entra uma camada nova antes da
+recuperação: um Query Analyzer, que transforma a pergunta num JSON com
+intenção, rota e filtros, e um Router, que decide entre três rotas —
+estruturada (SQL), RAG (documentos) ou híbrida (as duas).
+
+Ficamos com a Etapa 7 — Integrar Guardrails. Fui ver o que já existe: o
+src/guardrails.py tem a função de verificação e sete termos de recusa
+comercial, e há dois testes em tests/unit/test_guardrails.py. Mas procurei
+por "guardrail" em src/ e app/ e a função não é chamada em lugar nenhum. Ou
+seja, o guardrail existe e está testado, mas não está no caminho de nenhuma
+pergunta. O que a etapa pede é que ele passe a ser a primeira coisa a rodar,
+antes do Analyzer, e que uma pergunta bloqueada não chegue nem à ferramenta
+de SQL nem ao RAG — além de ficar registrada no trace com a rota marcada
+como bloqueada e o motivo da recusa.
+
+A base normativa como "parcialmente pronta", fui procurar o motivo: o FTS5 e o 
+FAISS indexam a tabela document_chunks do banco, e os nossos 794 
+trechos estão num arquivo JSONL que nunca foi carregado nessa tabela. 
+No meu banco local só existem registros da base estruturada. 
+Então a busca híbrida ainda não alcança as leis e os decretos. 
+Preciso confirmar com quem cuida da indexação de quem é
+esse carregamento.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** mapear o que já existe de guardrails no código.
+- **O que eu conferi / mudei:** Fui atrás do motivo da base normativa está
+  "parcialmente pronta" e descobri que os nossos trechos não estão na tabela
+  que a busca indexa — era uma informação que ninguém tinha levantado.
+
+### O que travou
+
+- Nada travou. O merge foi avanço direto e os 50 testes passaram.
+- Fica pendente de confirmar com o time quem carrega os 794 trechos da base
+  normativa na tabela que o FTS5 e o FAISS indexam.
+
+### Próximo passo
+
+- Começar a Etapa 7: colocar o guardrail no início do fluxo, antes do
+  Analyzer, e registrar o bloqueio no trace.
+- Escrever testes garantindo que uma pergunta bloqueada não aciona nenhuma
+  ferramenta.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** branch sincronizada com a principal nas
+  duas direções, 50 testes passando com o código novo da busca híbrida.
+  Definimos que assumimos a Etapa 7 (integrar guardrails).
+- **Travou:** o Query Analyzer e o Router, que são as Etapas 1 a 3 e
+  precedem a nossa, ainda não existem — o src/router.py continua com 0 bytes.
+- **Próximo passo:** iniciar a Etapa 7 e confirmar quem indexa os trechos da
+  base normativa.
+
+---
+
+## Encontro 11 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
