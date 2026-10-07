@@ -1454,7 +1454,7 @@ BM25          FAISS
 │              │
 └──────┬───────┘
        ↓
-  ## Encontro 8 - 2026-10-02
+## Encontro 8 - 2026-10-02
 
 ### Relato individual - Alisson Lima de Souza (4h)
 
@@ -1790,7 +1790,7 @@ Após os ajustes, foi validado o fluxo completo:
 
 Com isso, o processo de indexação ficou separado da consulta, o índice FAISS passou a ser reutilizado durante as perguntas e o pipeline RAG foi validado desde a recuperação híbrida das evidências até a geração da resposta pela LLM.
 
-**Encontro 9 - 07/10/2026**
+## Encontro 9 - 07/10/2026
 
 Neste encontro, o trabalho foi concentrado na implementação da auditabilidade e dos guardrails do pipeline RAG.
 
@@ -1828,7 +1828,7 @@ Os testes automatizados também foram executados após a integração. Foram val
 
 Com essas implementações, o RAG passou a possuir rastreabilidade das consultas e uma camada inicial de proteção antes da recuperação de informações e da geração de respostas.
 
-**Encontro 10**
+## Encontro 10 
 
 Neste encontro, foi realizada a continuidade da evolução da arquitetura do sistema RAG para contratações públicas, com foco na validação da auditabilidade e na integração definitiva do Guardrail ao fluxo de geração de respostas.
 
