@@ -91,7 +91,8 @@ def gerar_resposta_rag(
     pergunta: str,
     top_k: int = 5,
     cache_dir: Path = Path("data/index/faiss"),
-    retrieval_fn: Callable[..., list[RankedChunk]] = recuperar_chunks_ranqueados,
+    retrieval_fn: Callable[..., list[RankedChunk]
+                           ] = recuperar_chunks_ranqueados,
     llm_fn: Callable[[str], str] = gerar_resposta,
     incluir_prompt: bool = False,
     persistir: bool = False,
