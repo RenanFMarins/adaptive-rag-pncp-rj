@@ -58,7 +58,7 @@ duplicados nos índices.
 4. Acrescentar somente os chunks daquele lote ao índice FAISS:
 
    ```powershell
-   python -m src.pipeline_indexacao_faiss `
+   python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
      --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
      --indice-dir data/index/faiss/v1 `
      --origem 2026_08_lote_001 `
@@ -89,12 +89,12 @@ usa a mesma pipeline com filtros. Exemplos:
 
 ```powershell
 # Todos os chunks de uma base
-python -m src.pipeline_indexacao_faiss `
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
   --base-id base_normativa `
   --indice-dir data/index/faiss/v1
 
 # Uma versão específica de corpus
-python -m src.pipeline_indexacao_faiss `
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
   --corpus-version-id 2 `
   --indice-dir data/index/faiss/v1
 ```
@@ -104,7 +104,7 @@ inserido, alterado ou removido. Se for necessário reparar ou conferir o índice
 lexical, execute:
 
 ```powershell
-python -m src.pipeline_reconstruir_fts
+python -m src.base_estruturada.pipelines.pipeline_reconstruir_fts
 ```
 
 ## Operação e limites
