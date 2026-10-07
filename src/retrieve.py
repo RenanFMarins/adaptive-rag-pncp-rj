@@ -1,7 +1,8 @@
 """Retrieval híbrido: SQLite FTS5 + FAISS incremental + RRF.
 
 Esta etapa só consulta índices prontos. A criação de embeddings e a inclusão
-de novos vetores pertencem à ``pipeline_indexacao_faiss``.
+de novos vetores pertencem à
+``base_estruturada.pipelines.pipeline_indexacao_faiss``.
 """
 
 from __future__ import annotations
