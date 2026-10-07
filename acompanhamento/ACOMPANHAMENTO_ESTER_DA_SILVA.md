@@ -694,7 +694,82 @@ para o benchmark, conferindo cada uma no corpus para saber qual artigo responde.
 
 ---
 
-## Encontro 10 · DD/MM/AAAA
+## Encontro 10 · 07/10/2026
+
+### O que eu fiz hoje
+
+Dia de alinhamento e planejamento, depois da base normativa ter sido mesclada.
+
+Começamos atualizando a nossa branch com a principal. Entraram nove commits —
+os pull requests #29 a #33 —, trazendo a busca híbrida: FTS5 para busca por
+palavra-chave no SQLite, indexação FAISS incremental, e o retrieve.py e o
+index.py reescritos para combinar as duas com RRF. A pasta docs/ também foi
+renomeada para notas/. Não houve conflito, porque a nossa branch não tinha
+nada a mais que a principal. Rodei os 50 testes da base normativa depois do
+merge, para confirmar que nada quebrou com o código novo, e subi.
+
+Depois nós duas lemos as observações que o professor passou na última
+aula. Primeiro descreve a evolução da arquitetura em dez etapas: a ideia é
+que o sistema pare de tratar toda pergunta como consulta vetorial. Uma
+pergunta como "qual foi o valor total dos contratos em dezembro de 2025?"
+não deve ser respondida recuperando cinco trechos de texto — ela precisa
+virar uma soma na base estruturada. Para isso entra uma camada nova antes da
+recuperação: um Query Analyzer, que transforma a pergunta num JSON com
+intenção, rota e filtros, e um Router, que decide entre três rotas —
+estruturada (SQL), RAG (documentos) ou híbrida (as duas).
+
+Ficamos com a Etapa 7 — Integrar Guardrails. Fui ver o que já existe: o
+src/guardrails.py tem a função de verificação e sete termos de recusa
+comercial, e há dois testes em tests/unit/test_guardrails.py. Mas procurei
+por "guardrail" em src/ e app/ e a função não é chamada em lugar nenhum. Ou
+seja, o guardrail existe e está testado, mas não está no caminho de nenhuma
+pergunta. O que a etapa pede é que ele passe a ser a primeira coisa a rodar,
+antes do Analyzer, e que uma pergunta bloqueada não chegue nem à ferramenta
+de SQL nem ao RAG — além de ficar registrada no trace com a rota marcada
+como bloqueada e o motivo da recusa.
+
+A base normativa como "parcialmente pronta", fui procurar o motivo: o FTS5 e o 
+FAISS indexam a tabela document_chunks do banco, e os nossos 794 
+trechos estão num arquivo JSONL que nunca foi carregado nessa tabela. 
+No meu banco local só existem registros da base estruturada. 
+Então a busca híbrida ainda não alcança as leis e os decretos. 
+Preciso confirmar com quem cuida da indexação de quem é
+esse carregamento.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** mapear o que já existe de guardrails no código.
+- **O que eu conferi / mudei:** Fui atrás do motivo da base normativa está
+  "parcialmente pronta" e descobri que os nossos trechos não estão na tabela
+  que a busca indexa — era uma informação que ninguém tinha levantado.
+
+### O que travou
+
+- Nada travou. O merge foi avanço direto e os 50 testes passaram.
+- Fica pendente de confirmar com o time quem carrega os 794 trechos da base
+  normativa na tabela que o FTS5 e o FAISS indexam.
+
+### Próximo passo
+
+- Começar a Etapa 7: colocar o guardrail no início do fluxo, antes do
+  Analyzer, e registrar o bloqueio no trace.
+- Escrever testes garantindo que uma pergunta bloqueada não aciona nenhuma
+  ferramenta.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** branch sincronizada com a principal nas
+  duas direções, 50 testes passando com o código novo da busca híbrida.
+  Definimos que assumimos a Etapa 7 (integrar guardrails).
+- **Travou:** o Query Analyzer e o Router, que são as Etapas 1 a 3 e
+  precedem a nossa, ainda não existem — o src/router.py continua com 0 bytes.
+- **Próximo passo:** iniciar a Etapa 7 e confirmar quem indexa os trechos da
+  base normativa.
+
+---
+
+## Encontro 11 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
