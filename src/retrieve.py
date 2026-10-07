@@ -1,21 +1,26 @@
+"""Retrieval híbrido: SQLite FTS5 + FAISS incremental + RRF.
+
+Esta etapa só consulta índices prontos. A criação de embeddings e a inclusão
+de novos vetores pertencem à
+``base_estruturada.pipelines.pipeline_indexacao_faiss``.
+"""
+
 from __future__ import annotations
 
-import re
-import json
 import argparse
-from dataclasses import asdict
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
 from typing import Callable
 
-from rank_bm25 import BM25Okapi
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.modules.documents.model import DocumentChunk
 from llm_ecoa import gerar_embedding
-from src.index import load_or_build_faiss_index
+from src.fts import buscar_fts5
+from src.index import carregar_indice_faiss
 
 
 EmbeddingFn = Callable[[str], list[float]]
@@ -31,10 +36,6 @@ class RankedChunk:
     dense_rank: int | None
     dense_score: float | None
     metadata: dict[str, object]
-
-
-def _tokenizar(texto: str) -> list[str]:
-    return re.findall(r"\w+", texto.lower())
 
 
 def _score_decimal(valor: Decimal | None) -> float | None:
@@ -62,50 +63,34 @@ def _metadata(chunk: DocumentChunk) -> dict[str, object]:
     }
 
 
-def carregar_chunks(db: Session, limite: int | None = None) -> list[DocumentChunk]:
-    query = select(DocumentChunk).order_by(DocumentChunk.id)
-    if limite is not None:
-        query = query.limit(limite)
-    return list(db.scalars(query))
+def carregar_chunks_por_ids(
+    db: Session,
+    chunk_ids: list[str],
+) -> dict[str, DocumentChunk]:
+    """Carrega apenas os chunks vencedores dos índices."""
 
-
-def buscar_bm25(
-    pergunta: str,
-    chunks: list[DocumentChunk],
-    top_k: int,
-) -> list[tuple[str, float]]:
-    if not chunks:
-        return []
-    corpus = [_tokenizar(chunk.content) for chunk in chunks]
-    bm25 = BM25Okapi(corpus)
-    scores = bm25.get_scores(_tokenizar(pergunta))
-    ordenados = sorted(
-        zip(chunks, scores),
-        key=lambda item: float(item[1]),
-        reverse=True,
+    if not chunk_ids:
+        return {}
+    consulta = (
+        select(DocumentChunk)
+        .options(selectinload(DocumentChunk.document))
+        .where(DocumentChunk.chunk_id.in_(chunk_ids))
     )
-    return [
-        (chunk.chunk_id, float(score))
-        for chunk, score in ordenados[:top_k]
-        if float(score) > 0
-    ]
+    return {chunk.chunk_id: chunk for chunk in db.scalars(consulta)}
 
 
 def buscar_dense(
     pergunta: str,
-    chunks: list[DocumentChunk],
     top_k: int,
     cache_dir: Path,
     embedding_fn: EmbeddingFn = gerar_embedding,
 ) -> list[tuple[str, float]]:
-    if not chunks:
+    """Consulta somente um FAISS já indexado; nunca o reconstrói."""
+
+    if top_k <= 0:
         return []
-    index = load_or_build_faiss_index(
-        [(chunk.chunk_id, chunk.content) for chunk in chunks],
-        embedding_fn,
-        cache_dir,
-    )
-    return index.search(embedding_fn(pergunta), top_k)
+    indice = carregar_indice_faiss(cache_dir)
+    return indice.search(embedding_fn(pergunta), top_k)
 
 
 def reciprocal_rank_fusion(
@@ -129,22 +114,26 @@ def retrieve_hibrido(
     cache_dir: Path = Path("data/index/faiss"),
     embedding_fn: EmbeddingFn = gerar_embedding,
 ) -> list[RankedChunk]:
-    chunks = carregar_chunks(db)
-    por_chunk_id = {chunk.chunk_id: chunk for chunk in chunks}
+    """Combina ranking lexical persistente e ranking semântico vetorial."""
 
-    bm25 = buscar_bm25(pergunta, chunks, bm25_k)
-    dense = buscar_dense(pergunta, chunks, dense_k, cache_dir, embedding_fn)
-    fused = reciprocal_rank_fusion([bm25, dense], k=rrf_k)
+    lexical = buscar_fts5(db, pergunta, bm25_k)
+    dense = buscar_dense(pergunta, dense_k, cache_dir, embedding_fn)
+    fused = reciprocal_rank_fusion([lexical, dense], k=rrf_k)
 
-    bm25_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(bm25, start=1)}
-    bm25_score = dict(bm25)
+    bm25_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(lexical, start=1)}
+    bm25_score = dict(lexical)
     dense_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(dense, start=1)}
     dense_score = dict(dense)
-
     ordenados = sorted(fused.items(), key=lambda item: item[1], reverse=True)[:top_k]
+    chunks = carregar_chunks_por_ids(db, [chunk_id for chunk_id, _ in ordenados])
+
     resultados: list[RankedChunk] = []
     for chunk_id, rrf_score in ordenados:
-        chunk = por_chunk_id[chunk_id]
+        chunk = chunks.get(chunk_id)
+        # Um ID pode permanecer em um FAISS antigo se o banco foi limpo ou se
+        # houve troca de corpus. Ignorar evita retornar evidência inexistente.
+        if chunk is None:
+            continue
         resultados.append(
             RankedChunk(
                 chunk_id=chunk.chunk_id,
@@ -163,7 +152,7 @@ def retrieve_hibrido(
 if __name__ == "__main__":
     from app.core.database import SessionLocal, init_db
 
-    parser = argparse.ArgumentParser(description="Executa retrieval hibrido sobre DocumentChunk.")
+    parser = argparse.ArgumentParser(description="Executa retrieval híbrido sobre DocumentChunk.")
     parser.add_argument("pergunta")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--cache-dir", default="data/index/faiss")

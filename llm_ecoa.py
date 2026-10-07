@@ -8,9 +8,11 @@ load_dotenv()
 # Configurações obtidas com fallback seguro
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ecoa-llm.duckdns.org:11434/v1")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "ollama")
-GENERATION_MODEL = os.getenv("GENERATION_MODEL", "qcwind/qwen3-8b-instruct-Q4-K-M")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
-GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "1024"))
+GENERATION_MODEL = os.getenv(
+    "GENERATION_MODEL", "qcwind/qwen3-8b-instruct-Q4-K-M")
+EMBEDDING_MODEL = os.getenv(
+    "EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
+GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "2048"))
 
 # Cliente OpenAI apontando para o servidor Ollama
 client = OpenAI(

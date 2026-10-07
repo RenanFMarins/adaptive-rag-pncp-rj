@@ -91,6 +91,28 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(resposta.answer, MENSAGEM_SEM_EVIDENCIA)
         self.assertEqual(resposta.sources, [])
 
+    def test_informa_etapas_do_processamento(self):
+        etapas: list[str] = []
+
+        resposta = gerar_resposta_rag(
+            db=None,
+            pergunta="Qual o objeto?",
+            retrieval_fn=lambda **_kwargs: [chunk("c1", "Objeto recuperado")],
+            llm_fn=lambda _prompt: "Resposta baseada em [1].",
+            progresso=etapas.append,
+        )
+
+        self.assertEqual(resposta.answer, "Resposta baseada em [1].")
+        self.assertEqual(
+            etapas,
+            [
+                "Consultando evidências no FTS5 e no FAISS...",
+                "1 evidência(s) recuperada(s). Montando o contexto...",
+                "Gerando resposta com a LLM...",
+                "Resposta concluída.",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

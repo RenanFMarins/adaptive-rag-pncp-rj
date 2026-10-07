@@ -608,7 +608,8 @@ Os testes foram de 37 para 50.
 
 ### Resumo do time no dia
 
-- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
+- **Entregamos (base normativa):** logs estruturados (item 2.4), correção do bug da ficha 
+do PNCP e 50 testes passando. A base normativa cumpre todos os itens do enunciado.
 - **Travou:** Descobri que o `data/processed/` que estava commitado tinha sido gerado numa
   máquina onde as fichas do PNCP ainda não existiam, então os 313 trechos de
   edital estavam sem data de vigência. A capacidade estava certa e testada; o
@@ -617,7 +618,83 @@ Os testes foram de 37 para 50.
 
 ---
 
-## Encontro 9 · DD/MM/AAAA
+## Encontro 9 · 05/10/2026
+
+### O que eu fiz hoje
+
+Trabalhei com a Ana o dia todo, e foi um dia diferente dos anteriores: em vez de
+construir, foi de integrar e revisar.
+
+O pull request #20 foi aprovado e mesclado hoje. Com isso, tudo o que a
+gente construiu saiu da nossa branch e entrou na branch principal: o módulo de
+log, que estava com 0 bytes no repositório desde o começo do projeto, e os 794
+trechos processados, que agora estão disponíveis para quem for construir a
+busca. 
+
+Depois disso cuidei da parte de integração. Entraram outros dois pull requests
+ao longo do dia — a camada conversacional com os guardrails de escopo, e a
+pipeline de documentos da base estruturada —, então trouxe a principal de volta
+para a nossa branch duas vezes. Rodei os 50 testes depois de cada merge, para
+confirmar que nada da base normativa tinha quebrado com o código novo do time.
+Também conferi que o bloco normativo do manifesto continuava intacto, porque
+numa das vezes anteriores ele tinha vindo com os acentos corrompidos.
+
+Fizemos juntas uma auditoria no corpus, procurando defeito nos 794 trechos:
+textos duplicados, trechos acima do limite de tamanho, trechos curtos demais.
+Não encontramos nenhum problema. Os seis trechos abaixo de 100 caracteres são
+legítimos — artigos vetados, como o "Art. 172. (VETADO)", e cláusulas de edital
+que dizem "não se aplica". Foi bom ter conferido: até então a gente afirmava que
+o corpus estava bom sem nunca ter olhado para ele desse ângulo.
+
+Preparei o material da apresentação: um roteiro com os comandos, a saída
+esperada e o que falar em cada momento, dividido entre eu e a Ana.
+
+Sobrou um ponto real: a pasta data/raw/ é ignorada pelo Git, então as fichas com
+as datas do PNCP não vão para o repositório. Quem clonar o projeto e rodar a
+ingestão sem rodar a coleta antes vai gerar os 313 trechos de edital sem data de
+vigência, e em silêncio. Foi exatamente o que aconteceu comigo na sexta. A
+correção é um aviso no fim do processamento, dizendo quantos trechos ficaram sem
+data.
+
+No fim do dia começamos a rascunhar as perguntas de referência da base normativa
+para o benchmark, conferindo cada uma no corpus para saber qual artigo responde.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** conferir o estado do repositório depois dos merges, auditar o
+  corpus, preparar o material de apresentação e localizar no corpus as respostas
+  das perguntas de referência.
+- **O que eu conferi / mudei:** questionei as três melhorias que me foram
+  sugeridas para a base normativa e descartei duas, porque resolviam problemas
+  que não vão acontecer — o corpus está congelado e ninguém está travado
+  esperando documentação. Preferi registrar a decisão de não fazer.
+
+### O que travou
+
+- Nada travou hoje. Os dois merges passaram sem conflito e os testes continuaram
+  passando depois de cada um.
+- Olhando o projeto, notamos que o src/router.py está com 0 bytes e o eval/ está
+  vazio, a 18 dias do Demo Day. O roteador é o que o enunciado chama de coração
+  do Adaptive RAG. 
+
+### Próximo passo
+
+- Terminar o rascunho das perguntas de referência da base normativa.
+- Acrescentar o aviso de trechos sem data de vigência no fim do processamento.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** o PR #20 foi mesclado e a base normativa está
+  integrada à branch principal, com todos os itens do enunciado cumpridos.
+  Auditoria do corpus sem defeitos encontrados.
+- **Travou:** o roteador (src/router.py) e o benchmark (eval/) continuam vazios.
+- **Próximo passo:** perguntas de referência da base normativa e alinhar com o
+  time quem assume o roteador.
+
+---
+
+## Encontro 10 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 

@@ -62,6 +62,8 @@ data/extracted/
 data/extraction_tests/
 data/experiments/
 data/lotes_documentos/
+data/index/
+
 
 
 # ==============================
@@ -76,3 +78,4 @@ data/lotes_documentos/
 # ==============================
 .DS_Store
 Thumbs.db
+app.db
