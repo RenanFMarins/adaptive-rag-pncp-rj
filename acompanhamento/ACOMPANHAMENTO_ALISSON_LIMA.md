@@ -1454,7 +1454,11 @@ BM25          FAISS
 │              │
 └──────┬───────┘
        ↓
+
+
+
 ## Encontro 8 - 2026-10-02
+
 
 ### Relato individual - Alisson Lima de Souza (4h)
 
