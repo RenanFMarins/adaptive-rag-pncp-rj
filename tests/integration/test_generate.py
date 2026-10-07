@@ -10,6 +10,7 @@ from src.generate import (
     montar_contexto,
     montar_prompt,
 )
+from src.guardrails import MENSAGEM_RECUSA_PADRAO
 from src.retrieve import RankedChunk
 
 
@@ -125,7 +126,48 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(trace["status"], "success")
         self.assertEqual(trace["stage"], "completed")
         self.assertEqual(trace["request"]["question"], "Qual o objeto?")
+        self.assertEqual(
+            trace["guardrail"],
+            {
+                "checked": True,
+                "triggered": False,
+                "reason": None,
+                "message": None,
+            },
+        )
         self.assertEqual(trace["generation"]["answer"], "Resposta com base em [1].")
+
+    def test_guardrail_bloqueado_gera_trace_sem_retrieval_ou_llm(self):
+        def retrieval_fn(**_kwargs):
+            raise AssertionError("retrieval nao deveria ser chamado")
+
+        def llm_fn(_prompt: str) -> str:
+            raise AssertionError("LLM nao deveria ser chamado")
+
+        resposta = gerar_resposta_rag(
+            db=None,
+            pergunta="Qual empresa devo contratar para fornecer merenda escolar?",
+            retrieval_fn=retrieval_fn,
+            llm_fn=llm_fn,
+            persistir=True,
+            audit_dir=self.audit_dir,
+        )
+
+        trace = self.read_only_trace()
+        self.assertEqual(resposta.answer, MENSAGEM_RECUSA_PADRAO)
+        self.assertEqual(resposta.sources, [])
+        self.assertIsNone(resposta.prompt)
+        self.assertEqual(trace["status"], "blocked")
+        self.assertEqual(trace["stage"], "guardrail")
+        self.assertEqual(trace["guardrail"]["checked"], True)
+        self.assertEqual(trace["guardrail"]["triggered"], True)
+        self.assertEqual(trace["guardrail"]["reason"], "commercial_recommendation")
+        self.assertEqual(trace["guardrail"]["message"], MENSAGEM_RECUSA_PADRAO)
+        self.assertEqual(trace["retrieval"]["chunks"], [])
+        self.assertIsNone(trace["generation"]["contexto"])
+        self.assertIsNone(trace["generation"]["prompt"])
+        self.assertEqual(trace["generation"]["answer"], MENSAGEM_RECUSA_PADRAO)
+        self.assertEqual(trace["persistence"], {"enabled": True})
 
     def test_trace_id_uuid_unico(self):
         def retrieval_fn(**_kwargs):
