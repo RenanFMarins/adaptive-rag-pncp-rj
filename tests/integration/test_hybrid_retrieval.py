@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.core.database import create_sqlite_engine, init_db
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
-from src.retrieve import buscar_bm25, buscar_dense, reciprocal_rank_fusion, retrieve_hibrido
+from src.fts import buscar_fts5
+from src.index import indexar_chunks_incrementalmente
+from src.retrieve import buscar_dense, reciprocal_rank_fusion, retrieve_hibrido
 
 
 def fake_embedding(texto: str) -> list[float]:
@@ -43,15 +45,19 @@ class HybridRetrievalTests(unittest.TestCase):
         self.session.add_all(self.chunks)
         self.session.commit()
 
-    def test_bm25_rankeia_por_conteudo(self):
-        resultado = buscar_bm25("alpha", self.chunks, top_k=2)
+    def test_fts5_rankeia_por_conteudo(self):
+        resultado = buscar_fts5(self.session, "alpha", top_k=2)
         self.assertEqual(resultado[0][0], "c1")
 
     def test_dense_rankeia_com_faiss(self):
         with TemporaryDirectory() as pasta:
+            indexar_chunks_incrementalmente(
+                [(chunk.chunk_id, chunk.content) for chunk in self.chunks],
+                fake_embedding,
+                Path(pasta),
+            )
             resultado = buscar_dense(
                 "beta",
-                self.chunks,
                 top_k=2,
                 cache_dir=Path(pasta),
                 embedding_fn=fake_embedding,
@@ -66,6 +72,11 @@ class HybridRetrievalTests(unittest.TestCase):
         self.assertAlmostEqual(fused["c1"], fused["c2"])
 
         with TemporaryDirectory() as pasta:
+            indexar_chunks_incrementalmente(
+                [(chunk.chunk_id, chunk.content) for chunk in self.chunks],
+                fake_embedding,
+                Path(pasta),
+            )
             resultado = retrieve_hibrido(
                 self.session,
                 "alpha",

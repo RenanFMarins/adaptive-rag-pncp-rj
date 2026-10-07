@@ -58,7 +58,9 @@ class DatabaseTests(unittest.TestCase):
         self.session.add(Query(run_id="kept", text="Preservar consulta"))
         self.session.commit()
         init_db(self.engine)
-        self.assertEqual(set(inspect(self.engine).get_table_names()), TABLES)
+        tabelas = set(inspect(self.engine).get_table_names())
+        self.assertTrue(TABLES.issubset(tabelas))
+        self.assertIn("document_chunks_fts", tabelas)
         self.assertEqual(self.session.scalar(select(Query)).run_id, "kept")
         columns = {c["name"]: c for c in inspect(self.engine).get_columns("document_chunks")}
         self.assertNotIn("embedding", columns)
@@ -190,7 +192,8 @@ class DatabaseTests(unittest.TestCase):
             subprocess.run(command, cwd=ROOT, env=environment, check=True, capture_output=True)
             with closing(sqlite3.connect(db_path)) as connection, connection:
                 tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-                self.assertEqual(tables, TABLES)
+                self.assertTrue(TABLES.issubset(tables))
+                self.assertIn("document_chunks_fts", tables)
                 connection.execute("INSERT INTO queries (run_id, text) VALUES ('saved', 'Pergunta')")
             subprocess.run(command, cwd=ROOT, env=environment, check=True, capture_output=True)
             with closing(sqlite3.connect(db_path)) as connection:
