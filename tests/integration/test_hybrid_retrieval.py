@@ -32,9 +32,11 @@ class HybridRetrievalTests(unittest.TestCase):
         corpus = CorpusVersion(version="retrieval-test", status="ready")
         document = Document(
             corpus_version=corpus,
-            source_file="fonte",
+            source_file="pncp_rj_estruturada|contrato|12345678000199-2-000007/2026|1",
+            title="Contrato de teste",
             base_id="pncp_rj_estruturada",
             doc_type="contrato",
+            source_url="https://pncp.test/contrato/7",
             sensitivity="publico",
         )
         self.chunks = [
@@ -86,6 +88,15 @@ class HybridRetrievalTests(unittest.TestCase):
             )
         self.assertEqual(resultado[0].chunk_id, "c1")
         self.assertEqual(resultado[0].metadata["base_id"], "pncp_rj_estruturada")
+        self.assertEqual(
+            resultado[0].metadata["numeroControlePNCP"],
+            "12345678000199-2-000007/2026",
+        )
+        self.assertEqual(resultado[0].metadata["tituloDocumento"], "Contrato de teste")
+        self.assertEqual(
+            resultado[0].metadata["urlFontePncp"],
+            "https://pncp.test/contrato/7",
+        )
 
 
 if __name__ == "__main__":

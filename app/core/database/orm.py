@@ -2,7 +2,7 @@ from collections.abc import Generator
 from importlib import import_module
 import sqlite3
 
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
@@ -42,6 +42,23 @@ class Base(DeclarativeBase):
     pass
 
 
+def _migrar_colunas_documents(banco: Engine) -> None:
+    """Aplica migrações SQLite pequenas para bancos locais já existentes."""
+
+    if banco.dialect.name != "sqlite":
+        return
+
+    colunas = {
+        coluna["name"]
+        for coluna in inspect(banco).get_columns("documents")
+    }
+    if "title" not in colunas:
+        with banco.begin() as conexao:
+            conexao.exec_driver_sql(
+                "ALTER TABLE documents ADD COLUMN title VARCHAR"
+            )
+
+
 def init_db(bind: Engine | None = None) -> None:
     """Register domain models, create ORM tables and initialize FTS5."""
     for module in (
@@ -56,6 +73,7 @@ def init_db(bind: Engine | None = None) -> None:
 
     banco = engine if bind is None else bind
     Base.metadata.create_all(bind=banco)
+    _migrar_colunas_documents(banco)
 
     # FTS5 é uma tabela virtual SQLite, portanto não é representada por um
     # modelo ORM comum. Ela indexa DocumentChunk e é mantida por triggers.
