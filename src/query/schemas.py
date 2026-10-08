@@ -21,6 +21,13 @@ class QueryRoute(str, Enum):
     HYBRID = "hybrid"
 
 
+class ExecutionTool(str, Enum):
+    """Ferramentas internas permitidas no plano de execução."""
+
+    STRUCTURED_DATABASE = "structured_database"
+    RAG_RETRIEVAL = "rag_retrieval"
+
+
 class QueryIntent(str, Enum):
     """Intenções de alto nível reconhecidas pelo Analyzer."""
 
@@ -182,4 +189,34 @@ class QueryAnalysis(BaseModel):
                     "A rota hybrid exige needs_document_retrieval igual a true."
                 )
 
+        return self
+
+
+class ExecutionPlan(BaseModel):
+    """Plano determinístico que o Router executará em uma etapa posterior."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    route: QueryRoute
+    tools: list[ExecutionTool] = Field(min_length=1)
+    analysis: QueryAnalysis
+
+    @model_validator(mode="after")
+    def validar_consistencia(self) -> "ExecutionPlan":
+        if self.route is not self.analysis.route:
+            raise ValueError("route deve corresponder à rota da análise.")
+
+        ferramentas_por_rota = {
+            QueryRoute.STRUCTURED: [ExecutionTool.STRUCTURED_DATABASE],
+            QueryRoute.RAG: [ExecutionTool.RAG_RETRIEVAL],
+            QueryRoute.HYBRID: [
+                ExecutionTool.STRUCTURED_DATABASE,
+                ExecutionTool.RAG_RETRIEVAL,
+            ],
+        }
+        ferramentas_esperadas = ferramentas_por_rota[self.route]
+        if self.tools != ferramentas_esperadas:
+            raise ValueError(
+                "tools deve conter, na ordem definida, as ferramentas da rota."
+            )
         return self
