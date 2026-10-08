@@ -45,7 +45,8 @@ def aplicar_estado_docling(
     for origem, manifesto in manifestos.items():
         for entidade in manifesto:
             if isinstance(entidade, dict) and entidade.get("numeroControlePNCP"):
-                por_controle[(origem, str(entidade["numeroControlePNCP"]))] = entidade
+                por_controle[(origem, str(
+                    entidade["numeroControlePNCP"]))] = entidade
 
     for item in estados.values():
         if not isinstance(item, dict) or item.get("status") != "concluido":

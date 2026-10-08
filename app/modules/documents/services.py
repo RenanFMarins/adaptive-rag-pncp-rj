@@ -52,6 +52,21 @@ def _document_source_file(metadata: dict[str, Any]) -> str:
     )
 
 
+def _atualizar_origem_documento(
+    documento: Document,
+    metadata: dict[str, Any],
+) -> None:
+    """Sincroniza os identificadores de origem quando o JSONL é reprocessado."""
+
+    titulo = metadata.get("tituloDocumento")
+    if isinstance(titulo, str) and titulo.strip():
+        documento.title = titulo.strip()
+
+    url = metadata.get("urlFontePncp")
+    if isinstance(url, str) and url.strip():
+        documento.source_url = url.strip()
+
+
 def _obter_ou_criar_documento(
     db: Session,
     corpus_version_id: int,
@@ -65,16 +80,19 @@ def _obter_ou_criar_documento(
         )
     )
     if documento is not None:
+        _atualizar_origem_documento(documento, metadata)
         return documento, False
 
     documento = Document(
         corpus_version_id=corpus_version_id,
         source_file=source_file,
+        title=None,
         base_id=str(metadata.get("baseId") or ""),
         doc_type=str(metadata.get("tipoEntidade") or ""),
-        source_url=metadata.get("urlFontePncp"),
+        source_url=None,
         sensitivity=SENSIBILIDADE_PADRAO,
     )
+    _atualizar_origem_documento(documento, metadata)
     db.add(documento)
     db.flush()
     return documento, True
@@ -268,9 +286,6 @@ def persistir_chunks_jsonl_pncp(
             if tipos_entidade is not None and tipo_entidade not in tipos_entidade:
                 resumo["linhasIgnoradasTipo"] += 1
                 continue
-            if chunk_id in chunk_ids_vistos:
-                resumo["chunksReutilizados"] += 1
-                continue
             if (
                 limite_chunks_novos is not None
                 and resumo["chunksCriados"] >= limite_chunks_novos
@@ -290,6 +305,10 @@ def persistir_chunks_jsonl_pncp(
                     resumo["documentosCriados"] += 1
                 else:
                     resumo["documentosReutilizados"] += 1
+
+            if chunk_id in chunk_ids_vistos:
+                resumo["chunksReutilizados"] += 1
+                continue
 
             db.add(_criar_chunk(documento, chunk_id, conteudo, metadata))
             chunk_ids_vistos.add(chunk_id)
