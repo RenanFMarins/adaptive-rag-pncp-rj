@@ -32,6 +32,15 @@ def executar_consulta_adaptativa(
     """
 
     analysis = analyzer_fn(pergunta)
+    return executar_analise_estruturada(connection, analysis)
+
+
+def executar_analise_estruturada(
+    connection: sqlite3.Connection,
+    analysis: QueryAnalysis,
+) -> AdaptiveQueryResult:
+    """Executa uma análise estruturada já pronta, sem chamar a LLM novamente."""
+
     plan = planejar_execucao(analysis)
     if plan.route is not QueryRoute.STRUCTURED:
         raise QueryExecutionError(

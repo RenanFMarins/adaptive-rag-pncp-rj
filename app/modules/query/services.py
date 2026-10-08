@@ -7,6 +7,11 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.modules.query.model import Query, Response, ResponseSource
+from src.query.adaptive_executor import (
+    AdaptiveExecutionResult,
+    executar_plano_adaptativo,
+)
+from src.query.analyzer import analisar_pergunta
 from src.query.executor import executar_consulta_adaptativa
 from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
 from src.retrieve import RankedChunk
@@ -40,6 +45,37 @@ def executar_consulta_estruturada(
         _sqlite_connection_from_session(db),
         pergunta,
         **kwargs,
+    )
+
+
+def executar_consulta_adaptativa_api(
+    db: Session,
+    pergunta: str,
+    top_k: int,
+    analyzer_fn: AnalyzerFn | None = None,
+    rag_executor: Callable[[], object] | None = None,
+) -> AdaptiveExecutionResult:
+    """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
+
+    analysis = (analyzer_fn or analisar_pergunta)(pergunta)
+
+    if rag_executor is None:
+        def rag_executor() -> object:
+            # Importação tardia evita ciclo: generate.py já usa este service
+            # para persistir Query, Response e ResponseSource.
+            from src.generate import gerar_resposta_rag
+
+            return gerar_resposta_rag(
+                db=db,
+                pergunta=pergunta,
+                top_k=top_k,
+                persistir=True,
+            )
+
+    return executar_plano_adaptativo(
+        analysis,
+        structured_connection=_sqlite_connection_from_session(db),
+        rag_executor=rag_executor,
     )
 
 

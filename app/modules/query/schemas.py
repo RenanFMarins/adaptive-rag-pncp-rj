@@ -8,6 +8,7 @@ from src.query.schemas import (
     ExecutionPlan,
     QueryAnalysis,
     StructuredQueryResult,
+    QueryRoute,
 )
 
 
@@ -44,3 +45,23 @@ class StructuredQueryResponse(BaseModel):
     analysis: QueryAnalysis
     plan: ExecutionPlan
     structured_result: StructuredQueryResult
+
+
+class AdaptiveAskRequest(BaseModel):
+    """Entrada do endpoint principal de roteamento adaptativo."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pergunta: str = Field(min_length=1)
+    top_k: int = Field(default=5, ge=1, le=100)
+
+
+class AdaptiveAskResponse(BaseModel):
+    """Resposta de uma rota estruturada ou documental já executada."""
+
+    route: QueryRoute
+    analysis: QueryAnalysis
+    plan: ExecutionPlan
+    structured_result: StructuredQueryResult | None = None
+    answer: str | None = None
+    sources: list[SourceResponse] = Field(default_factory=list)

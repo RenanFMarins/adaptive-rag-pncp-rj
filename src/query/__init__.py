@@ -1,7 +1,12 @@
 """Contratos e componentes técnicos para análise de perguntas."""
 
 from .analyzer import QueryAnalysisError, analisar_pergunta
-from .executor import QueryExecutionError, executar_consulta_adaptativa
+from .adaptive_executor import AdaptiveExecutionResult, executar_plano_adaptativo
+from .executor import (
+    QueryExecutionError,
+    executar_analise_estruturada,
+    executar_consulta_adaptativa,
+)
 from .planner import planejar_execucao
 from .schemas import (
     ExecutionPlan,
@@ -18,6 +23,7 @@ __all__ = [
     "ExecutionPlan",
     "ExecutionTool",
     "AdaptiveQueryResult",
+    "AdaptiveExecutionResult",
     "QueryAnalysis",
     "QueryAnalysisError",
     "QueryFilters",
@@ -26,7 +32,9 @@ __all__ = [
     "StructuredQueryError",
     "StructuredQueryResult",
     "analisar_pergunta",
+    "executar_analise_estruturada",
     "executar_consulta_adaptativa",
     "executar_consulta_estruturada",
+    "executar_plano_adaptativo",
     "planejar_execucao",
 ]
