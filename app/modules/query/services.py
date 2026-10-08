@@ -1,11 +1,46 @@
 from __future__ import annotations
 
+import sqlite3
+from collections.abc import Callable
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.modules.query.model import Query, Response, ResponseSource
+from src.query.executor import executar_consulta_adaptativa
+from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
 from src.retrieve import RankedChunk
+
+
+AnalyzerFn = Callable[[str], QueryAnalysis]
+
+
+def _sqlite_connection_from_session(db: Session) -> sqlite3.Connection:
+    """Obtém a conexão SQLite atual sem abrir outro banco para a consulta."""
+
+    sqlalchemy_connection = db.connection()
+    connection_proxy = sqlalchemy_connection.connection
+    raw_connection = getattr(connection_proxy, "driver_connection", connection_proxy)
+    if not isinstance(raw_connection, sqlite3.Connection):
+        raise RuntimeError("A consulta estruturada requer uma conexão SQLite.")
+    return raw_connection
+
+
+def executar_consulta_estruturada(
+    db: Session,
+    pergunta: str,
+    analyzer_fn: AnalyzerFn | None = None,
+) -> AdaptiveQueryResult:
+    """Executa Analyzer, Planner e Structured Tool na conexão da API."""
+
+    kwargs: dict[str, object] = {}
+    if analyzer_fn is not None:
+        kwargs["analyzer_fn"] = analyzer_fn
+    return executar_consulta_adaptativa(
+        _sqlite_connection_from_session(db),
+        pergunta,
+        **kwargs,
+    )
 
 
 def persistir_resultado_rag(

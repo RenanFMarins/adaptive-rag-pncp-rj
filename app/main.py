@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.core.database import init_db
+from app.core.database import init_db, initialize_database
 from app.core.security import dummy_password_hash, validate_security_settings
 from app.modules.admin.routes import router as admin_router
 from app.modules.auth.routes import router as auth_router
@@ -13,6 +13,8 @@ from app.modules.query.routes import router as query_router
 async def lifespan(app: FastAPI):
     validate_security_settings()
     dummy_password_hash()
+    raw_connection = initialize_database()
+    raw_connection.close()
     init_db()
     yield
 

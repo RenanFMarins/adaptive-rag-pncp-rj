@@ -4,6 +4,12 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.query.schemas import (
+    ExecutionPlan,
+    QueryAnalysis,
+    StructuredQueryResult,
+)
+
 
 class GenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -22,3 +28,19 @@ class SourceResponse(BaseModel):
 class GenerateResponse(BaseModel):
     answer: str
     sources: list[SourceResponse]
+
+
+class StructuredQueryRequest(BaseModel):
+    """Entrada da rota de consulta à base estruturada."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pergunta: str = Field(min_length=1)
+
+
+class StructuredQueryResponse(BaseModel):
+    """Análise, plano e registros retornados pela Structured Tool."""
+
+    analysis: QueryAnalysis
+    plan: ExecutionPlan
+    structured_result: StructuredQueryResult
