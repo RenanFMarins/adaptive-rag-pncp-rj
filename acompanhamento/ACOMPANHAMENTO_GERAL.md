@@ -351,3 +351,169 @@
 
 * Utilizamos assistentes de IA como apoio na análise técnica, revisão da arquitetura, investigação das APIs, organização do corpus, tratamento dos dados, processamento documental, recuperação híbrida, geração de respostas, testes e documentação.
 * As sugestões foram analisadas e adaptadas pela equipe, sendo validadas por meio de testes, execuções controladas, análise dos dados coletados e verificação dos resultados no projeto.
+
+# Resumo do dia - Encontro 8 - 2026-10-02
+
+## Resumo do time no dia
+
+****Entregamos hoje:****
+
+* Avançamos na integração das diferentes frentes do projeto, com evolução simultânea das bases, ingestão, processamento, recuperação, geração e organização da aplicação.
+* Evoluímos a coleta e persistência dos dados estruturados e agregados, mantendo a organização dos dados RAW e dos mecanismos de controle utilizados nas coletas.
+* Continuamos a coleta e processamento dos dados do PNCP, incluindo a organização das informações de contratos, contratações, itens e resultados para as etapas posteriores de integração.
+* Avançamos na preparação da recuperação documental, incluindo testes de ingestão e organização dos documentos para utilização no mecanismo de busca híbrida.
+* Integramos o fluxo de recuperação e geração de respostas à API da aplicação por meio do endpoint `POST /query/generate`, utilizando a estrutura de RAG já desenvolvida.
+* Validamos consultas reais pela API e pelo Swagger, com respostas geradas a partir dos documentos recuperados e respectivas evidências.
+* A resposta gerada passou a manter a rastreabilidade das fontes, incluindo posição dos resultados, identificadores dos chunks, relevância e metadados.
+* Avançamos na persistência do fluxo de consulta e resposta, relacionando consultas, respostas e fontes utilizadas durante a geração.
+* Evoluímos a observabilidade da ingestão com a implementação de logs estruturados em JSONL, incluindo `run_id`, etapas executadas, duração das operações e registro de falhas.
+* Corrigimos um problema de idempotência relacionado à seleção indevida de arquivos `.meta.json` durante o processamento.
+* Foram adicionados testes relacionados ao logging, idempotência e comportamento da ingestão, elevando a suíte de testes de 37 para 50 testes.
+* Identificamos e corrigimos dados processados anteriormente sem o campo de vigência, realizando o reprocessamento completo dos 794 chunks da base normativa.
+* Avançamos na organização da arquitetura de consulta, iniciando a definição de um componente responsável por interpretar a pergunta do usuário antes da execução da busca ou consulta.
+* Foram realizados diagnósticos e auditorias da coleta histórica do PNCP, incluindo análise de cobertura, checkpoints, integridade e registros ainda pendentes.
+
+****Ficou pendente:****
+
+* Continuar a expansão e auditoria das bases estruturada e agregada.
+* Completar as coletas históricas ainda pendentes e validar a cobertura dos dados.
+* Continuar a integração dos dados RAW com as estruturas necessárias para consultas.
+* Ampliar o processamento e indexação dos documentos das diferentes bases.
+* Continuar a evolução do fluxo de recuperação e geração de respostas.
+* Integrar o componente de interpretação das perguntas ao fluxo principal da aplicação.
+* Estruturar o roteamento entre consultas estruturadas, RAG e consultas que necessitem combinar as duas abordagens.
+* Continuar a evolução dos mecanismos de auditoria, observabilidade e rastreabilidade.
+
+****Bloqueios em aberto:****
+
+* O PNCP continua apresentando limitações e diferenças de cobertura entre os recursos consultados, exigindo auditoria dos checkpoints e dos registros pendentes.
+* Parte da coleta histórica ainda apresenta resultados parciais e precisa ser concluída antes do fechamento definitivo dos snapshots.
+* A integração completa entre as diferentes formas de consulta ainda depende da definição e implementação do roteamento da aplicação.
+
+****Próximo passo (início do Encontro 9):****
+
+* Continuar a coleta e auditoria dos dados históricos do PNCP.
+* Completar os registros pendentes e validar a cobertura das bases estruturada e agregada.
+* Continuar a integração da ingestão e indexação dos documentos.
+* Evoluir o componente de interpretação das perguntas e iniciar sua integração com o roteamento.
+* Estruturar as consultas estruturadas e a integração com o RAG existente.
+* Continuar os testes de recuperação, geração, persistência e rastreabilidade.
+
+****Uso de assistentes de IA:****
+
+* Utilizamos assistentes de IA como apoio na análise dos dados coletados, auditoria de bancos e checkpoints, investigação das APIs, organização da arquitetura de consulta, implementação dos logs, testes, integração do RAG com a API e documentação.
+
+* As sugestões foram analisadas e adaptadas pela equipe, sendo validadas por meio de testes automatizados, consultas reais, auditorias dos dados e execuções controladas.
+
+# Resumo do dia - Encontro 9 - 2026-10-05
+
+## Resumo do time no dia
+
+****Entregamos hoje:****
+
+* Avançamos na consolidação das bases coletadas e no fechamento de etapas importantes da ingestão e preparação do corpus.
+* Finalizamos a cobertura dos resultados homologados dos itens do recorte trabalhado, chegando a 100% dos itens identificados com resultado, sem registros pendentes nesse conjunto.
+* Avançamos na coleta e organização dos dados do PCA, incluindo a consulta de novos órgãos, identificação dos planos disponíveis e integração dos resultados ao conjunto de dados já coletado.
+* Foram identificados novos planos e itens associados aos dados do PCA, ampliando a base agregada para as próximas etapas de processamento.
+* Iniciamos uma nova frente de coleta de atas de registro de preços, estruturando checkpoint próprio, seleção das unidades e registro dos dados em formato adequado para posterior auditoria e integração.
+* Avançamos na definição de um fluxo reproduzível para as novas coletas, com checkpoints, retomada segura, atualização dos registros e geração de logs.
+* A base normativa processada foi integrada ao projeto com 794 chunks, mantendo os metadados, rastreabilidade e regras de processamento definidas anteriormente.
+* Foram realizados testes de auditoria da base normativa, verificando duplicidades, tamanho dos chunks e consistência dos dados processados.
+* A base normativa foi considerada congelada para a etapa de benchmark, permitindo iniciar a definição de perguntas de referência para avaliação do sistema.
+* Avançamos no processamento e ingestão das demais fontes documentais e na preparação da recuperação para testes.
+* Evoluímos a arquitetura de consulta com o desenvolvimento do Query Analyzer, responsável por interpretar a pergunta antes de definir a estratégia de consulta.
+* Foram realizados testes com perguntas estruturadas, documentais/normativas e híbridas, validando a identificação de diferentes necessidades de consulta.
+* O componente passou a diferenciar cenários de consulta estruturada, RAG e híbrida, preparando a integração futura com o Router e as ferramentas de consulta.
+* Avançamos na organização da documentação, integração das contribuições do grupo e alinhamento das próximas etapas do projeto.
+* Foram realizadas apresentações e discussões com a equipe e orientação do projeto para avaliar o progresso e os próximos passos.
+
+****Ficou pendente:****
+
+* Continuar a coleta e auditoria das atas de registro de preços.
+* Finalizar as etapas restantes da coleta histórica e organizar os artefatos para release.
+* Continuar a expansão e validação das bases estruturada e agregada.
+* Integrar o Query Analyzer ao fluxo principal da aplicação.
+* Implementar o Router responsável por encaminhar cada pergunta para a estratégia adequada.
+* Estruturar a ferramenta de consulta aos dados estruturados e definir as regras de execução segura das consultas.
+* Continuar a integração entre as bases, recuperação, geração e persistência.
+* Iniciar e ampliar o benchmark com perguntas de referência para avaliar recuperação e qualidade das respostas.
+
+****Bloqueios em aberto:****
+
+* A coleta de algumas fontes ainda está em andamento e depende da execução por unidades, períodos e checkpoints.
+* A estrutura de roteamento ainda não está implementada, sendo necessário integrar o Query Analyzer às etapas seguintes da consulta.
+* O componente de Router ainda precisa ser estruturado para conectar as perguntas às ferramentas de RAG e consulta estruturada.
+* A avaliação sistemática do RAG ainda depende da definição e execução do conjunto de perguntas de benchmark.
+
+****Próximo passo (início do Encontro 10):****
+
+* Continuar e auditar a coleta das atas de registro de preços e demais fontes ainda pendentes.
+* Organizar os artefatos finais das bases coletadas e preparar os próximos releases.
+* Integrar o Query Analyzer ao fluxo principal.
+* Iniciar a implementação do Router e das ferramentas de consulta estruturada.
+* Integrar o roteamento com o RAG já existente.
+* Continuar o benchmark das perguntas de referência e avaliar recuperação, geração e rastreabilidade.
+* Avançar na integração completa do pipeline para a demonstração final.
+
+****Uso de assistentes de IA:****
+
+* Utilizamos assistentes de IA como apoio na auditoria das bases, análise de cobertura, organização das coletas, definição de checkpoints, investigação das APIs, desenvolvimento e validação do Query Analyzer, estruturação da arquitetura de consulta, criação de testes e documentação.
+
+* As sugestões foram analisadas e adaptadas pela equipe, sendo validadas por meio das execuções reais, testes automatizados, auditorias dos dados e resultados obtidos no projeto.
+
+# Resumo do dia - Encontro 10 - 2026-10-07
+
+## Resumo do time no dia
+
+***Entregamos hoje:****
+
+* Avançamos na consolidação da nova arquitetura de consulta do projeto, definindo com mais clareza a separação entre interpretação da pergunta, roteamento, recuperação, geração e auditoria.
+* Atualizamos as branches com a principal e incorporamos os novos componentes da busca híbrida, utilizando FTS5 para busca por palavras-chave, FAISS para busca semântica e RRF para combinação dos resultados.
+* Foram executados os 50 testes da base normativa após a atualização do código, confirmando que as alterações da busca híbrida não quebraram o funcionamento existente.
+* Avançamos na implementação e validação do FTS5, complementando a recuperação semântica já existente e realizando testes sobre os resultados retornados.
+* Foram realizados ajustes no prompt e no contexto enviado à LLM, incluindo limitação do tamanho das respostas, padronização das citações no formato `[1]`, `[2]` e instruções para evitar a mistura de evidências de processos diferentes.
+* O contexto enviado para a geração passou a apresentar identificadores mais claros das evidências, incluindo `numeroControlePNCP`, título do documento e URL de origem.
+* Avançamos na definição do Query Analyzer, organizando a interpretação das perguntas em três possibilidades principais: `structured`, `rag` e `hybrid`.
+* Foram organizadas as próximas etapas relacionadas ao Router, que deverá encaminhar cada pergunta para a estratégia de consulta adequada, aproveitando os componentes RAG já desenvolvidos.
+* Avançamos na implementação da camada de auditabilidade, utilizando um `trace_id` único para cada consulta e registrando as informações da execução em arquivos próprios de auditoria.
+* A auditoria passou a registrar informações relacionadas à pergunta, estratégia de retrieval, chunks recuperados, scores de BM25 e FAISS, RRF, contexto, prompt, resposta, tempo de processamento, persistência e possíveis erros.
+* Avançamos na integração do Guardrail ao fluxo de geração, fazendo com que perguntas fora do escopo definido possam ser bloqueadas antes da recuperação das evidências e da chamada à LLM.
+* Foi realizado um teste com uma pergunta de recusa comercial, sendo bloqueada corretamente pelo Guardrail. A resposta não realizou retrieval nem geração pela LLM, apresentando `sources: []` e `prompt: null`.
+* As consultas bloqueadas também passaram a permanecer rastreáveis por meio da auditoria, registrando o bloqueio, o motivo da recusa e a mensagem retornada.
+* Foram mantidas as regras de sanitização dos registros de auditoria para evitar o armazenamento de informações sensíveis, como tokens, chaves de API e dados de autorização.
+* Identificamos uma pendência na base normativa: os 794 chunks processados ainda não estão carregados na tabela `document_chunks`, utilizada pela busca híbrida, impedindo que esses conteúdos sejam recuperados atualmente pelo FTS5 e FAISS.
+
+****Ficou pendente:****
+
+* Integrar o Query Analyzer ao fluxo principal da aplicação.
+* Implementar e integrar o Router responsável por encaminhar cada pergunta para a estratégia adequada.
+* Estruturar a ferramenta de consulta aos dados estruturados e definir as regras de execução segura das consultas.
+* Integrar as rotas `structured`, `rag` e `hybrid` aos respectivos componentes de consulta.
+* Finalizar a integração dos Guardrails ao fluxo completo e ampliar os testes de bloqueio.
+* Carregar e disponibilizar os 794 chunks da base normativa na tabela utilizada pela busca híbrida.
+* Definir e executar a indexação da base normativa no FTS5 e FAISS após sua disponibilização no banco.
+* Continuar os testes de recuperação, geração, persistência e auditabilidade.
+* Continuar a documentação e organização das próximas etapas do projeto.
+
+****Bloqueios em aberto:****
+
+* O Query Analyzer e o Router ainda não estão integrados ao fluxo principal da aplicação.
+* A ferramenta de consulta aos dados estruturados ainda precisa ser implementada para permitir que perguntas quantitativas sejam respondidas diretamente pela base estruturada.
+* Os 794 chunks da base normativa ainda não estão na tabela utilizada pela busca híbrida, fazendo com que os conteúdos processados não estejam disponíveis para recuperação.
+* A integração completa do Guardrail depende da conexão com as etapas seguintes da arquitetura, principalmente Analyzer, Router e ferramentas de consulta.
+
+****Próximo passo (início do Encontro 11):****
+
+* Integrar o Query Analyzer ao fluxo principal da aplicação.
+* Avançar na implementação do Router e conectar as rotas `structured`, `rag` e `hybrid`.
+* Estruturar a ferramenta de consulta aos dados estruturados com execução segura e somente leitura.
+* Continuar a integração do Guardrail antes das etapas de consulta e recuperação.
+* Carregar os 794 chunks da base normativa em `document_chunks` e realizar a indexação necessária para a busca híbrida.
+* Continuar os testes de recuperação, geração e auditoria, incluindo consultas bloqueadas.
+* Integrar as diferentes frentes do pipeline e preparar a arquitetura para a demonstração final.
+
+****Uso de assistentes de IA:****
+
+* Utilizamos assistentes de IA como apoio na análise e evolução da arquitetura, desenvolvimento e validação do Query Analyzer, implementação e testes da recuperação híbrida, análise dos Guardrails, estruturação da auditabilidade, revisão de prompts e organização das próximas etapas do projeto.
+
+* As sugestões foram analisadas e adaptadas pela equipe de acordo com o código existente, os requisitos do projeto e as decisões tomadas durante o desenvolvimento, sendo validadas por meio de testes, execuções reais e auditorias dos resultados.
