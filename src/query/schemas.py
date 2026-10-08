@@ -233,3 +233,13 @@ class StructuredQueryResult(BaseModel):
     rows: list[dict[str, Any]]
     row_count: int
     limit_applied: int
+
+
+class AdaptiveQueryResult(BaseModel):
+    """Resultado da execução estruturada de uma pergunta já analisada."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    analysis: QueryAnalysis
+    plan: ExecutionPlan
+    structured_result: StructuredQueryResult
