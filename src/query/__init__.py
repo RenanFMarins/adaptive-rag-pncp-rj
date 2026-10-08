@@ -8,7 +8,9 @@ from .schemas import (
     QueryAnalysis,
     QueryFilters,
     QueryRoute,
+    StructuredQueryResult,
 )
+from .structured_tool import StructuredQueryError, executar_consulta_estruturada
 
 __all__ = [
     "ExecutionPlan",
@@ -17,6 +19,9 @@ __all__ = [
     "QueryAnalysisError",
     "QueryFilters",
     "QueryRoute",
+    "StructuredQueryError",
+    "StructuredQueryResult",
     "analisar_pergunta",
+    "executar_consulta_estruturada",
     "planejar_execucao",
 ]

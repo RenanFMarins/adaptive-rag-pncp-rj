@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import date
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -220,3 +221,15 @@ class ExecutionPlan(BaseModel):
                 "tools deve conter, na ordem definida, as ferramentas da rota."
             )
         return self
+
+
+class StructuredQueryResult(BaseModel):
+    """Resultado serializável de uma consulta somente-leitura ao SQLite."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    entity: QueryEntity
+    columns: list[str]
+    rows: list[dict[str, Any]]
+    row_count: int
+    limit_applied: int
