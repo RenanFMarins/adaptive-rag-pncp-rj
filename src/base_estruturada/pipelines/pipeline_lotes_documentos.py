@@ -407,13 +407,13 @@ def gerar_fila_docling_do_lote(
 
 if __name__ == "__main__":
     PERIODO = PeriodoColeta(ano=2026, mes=8)
-    NOME_LOTE = "lote_002"
+    NOME_LOTE = "lote_003"
     LIMITE_DOCUMENTOS = 500
     TIPOS_PERMITIDOS = TIPOS_TESTE_EXTRACAO
 
     # Opções: criar, criar_e_baixar, reprocessar_erros, gerar_zip.
     # "criar" apenas congela a lista; é útil para preparar o trabalho da equipe.
-    ACAO = "criar_e_baixar"
+    ACAO = "reprocessar_erros"
 
     if ACAO in {"criar", "criar_e_baixar"}:
         lote = criar_lote_documentos(
