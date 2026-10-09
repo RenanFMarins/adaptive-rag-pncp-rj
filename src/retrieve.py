@@ -150,6 +150,7 @@ def resolver_chunk_ids_filtrados(
         (DocumentChunk.municipio, filters.municipio),
         (DocumentChunk.fornecedor, filters.fornecedor),
         (DocumentChunk.modalidade, filters.modalidade),
+        (DocumentChunk.objeto, filters.objeto),
     )
     for column, value in text_filters:
         if value:

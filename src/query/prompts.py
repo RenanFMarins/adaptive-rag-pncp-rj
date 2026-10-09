@@ -3,8 +3,22 @@
 from __future__ import annotations
 
 
-def montar_prompt_analise(pergunta: str) -> str:
+def montar_prompt_analise(
+    pergunta: str,
+    *,
+    rota_obrigatoria: str | None = None,
+) -> str:
     """Instrui o modelo a gerar um plano JSON, nunca uma resposta ao usuário."""
+
+    restricao_de_rota = ""
+    if rota_obrigatoria == "structured":
+        restricao_de_rota = (
+            "\nO chamador selecionou explicitamente a consulta estruturada.\n"
+            "Portanto, route DEVE ser \"structured\", bases DEVE ser "
+            "[\"estruturada\"] e needs_document_retrieval DEVE ser false. "
+            "Extraia apenas entidade, filtros, operações, agrupamentos, "
+            "ordenação e limite. Nunca escolha \"rag\" ou \"hybrid\".\n"
+        )
 
     return f"""Você é o Query Analyzer de um sistema de contratações públicas.
 Sua única tarefa é converter a pergunta do usuário em um plano JSON válido.
@@ -25,6 +39,7 @@ Retorne exclusivamente um objeto JSON compatível com esta estrutura:
     "municipio": string|null,
     "fornecedor": string|null,
     "modalidade": string|null,
+    "objeto": string|null,
     "ano": integer|null,
     "period_start": "YYYY-MM-DD"|null,
     "period_end": "YYYY-MM-DD"|null,
@@ -44,9 +59,16 @@ Regras:
 - Use route "structured" para contagens, totais, médias, máximos, mínimos e listas de registros.
 - Use route "rag" para perguntas sobre conteúdo de editais, contratos, normas e documentos.
 - Use route "hybrid" somente quando a pergunta exigir dados estruturados e evidência documental.
-- Para route "rag", operations deve ser uma lista vazia e needs_document_retrieval deve ser true.
+- Para route "rag", use intent "documental", entity "documento", operations como lista vazia e needs_document_retrieval como true.
+- Em perguntas documentais sobre contratos ou contratações, tipo_entidade pode indicar a origem do documento ("contrato" ou "contratacao"), mas entity continua "documento".
+- "Contratação" e "contrato" não são modalidades. Só preencha modalidade quando a pergunta citar uma modalidade concreta, como "Pregão", "Dispensa" ou "Concorrência".
+- Use objeto somente quando a pergunta restringir claramente o objeto da compra ou do contrato. Preserve os termos completos e relevantes, por exemplo "manutenção de elevadores".
+- filters aceita exclusivamente os campos declarados acima. Nunca invente chaves novas.
+- Para perguntas sobre documentos do PNCP, use a base "agregada". Use "normativa" apenas se a pergunta pedir conteúdo de leis, decretos ou normas.
 - Para sum, avg, min ou max, informe aggregation_field.
 - Não invente filtros ausentes na pergunta.
+
+{restricao_de_rota}
 
 Pergunta do usuário:
 {pergunta}

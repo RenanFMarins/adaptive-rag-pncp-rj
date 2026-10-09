@@ -167,6 +167,7 @@ def _where_clause(
         (StructuredField.MUNICIPIO, filters.municipio),
         (StructuredField.FORNECEDOR, filters.fornecedor),
         (StructuredField.MODALIDADE, filters.modalidade),
+        (StructuredField.OBJETO, filters.objeto),
     )
     for field, value in text_filters:
         if value:

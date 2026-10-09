@@ -109,6 +109,7 @@ class QueryFilters(BaseModel):
     municipio: str | None = None
     fornecedor: str | None = None
     modalidade: str | None = None
+    objeto: str | None = None
     ano: int | None = Field(default=None, ge=2000, le=2100)
     period_start: date | None = None
     period_end: date | None = None

@@ -1,6 +1,11 @@
 import unittest
 
-from src.query.analyzer import QueryAnalysisError, analisar_pergunta
+from src.query.analyzer import (
+    QueryAnalysisError,
+    analisar_pergunta,
+    analisar_pergunta_estruturada,
+)
+from src.query.prompts import montar_prompt_analise
 from src.query.schemas import (
     KnowledgeBase,
     QueryRoute,
@@ -73,6 +78,80 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.route, QueryRoute.RAG)
         self.assertEqual(analysis.bases, [KnowledgeBase.NORMATIVA])
         self.assertTrue(analysis.needs_document_retrieval)
+
+    def test_aceita_filtro_de_objeto_documental(self):
+        analysis = analisar_pergunta(
+            "Quais práticas de sustentabilidade existem para manutenção de elevadores?",
+            llm_fn=lambda _prompt: """{
+              "route": "rag",
+              "intent": "documental",
+              "entity": "documento",
+              "bases": ["agregada"],
+              "filters": {
+                "tipo_entidade": "contratacao",
+                "objeto": "manutenção de elevadores"
+              },
+              "operations": [],
+              "aggregation_field": null,
+              "group_by": [],
+              "order_by": [],
+              "limit": null,
+              "semantic_query": "práticas de sustentabilidade",
+              "needs_document_retrieval": true
+            }""",
+        )
+
+        self.assertEqual(analysis.filters.objeto, "manutenção de elevadores")
+        self.assertIn("objeto", montar_prompt_analise("teste"))
+
+    def test_modo_estruturado_obriga_rota_e_base_estruturada(self):
+        prompts: list[str] = []
+
+        def llm_fn(prompt: str) -> str:
+            prompts.append(prompt)
+            return """{
+              "route": "structured",
+              "intent": "aggregate",
+              "entity": "contratacao",
+              "bases": ["estruturada"],
+              "filters": {"ano": 2026},
+              "operations": ["count", "group_by"],
+              "aggregation_field": null,
+              "group_by": ["modalidade"],
+              "order_by": [],
+              "limit": null,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }"""
+
+        analysis = analisar_pergunta_estruturada(
+            "Quantas contratações existem por modalidade em 2026?",
+            llm_fn=llm_fn,
+        )
+
+        self.assertEqual(analysis.route, QueryRoute.STRUCTURED)
+        self.assertIn('route DEVE ser "structured"', prompts[0])
+        self.assertIn('bases DEVE ser ["estruturada"]', prompts[0])
+
+    def test_modo_estruturado_rejeita_rota_diferente(self):
+        with self.assertRaisesRegex(QueryAnalysisError, "endpoint exige 'structured'"):
+            analisar_pergunta_estruturada(
+                "Quantas contratações existem?",
+                llm_fn=lambda _prompt: """{
+                  "route": "rag",
+                  "intent": "documental",
+                  "entity": "documento",
+                  "bases": ["agregada"],
+                  "filters": {},
+                  "operations": [],
+                  "aggregation_field": null,
+                  "group_by": [],
+                  "order_by": [],
+                  "limit": null,
+                  "semantic_query": "contratações",
+                  "needs_document_retrieval": true
+                }""",
+            )
 
     def test_aceita_plano_hibrido(self):
         analysis = analisar_pergunta(

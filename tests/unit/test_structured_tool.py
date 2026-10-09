@@ -151,6 +151,20 @@ class StructuredToolTests(unittest.TestCase):
 
         self.assertEqual(result.row_count, 0)
 
+    def test_lista_contratacoes_filtradas_por_objeto(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATACAO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            filters=QueryFilters(objeto="hospitalar"),
+        )
+
+        result = executar_consulta_estruturada(self.connection, analysis)
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["numero_controle_pncp"], "002-1-000002/2026")
+
     def test_rejeita_filtro_de_documento_na_base_estruturada(self) -> None:
         analysis = QueryAnalysis(
             route=QueryRoute.STRUCTURED,

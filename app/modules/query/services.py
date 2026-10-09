@@ -11,7 +11,7 @@ from src.query.adaptive_executor import (
     AdaptiveExecutionResult,
     executar_plano_adaptativo,
 )
-from src.query.analyzer import analisar_pergunta
+from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
 from src.query.executor import executar_consulta_adaptativa
 from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
 from src.retrieve import RankedChunk
@@ -38,13 +38,10 @@ def executar_consulta_estruturada(
 ) -> AdaptiveQueryResult:
     """Executa Analyzer, Planner e Structured Tool na conexão da API."""
 
-    kwargs: dict[str, object] = {}
-    if analyzer_fn is not None:
-        kwargs["analyzer_fn"] = analyzer_fn
     return executar_consulta_adaptativa(
         _sqlite_connection_from_session(db),
         pergunta,
-        **kwargs,
+        analyzer_fn=analyzer_fn or analisar_pergunta_estruturada,
     )
 
 

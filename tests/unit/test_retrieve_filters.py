@@ -52,6 +52,7 @@ class RetrieveFiltersTests(unittest.TestCase):
             ano=2026,
             modalidade="Pregão Eletrônico",
             municipio="Rio de Janeiro",
+            objeto="Manutenção de elevadores",
             valor=100.0,
         )
         self.chunk_b = DocumentChunk(
@@ -61,6 +62,7 @@ class RetrieveFiltersTests(unittest.TestCase):
             ano=2025,
             modalidade="Dispensa",
             municipio="Niterói",
+            objeto="Material hospitalar",
             valor=200.0,
         )
         self.session.add_all([self.chunk_a, self.chunk_b])
@@ -110,6 +112,14 @@ class RetrieveFiltersTests(unittest.TestCase):
                 valor_minimo=90,
                 valor_maximo=110,
             ),
+        )
+
+        self.assertEqual(allowed, {"chunk-a"})
+
+    def test_filtra_por_objeto(self) -> None:
+        allowed = resolver_chunk_ids_filtrados(
+            self.session,
+            QueryFilters(objeto="elevadores"),
         )
 
         self.assertEqual(allowed, {"chunk-a"})
