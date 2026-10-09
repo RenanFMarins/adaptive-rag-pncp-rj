@@ -12,6 +12,7 @@ from src.generate import (
 )
 from src.guardrails import MENSAGEM_RECUSA_PADRAO
 from src.retrieve import RankedChunk
+from src.query.schemas import QueryEntity, StructuredQueryResult
 
 
 def chunk(chunk_id: str, content: str) -> RankedChunk:
@@ -119,6 +120,58 @@ class GenerateTests(unittest.TestCase):
 
         self.assertEqual(resposta.answer, MENSAGEM_SEM_EVIDENCIA)
         self.assertEqual(resposta.sources, [])
+
+    def test_dados_estruturados_permanecem_separados_das_citacoes_documentais(self):
+        dados = StructuredQueryResult(
+            entity=QueryEntity.CONTRATO,
+            columns=["numero_controle_pncp", "valor_global"],
+            rows=[{"numero_controle_pncp": "123-2-1/2026", "valor_global": 100.0}],
+            row_count=1,
+            limit_applied=20,
+        )
+        prompts: list[str] = []
+
+        resposta = gerar_resposta_rag(
+            db=None,
+            pergunta="Qual é o valor do contrato?",
+            retrieval_fn=lambda **_kwargs: [],
+            llm_fn=lambda prompt: prompts.append(prompt) or "O valor é R$ 100,00.",
+            structured_result=dados,
+            incluir_prompt=True,
+            audit_dir=self.audit_dir,
+        )
+
+        self.assertEqual(resposta.answer, "O valor é R$ 100,00.")
+        self.assertEqual(resposta.sources, [])
+        self.assertEqual(len(prompts), 1)
+        self.assertIn("DADOS ESTRUTURADOS", prompts[0])
+        self.assertIn("123-2-1/2026", prompts[0])
+        trace = self.read_only_trace()
+        self.assertEqual(trace["request"]["structured_result"]["row_count"], 1)
+
+    def test_informa_etapas_do_processamento(self):
+        etapas: list[str] = []
+
+        resposta = gerar_resposta_rag(
+            db=None,
+            pergunta="Qual o objeto?",
+            retrieval_fn=lambda **_kwargs: [chunk("c1", "Objeto recuperado")],
+            llm_fn=lambda _prompt: "Resposta baseada em [1].",
+            audit_dir=self.audit_dir,
+            progresso=etapas.append,
+        )
+
+        self.assertEqual(resposta.answer, "Resposta baseada em [1].")
+        self.assertEqual(
+            etapas,
+            [
+                "Validando regras de segurança...",
+                "Consultando evidências no FTS5 e no FAISS...",
+                "1 evidência(s) recuperada(s). Montando o contexto...",
+                "Gerando resposta com a LLM...",
+                "Resposta concluída.",
+            ],
+        )
 
     def test_audit_trace_criado_em_execucao_normal(self):
         def retrieval_fn(**_kwargs):
