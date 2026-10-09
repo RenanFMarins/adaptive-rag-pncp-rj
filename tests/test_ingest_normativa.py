@@ -262,3 +262,37 @@ def test_aviso_ensina_o_comando_da_coleta_da_versao_certa():
     aviso = services.aviso_sem_data([_chunk("edital-93.pdf", None)], versao="v2")
 
     assert "fetch --versao v2" in aviso[-1]
+
+
+# --- numero_do_edital: a regra principal e a reserva ----------------------
+
+def test_titulo_curto_sai_pela_regra_principal():
+    inicio = "Governo do Estado do Rio de Janeiro\nPREGÃO ELETRÔNICO N° 210/2024\n"
+
+    assert services.numero_do_edital(inicio) == "PREGÃO ELETRÔNICO N° 210/2024"
+
+
+def test_sigla_entre_o_tipo_e_o_numero_tambem_sai():
+    inicio = "EDITAL DE LICITAÇÃO\nPREGÃO ELETRÔNICO SRP N° 096/2025\n"
+
+    assert services.numero_do_edital(inicio) == "PREGÃO ELETRÔNICO SRP N° 096/2025"
+
+
+def test_titulo_longo_sai_pela_regra_reserva():
+    # "PARA REGISTRO DE PREÇOS" passa dos 20 caracteres da regra principal.
+    inicio = ("EDITAL DE LICITAÇÃO\n"
+              "PREGÃO ELETRÔNICO PARA REGISTRO DE PREÇOS N° 019/2025\n")
+
+    assert services.numero_do_edital(inicio) == "PREGÃO ELETRÔNICO N° 019/2025"
+
+
+def test_a_reserva_nao_atropela_quem_ja_saia_certo():
+    # Com a regra principal ampliada, este viraria "EDITAL DE PREGÃO
+    # ELETRÔNICO N° 210/2024". A reserva só roda quando a principal falha.
+    inicio = "EDITAL DE PREGÃO ELETRÔNICO N° 210/2024\n"
+
+    assert services.numero_do_edital(inicio) == "PREGÃO ELETRÔNICO N° 210/2024"
+
+
+def test_documento_sem_numero_devolve_none():
+    assert services.numero_do_edital("EDITAL DE LICITAÇÃO\nOBJETO\n") is None
