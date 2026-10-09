@@ -1259,3 +1259,55 @@ Os próximos passos definidos foram:
 - concluir a coleta de contratos e empenhos necessários ao snapshot T2;
 - gerar o inventário e a Release do segundo trimestre;
 - iniciar a normalização dos dados preservados na camada RAW.
+- 
+## Encontro 10 - 2026-10-09
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei meu trabalho na evolução da arquitetura de ingestão da camada RAW das bases Estruturada e Agregada do Portal Nacional de Contratações Públicas (PNCP), com foco na preparação do sistema para realizar coletas incrementais e identificar alterações em registros históricos sem comprometer os dados já armazenados.
+
+Inicialmente, foi realizada uma auditoria técnica da implementação existente, identificando limitações no mecanismo de identificação das entidades, no versionamento dos registros e no controle de checkpoints. A partir dessa análise, foi estruturada uma abordagem para separar a coleta histórica da futura coleta incremental, preservando a compatibilidade com o fluxo atual do projeto.
+
+Uma das principais melhorias foi a correção da identidade canônica dos registros RAW. Anteriormente, a identificação dependia da fonte de coleta, o que poderia fazer uma mesma contratação aparecer como uma nova entidade ao ser encontrada por outro coletor. A identificação passou a considerar a combinação `base_id`, `resource_type` e `external_id`, permitindo reconhecer o mesmo registro independentemente da origem da execução.
+
+Também foi aprimorado o mecanismo de versionamento, mantendo a preservação imutável dos payloads originais e a detecção de alterações por SHA-256. O sistema passou a considerar a versão corrente do registro, evitando que informações antigas recebidas fora de ordem substituam indevidamente versões mais recentes.
+
+Para validar essas alterações, foi utilizada uma cópia isolada do banco SQLite referente ao primeiro trimestre de 2023, anteriormente disponibilizado em uma Release do GitHub. Foi aplicada exclusivamente nessa cópia uma migração responsável pela criação de um índice para otimizar as consultas por identidade canônica.
+
+Outra atividade importante foi a reformulação da arquitetura de checkpoints. O modelo anterior utilizava posições numéricas em listas dinâmicas, o que poderia ocasionar a perda de alvos quando novos registros fossem inseridos durante o processo de coleta.
+
+Para solucionar esse problema, foram implementadas quatro novas estruturas:
+
+- `sync_job`: identificação da configuração e do tipo de coleta;
+- `sync_window`: controle das janelas temporais de processamento;
+- `sync_target_progress`: acompanhamento individual dos alvos por identidade estável;
+- `sync_watermark`: registro do progresso temporal confirmado.
+
+O novo modelo também incorporou controle de concorrência por lease, recuperação de execuções interrompidas, separação entre checkpoints históricos e incrementais e confirmação do progresso somente após a persistência bem-sucedida dos registros RAW.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para analisar os problemas identificados na arquitetura de ingestão, estruturar as etapas de correção, discutir estratégias de versionamento, planejar a separação entre coleta histórica e incremental e elaborar instruções técnicas para implementação e validação.
+
+As alterações foram acompanhadas por verificações de integridade e testes, mantendo a preocupação com a preservação dos dados históricos.
+
+### Resultado do encontro
+
+Ao final do encontro, foram concluídas e validadas as melhorias de identidade canônica, versionamento RAW e controle de checkpoints v2. A migração do índice foi testada com sucesso no snapshot do primeiro trimestre de 2023, preservando todos os registros originais.
+
+A arquitetura passou a contar com mecanismos mais seguros para identificar atualizações, acompanhar janelas de processamento, controlar execuções concorrentes e retomar coletas interrompidas.
+
+Nenhum banco operacional foi modificado durante essas validações, e a coleta histórica existente permaneceu preservada.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- implementar o novo ponto de entrada `fetch_incremental.py`, separado do coletor histórico;
+- integrar o novo coletor aos checkpoints v2;
+- implementar e validar a renovação de lease durante execuções prolongadas;
+- realizar simulações offline de atualizações e retomadas;
+- analisar as datas de atualização fornecidas pelo PNCP;
+- preparar a futura integração dos endpoints incrementais para PCA, contratações, contratos e atas;
+- definir estratégias de reconciliação para itens, resultados homologados e demais recursos dependentes;
+- manter a preservação e a rastreabilidade dos dados RAW antes do início da normalização.
