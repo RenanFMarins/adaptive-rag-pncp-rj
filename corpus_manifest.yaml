@@ -947,3 +947,78 @@ sources:
       - numeroControlePNCPCompra
       - numeroItem
       - sequencialResultado
+
+  # Contratos publicados no segundo trimestre de 2023 pelas unidades do RJ
+  # identificadas nas contratações RAW do período histórico.
+  - id: pncp_contratacoes_rj_2023_t2
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: estruturada
+    resource_type: contrato
+    collector: pncp_published_contracts
+    sensitivity: public_with_personal_data
+    endpoint: /api/consulta/v1/contratos
+    params:
+      dataInicial: "20230401"
+      dataFinal: "20230630"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2023
+      trimestre_publicacao: 2
+      uf: RJ
+      tipo_execucao: completa
+    target_source_id: pncp_contratacoes_rj_2023_t2_ate_hoje
+    target_resource_type: contratacao
+    target_field_paths:
+      cnpj: orgaoEntidade.cnpj
+      codigo_unidade: unidadeOrgao.codigoUnidade
+      uf: unidadeOrgao.ufSigla
+    pagination:
+      page_param: pagina
+      page_size_param: tamanhoPagina
+      page_size: 50
+    request:
+      timeout_seconds: 45
+      rate_limit_seconds: 2.0
+      max_retries: 5
+      retry_backoff_seconds: 2.0
+      max_concurrency: 1
+    item_path: data
+    key_fields:
+      - numeroControlePNCP
+
+  # Empenhos vinculados aos contratos publicados no segundo trimestre de 2023.
+  - id: pncp_empenhos_contratos_rj_2023_t2
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: estruturada
+    resource_type: empenho
+    collector: pncp_commitments
+    sensitivity: public_with_personal_data
+    endpoint: /api/pncp/v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/empenhos
+    target_source_id: pncp_contratacoes_rj_2023_t2
+    target_resource_type: contrato
+    target_field_paths:
+      numero_controle: "@external_id"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2023
+      trimestre_publicacao: 2
+      uf: RJ
+      tipo_execucao: completa
+    pagination:
+      page_param: pagina
+      page_size_param: tamanhoPagina
+      page_size: 50
+    request:
+      timeout_seconds: 45
+      rate_limit_seconds: 0.5
+      max_retries: 5
+      retry_backoff_seconds: 2.0
+      max_concurrency: 32
+    item_path: data
+    key_fields:
+      - cnpj
+      - ano
+      - sequencialContrato
+      - sequencialEmpenho

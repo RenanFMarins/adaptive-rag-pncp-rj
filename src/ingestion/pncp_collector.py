@@ -17,7 +17,7 @@ from ..schema import (
     records_from_response,
     value_at_path,
 )
-from .pncp_client import PNCPClient
+from .pncp_client import PNCPClient, PNCPClientError
 
 
 class PNCPCollector:
@@ -459,10 +459,13 @@ class PublishedContractCollector:
             found = []
             pages_requested = 0
             while True:
+                query_unit = self._query_unit_code(
+                    context["codigo_unidade"]
+                )
                 params = {
                     **source.params,
                     "cnpjOrgao": context["cnpj"],
-                    "codigoUnidadeAdministrativa": context["codigo_unidade"],
+                    "codigoUnidadeAdministrativa": query_unit,
                     source.page_param: page,
                     source.page_size_param: source.page_size,
                 }
@@ -470,15 +473,45 @@ class PublishedContractCollector:
                     source.endpoint, params, base_url=source.base
                 )
                 pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
-                )
+                try:
+                    response = self._request(source, params)
+                    record_params = {
+                        **params,
+                        "codigoUnidadeAdministrativaOriginal": context[
+                            "codigo_unidade"
+                        ],
+                        "consultaSemFiltroUnidade": False,
+                    }
+                except PNCPClientError as error:
+                    if error.status_code != 422:
+                        raise
+                    fallback_params = dict(params)
+                    fallback_params.pop("codigoUnidadeAdministrativa")
+                    url = self.client.build_url(
+                        source.endpoint,
+                        fallback_params,
+                        base_url=source.base,
+                    )
+                    self.logger.event(
+                        "pncp_contract_unit_fallback",
+                        source_id=source.id,
+                        target_index=target_index,
+                        cnpj=context["cnpj"],
+                        codigo_unidade=context["codigo_unidade"],
+                        codigo_unidade_consulta=query_unit,
+                        page=page,
+                        status_original=422,
+                        action="retry_without_unit_filter",
+                    )
+                    pacer.wait()
+                    response = self._request(source, fallback_params)
+                    record_params = {
+                        **fallback_params,
+                        "codigoUnidadeAdministrativaOriginal": context[
+                            "codigo_unidade"
+                        ],
+                        "consultaSemFiltroUnidade": True,
+                    }
                 pages_requested += 1
                 records = (
                     []
@@ -490,7 +523,9 @@ class PublishedContractCollector:
                         payload, context, url
                     )
                     if external_id is not None:
-                        found.append((payload, external_id, url, params))
+                        found.append(
+                            (payload, external_id, url, record_params)
+                        )
                 if not records or _is_last_response_page(response, page):
                     break
                 page += 1
@@ -549,6 +584,32 @@ class PublishedContractCollector:
             "uf": actual_uf,
         }
 
+    def _request(self, source, params):
+        return self.client.get(
+            source.endpoint,
+            params,
+            base_url=source.base,
+            timeout_seconds=source.timeout_seconds,
+            headers=source.headers,
+            max_retries=source.max_retries,
+            retry_backoff_seconds=source.retry_backoff_seconds,
+        )
+
+    @staticmethod
+    def _query_unit_code(unit_code: str) -> str:
+        if len(unit_code) > 6 and unit_code.isdigit():
+            return str(int(unit_code))
+        return unit_code
+
+    @staticmethod
+    def _same_unit_code(actual: object, expected: str) -> bool:
+        actual_text = str(actual)
+        if actual_text == expected:
+            return True
+        if actual_text.isdigit() and expected.isdigit():
+            return int(actual_text) == int(expected)
+        return False
+
     def _validate_contract(self, payload, context, source_url):
         external_id = payload.get("numeroControlePNCP")
         match = self.control_number_pattern.fullmatch(str(external_id or ""))
@@ -563,7 +624,7 @@ class PublishedContractCollector:
             or str(actual_uf) != context["uf"]
         ):
             raise ValueError(f"Contrato fora do órgão/UF alvo em {source_url}")
-        if str(actual_unit) != context["codigo_unidade"]:
+        if not self._same_unit_code(actual_unit, context["codigo_unidade"]):
             self.logger.event(
                 "pncp_contract_scope_mismatch",
                 external_id=str(external_id),

@@ -55,6 +55,22 @@ class PNCPClientTests(unittest.TestCase):
             client.get("/api")
 
     @patch("src.ingestion.pncp_client.urlopen")
+    def test_http_error_exposes_status_code(self, urlopen):
+        client = PNCPClient(base_url="https://pncp.example", max_retries=0)
+        urlopen.side_effect = HTTPError(
+            "https://pncp.example/api",
+            422,
+            "unprocessable entity",
+            {},
+            io.BytesIO(),
+        )
+
+        with self.assertRaises(PNCPClientError) as raised:
+            client.get("/api")
+
+        self.assertEqual(raised.exception.status_code, 422)
+
+    @patch("src.ingestion.pncp_client.urlopen")
     def test_get_retries_transient_http_error(self, urlopen):
         urlopen.side_effect = [
             HTTPError(

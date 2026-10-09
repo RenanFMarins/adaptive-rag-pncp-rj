@@ -15,6 +15,15 @@ from ..schema import SourceConfig
 class PNCPClientError(RuntimeError):
     """Erro de comunicação ou desserialização da resposta do PNCP."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
 
 class PNCPClient:
     RETRYABLE_HTTP_STATUS = {429, 500, 502, 503, 504}
@@ -153,7 +162,8 @@ class PNCPClient:
                     attempt += 1
                     continue
                 raise PNCPClientError(
-                    f"PNCP retornou HTTP {error.code} para {url}"
+                    f"PNCP retornou HTTP {error.code} para {url}",
+                    status_code=error.code,
                 ) from error
             except (URLError, TimeoutError, HTTPException, ConnectionError) as error:
                 should_retry = attempt < retry_limit
