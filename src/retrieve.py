@@ -14,13 +14,14 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Callable
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.modules.documents.model import DocumentChunk
+from app.modules.documents.model import Document, DocumentChunk
 from llm_ecoa import gerar_embedding
 from src.fts import buscar_fts5
 from src.index import carregar_indice_faiss
+from src.query.schemas import QueryEntity, QueryFilters
 
 
 EmbeddingFn = Callable[[str], list[float]]
@@ -98,13 +99,74 @@ def buscar_dense(
     top_k: int,
     cache_dir: Path,
     embedding_fn: EmbeddingFn = gerar_embedding,
+    allowed_chunk_ids: set[str] | None = None,
 ) -> list[tuple[str, float]]:
     """Consulta somente um FAISS já indexado; nunca o reconstrói."""
 
     if top_k <= 0:
         return []
     indice = carregar_indice_faiss(cache_dir)
-    return indice.search(embedding_fn(pergunta), top_k)
+    if allowed_chunk_ids is None:
+        return indice.search(embedding_fn(pergunta), top_k)
+    if not allowed_chunk_ids:
+        return []
+
+    # O IndexFlat do FAISS não oferece filtro por metadados. Para manter a
+    # correção do recorte, ordenamos o índice e só então preservamos IDs
+    # autorizados pelo SQLite. Não há reconstrução nem gravação do índice.
+    ranking_completo = indice.search(embedding_fn(pergunta), len(indice.chunk_ids))
+    return [
+        (chunk_id, score)
+        for chunk_id, score in ranking_completo
+        if chunk_id in allowed_chunk_ids
+    ][:top_k]
+
+
+def resolver_chunk_ids_filtrados(
+    db: Session,
+    filters: QueryFilters | None,
+) -> set[str] | None:
+    """Resolve no SQLite os IDs de chunks permitidos pelos filtros da pergunta."""
+
+    if filters is None or not filters.model_fields_set:
+        return None
+
+    query = select(DocumentChunk.chunk_id).join(DocumentChunk.document)
+    if filters.numero_controle_pncp:
+        query = query.where(
+            Document.source_file.contains(f"|{filters.numero_controle_pncp}|")
+        )
+    if filters.document_id is not None:
+        query = query.where(DocumentChunk.document_id == filters.document_id)
+    if filters.tipo_entidade and filters.tipo_entidade is not QueryEntity.DOCUMENTO:
+        query = query.where(Document.doc_type == filters.tipo_entidade.value)
+    if filters.tipo_documento:
+        query = query.where(
+            func.lower(Document.title).like(f"%{filters.tipo_documento.lower()}%")
+        )
+
+    text_filters = (
+        (DocumentChunk.orgao, filters.orgao),
+        (DocumentChunk.municipio, filters.municipio),
+        (DocumentChunk.fornecedor, filters.fornecedor),
+        (DocumentChunk.modalidade, filters.modalidade),
+    )
+    for column, value in text_filters:
+        if value:
+            query = query.where(func.lower(column).like(f"%{value.lower()}%"))
+
+    if filters.ano is not None:
+        query = query.where(DocumentChunk.ano == filters.ano)
+    if filters.period_start:
+        query = query.where(DocumentChunk.data_publicacao >= filters.period_start)
+    if filters.period_end:
+        query = query.where(DocumentChunk.data_publicacao <= filters.period_end)
+    if filters.valor_minimo is not None:
+        query = query.where(DocumentChunk.valor >= filters.valor_minimo)
+    if filters.valor_maximo is not None:
+        query = query.where(DocumentChunk.valor <= filters.valor_maximo)
+
+    return set(db.scalars(query))
 
 
 def reciprocal_rank_fusion(
@@ -127,11 +189,27 @@ def retrieve_hibrido(
     rrf_k: int = 60,
     cache_dir: Path = Path("data/index/faiss"),
     embedding_fn: EmbeddingFn = gerar_embedding,
+    filters: QueryFilters | None = None,
 ) -> list[RankedChunk]:
     """Combina ranking lexical persistente e ranking semântico vetorial."""
 
-    lexical = buscar_fts5(db, pergunta, bm25_k)
-    dense = buscar_dense(pergunta, dense_k, cache_dir, embedding_fn)
+    allowed_chunk_ids = resolver_chunk_ids_filtrados(db, filters)
+    if allowed_chunk_ids is not None and not allowed_chunk_ids:
+        return []
+
+    lexical = buscar_fts5(
+        db,
+        pergunta,
+        bm25_k,
+        allowed_chunk_ids=allowed_chunk_ids,
+    )
+    dense = buscar_dense(
+        pergunta,
+        dense_k,
+        cache_dir,
+        embedding_fn,
+        allowed_chunk_ids=allowed_chunk_ids,
+    )
     fused = reciprocal_rank_fusion([lexical, dense], k=rrf_k)
 
     bm25_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(lexical, start=1)}

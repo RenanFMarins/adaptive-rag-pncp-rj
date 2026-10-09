@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session
 
@@ -126,6 +126,7 @@ def buscar_fts5(
     db: Session,
     pergunta: str,
     top_k: int,
+    allowed_chunk_ids: set[str] | None = None,
 ) -> list[tuple[str, float]]:
     """Retorna ``(chunk_id, score_bm25)`` sem carregar o corpus na memória."""
 
@@ -134,18 +135,25 @@ def buscar_fts5(
     consulta = preparar_consulta_fts5(pergunta)
     if not consulta:
         return []
-    linhas = db.execute(
-        text(
-            """
-            SELECT chunks.chunk_id, bm25(document_chunks_fts) AS score
-            FROM document_chunks_fts
-            JOIN document_chunks AS chunks
-              ON chunks.id = document_chunks_fts.rowid
-            WHERE document_chunks_fts MATCH :consulta
-            ORDER BY score ASC
-            LIMIT :limite
-            """
-        ),
-        {"consulta": consulta, "limite": top_k},
-    ).all()
+    if allowed_chunk_ids is not None and not allowed_chunk_ids:
+        return []
+
+    sql = """
+        SELECT chunks.chunk_id, bm25(document_chunks_fts) AS score
+        FROM document_chunks_fts
+        JOIN document_chunks AS chunks
+          ON chunks.id = document_chunks_fts.rowid
+        WHERE document_chunks_fts MATCH :consulta
+    """
+    params: dict[str, object] = {"consulta": consulta, "limite": top_k}
+    if allowed_chunk_ids is not None:
+        sql += " AND chunks.chunk_id IN :allowed_chunk_ids"
+        params["allowed_chunk_ids"] = sorted(allowed_chunk_ids)
+    statement = text(sql + " ORDER BY score ASC LIMIT :limite")
+    if allowed_chunk_ids is not None:
+        statement = statement.bindparams(
+            bindparam("allowed_chunk_ids", expanding=True)
+        )
+
+    linhas = db.execute(statement, params).all()
     return [(str(linha.chunk_id), float(linha.score)) for linha in linhas]

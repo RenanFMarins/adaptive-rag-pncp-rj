@@ -16,6 +16,7 @@ from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
 from src.audit import new_trace_id, utc_now, write_audit_trace
 from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk
+from src.query.schemas import QueryFilters
 
 
 MENSAGEM_SEM_EVIDENCIA = (
@@ -114,6 +115,7 @@ def gerar_resposta_rag(
     trace_id: str | None = None,
     audit_dir: Path = Path("logs/queries"),
     progresso: Callable[[str], None] | None = None,
+    filters: QueryFilters | None = None,
 ) -> RagAnswer:
     def informar(mensagem: str) -> None:
         if progresso is not None:
@@ -131,6 +133,7 @@ def gerar_resposta_rag(
             "question": pergunta,
             "top_k": top_k,
             "cache_dir": str(cache_dir),
+            "filters": filters.model_dump(mode="json") if filters else None,
         },
         "guardrail": {
             "checked": False,
@@ -185,6 +188,7 @@ def gerar_resposta_rag(
             pergunta=pergunta,
             top_k=top_k,
             cache_dir=cache_dir,
+            filters=filters,
         )
 
         trace["retrieval"]["chunks"] = [
