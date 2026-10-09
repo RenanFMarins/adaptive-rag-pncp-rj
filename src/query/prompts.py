@@ -59,6 +59,13 @@ Regras:
 - Use route "structured" para contagens, totais, médias, máximos, mínimos e listas de registros.
 - Use route "rag" para perguntas sobre conteúdo de editais, contratos, normas e documentos.
 - Use route "hybrid" somente quando a pergunta exigir dados estruturados e evidência documental.
+- Termos como "quantos", "quantidade" e "número de" exigem a operação "count".
+- Termos como "valor total", "soma" e "quanto foi gasto" exigem a operação "sum" e um aggregation_field de valor.
+- Termos como "maior", "menor", "máximo" e "mínimo" exigem a operação agregada correspondente ou ordenação adequada.
+- Termos como "top", "ranking", "maiores" e "menores" exigem "list" e "order_by"; use limit quando a pergunta indicar uma quantidade.
+- Quando a pergunta pedir resultados "por" um campo, como "por modalidade" ou "por município", use "group_by" com esse campo e inclua a operação "group_by".
+- Extraia ano, mês ou período somente quando estiverem explícitos ou forem inequivocamente informados na pergunta.
+- Não transforme uma pergunta quantitativa em RAG apenas porque existem documentos relacionados ao assunto.
 - Para route "rag", use intent "documental", entity "documento", operations como lista vazia e needs_document_retrieval como true.
 - Em perguntas documentais sobre contratos ou contratações, tipo_entidade pode indicar a origem do documento ("contrato" ou "contratacao"), mas entity continua "documento".
 - "Contratação" e "contrato" não são modalidades. Só preencha modalidade quando a pergunta citar uma modalidade concreta, como "Pregão", "Dispensa" ou "Concorrência".

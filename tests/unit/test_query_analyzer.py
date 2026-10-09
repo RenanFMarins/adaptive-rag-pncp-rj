@@ -79,6 +79,31 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.bases, [KnowledgeBase.NORMATIVA])
         self.assertTrue(analysis.needs_document_retrieval)
 
+    def test_aceita_json_com_texto_antes_e_depois(self):
+        analysis = analisar_pergunta(
+            "Quantas contratações existem por modalidade em 2026?",
+            llm_fn=lambda _prompt: """Plano identificado:\n```json
+            {
+              "route": "structured",
+              "intent": "aggregate",
+              "entity": "contratacao",
+              "bases": ["estruturada"],
+              "filters": {"ano": 2026},
+              "operations": ["count", "group_by"],
+              "aggregation_field": null,
+              "group_by": ["modalidade"],
+              "order_by": [],
+              "limit": null,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }
+            ```\nFim do plano.""",
+        )
+
+        self.assertEqual(analysis.route, QueryRoute.STRUCTURED)
+        self.assertIn(StructuredOperation.COUNT, analysis.operations)
+        self.assertIn(StructuredOperation.GROUP_BY, analysis.operations)
+
     def test_aceita_filtro_de_objeto_documental(self):
         analysis = analisar_pergunta(
             "Quais práticas de sustentabilidade existem para manutenção de elevadores?",
@@ -132,6 +157,7 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.route, QueryRoute.STRUCTURED)
         self.assertIn('route DEVE ser "structured"', prompts[0])
         self.assertIn('bases DEVE ser ["estruturada"]', prompts[0])
+        self.assertIn('"quantos", "quantidade" e "número de"', prompts[0])
 
     def test_modo_estruturado_rejeita_rota_diferente(self):
         with self.assertRaisesRegex(QueryAnalysisError, "endpoint exige 'structured'"):

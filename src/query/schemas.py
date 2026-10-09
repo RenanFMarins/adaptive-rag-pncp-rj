@@ -119,13 +119,15 @@ class QueryFilters(BaseModel):
     @model_validator(mode="after")
     def validar_intervalos(self) -> "QueryFilters":
         if self.period_start and self.period_end and self.period_start > self.period_end:
-            raise ValueError("period_start não pode ser posterior a period_end.")
+            raise ValueError(
+                "period_start não pode ser posterior a period_end.")
         if (
             self.valor_minimo is not None
             and self.valor_maximo is not None
             and self.valor_minimo > self.valor_maximo
         ):
-            raise ValueError("valor_minimo não pode ser maior que valor_maximo.")
+            raise ValueError(
+                "valor_minimo não pode ser maior que valor_maximo.")
         return self
 
 
@@ -150,7 +152,8 @@ class QueryAnalysis(BaseModel):
     @model_validator(mode="after")
     def validar_plano(self) -> "QueryAnalysis":
         if len(set(self.operations)) != len(self.operations):
-            raise ValueError("operations não pode conter operações duplicadas.")
+            raise ValueError(
+                "operations não pode conter operações duplicadas.")
 
         operacoes_agregadas = {
             StructuredOperation.SUM,
@@ -178,7 +181,8 @@ class QueryAnalysis(BaseModel):
                 )
         elif self.route is QueryRoute.RAG:
             if self.operations:
-                raise ValueError("A rota rag não aceita operações estruturadas.")
+                raise ValueError(
+                    "A rota rag não aceita operações estruturadas.")
             if not self.needs_document_retrieval:
                 raise ValueError(
                     "A rota rag exige needs_document_retrieval igual a true."

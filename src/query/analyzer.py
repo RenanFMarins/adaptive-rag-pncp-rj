@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 
 from pydantic import ValidationError
@@ -20,19 +21,22 @@ class QueryAnalysisError(ValueError):
 
 
 def _extrair_json(resposta: str) -> str:
-    """Aceita JSON puro e a cerca Markdown que alguns modelos ainda produzem."""
+    """Extrai o objeto JSON mesmo se a LLM incluir texto ou Markdown."""
 
     conteudo = resposta.strip()
     if not conteudo:
         raise QueryAnalysisError("A LLM retornou uma análise vazia.")
-    if not conteudo.startswith("```"):
-        return conteudo
 
-    linhas = conteudo.splitlines()
-    if len(linhas) < 3 or not linhas[-1].strip().startswith("```"):
-        raise QueryAnalysisError(
-            "A LLM retornou uma cerca Markdown incompleta.")
-    return "\n".join(linhas[1:-1]).strip()
+    # Alguns modelos devolvem "Aqui está o JSON:" ou uma cerca Markdown
+    # apesar do prompt. Localizamos o primeiro objeto para manter o Analyzer
+    # tolerante à apresentação, sem afrouxar a validação Pydantic posterior.
+    conteudo = re.sub(r"^```(?:json)?\s*", "", conteudo, flags=re.IGNORECASE)
+    conteudo = re.sub(r"\s*```\s*$", "", conteudo).strip()
+    inicio = conteudo.find("{")
+    fim = conteudo.rfind("}")
+    if inicio == -1 or fim <= inicio:
+        raise QueryAnalysisError("A LLM não retornou um objeto JSON válido.")
+    return conteudo[inicio : fim + 1]
 
 
 def analisar_pergunta(
