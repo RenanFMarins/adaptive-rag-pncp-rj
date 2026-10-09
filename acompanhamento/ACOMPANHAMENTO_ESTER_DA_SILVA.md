@@ -769,7 +769,108 @@ esse carregamento.
 
 ---
 
-## Encontro 11 · DD/MM/AAAA
+## Encontro 11 · 09/10/2026
+
+### O que eu fiz hoje
+
+O dia em que a base normativa saiu do arquivo e entrou no sistema.
+
+Comecei atualizando a branch com a principal e fui atrás de uma coisa que
+tinha ficado da aula passada: por que a nossa base aparecia como
+"parcialmente pronta" enquanto a estruturada aparecia como pronta. Descobri
+o motivo e ele era concreto. A busca do sistema — o FTS5 e o FAISS — só
+procura dentro da tabela document_chunks do banco. Os nossos 794 trechos
+estavam apenas no arquivo JSONL e nunca tinham sido gravados nessa tabela.
+Conferi no banco: só havia registros da base estruturada. Ou seja, tudo o
+que a gente coletou e processou nas últimas semanas estava invisível para
+quem fizesse uma pergunta.
+
+Antes de mexer, conferi se dava para resolver sem atrapalhar ninguém.
+Procurei quem importa os nossos módulos em todo o projeto e não há ninguém;
+as nossas rotas nem estão ligadas na API. Então o trabalho era nosso e só
+nosso.
+
+Escrevi o carregador, o app/modules/normative/persistencia.py. Ele lê o
+nosso JSONL e grava os trechos no banco, e é idempotente pelo chunk_id:
+rodar de novo não duplica nada. Rodou e gravou 794 trechos em 13
+documentos, que é exatamente o volume_alvo do manifesto. Rodei uma segunda
+vez para conferir: zero gravados, 794 já existentes.
+
+Aí veio a parte que valeu o dia. O FTS5 indexou os trechos sozinho, por um
+gatilho que já existia, e fui testar uma busca de verdade. Perguntei "prazo
+de vigência da ata de registro de preços" e o sistema trouxe o Art. 84 da
+Lei 14.133, que é a resposta certa. Testei mais duas perguntas e vieram os
+artigos corretos. Foi a primeira vez que vi o nosso corpus respondendo.
+
+Uma coisa que me deixou satisfeita: não escrevemos uma linha de código de
+busca. Os trechos entraram na tabela e passaram a circular pela mesma
+recuperação que o resto do sistema usa. Era exatamente isso que queria dizer 
+com "reutilizar RAG".
+
+Depois fizemos mais três coisas. Primeiro, o aviso de trechos sem data de
+vigência no fim do processamento — o problema que eu vivi na sexta, de
+rodar a ingestão sem a coleta e gerar 313 trechos sem data em silêncio.
+Agora o programa avisa quantos ficaram sem data e qual comando rodar.
+
+Segundo, consertamos o título de um edital que ficava vazio. O número dele
+está no texto, mas o título é longo — "PREGÃO ELETRÔNICO PARA REGISTRO DE
+PREÇOS N° 019/2025" — e a nossa regra só aceitava 20 caracteres entre o
+tipo e o número. A primeira ideia foi ampliar o limite, mas testei nos
+cinco editais e isso estragava outros dois. Criamos então uma regra reserva
+que só roda quando a principal não acha nada. Os cinco saem certos agora.
+
+Terceiro, reprocessamos o corpus e eu comparei o antes e o depois trecho a
+trecho: 794 trechos, nenhum texto alterado, nenhum chunk_id alterado — só
+os 27 daquele edital ganharam o número. Isso importa porque significa que
+nada do que alguém já tivesse indexado ficou velho.
+
+No fim do dia atualizei a branch de novo e entrou o PR #42 do Luciano, com
+o planejador, o executor e a rota híbrida. O Adaptive RAG do enunciado
+passou a existir de verdade hoje.
+
+Os nossos testes foram de 50 para 81.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** investigar por que a base estava "parcialmente pronta",
+  escrever o carregador e os testes, e conferir o impacto das mudanças.
+- **O que eu conferi / mudei:** três vezes não aceitei o que me foi dito.
+  Perguntei se o ingest/services.py era código do grupo e a resposta inicial
+  estava errada — conferi o histórico e os únicos nomes no arquivo são o meu
+  e o da Ana. Perguntei se as nossas mudanças afetariam os outros e exigi a
+  verificação em vez da suposição. E quando me disseram que faltava um
+  servidor Ollama, pedi para olhar o código: já existe um servidor do ECOA
+  configurado por padrão e ele está no ar. Também escolhi não criar coluna
+  nova no banco, porque isso mexeria em arquivo compartilhado.
+
+### O que travou
+
+- Nada travou. Os dois merges passaram sem conflito.
+- Para rodar os testes do carregador faltavam três pacotes na minha máquina
+  que o projeto declara mas nunca tinham sido instalados, e faltava o .env,
+  que o projeto exige e não vem pronto.
+
+### Próximo passo
+
+- A indexação FAISS da base normativa, que é a busca por significado. É o
+  último item e é mais simples do que parecia: o servidor do ECOA já está
+  configurado no código.
+- Escrever as nove perguntas de referência no eval/questions.json, que
+  continua com 0 bytes.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** os 794 trechos carregados no banco e
+  encontráveis pela busca, o aviso de trechos sem data, o conserto do
+  número do edital e o preenchimento de título no recarregamento. Testes de
+  50 para 81.
+- **Travou:** nada na nossa parte. 
+- **Próximo passo:** indexação FAISS e as perguntas de referência.
+
+---
+
+## Encontro 12 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
