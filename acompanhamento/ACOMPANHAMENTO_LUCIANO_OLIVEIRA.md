@@ -99,3 +99,15 @@ Também realizei alguns ajustes no prompt utilizado pela LLM. Limitei o tamanho 
 Além disso, melhorei as informações enviadas no contexto para a LLM, incluindo identificadores mais claros sobre a origem de cada evidência, como o `numeroControlePNCP`, o título do documento e a URL de origem.
 
 O trabalho de hoje ficou concentrado principalmente na implementação do FTS5 e nos ajustes e testes do fluxo de recuperação e geração das respostas.
+
+## Encontro 10 - 2026-10-09
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade ao desenvolvimento e, principalmente, aos testes das funcionalidades que comecei a implementar ontem, envolvendo a análise das perguntas (Query Analysis), o roteamento das buscas (Router), a integração com o banco estruturado (Structured DB) e a aplicação dos filtros.
+
+Também trabalhei na criação e nos testes de endpoints para verificar o funcionamento das diferentes rotas de busca, avaliando se as perguntas estão sendo direcionadas corretamente para SQL, RAG ou busca híbrida.
+
+Durante os testes, identifiquei que alguns cenários apresentaram os resultados esperados, enquanto outros ainda precisam de ajustes. Por isso, dediquei boa parte do dia à análise desses comportamentos, buscando identificar possíveis problemas e melhorias no fluxo.
+
+Dessa forma, o trabalho de hoje ficou concentrado principalmente na validação das funcionalidades implementadas, na identificação de falhas e nos ajustes necessários para melhorar o funcionamento das buscas.
