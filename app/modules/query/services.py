@@ -1,11 +1,97 @@
 from __future__ import annotations
 
+import sqlite3
+from collections.abc import Callable
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.modules.query.model import Query, Response, ResponseSource
+from src.query.adaptive_executor import (
+    AdaptiveExecutionResult,
+    executar_plano_adaptativo,
+)
+from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
+from src.query.executor import executar_consulta_adaptativa
+from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
 from src.retrieve import RankedChunk
+
+
+AnalyzerFn = Callable[[str], QueryAnalysis]
+
+
+def _sqlite_connection_from_session(db: Session) -> sqlite3.Connection:
+    """Obtém a conexão SQLite atual sem abrir outro banco para a consulta."""
+
+    sqlalchemy_connection = db.connection()
+    connection_proxy = sqlalchemy_connection.connection
+    raw_connection = getattr(connection_proxy, "driver_connection", connection_proxy)
+    if not isinstance(raw_connection, sqlite3.Connection):
+        raise RuntimeError("A consulta estruturada requer uma conexão SQLite.")
+    return raw_connection
+
+
+def executar_consulta_estruturada(
+    db: Session,
+    pergunta: str,
+    analyzer_fn: AnalyzerFn | None = None,
+) -> AdaptiveQueryResult:
+    """Executa Analyzer, Planner e Structured Tool na conexão da API."""
+
+    return executar_consulta_adaptativa(
+        _sqlite_connection_from_session(db),
+        pergunta,
+        analyzer_fn=analyzer_fn or analisar_pergunta_estruturada,
+    )
+
+
+def executar_consulta_adaptativa_api(
+    db: Session,
+    pergunta: str,
+    top_k: int,
+    analyzer_fn: AnalyzerFn | None = None,
+    rag_executor: Callable[[], object] | None = None,
+    hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
+) -> AdaptiveExecutionResult:
+    """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
+
+    analysis = (analyzer_fn or analisar_pergunta)(pergunta)
+
+    if rag_executor is None:
+        def rag_executor() -> object:
+            # Importação tardia evita ciclo: generate.py já usa este service
+            # para persistir Query, Response e ResponseSource.
+            from src.generate import gerar_resposta_rag
+
+            return gerar_resposta_rag(
+                db=db,
+                pergunta=pergunta,
+                top_k=top_k,
+                persistir=True,
+                filters=analysis.filters,
+            )
+
+    if hybrid_executor is None:
+        def hybrid_executor(structured: AdaptiveQueryResult) -> object:
+            # A fonte estruturada é entregue em seção própria; as citações da
+            # resposta continuam apontando somente para chunks documentais.
+            from src.generate import gerar_resposta_rag
+
+            return gerar_resposta_rag(
+                db=db,
+                pergunta=pergunta,
+                top_k=top_k,
+                persistir=True,
+                filters=analysis.filters,
+                structured_result=structured.structured_result,
+            )
+
+    return executar_plano_adaptativo(
+        analysis,
+        structured_connection=_sqlite_connection_from_session(db),
+        rag_executor=rag_executor,
+        hybrid_executor=hybrid_executor,
+    )
 
 
 def persistir_resultado_rag(
