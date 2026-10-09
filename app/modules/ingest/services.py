@@ -174,6 +174,35 @@ def ficha_do_documento(caminho: Path) -> dict:
     return {}
 
 
+def numero_do_edital(inicio: str) -> str | None:
+    """
+    Tira o número do edital da linha de título.
+
+    A regra principal aceita até 20 caracteres entre o tipo e o "Nº", o que
+    cobre "PREGÃO ELETRÔNICO SRP N° 096/2025". Quando o título é mais longo —
+    "PREGÃO ELETRÔNICO PARA REGISTRO DE PREÇOS N° 019/2025" —, ela não acha
+    nada, e aí entra a regra reserva, que aceita um intervalo maior mas só
+    guarda o tipo e o número. Ampliar a regra principal não serve: ela
+    passaria a casar "EDITAL DE PREGÃO ELETRÔNICO N° 210/2024" e os títulos
+    que já saem certos ficariam compridos.
+    """
+    achado = re.search(
+        r"(PREG[ÃA]O ELETR[ÔO]NICO[^\n]{0,20}?N[º°o]\.?\s*[\d\./]+"
+        r"|EDITAL[^\n]{0,20}?N[º°o]\.?\s*[\d\./]+)",
+        inicio, re.I)
+    if achado:
+        return re.sub(r"\s+", " ", achado.group(1)).strip()
+
+    reserva = re.search(
+        r"(PREG[ÃA]O ELETR[ÔO]NICO|EDITAL)[^\n]{0,60}?(N[º°o]\.?\s*\d{1,4}/\d{4})",
+        inicio, re.I)
+    if reserva:
+        tipo = re.sub(r"\s+", " ", reserva.group(1)).strip()
+        numero = re.sub(r"\s+", " ", reserva.group(2)).strip()
+        return f"{tipo} {numero}"
+    return None
+
+
 def metadados_do_documento(caminho: Path, texto: str) -> dict:
     """
     Descobre, pelo próprio texto, que documento é: lei, decreto ou edital,
@@ -190,7 +219,6 @@ def metadados_do_documento(caminho: Path, texto: str) -> dict:
     data = r",?\s+DE\s+(\d{1,2})[º°o]?\s+(?:DE\s+)?(\w+)\s+DE\s+(\d{4})"
     lei = re.search(r"^LEI N[º°o]\s*([\d\.]+)" + data, inicio, re.I | re.M)
     decreto = re.search(r"^DECRETO N[º°o]\s*([\d\.]+)" + data, inicio, re.I | re.M)
-    edital = re.search(r"(PREG[ÃA]O ELETR[ÔO]NICO[^\n]{0,20}?N[º°o]\.?\s*[\d\./]+|EDITAL[^\n]{0,20}?N[º°o]\.?\s*[\d\./]+)", inicio, re.I)
     menciona_edital = re.search(r"EDITAL|PREG[ÃA]O", inicio, re.I)
 
     if decreto and (not menciona_edital or decreto.start() < menciona_edital.start()):
@@ -211,8 +239,7 @@ def metadados_do_documento(caminho: Path, texto: str) -> dict:
         if altera:
             meta["altera"] = f"Decreto RJ {altera.group(1)}"
     else:
-        meta.update(doc_type="edital",
-                    numero_edital=re.sub(r"\s+", " ", edital.group(1)).strip() if edital else None)
+        meta.update(doc_type="edital", numero_edital=numero_do_edital(inicio))
         orgao = re.search(r"(Governo do Estado do Rio de Janeiro\s+[^\n]+|Prefeitura Municipal de [^\n]+)", inicio)
         meta["orgao"] = orgao.group(1).strip() if orgao else None
         # Vigência do edital: data oficial do PNCP, gravada na coleta em
@@ -346,6 +373,29 @@ def gerar_chunks(caminho: Path) -> list[dict]:
     return chunks
 
 
+def aviso_sem_data(chunks, versao="v1"):
+    """
+    Monta o aviso dos chunks que ficaram sem data de vigência.
+
+    A data dos editais vem das fichas .meta.json que a coleta grava em
+    data/raw/, pasta que o Git ignora. Quem clona o projeto e roda só a
+    ingestão gera o corpus inteiro sem data e não percebe: o JSONL sai com o
+    número certo de chunks e nenhum erro aparece.
+
+    Devolve lista vazia quando está tudo certo.
+    """
+    sem_data = [c for c in chunks if not c["metadata"].get("data_publicacao")]
+    if not sem_data:
+        return []
+    arquivos = sorted({c["metadata"]["source_file"] for c in sem_data})
+    return [
+        f"ATENÇÃO: {len(sem_data)} chunk(s) sem data de vigência, "
+        f"em {len(arquivos)} arquivo(s): {', '.join(arquivos)}",
+        "  Rode a coleta antes da ingestão, para gerar as fichas do PNCP:",
+        f"  python -m app.modules.normative.services fetch --versao {versao}",
+    ]
+
+
 def processar(versao="v1", raiz="data/raw", saida=None):
     """Processa todos os documentos da base e grava os chunks em JSONL."""
     pasta = Path(raiz) / versao / BASE_ID
@@ -375,6 +425,8 @@ def processar(versao="v1", raiz="data/raw", saida=None):
         for c in todos:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
     print(f"Total: {len(todos)} chunks em {saida}")
+    for linha in aviso_sem_data(todos, versao):
+        print(linha)
     print(f"Log em logs/ · run_id {run_id}")
     return todos
 

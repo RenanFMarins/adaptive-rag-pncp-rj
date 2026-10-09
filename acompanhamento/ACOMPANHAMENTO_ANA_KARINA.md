@@ -574,3 +574,90 @@ por quem faz uma pergunta. É pouco trabalho, mas é o que falta.
   não existem.
 - Próximo passo: iniciar a Etapa 7 e confirmar quem indexa os trechos da
   base normativa.
+
+    ## Encontro 11 · 09/10/2026
+
+### O que eu fiz hoje
+
+O dia em que a base normativa saiu do arquivo e entrou no sistema.
+
+Trabalhamos juntas o dia todo. Começamos atrás de uma coisa que tinha
+ficado da aula passada: por que a nossa base aparecia como "parcialmente
+pronta" enquanto a estruturada aparecia como pronta. O motivo era concreto.
+A busca do sistema só procura dentro de uma tabela do banco, a
+document_chunks. Os nossos 794 trechos estavam apenas no arquivo JSONL e
+nunca tinham sido gravados nessa tabela. Ou seja: tudo o que a gente
+coletou e processou nas últimas semanas estava invisível para quem fizesse
+uma pergunta. Isso me surpreendeu, porque a gente achava que entregar o
+JSONL era o fim do nosso trabalho.
+
+Antes de mexer, conferimos se dava para resolver sem atrapalhar ninguém.
+Ninguém no projeto importa os nossos módulos, e as nossas rotas nem estão
+ligadas na API. Então era trabalho nosso e só nosso.
+
+Escrevemos o carregador, o app/modules/normative/persistencia.py, que lê o
+nosso JSONL e grava os trechos no banco. Ele é seguro de rodar várias
+vezes: na segunda passada ele vê que já está tudo lá e não duplica. Rodou e
+gravou 794 trechos em 13 documentos, exatamente o volume_alvo do manifesto.
+
+Aí veio a parte que valeu o dia. Perguntamos ao sistema "prazo de vigência
+da ata de registro de preços" e ele trouxe o Art. 84 da Lei 14.133, que é a
+resposta certa. Foi a primeira vez que vi o nosso corpus respondendo uma
+pergunta de verdade. Depois de semanas coletando PDF e ajustando regra de
+divisão de texto, ver isso funcionando foi diferente.
+
+E não escrevemos uma linha de código de busca. Os trechos entraram na
+tabela e passaram a circular pela mesma recuperação que o resto do sistema
+usa — era isso que queria dizer com "reutilizar RAG".
+
+Fizemos mais três coisas. O aviso de trechos sem data de vigência no fim do
+processamento, que resolve o problema de quem roda a ingestão sem a coleta
+antes e gera 313 trechos sem data sem perceber. O conserto do título de um
+edital que ficava vazio: o número está no texto, mas o título é longo
+demais e a nossa regra só aceitava 20 caracteres entre o tipo e o número —
+ampliar o limite estragava outros dois editais, então criamos uma regra
+reserva que só roda quando a principal falha. E o reprocessamento do
+corpus, comparando antes e depois: 794 trechos, nenhum texto alterado,
+nenhum chunk_id alterado, só os 27 daquele edital ganharam o número.
+
+No fim do dia entrou o PR #42 do Luciano, com o planejador, o executor e a
+rota híbrida. O Adaptive RAG do enunciado passou a existir de verdade hoje.
+
+Os nossos testes foram de 50 para 81.
+
+### Onde usei IA e o que mudei no resultado
+
+- Ferramenta: Claude.
+- Para quê: entender por que a nossa base estava invisível para a busca,
+  escrever o carregador e os testes, e conferir o impacto das mudanças.
+- O que eu conferi / mudei: fizemos questão de confirmar cada afirmação
+  em vez de aceitar. Quando foi dito que o ingest/services.py poderia ser
+  código do grupo, conferimos o histórico: os únicos nomes no arquivo são o
+  meu e o da Ester, e a maior parte das linhas é minha. Quando foi dito que
+  faltava um servidor Ollama, fomos olhar o código e já existe um servidor
+  do ECOA configurado por padrão, que está no ar. Também decidimos não
+  criar coluna nova no banco, porque isso mexeria em arquivo compartilhado
+  com o time.
+
+### O que travou
+
+- Nada travou no nosso trabalho.
+- Faltavam na máquina três pacotes que o projeto declara e o arquivo .env,
+  que o projeto exige e não vem pronto no repositório.
+
+### Próximo passo
+
+- A indexação FAISS da base normativa, que é a busca por significado — a
+  que encontra o artigo certo mesmo quando a pergunta não usa as mesmas
+  palavras do texto.
+- As nove perguntas de referência no eval/questions.json, que continua
+  vazio.
+
+### Resumo do time no dia
+
+- Entregamos (base normativa): os 794 trechos carregados no banco e
+  encontráveis pela busca, o aviso de trechos sem data, o conserto do
+  número do edital e o preenchimento de título no recarregamento. Testes de
+  50 para 81.
+- Travou: nada na nossa parte. 
+- Próximo passo: indexação FAISS e as perguntas de referência.
