@@ -54,6 +54,7 @@ def executar_consulta_adaptativa_api(
     top_k: int,
     analyzer_fn: AnalyzerFn | None = None,
     rag_executor: Callable[[], object] | None = None,
+    hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
@@ -70,12 +71,29 @@ def executar_consulta_adaptativa_api(
                 pergunta=pergunta,
                 top_k=top_k,
                 persistir=True,
+                filters=analysis.filters,
+            )
+
+    if hybrid_executor is None:
+        def hybrid_executor(structured: AdaptiveQueryResult) -> object:
+            # A fonte estruturada é entregue em seção própria; as citações da
+            # resposta continuam apontando somente para chunks documentais.
+            from src.generate import gerar_resposta_rag
+
+            return gerar_resposta_rag(
+                db=db,
+                pergunta=pergunta,
+                top_k=top_k,
+                persistir=True,
+                filters=analysis.filters,
+                structured_result=structured.structured_result,
             )
 
     return executar_plano_adaptativo(
         analysis,
         structured_connection=_sqlite_connection_from_session(db),
         rag_executor=rag_executor,
+        hybrid_executor=hybrid_executor,
     )
 
 

@@ -117,6 +117,51 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.json()["answer"], rag_result.answer)
         self.assertEqual(response.json()["sources"][0]["chunk_id"], "chunk-1")
 
+    def test_retorna_dados_sql_e_fontes_documentais_na_rota_hybrid(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.HYBRID,
+            intent=QueryIntent.COMPARISON,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA, KnowledgeBase.NORMATIVA],
+            semantic_query="Compare valores e cláusulas.",
+            needs_document_retrieval=True,
+        )
+        rag_result = type(
+            "RagResult",
+            (),
+            {"answer": "O valor está nos dados SQL e a cláusula consta em [1].", "sources": []},
+        )()
+        structured = AdaptiveQueryResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=StructuredQueryResult(
+                entity=QueryEntity.CONTRATO,
+                columns=["valor_global"],
+                rows=[{"valor_global": 100.0}],
+                row_count=1,
+                limit_applied=20,
+            ),
+        )
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=structured,
+            rag_result=rag_result,
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Compare valores e cláusulas."},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["route"], "hybrid")
+        self.assertEqual(response.json()["structured_result"]["rows"], [{"valor_global": 100.0}])
+        self.assertEqual(response.json()["answer"], rag_result.answer)
+
 
 if __name__ == "__main__":
     unittest.main()

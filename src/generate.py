@@ -16,7 +16,7 @@ from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
 from src.audit import new_trace_id, utc_now, write_audit_trace
 from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk
-from src.query.schemas import QueryFilters
+from src.query.schemas import QueryFilters, StructuredQueryResult
 
 
 MENSAGEM_SEM_EVIDENCIA = (
@@ -57,8 +57,22 @@ def _metadata_util(metadata: dict[str, object]) -> dict[str, object]:
     }
 
 
-def montar_contexto(chunks: list[RankedChunk]) -> str:
+def montar_contexto(
+    chunks: list[RankedChunk],
+    structured_result: StructuredQueryResult | None = None,
+) -> str:
     partes: list[str] = []
+
+    if structured_result is not None:
+        dados_estruturados = json.dumps(
+            structured_result.model_dump(mode="json"),
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        partes.append(
+            "DADOS ESTRUTURADOS (SQLite; não são citação documental):\n"
+            f"{dados_estruturados}"
+        )
 
     for indice, chunk in enumerate(chunks, start=1):
         metadata = _metadata_util(chunk.metadata)
@@ -96,6 +110,9 @@ def montar_prompt(pergunta: str, contexto: str) -> str:
         "conteúdo demonstrarem explicitamente que pertencem ao mesmo processo. "
         "Caso contrário, responda cada caso separadamente ou informe que não há "
         "informação suficiente para fazer essa associação.\n\n"
+        "Quando houver a seção DADOS ESTRUTURADOS, use-a somente como evidência "
+        "tabular. Não atribua marcadores [n] a esses dados; os marcadores [n] "
+        "referem-se exclusivamente às evidências documentais numeradas.\n\n"
         f"Pergunta:\n{pergunta}\n\n"
         f"Evidências:\n{contexto}\n\n"
         "Resposta fundamentada:"
@@ -116,6 +133,7 @@ def gerar_resposta_rag(
     audit_dir: Path = Path("logs/queries"),
     progresso: Callable[[str], None] | None = None,
     filters: QueryFilters | None = None,
+    structured_result: StructuredQueryResult | None = None,
 ) -> RagAnswer:
     def informar(mensagem: str) -> None:
         if progresso is not None:
@@ -134,6 +152,11 @@ def gerar_resposta_rag(
             "top_k": top_k,
             "cache_dir": str(cache_dir),
             "filters": filters.model_dump(mode="json") if filters else None,
+            "structured_result": (
+                structured_result.model_dump(mode="json")
+                if structured_result
+                else None
+            ),
         },
         "guardrail": {
             "checked": False,
@@ -206,7 +229,7 @@ def gerar_resposta_rag(
             for rank, chunk in enumerate(chunks, start=1)
         ]
 
-        if not chunks:
+        if not chunks and structured_result is None:
             informar("Nenhuma evidência foi encontrada.")
             resposta_sem_evidencia = RagAnswer(
                 answer=MENSAGEM_SEM_EVIDENCIA,
@@ -218,8 +241,13 @@ def gerar_resposta_rag(
             trace["stage"] = "completed"
             return resposta_sem_evidencia
 
-        informar(f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto...")
-        contexto = montar_contexto(chunks)
+        if chunks:
+            informar(
+                f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto..."
+            )
+        else:
+            informar("Nenhuma evidência documental foi encontrada. Usando dados estruturados...")
+        contexto = montar_contexto(chunks, structured_result=structured_result)
         prompt = montar_prompt(pergunta, contexto)
         trace["generation"]["contexto"] = contexto
         trace["generation"]["prompt"] = prompt

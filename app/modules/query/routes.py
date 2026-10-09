@@ -55,13 +55,17 @@ def ask(
             detail=str(exc),
         ) from exc
 
-    if result.structured_result is not None:
-        structured = result.structured_result
+    structured_result = (
+        result.structured_result.structured_result
+        if result.structured_result is not None
+        else None
+    )
+    if structured_result is not None and result.rag_result is None:
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,
             plan=result.plan,
-            structured_result=structured.structured_result,
+            structured_result=structured_result,
         )
 
     rag_result = result.rag_result
@@ -74,6 +78,7 @@ def ask(
         route=result.plan.route,
         analysis=result.analysis,
         plan=result.plan,
+        structured_result=structured_result,
         answer=rag_result.answer,
         sources=[
             SourceResponse(

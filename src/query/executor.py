@@ -32,6 +32,10 @@ def executar_consulta_adaptativa(
     """
 
     analysis = analyzer_fn(pergunta)
+    if analysis.route is not QueryRoute.STRUCTURED:
+        raise QueryExecutionError(
+            f"A rota '{analysis.route.value}' ainda não está integrada a este executor."
+        )
     return executar_analise_estruturada(connection, analysis)
 
 
@@ -39,12 +43,12 @@ def executar_analise_estruturada(
     connection: sqlite3.Connection,
     analysis: QueryAnalysis,
 ) -> AdaptiveQueryResult:
-    """Executa uma análise estruturada já pronta, sem chamar a LLM novamente."""
+    """Executa a parcela SQL de uma análise, sem chamar a LLM novamente."""
 
     plan = planejar_execucao(analysis)
-    if plan.route is not QueryRoute.STRUCTURED:
+    if plan.route not in {QueryRoute.STRUCTURED, QueryRoute.HYBRID}:
         raise QueryExecutionError(
-            f"A rota '{plan.route.value}' ainda não está integrada ao executor."
+            f"A rota '{plan.route.value}' não possui parcela SQL estruturada."
         )
 
     structured_result = executar_consulta_estruturada(connection, analysis)

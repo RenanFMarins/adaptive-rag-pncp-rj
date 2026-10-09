@@ -13,6 +13,7 @@ from .schemas import AdaptiveQueryResult, ExecutionPlan, QueryAnalysis, QueryRou
 
 
 RagExecutorFn = Callable[[], Any]
+HybridExecutorFn = Callable[[AdaptiveQueryResult], Any]
 
 
 @dataclass(frozen=True)
@@ -30,11 +31,12 @@ def executar_plano_adaptativo(
     *,
     structured_connection: sqlite3.Connection | None = None,
     rag_executor: RagExecutorFn | None = None,
+    hybrid_executor: HybridExecutorFn | None = None,
 ) -> AdaptiveExecutionResult:
     """Executa exclusivamente a ferramenta indicada pela rota planejada.
 
-    A rota híbrida permanece bloqueada até existir uma política explícita para
-    combinar resultados SQL e evidências documentais na geração.
+    A rota híbrida executa SQL primeiro e entrega seu resultado ao executor
+    documental, que é responsável por manter os dois contextos separados.
     """
 
     plan = planejar_execucao(analysis)
@@ -57,6 +59,14 @@ def executar_plano_adaptativo(
             rag_result=rag_executor(),
         )
 
-    raise QueryExecutionError(
-        "A rota 'hybrid' ainda não está integrada à combinação de evidências."
+    if structured_connection is None:
+        raise QueryExecutionError("A rota hybrid requer conexão SQLite.")
+    if hybrid_executor is None:
+        raise QueryExecutionError("A rota hybrid requer um executor híbrido.")
+    structured = executar_analise_estruturada(structured_connection, analysis)
+    return AdaptiveExecutionResult(
+        analysis=analysis,
+        plan=plan,
+        structured_result=structured,
+        rag_result=hybrid_executor(structured),
     )

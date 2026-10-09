@@ -87,7 +87,7 @@ class AdaptiveExecutorTests(unittest.TestCase):
         self.assertIsNone(result.structured_result)
         self.assertIs(result.rag_result, resposta_rag)
 
-    def test_rota_hibrida_e_recusada_ate_existir_combinacao_de_evidencias(self) -> None:
+    def test_rota_hibrida_entrega_sql_ao_executor_documental(self) -> None:
         analysis = QueryAnalysis(
             route=QueryRoute.HYBRID,
             intent=QueryIntent.COMPARISON,
@@ -97,8 +97,23 @@ class AdaptiveExecutorTests(unittest.TestCase):
             needs_document_retrieval=True,
         )
 
-        with self.assertRaisesRegex(QueryExecutionError, "hybrid"):
-            executar_plano_adaptativo(analysis, structured_connection=self.connection)
+        recebidos = []
+        resposta_hibrida = object()
+
+        def executor_hibrido(structured):
+            recebidos.append(structured)
+            return resposta_hibrida
+
+        result = executar_plano_adaptativo(
+            analysis,
+            structured_connection=self.connection,
+            hybrid_executor=executor_hibrido,
+        )
+
+        self.assertEqual(len(recebidos), 1)
+        self.assertEqual(recebidos[0].structured_result.row_count, 1)
+        self.assertIs(result.structured_result, recebidos[0])
+        self.assertIs(result.rag_result, resposta_hibrida)
 
 
 if __name__ == "__main__":
