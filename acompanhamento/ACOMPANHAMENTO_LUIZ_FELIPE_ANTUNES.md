@@ -265,3 +265,138 @@ A documentação e o repositório permaneceram organizados para permitir a conti
 ### Uso de assistentes de IA
 
 Utilizei IA como ferramenta de apoio durante a investigação das APIs, análise dos dados, organização da documentação, revisão dos arquivos e esclarecimento de dúvidas técnicas. As sugestões foram analisadas e ajustadas de acordo com os requisitos do projeto e as fontes oficiais utilizadas.
+
+
+# Encontro 8 — 02/10/2026
+
+### Atividades realizadas
+
+Continuei acompanhando a evolução das diferentes frentes do projeto e atuando na **organização do planejamento, documentação e integração das contribuições do grupo**.
+
+Com o avanço das implementações de ingestão, processamento, retrieval e geração de respostas, comecei a organizar melhor a estrutura geral do projeto e entender como essas partes poderiam se conectar em um fluxo único.
+
+Também acompanhei as atividades relacionadas às bases e ao RAG, ajudando a identificar as próximas etapas e organizar as responsabilidades necessárias para a continuidade do desenvolvimento.
+
+A partir dessa análise, comecei a estruturar a ideia do **Query Analyzer**, pensando em uma etapa capaz de interpretar a pergunta do usuário antes de definir qual caminho do sistema deveria ser utilizado.
+
+### Resultado
+
+O planejamento do projeto ficou mais organizado em relação às próximas etapas de integração.
+
+Também foi iniciada a estruturação do Query Analyzer, com a ideia de separar a interpretação da pergunta da execução da consulta e da geração da resposta.
+
+### Pendências e bloqueios
+
+* Continuar a evolução do Query Analyzer.
+
+* Integrar as diferentes partes do fluxo de consulta.
+
+* Definir melhor o roteamento entre dados estruturados, RAG e consultas híbridas.
+
+* Continuar a consolidação das bases e do pipeline.
+
+### Próximo passo
+
+* Continuar o desenvolvimento do Query Analyzer.
+
+* Acompanhar a integração das bases e do RAG.
+
+* Organizar as próximas etapas da arquitetura de consultas.
+
+* Continuar a documentação e os acompanhamentos do projeto.
+
+### Uso de assistentes de IA
+
+Utilizei IA como apoio para entender e estruturar a arquitetura de consultas, revisar possibilidades de implementação, esclarecer dúvidas técnicas e organizar a documentação. As sugestões foram analisadas e adaptadas de acordo com a estrutura e os requisitos definidos pelo grupo.
+
+
+# Encontro 9 — 05/10/2026
+
+### Atividades realizadas
+
+Continuei trabalhando na **organização da arquitetura de consultas, documentação e integração das diferentes partes do projeto**, acompanhando também a evolução das atividades realizadas pelos demais integrantes.
+
+Avancei no desenvolvimento do **Query Analyzer**, criando uma estrutura para interpretar as perguntas e identificar qual tipo de consulta seria necessária.
+
+Foram realizados testes com perguntas estruturadas, perguntas relacionadas a documentos e normas e perguntas que precisam combinar informações estruturadas com o conteúdo documental.
+
+Também continuei organizando o planejamento das próximas etapas, principalmente a integração entre o Query Analyzer, o futuro Router e os componentes de RAG e consulta estruturada.
+
+### Resultado
+
+O Query Analyzer conseguiu identificar corretamente os principais tipos de perguntas testados, classificando os cenários como **structured, rag e hybrid**.
+
+Com isso, ficou mais clara a separação entre a etapa de interpretação da pergunta e as etapas responsáveis pela busca, consulta e geração da resposta.
+
+### Pendências e bloqueios
+
+* Integrar o Query Analyzer ao fluxo principal.
+
+* Estruturar o Router responsável pelo direcionamento das consultas.
+
+* Definir a ferramenta de consulta dos dados estruturados.
+
+* Continuar a integração entre as diferentes partes do sistema.
+
+### Próximo passo
+
+* Continuar a evolução do Query Analyzer.
+
+* Iniciar a integração com o Router.
+
+* Acompanhar a evolução do RAG e das bases estruturadas.
+
+* Continuar organizando a documentação e o planejamento das próximas entregas.
+
+### Uso de assistentes de IA
+
+Utilizei IA como apoio no desenvolvimento e validação do Query Analyzer, principalmente para revisar estruturas, testar diferentes tipos de perguntas, esclarecer dúvidas de implementação e analisar possíveis soluções. As sugestões foram avaliadas e adaptadas conforme os requisitos do projeto.
+
+
+# Encontro 10 — 07/10/2026
+
+### Atividades realizadas
+
+Continuei trabalhando na **organização da arquitetura, documentação e planejamento das próximas etapas do projeto**, acompanhando a evolução das diferentes frentes desenvolvidas pelo grupo.
+
+A partir dos testes realizados com o Query Analyzer, avancei na definição de como a análise da pergunta poderá ser integrada ao restante do sistema.
+
+Organizei o fluxo pensando em três possibilidades principais: **structured, rag e hybrid**, permitindo que cada pergunta seja encaminhada para o tipo de consulta mais adequado.
+
+Também comecei a estruturar as próximas etapas relacionadas ao Router e à integração com os componentes que já foram desenvolvidos, buscando aproveitar o RAG existente sem duplicar funcionalidades.
+
+Continuei ainda acompanhando e organizando as atividades do grupo, ajudando na definição dos próximos papéis, tarefas e pontos que precisam ser desenvolvidos.
+
+### Resultado
+
+A arquitetura de consultas ficou mais organizada, com uma separação mais clara entre interpretação, roteamento, execução e geração da resposta.
+
+Também ficaram definidas as principais próximas etapas para integrar o Query Analyzer ao fluxo principal do projeto.
+
+### Pendências e bloqueios
+
+* Integração do Query Analyzer ao fluxo principal.
+
+* Desenvolvimento do Router.
+
+* Estruturação da consulta aos dados estruturados.
+
+* Integração entre SQL, RAG e fluxo híbrido.
+
+* Continuidade da documentação e organização do projeto.
+
+### Próximo passo
+
+* Avançar na implementação do Router.
+
+* Integrar o Query Analyzer ao fluxo principal.
+
+* Continuar a evolução das consultas estruturadas e híbridas.
+
+* Acompanhar a integração das diferentes contribuições do grupo.
+
+* Manter a documentação e o planejamento atualizados conforme o projeto evolui.
+
+### Uso de assistentes de IA
+
+Utilizei IA como apoio para analisar a arquitetura, esclarecer dúvidas técnicas, revisar as possibilidades de integração entre os componentes e organizar as próximas etapas do projeto. As sugestões foram avaliadas e adaptadas de acordo com o que já havia sido desenvolvido pelo grupo.

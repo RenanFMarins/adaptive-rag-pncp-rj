@@ -1,40 +1,45 @@
-# RAG --- Contratações Públicas do Estado do Rio de Janeiro
+# RAG — Contratações Públicas do Estado do Rio de Janeiro
 
-Projeto desenvolvido pelo **Time 03** para construção de uma solução de
-**Retrieval-Augmented Generation (RAG)** aplicada ao cenário de
-**Contratações Públicas do Estado do Rio de Janeiro**.
+Projeto desenvolvido pelo **Time 03** para construção de uma solução de **Retrieval-Augmented Generation (RAG)** aplicada ao cenário de **Contratações Públicas do Estado do Rio de Janeiro**.
 
-A aplicação utiliza **FastAPI** como framework backend, **Uvicorn** como
-servidor ASGI, **SQLite** como banco de dados local e **SQLAlchemy**
-para persistência e acesso aos dados.
+A aplicação utiliza **FastAPI** como framework backend, **Uvicorn** como servidor ASGI, **SQLite** como banco de dados local e **SQLAlchemy** para persistência e acesso aos dados.
 
-O projeto também prevê uma arquitetura de recuperação híbrida utilizando
-busca semântica e lexical para construção do pipeline RAG.
+O projeto utiliza diferentes fontes de dados e documentos, organizados em quatro bases:
 
-------------------------------------------------------------------------
+* **Base Normativa** — leis, decretos e editais;
+* **Base Estruturada** — contratos, contratações, itens e resultados;
+* **Base Conversacional** — atas e e-mails sintéticos;
+* **Base Agregada** — PCA e valores homologados por item.
 
-## Início rápido
+A arquitetura evoluiu de um pipeline RAG inicialmente focado em recuperação documental para uma arquitetura de consulta composta por **Guardrail, Query Analyzer, Router, ferramentas de consulta, geração, persistência e auditoria**.
 
-### 1. Criar e ativar o ambiente
+O objetivo é permitir que uma mesma aplicação identifique o tipo de pergunta recebida e utilize a estratégia adequada para respondê-la, podendo realizar consultas estruturadas, recuperação documental ou combinar as duas abordagens.
 
-``` powershell
+---
+
+# 1. Início rápido
+
+## 1.1 Criar e ativar o ambiente
+
+```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 2. Instalar dependências
+## 1.2 Instalar dependências
 
-``` powershell
+```powershell
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-### 3. Criar o `.env`
+## 1.3 Criar o `.env`
 
 Na raiz do projeto:
 
-``` env
+```env
 DATABASE_URL=sqlite:///./app.db
+
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -42,1275 +47,1372 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 Gere uma chave JWT local:
 
-``` powershell
+```powershell
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Copie o resultado para `JWT_SECRET_KEY`. O `.env` não deve ser enviado
-ao GitHub.
+Copie o resultado para `JWT_SECRET_KEY`.
 
-### 4. Inicializar o banco
+O `.env` não deve ser enviado ao GitHub.
 
-``` powershell
+## 1.4 Inicializar o banco
+
+```powershell
 python -m app.init_db
 ```
 
-### 5. Criar o primeiro administrador
+## 1.5 Criar o primeiro administrador
 
-``` powershell
+```powershell
 python -m app.create_admin
 ```
 
-O comando solicita username, email, senha e confirmação. A senha deve
-possuir de 12 a 128 caracteres e somente seu hash é armazenado.
+O comando solicita username, email, senha e confirmação.
 
-Exemplo de execução:
+A senha deve possuir de 12 a 128 caracteres e somente seu hash é armazenado.
 
-``` text
+Exemplo:
+
+```text
 Username: alisson
 Email: a@a.com
 Senha (12 a 128 caracteres):
 Confirme a senha:
+
 Administrador criado: alisson (id=1).
 ```
 
-### 6. Iniciar a API
+## 1.6 Iniciar a API
 
-``` powershell
+```powershell
 python -m uvicorn app.main:app --reload
 ```
 
 Swagger:
 
-``` text
+```text
 http://127.0.0.1:8000/docs
 ```
 
 ReDoc:
 
-``` text
+```text
 http://127.0.0.1:8000/redoc
 ```
 
-### 7. Fazer login
+## 1.7 Fazer login
 
 No Swagger:
 
-``` text
+```text
 Auth → POST /auth/login
 ```
 
 Envie:
 
-``` json
+```json
 {
   "username": "alisson",
   "password": "sua senha"
 }
 ```
 
-Copie o `access_token`, clique em **Authorize**, escolha **BearerAuth**
-e cole somente o token. Depois teste:
+Copie o `access_token`, clique em **Authorize**, escolha **BearerAuth** e cole somente o token.
 
-``` text
+Depois teste:
+
+```text
 GET /auth/me
 ```
 
 As rotas `/admin/*` exigem usuário autenticado com `role = admin`.
 
-------------------------------------------------------------------------
+---
 
-## 1. Tecnologias\*\*
+# 2. Tecnologias
 
-Tecnologias previstas/utilizadas no projeto:
+Tecnologias utilizadas ou previstas no projeto:
 
--   Python
+* Python
+* FastAPI
+* Uvicorn
+* Pydantic
+* Pydantic Settings
+* SQLAlchemy
+* SQLite
+* FAISS
+* BM25
+* RRF
+* Pytest
+* LLM
+* Docling
+* OpenRouter
+* LangChain
+* JWT
+* Argon2id
 
--   FastAPI
+---
 
--   Uvicorn
-
--   Pydantic
-
--   Pydantic Settings
-
--   SQLAlchemy
-
--   SQLite
-
--   FAISS
-
--   BM25
-
--   RRF
-
--   Pytest
-
--   LLM
-
-**---**
-
-## 2. Pré-requisitos\*\*
+# 3. Pré-requisitos
 
 Antes de executar o projeto, verifique se possui o Python instalado.
 
-\`\`\`bash
-
+```bash
 python --version
-
-\`\`\`
+```
 
 No Windows também pode ser utilizado:
 
-\`\`\`bash
-
+```bash
 py --version
+```
 
-\`\`\`
+Recomenda-se utilizar **Python 3.12 ou superior**.
 
-Recomenda-se utilizar **Python 3.12 ou superior\*\***.
+---
 
-**---**
-
-## 3. Clonar o projeto\*\*
+# 4. Clonar o projeto
 
 Clone o repositório:
 
-\`\`\`bash
-
-git clone
-https://github.com/grande-desafio-ia-rag-03/rag-grande-desafio-grupo03-contratacoes-publicas.git
-
-\`\`\`
+```bash
+git clone https://github.com/grande-desafio-ia-rag-03/rag-grande-desafio-grupo03-contratacoes-publicas.git
+```
 
 Entre na pasta:
 
-\`\`\`bash
-
+```bash
 cd rag-grande-desafio-grupo03-contratacoes-publicas
-
-\`\`\`
+```
 
 Caso seja necessário trabalhar em uma branch específica:
 
-\`\`\`bash
-
+```bash
 git fetch --all
-
 git switch nome-da-branch
+```
 
-\`\`\`
+---
 
-**---**
+# 5. Criar o ambiente virtual
 
-# 4. Criar o ambiente virtual\*\*
+O ambiente virtual **não é enviado para o GitHub**.
 
-O ambiente virtual **não é enviado para o GitHub\*\***.
+Cada desenvolvedor deverá criar sua própria `.venv` depois de clonar o projeto.
 
-Cada desenvolvedor deverá criar sua própria \`.venv\` depois de clonar o
-projeto.
+## Windows — PowerShell
 
-## Windows --- PowerShell\*\*
-
-\`\`\`powershell
-
+```powershell
 py -m venv .venv
-
-\`\`\`
+```
 
 Ative:
 
-\`\`\`powershell
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-.\\.venv`\Scripts`{=tex}`\Activate`{=tex}.ps1
+## Windows — Git Bash
 
-\`\`\`
-
-## Windows --- Git Bash\*\*
-
-\`\`\`bash
-
+```bash
 py -m venv .venv
-
-\`\`\`
+```
 
 Ative:
 
-\`\`\`bash
-
+```bash
 source .venv/Scripts/activate
+```
 
-\`\`\`
+Quando estiver ativo:
 
-Quando estiver ativo, o terminal deverá apresentar algo semelhante a:
-
-\`\`\`text
-
+```text
 (.venv)
+```
 
-\`\`\`
+---
 
-**---**
+# 6. Instalar as dependências
 
-# 5. Instalar as dependências\*\*
+Com a `.venv` ativada:
 
-Com a \`.venv\` ativada, atualize o \`pip\`:
-
-\`\`\`bash
-
+```bash
 python -m pip install --upgrade pip
+```
 
-\`\`\`
+Instale as dependências:
 
-Se o projeto possuir \`requirements.txt\`:
-
-\`\`\`bash
-
+```bash
 pip install -r requirements.txt
+```
 
-\`\`\`
+Para desenvolvimento e testes:
 
-Caso esteja realizando a configuração inicial manualmente, as
-dependências básicas são:
+```bash
+pip install -r requirements-dev.txt
+```
 
-\`\`\`bash
+---
 
-pip install fastapi "uvicorn\[standard\]" sqlalchemy pydantic-settings
+# 7. Configuração do `.env`
 
-\`\`\`
+O projeto utiliza variáveis de ambiente para configurações que não devem ficar diretamente no código.
 
-As dependências específicas do pipeline RAG deverão ser adicionadas ao
-\`requirements.txt\` conforme os respectivos módulos forem
-implementados.
+Crie:
 
-**---**
-
-# 6. Configuração do \`.env\`\*\*
-
-O projeto utiliza variáveis de ambiente para configurações que não devem
-ficar diretamente no código.
-
-Crie o arquivo:
-
-\`\`\`text
-
+```text
 .env
-
-\`\`\`
+```
 
 na raiz do projeto.
 
 Exemplo:
 
-\`\`\`env
-
+```env
 DATABASE_URL=sqlite:///./app.db
 
-\`\`\`
+JWT_SECRET_KEY=
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
 
-A estrutura ficará semelhante a:
+O arquivo `.env` não deve ser enviado para o GitHub.
 
-\`\`\`text
+---
 
-projeto/
-
-├── .env
-
-├── .gitignore
-
-├── README.md
-
-├── app/
-
-└── ...
-
-\`\`\`
-
-\> O arquivo \`.env\` não deve ser enviado para o GitHub.
-
-**---**
-
-# 7. Banco de dados\*\*
+# 8. Banco de dados
 
 O projeto utiliza inicialmente:
 
--   **SQLite\*\*** --- banco de dados;
+* **SQLite** — banco de dados;
+* **SQLAlchemy** — ORM e acesso ao banco.
 
--   **SQLAlchemy\*\*** --- ORM e acesso ao banco.
+Configuração:
 
-A configuração é definida no \`.env\`:
-
-\`\`\`env
-
+```env
 DATABASE_URL=sqlite:///./app.db
+```
 
-\`\`\`
+O banco é armazenado localmente em:
 
-Isso indica que o SQLite deverá utilizar o arquivo:
-
-\`\`\`text
-
+```text
 app.db
+```
 
-\`\`\`
+O fluxo principal é:
 
-na raiz do projeto.
-
-## O que é o \`app.db\`?\*\*
-
-Diferentemente do PostgreSQL, o SQLite não precisa de:
-
--   servidor de banco;
-
--   Docker;
-
--   porta;
-
--   usuário;
-
--   senha;
-
--   serviço executando em segundo plano.
-
-O banco é armazenado em um arquivo local:
-
-\`\`\`text
-
-app.db
-
-\`\`\`
-
-Fluxo:
-
-\`\`\`text
-
+```text
 FastAPI
-
-   ↓
-
+   ↓
 SQLAlchemy
-
-   ↓
-
+   ↓
 SQLite
-
-   ↓
-
+   ↓
 app.db
+```
 
-\`\`\`
+O SQLite não necessita de servidor, Docker, porta ou serviço separado.
 
-**---**
+---
 
-# 8. Criação do banco\*\*
+# 9. Modelos e persistência
 
-Não é necessário criar o arquivo \`app.db\` manualmente.
+A aplicação utiliza modelos SQLAlchemy para persistir os dados necessários ao funcionamento do sistema.
 
-O SQLite criará o arquivo quando a aplicação estabelecer a conexão e
-executar a criação das tabelas.
+Entre as estruturas utilizadas estão:
 
-A configuração principal está localizada em:
+| Módulo      | Estruturas                                 |
+| ----------- | ------------------------------------------ |
+| `corpus`    | `corpus_versions`                          |
+| `documents` | `documents`, `document_chunks`             |
+| `query`     | `queries`, `responses`, `response_sources` |
+| `feedback`  | `feedback`                                 |
+| `rag`       | `pipeline_events`                          |
+| `auth`      | `users`                                    |
 
-\`\`\`text
+Os relacionamentos principais incluem:
 
-app/core/database.py
+```text
+Corpus
+   ↓
+Documents
+   ↓
+DocumentChunks
 
-\`\`\`
+Query
+   ↓
+Response
+   ↓
+ResponseSources
+   ↓
+DocumentChunks
+```
 
-Exemplo:
+Também existem relacionamentos entre consultas, feedback e eventos de pipeline.
 
-\`\`\`python
+O campo textual `document_chunks.chunk_id` é utilizado como identificador estável para os índices externos de recuperação, enquanto `response_sources.chunk_id` referencia o registro correspondente no banco.
 
-from sqlalchemy import create_engine
+Os índices de recuperação não armazenam seus embeddings diretamente no SQLite.
 
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+---
 
-from app.core.config import settings
+# 10. Inicialização do banco
 
-class Base(DeclarativeBase):
+Não é necessário criar o arquivo `app.db` manualmente.
 
-    pass
+Execute:
 
-engine = create_engine(
-
-    settings.database_url,
-
-    connect_args={"check_same_thread": False},
-
-)
-
-SessionLocal = sessionmaker(
-
-    bind=engine,
-
-    autoflush=False,
-
-    autocommit=False,
-
-)
-
-def get_db():
-
-    db = SessionLocal()
-
-    try:
-
-        yield db
-
-    finally:
-
-        db.close()
-
-\`\`\`
-
-**---**
-
-# 9. Configuração da aplicação\*\*
-
-As variáveis do \`.env\` são carregadas pelo:
-
-\`\`\`text
-
-app/core/config.py
-
-\`\`\`
-
-Exemplo:
-
-\`\`\`python
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-class Settings(BaseSettings):
-
-    database_url: str
-
-    model_config = SettingsConfigDict(
-
-        env_file=".env",
-
-        env_file_encoding="utf-8",
-
-    )
-
-settings = Settings()
-
-\`\`\`
-
-O fluxo de configuração fica:
-
-\`\`\`text
-
-.env
-
-  ↓
-
-config.py
-
-  ↓
-
-database.py
-
-  ↓
-
-SQLAlchemy
-
-  ↓
-
-SQLite
-
-\`\`\`
-
-**---**
-
-# 10. Criando as tabelas\*\*
-
-Com \`DATABASE_URL=sqlite:///./app.db\` no \`.env\`, execute na raiz do
-projeto:
-
-\`\`\`bash
-
+```bash
 python -m app.init_db
+```
 
-\`\`\`
+A inicialização cria as tabelas necessárias sem depender do Uvicorn.
 
-Esse comando cria as tabelas sem depender do Uvicorn. A API chama a
-mesma
+Alterações futuras de esquema deverão ser tratadas adequadamente, pois `create_all()` não funciona como mecanismo de migration para alterações de tabelas existentes.
 
-função \`app.core.database.init_db()\` durante sua inicialização. Ela
-importa
+---
 
-todos os models antes de executar \`Base.metadata.create_all()\`,
-preservando
+# 11. Visualizar o SQLite no DBeaver
 
-dados e tabelas existentes. \`create_all()\` não migra tabelas já
-existentes;
-
-alterações futuras de esquema precisarão de migrations.
-
-\| Módulo (\`app/modules/\`) \| Tabelas \|
-
-\|---\|---\|
-
-\| \`corpus/model.py\` \| \`corpus_versions\` \|
-
-\| \`documents/model.py\` \| \`documents\`, \`document_chunks\` \|
-
-\| \`query/model.py\` \| \`queries\`, \`responses\`,
-\`response_sources\` \|
-
-\| \`feedback/model.py\` \| \`feedback\` \|
-
-\| \`rag/model.py\` \| \`pipeline_events\` \|
-
-\| \`auth/model.py\` \| \`users\` \|
-
-Todos os models compartilham a \`Base\` de \`app/core/database.py\`,
-usando
-
-SQLAlchemy 2.x com \`Mapped\` e \`mapped_column\`.
-
-\`Settings\` ignora variáveis extras do \`.env\`, permitindo
-compartilhar o arquivo
-
-com as configurações de modelos já presentes em \`.env.example\`.
-
-Relacionamentos: corpus → documentos → chunks (1:N em cada etapa),
-
-consulta → resposta (1:0..1), resposta → fontes (1:N), chunk → fontes
-(1:N),
-
-consulta → feedback (1:N) e consulta → eventos (1:N).
-
-Uma restrição UNIQUE em \`responses.query_id\` impede duas respostas
-para a
-
-mesma consulta. \`version\`, \`queries.run_id\` e
-\`document_chunks.chunk_id\`
-
-também são únicos. As conexões da aplicação habilitam \`PRAGMA
-foreign_keys=ON\`;
-
-não há exclusão em cascata de registros referenciados.
-
-\`response_sources.chunk_id\` é uma FK **inteira\*\*** para
-\`document_chunks.id\`.
-
-Já \`document_chunks.chunk_id\` é o identificador **textual\*\***
-estável destinado
-
-aos índices externos FAISS e BM25. Não há tabela de índices nem coluna
-de
-
-embedding no SQLite.
-
-Os timestamps são gerados pelo SQLite em UTC (sem informação de fuso no
-
-valor armazenado). Valores monetários usam \`Numeric(15, 2)\` e
-\`Decimal\` no ORM;
-
-a afinidade NUMERIC do SQLite não impõe precisão/escala como um decimal
-fixo.
-
-Metadados opcionais aceitam NULL. \`rating\` permanece inteiro, sem
-impor uma
-
-escala de avaliação ainda não especificada.
-
-Os estágios de referência estão em \`PIPELINE_STAGES\` no módulo
-\`rag\`:
-
-\`query_analysis\`, \`roteamento\`, \`retrieval_denso\`,
-\`retrieval_bm25\`, \`fusao_rrf\`,
-
-\`rerank\`, \`geracao\`, \`validacao\` e \`feedback\`. Eles seguem o
-pedido de implementação,
-
-a análise de requisitos e \`notas/AGENTS.md\`; os nomes em inglês nas
-seções de
-
-pipeline deste README e de \`ARQUITETURA.md\` divergem dessa convenção.
-
-\`stage\` permanece VARCHAR para permitir extensão sem migração de enum.
-
-A camada de serviços deverá manter o mesmo \`run_id\` da consulta em
-seus eventos
-
-e criar novas versões do corpus sem modificar versões publicadas; não
-foram
-
-adicionados triggers de imutabilidade nesta camada relacional.
-
-Testes offline (instale \`requirements-dev.txt\`; bancos isolados, sem
-alterar o \`app.db\` local):
-
-\`\`\`bash
-
-python -m unittest discover -s tests/integration -p "test\_\*.py" -v
-
-\`\`\`
-
-Os testes cobrem rastreabilidade, FKs, unicidade, consulta sem resposta,
-
-feedback/eventos, tipos de dados e inicialização idempotente pela CLI.
-
-**---**
-
-# 11. Visualizar o SQLite no DBeaver\*\*
-
-O arquivo \`app.db\` pode ser aberto diretamente no **DBeaver\*\***.
+O arquivo `app.db` pode ser aberto diretamente no **DBeaver**.
 
 Não é necessário deixar o Uvicorn rodando para consultar o banco.
 
 No DBeaver:
 
-1\. Abra **Nova Conexão\*\***.
-
-2\. Escolha **SQLite\*\***.
-
-3\. No campo **Caminho\*\***, clique em **Abrir\*\***.
-
-4\. Selecione o arquivo \`app.db\`.
-
-5\. Clique em **Testar conexão\*\***.
-
-6\. Clique em **Concluir\*\***.
-
-Depois será possível navegar por:
-
-\`\`\`text
-
-app.db
-
-└── Tabelas
-
-    ├── documents
-
-    ├── ...
-
-\`\`\`
-
-Também é possível utilizar o SQL Editor:
-
-\`\`\`sql
-
-SELECT \* FROM documents;
-
-\`\`\`
-
-**---**
-
-# 12. Executar a aplicação\*\*
-
-Com a \`.venv\` ativada e a chave JWT configurada conforme a seção 24:
-
-\`\`\`bash
-
-python -m uvicorn app.main:app --reload
-
-\`\`\`
-
-Também é possível utilizar:
-
-\`\`\`bash
-
-uvicorn app.main:app --reload
-
-\`\`\`
-
-A primeira opção é recomendada porque garante que o Uvicorn utilizado
-pertence ao ambiente Python atualmente ativo.
-
-Quando iniciar corretamente, será exibido algo semelhante a:
-
-\`\`\`text
-
-INFO: Uvicorn running on http://127.0.0.1:8000
-
-INFO: Application startup complete.
-
-\`\`\`
-
-**---**
-
-# 13. Acessar a API\*\*
-
-API:
-
-\`\`\`text
-
-http://127.0.0.1:8000
-
-\`\`\`
-
-Swagger:
-
-\`\`\`text
-
-http://127.0.0.1:8000/docs
-
-\`\`\`
-
-Documentação ReDoc:
-
-\`\`\`text
-
-http://127.0.0.1:8000/redoc
-
-\`\`\`
-
-O Swagger será utilizado durante o desenvolvimento para visualizar e
-testar os endpoints da aplicação.
-
-**---**
-
-# 14. Estrutura do projeto\*\*
-
-A arquitetura segue uma organização modular.
-
-\`\`\`text
-
-rag-grande-desafio-grupo03-contratacoes-publicas/
-
-│
-
-├── .env
-
-├── .gitignore
-
-├── README.md
-
-├── requirements.txt
-
-│
-
-├── app/
-
-│   ├── **init**.py
-
-│   ├── main.py
-
-│   │
-
-│   ├── core/
-
-│   │   ├── **init**.py
-
-│   │   ├── config.py
-
-│   │   ├── database.py
-
-│   │   ├── exceptions.py
-
-│   │   └── logging.py
-
-│   │
-
-│   └── modules/
-
-│       │
-
-│       ├── normative/
-
-│       │   ├── model.py
-
-│       │   ├── schemas.py
-
-│       │   ├── services.py
-
-│       │   └── routes.py
-
-│       │
-
-│       ├── structured/
-
-│       │   ├── model.py
-
-│       │   ├── schemas.py
-
-│       │   ├── services.py
-
-│       │   └── routes.py
-
-│       │
-
-│       ├── aggregated/
-
-│       │   ├── model.py
-
-│       │   ├── schemas.py
-
-│       │   ├── services.py
-
-│       │   └── routes.py
-
-│       │
-
-│       ├── ingest/
-
-│       │   ├── schemas.py
-
-│       │   ├── services.py
-
-│       │   └── routes.py
-
-│       │
-
-│       ├── retrieval/
-
-│       │   ├── dense.py
-
-│       │   ├── bm25.py
-
-│       │   ├── rrf.py
-
-│       │   ├── reranker.py
-
-│       │   └── services.py
-
-│       │
-
-│       ├── query/
-
-│       │   ├── analyzer.py
-
-│       │   ├── router.py
-
-│       │   └── guardrails.py
-
-│       │
-
-│       ├── rag/
-
-│       │   ├── schemas.py
-
-│       │   ├── services.py
-
-│       │   └── routes.py
-
-│       │
-
-│       └── evaluation/
-
-│           ├── schemas.py
-
-│           ├── services.py
-
-│           └── routes.py
-
-│
-
-├── data/
-
-│   ├── raw/
-
-│   ├── inventory/
-
-│   └── processed/
-
-│
-
-├── indexes/
-
-│   ├── faiss/
-
-│   └── bm25/
-
-│
-
-├── logs/
-
-│
-
-├── tests/
-
-│
-
-└── notes/
-
-    ├── ARQUITETURA.md
-
-    ├── PERSONAS.md
-
-    └── corpus_manifest.yaml
-
-\`\`\`
-
-**---**
-
-# 15. Responsabilidade das principais pastas\*\*
-
-## \`app/\`\*\*
-
-Código principal da aplicação.
-
-## \`app/core/\`\*\*
-
-Configurações compartilhadas pelo sistema.
-
-Contém:
-
-\`\`\`text
-
-config.py
-
-database.py
-
-exceptions.py
-
-logging.py
-
-\`\`\`
-
-## \`app/modules/\`\*\*
-
-Módulos de negócio da aplicação.
-
-Cada módulo deve possuir responsabilidades bem definidas.
-
-Quando aplicável, a estrutura padrão será:
-
-\`\`\`text
-
-model.py
-
-schemas.py
-
-services.py
-
-routes.py
-
-\`\`\`
-
-**\### \`model.py\`**
-
-Models SQLAlchemy e representação das tabelas.
-
-**\### \`schemas.py\`**
-
-Schemas Pydantic para entrada e saída de dados.
-
-**\### \`services.py\`**
-
-Regras de negócio.
-
-**\### \`routes.py\`**
-
-Endpoints FastAPI.
-
-**---**
-
-# 16. Dados e índices\*\*
-
-A pasta:
-
-\`\`\`text
-
-data/
-
-\`\`\`
-
-é utilizada para organização do corpus.
+1. Abra **Nova Conexão**.
+2. Escolha **SQLite**.
+3. Selecione o arquivo `app.db`.
+4. Teste a conexão.
+5. Conclua a configuração.
 
 Exemplo:
 
-\`\`\`text
+```sql
+SELECT * FROM documents;
+```
 
+---
+
+# 12. Executar a aplicação
+
+Com a `.venv` ativada:
+
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+Também é possível utilizar:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+A primeira opção é recomendada para garantir que o Uvicorn utilizado pertence ao ambiente Python ativo.
+
+---
+
+# 13. Acessar a API
+
+API:
+
+```text
+http://127.0.0.1:8000
+```
+
+Swagger:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+ReDoc:
+
+```text
+http://127.0.0.1:8000/redoc
+```
+
+O Swagger é utilizado durante o desenvolvimento para visualizar e testar os endpoints.
+
+---
+
+# 14. Arquitetura atual
+
+A arquitetura atual do projeto está organizada em etapas independentes:
+
+```text
+Pergunta do usuário
+        ↓
+    Guardrail
+        ↓
+  Query Analyzer
+        ↓
+      Router
+        ↓
+ ┌──────┼────────┐
+ ↓      ↓        ↓
+SQL    RAG     Hybrid
+Tool   Tool      ↓
+ ↓      ↓      SQL + RAG
+ └──────┼────────┘
+        ↓
+    Generation
+        ↓
+   Persistence
+        ↓
+      Audit
+```
+
+Cada etapa possui uma responsabilidade específica.
+
+## 14.1 Guardrail
+
+O Guardrail realiza as validações iniciais da pergunta antes que ela siga para o restante do pipeline.
+
+Seu objetivo é impedir que consultas fora do escopo do projeto ou situações não permitidas avancem para execução.
+
+O Guardrail não responde à pergunta.
+
+---
+
+## 14.2 Query Analyzer
+
+O **Query Analyzer** interpreta a pergunta recebida e produz uma representação estruturada da intenção.
+
+Ele identifica, entre outras informações:
+
+* rota provável;
+* intenção;
+* entidade;
+* operação;
+* campo;
+* filtros;
+* bases necessárias;
+* necessidade de SQL;
+* necessidade de RAG;
+* nível de confiança.
+
+Exemplos de rotas:
+
+```text
+structured
+rag
+hybrid
+```
+
+Exemplos de intenções:
+
+```text
+lookup
+aggregate
+comparison
+ranking
+document_question
+normative_question
+conversational_question
+unknown
+```
+
+O Analyzer **não executa SQL, não realiza recuperação e não gera a resposta**.
+
+Sua responsabilidade é interpretar a pergunta para que a próxima etapa possa decidir como executá-la.
+
+Exemplos validados:
+
+```text
+"Qual foi o valor total dos contratos em dezembro de 2025?"
+→ structured
+```
+
+```text
+"Quais são as regras para contratação direta previstas no Decreto 48.820 de 2023?"
+→ rag
+```
+
+```text
+"Quais contratos ultrapassaram o limite de contratação direta previsto no Decreto 48.820 de 2023?"
+→ hybrid
+```
+
+---
+
+# 15. Router
+
+O Router utiliza a análise produzida pelo Query Analyzer para selecionar a estratégia de execução.
+
+A lógica prevista é:
+
+```text
+Query Analyzer
+      ↓
+    Router
+      ├── structured → SQL Tool
+      ├── rag        → RAG Tool
+      └── hybrid     → SQL Tool + RAG Tool
+```
+
+O Router não deve substituir o Analyzer.
+
+O Analyzer interpreta a pergunta.
+
+O Router decide para onde a pergunta deve seguir.
+
+---
+
+# 16. Ferramentas de consulta
+
+A arquitetura utiliza ferramentas especializadas de acordo com o tipo de pergunta.
+
+## 16.1 SQL Tool
+
+A SQL Tool será responsável por consultas sobre dados estruturados.
+
+Exemplos:
+
+* contagens;
+* somas;
+* médias;
+* valores mínimos e máximos;
+* agrupamentos;
+* filtros;
+* rankings;
+* comparações.
+
+A execução deve ser somente leitura.
+
+A ferramenta deve trabalhar com:
+
+* consultas `SELECT`;
+* tabelas e colunas permitidas;
+* limite de linhas;
+* timeout;
+* validação da consulta;
+* bloqueio de comandos de escrita ou DDL.
+
+Não devem ser permitidas operações como:
+
+```text
+INSERT
+UPDATE
+DELETE
+DROP
+ALTER
+CREATE
+```
+
+---
+
+## 16.2 RAG Tool
+
+A RAG Tool utiliza a estrutura de recuperação documental já desenvolvida no projeto.
+
+O fluxo utiliza:
+
+```text
+Documentos
+    ↓
+Chunks
+    ↓
+BM25 + FAISS
+    ↓
+RRF
+    ↓
+Evidências
+```
+
+A recuperação pode utilizar:
+
+* busca lexical com BM25;
+* busca vetorial com FAISS;
+* fusão dos resultados com RRF;
+* metadados;
+* rastreabilidade dos chunks.
+
+---
+
+## 16.3 Hybrid
+
+A rota híbrida combina as duas estratégias.
+
+Exemplo:
+
+```text
+Pergunta
+   ↓
+Analyzer
+   ↓
+Hybrid
+   ├── SQL → identifica contratos
+   │
+   └── RAG → recupera a norma aplicável
+             ↓
+          Generation
+```
+
+Esse tipo de consulta é necessário quando a resposta depende simultaneamente de dados estruturados e documentos.
+
+---
+
+# 17. Generation
+
+Depois da recuperação das informações necessárias, o sistema utiliza o modelo de linguagem para construir a resposta.
+
+A geração deve utilizar as evidências recuperadas e manter a rastreabilidade das fontes.
+
+O fluxo geral é:
+
+```text
+Consulta
+   ↓
+Guardrail
+   ↓
+Analyzer
+   ↓
+Router
+   ↓
+Tool(s)
+   ↓
+Contexto / Resultados
+   ↓
+Generation
+   ↓
+Resposta
+```
+
+A geração não deve substituir as etapas de análise ou recuperação.
+
+---
+
+# 18. Persistence
+
+O sistema mantém a rastreabilidade das consultas e respostas.
+
+O fluxo principal de persistência é:
+
+```text
+Query
+  ↓
+Response
+  ↓
+ResponseSource
+  ↓
+DocumentChunk
+```
+
+Também são utilizados eventos de pipeline para registrar informações de execução.
+
+Isso permite relacionar:
+
+* pergunta realizada;
+* resposta gerada;
+* fontes utilizadas;
+* chunks recuperados;
+* execução do pipeline;
+* informações de auditoria.
+
+---
+
+# 19. Audit e observabilidade
+
+A arquitetura prevê auditoria da execução completa da pergunta.
+
+Os registros devem permitir acompanhar:
+
+```text
+trace_id
+timestamp
+user
+input
+guardrail
+analyzer
+route
+tools
+SQL
+resultados
+RAG
+generation
+sources
+errors
+timings
+```
+
+Cada pergunta deverá poder ser acompanhada desde sua entrada até a resposta final.
+
+O objetivo é facilitar:
+
+* depuração;
+* avaliação;
+* rastreabilidade;
+* identificação de falhas;
+* análise de desempenho;
+* auditoria das respostas.
+
+---
+
+# 20. Estrutura atual do pipeline
+
+O fluxo conceitual completo é:
+
+```text
+Pergunta do usuário
+        ↓
+query_received
+        ↓
+Guardrail
+        ↓
+query_analysis
+        ↓
+roteamento
+        ↓
+┌───────────────┬────────────────┐
+│               │                │
+structured      rag            hybrid
+│               │                │
+SQL Tool      RAG Tool      SQL + RAG
+│               │                │
+└───────────────┴────────────────┘
+                ↓
+             geração
+                ↓
+            validação
+                ↓
+          persistência
+                ↓
+              audit
+                ↓
+         resposta final
+```
+
+Para o RAG, a recuperação documental continua utilizando:
+
+```text
+dense_retrieval
+        +
+bm25_retrieval
+        ↓
+fusao_rrf
+        ↓
+rerank
+        ↓
+evidence_selection
+        ↓
+generation
+```
+
+---
+
+# 21. Dados e índices
+
+A pasta:
+
+```text
 data/
+```
 
+é utilizada para organização do corpus.
+
+Estrutura conceitual:
+
+```text
+data/
 ├── raw/
-
 ├── inventory/
+├── processed/
+└── manual/
+```
 
-└── processed/
+Os índices são armazenados separadamente:
 
-\`\`\`
-
-Os índices de recuperação serão armazenados separadamente:
-
-\`\`\`text
-
+```text
 indexes/
-
 ├── faiss/
-
 └── bm25/
+```
 
-\`\`\`
+A divisão de responsabilidades é:
 
-O objetivo é manter responsabilidades diferentes:
-
-\`\`\`text
-
+```text
 SQLite
-
-   ↓
-
-dados da aplicação e metadados
+   ↓
+dados da aplicação + metadados + persistência
 
 FAISS
-
-   ↓
-
+   ↓
 índice vetorial / embeddings
 
 BM25
-
-   ↓
-
+   ↓
 índice lexical
-
-\`\`\`
-
-**---**
-
-# 17. Pipeline RAG planejado\*\*
-
-A arquitetura prevê o seguinte fluxo:
-
-\`\`\`text
-
-Pergunta do usuário
-
-        ↓
-
-query_received
-
-        ↓
-
-query_normalization
-
-        ↓
-
-query_analysis
-
-        ↓
-
-scope_validation
-
-        ↓
-
-adaptive_routing
-
-        ↓
-
-metadata_filtering
-
-        ↓
-
-┌──────────────────────────┐
-
-│                          │
-
-↓                          ↓
-
-dense_retrieval       bm25_retrieval
-
-│                          │
-
-└────────────┬─────────────┘
-
-             ↓
-
-         rrf_fusion
-
-             ↓
-
-          reranking
-
-             ↓
-
-     evidence_selection
-
-             ↓
-
-       prompt_building
-
-             ↓
-
-       llm_generation
-
-             ↓
-
-    response_validation
-
-             ↓
-
-      output_guardrails
-
-             ↓
-
-       response_final
-
-\`\`\`
-
-Os nomes dos estágios deverão ser utilizados também no campo \`stage\`
-dos logs da aplicação.
-
-**---**
-
-# 18. Bases do projeto\*\*
-
-O projeto foi dividido inicialmente em três bases principais.
-
-## Base Normativa
-
-**Responsáveis:** Ana Karina e Ester Neves
-
-Leis, decretos estaduais e editais de licitação — o texto que diz *o que a regra
-determina*. É a base que responde perguntas como "posso participar sendo MEI?"
-ou "qual o prazo de vigência do contrato?".
-
-### O que está no corpus
-
-13 documentos, 8,5 MB, coletados em 25/09/2026, sem falhas:
-
-| Fonte | Quantidade | Formato |
-| --- | --- | --- |
-| Lei 14.133/2021 (Planalto, texto compilado) | 1 | HTML |
-| Decretos estaduais do RJ | 7 | PDF |
-| Editais de órgãos do RJ publicados no PNCP | 5 | PDF |
-
-O que **deve** entrar está declarado em [`corpus_manifest.yaml`](corpus_manifest.yaml);
-o que **entrou de fato** está em [`CORPUS_INVENTORY.md`](CORPUS_INVENTORY.md).
-
-### Dependências
-
-```bash
-pip install requests truststore PyYAML pypdf pytest
 ```
 
-O `truststore` é necessário porque os sites do governo usam certificados da
-ICP-Brasil, que o Python não reconhece sozinho (dá `SSLError`).
+---
 
-### Como rodar
+# 22. Estrutura do projeto
 
-**1. Coleta inicial** — baixa tudo o que o manifesto declara:
+A estrutura combina a aplicação principal, módulos de negócio e componentes do pipeline de dados e RAG.
+
+```text
+rag-grande-desafio-grupo03-contratacoes-publicas/
+│
+├── .env
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── requirements-dev.txt
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── database/
+│   │   ├── exceptions.py
+│   │   ├── logging.py
+│   │   └── security.py
+│   │
+│   └── modules/
+│       ├── auth/
+│       ├── admin/
+│       ├── corpus/
+│       ├── documents/
+│       ├── query/
+│       ├── feedback/
+│       └── rag/
+│
+├── src/
+│   ├── analyzer/
+│   ├── query/
+│   │   ├── schemas.py
+│   │   └── analyzer.py
+│   │
+│   ├── retrieve.py
+│   ├── generate.py
+│   ├── guardrails.py
+│   ├── index.py
+│   ├── ingestion.py
+│   └── ...
+│
+├── data/
+│   ├── raw/
+│   ├── inventory/
+│   ├── processed/
+│   └── manual/
+│
+├── indexes/
+│   ├── faiss/
+│   └── bm25/
+│
+├── logs/
+│   └── queries/
+│
+├── tests/
+│
+└── notes/
+    ├── ARQUITETURA.md
+    ├── PERSONAS.md
+    └── corpus_manifest.yaml
+```
+
+A estrutura exata pode evoluir conforme os módulos forem integrados.
+
+---
+
+# 23. Responsabilidade das principais pastas
+
+## `app/`
+
+Código principal da aplicação.
+
+## `app/core/`
+
+Configurações compartilhadas pelo sistema.
+
+Inclui recursos relacionados a:
+
+```text
+configuração
+banco
+logging
+segurança
+exceções
+```
+
+## `app/modules/`
+
+Módulos de negócio da aplicação.
+
+Os módulos possuem responsabilidades específicas, como:
+
+```text
+auth
+admin
+corpus
+documents
+query
+feedback
+rag
+```
+
+## `src/`
+
+Componentes relacionados ao pipeline de dados, análise, recuperação e geração.
+
+Inclui componentes relacionados a:
+
+* Query Analyzer;
+* Guardrails;
+* ingestão;
+* indexação;
+* recuperação;
+* geração.
+
+---
+
+# 24. Bases do projeto
+
+O projeto está organizado em quatro bases principais.
+
+---
+
+## 24.1 Base Normativa
+
+**Responsáveis:**
+
+* Ana Karina
+* Ester Neves
+
+Base composta por leis, decretos estaduais e editais de licitação.
+
+É a base que representa **o que a legislação e os documentos normativos determinam**.
+
+### Corpus atual
+
+A base normativa possui:
+
+* 1 Lei 14.133/2021;
+* 7 decretos estaduais;
+* 5 editais;
+* 13 documentos no conjunto original;
+* 794 chunks processados após a evolução do processamento.
+
+A base foi processada mantendo metadados e rastreabilidade.
+
+### Processamento
+
+A Lei e os decretos são divididos por artigo.
+
+Os editais são divididos por cláusulas.
+
+Trechos acima de 4.000 caracteres podem ser divididos em partes, utilizando overlap de 200 caracteres dentro da mesma unidade documental.
+
+Não existe overlap entre artigos diferentes.
+
+### Metadados
+
+Entre os metadados utilizados estão:
+
+```text
+source_file
+doc_type
+chunk_id
+sensitivity
+base_id
+data_publicacao
+fonte_data
+numero_norma
+numero_edital
+artigo
+clausula
+parte
+tem_overlap
+orgao
+ano
+altera
+dados_pessoais
+```
+
+### Dados pessoais
+
+A ingestão trata dados pessoais encontrados nos documentos.
+
+| Dado            | Tratamento           |
+| --------------- | -------------------- |
+| CPF             | mascarado            |
+| Telefone        | mascarado            |
+| E-mail          | mantido e sinalizado |
+| CNPJ            | mantido              |
+| Nome de empresa | mantido              |
+| Valores         | mantidos             |
+| Objeto          | mantido              |
+
+Após o processamento, não há CPF ou telefone visível no corpus processado.
+
+### Logs
+
+A coleta e ingestão utilizam logs estruturados em JSONL:
+
+```text
+logs/pipeline-AAAA-MM-DD.jsonl
+```
+
+Cada execução recebe um `run_id`.
+
+Os eventos registram informações como:
+
+```text
+timestamp
+run_id
+stage
+status
+latência
+entrada
+saída
+modelo
+tokens
+informações adicionais
+```
+
+---
+
+## 24.2 Base Estruturada
+
+**Responsáveis:**
+
+* Alisson Lima de Souza
+* Luciano Costa
+
+Responsável pelos dados estruturados relacionados às contratações públicas.
+
+A base trabalha com dados como:
+
+* contratações;
+* contratos;
+* itens;
+* resultados;
+* fornecedores;
+* órgãos;
+* municípios;
+* informações disponibilizadas pelo PNCP.
+
+Durante a evolução do projeto foram implementadas rotinas de coleta, persistência, controle de checkpoints, tratamento de falhas e preparação dos dados para consultas estruturadas.
+
+Também foram realizados testes com dados reais e integração com a camada RAW.
+
+A base estruturada será utilizada principalmente pela **SQL Tool** nas consultas estruturadas.
+
+---
+
+## 24.3 Base Agregada
+
+**Responsáveis:**
+
+* Felipe Antunes
+* Renan Freitas
+
+Responsável por indicadores, estatísticas e informações consolidadas.
+
+A base utiliza principalmente informações relacionadas ao:
+
+* Plano de Contratações Anual (PCA);
+* valores homologados por item;
+* resultados das contratações;
+* informações agregadas provenientes do PNCP.
+
+Foram desenvolvidos mecanismos de:
+
+* coleta;
+* versionamento;
+* checkpoints;
+* detecção de alterações;
+* preservação dos dados RAW;
+* auditoria;
+* integração dos resultados.
+
+A base também foi ampliada historicamente, com coleta de diferentes períodos e órgãos.
+
+---
+
+## 24.4 Base Conversacional
+
+Base destinada às informações provenientes de:
+
+* atas;
+* e-mails sintéticos;
+* informações conversacionais utilizadas no cenário do projeto.
+
+A base faz parte da definição do corpus e será integrada às etapas de processamento, recuperação e roteamento conforme a evolução do pipeline.
+
+---
+
+# 25. Coleta e camada RAW
+
+As diferentes bases possuem necessidades de coleta específicas.
+
+A camada RAW mantém os dados originais recebidos das fontes.
+
+O objetivo é preservar:
+
+* payload original;
+* identificação da fonte;
+* versão;
+* hash;
+* checkpoint;
+* status da coleta;
+* informações necessárias para auditoria.
+
+O fluxo geral é:
+
+```text
+Fonte oficial
+     ↓
+Coleta
+     ↓
+Checkpoint
+     ↓
+Detecção de alteração
+     ↓
+RAW
+     ↓
+Processamento
+     ↓
+Estruturas de consulta / RAG
+```
+
+Essa separação permite reprocessar os dados sem depender de uma nova consulta à fonte original.
+
+---
+
+# 26. Snapshot e versionamento
+
+O projeto utiliza snapshots para preservar determinados recortes do corpus.
+
+Um snapshot pode conter:
+
+* banco SQLite;
+* dump SQL;
+* inventário;
+* hashes;
+* informações de versão;
+* registros necessários para restauração.
+
+O objetivo é permitir reprodução, auditoria e comparação dos dados coletados.
+
+---
+
+# 27. Base normativa — execução
+
+As rotinas de coleta da base normativa podem ser executadas conforme o manifesto.
+
+Exemplo:
 
 ```bash
 python -m app.modules.normative.services fetch --manifest corpus_manifest.yaml --versao v1
 ```
 
-Grava em `data/raw/v1/editais_normativo/` e registra cada arquivo em
-`data/inventory/v1_editais_normativo.json`. É idempotente (arquivo já baixado
-não é baixado de novo), retomável (queda de rede não obriga a recomeçar) e
-respeita o `rate_limit_seg` do manifesto. URL com problema vira uma linha com
-status `falhou`, sem abortar a coleta.
+A coleta é planejada para ser:
 
-**2. Nova versão com diff** — recoleta sem sobrescrever a anterior:
+* idempotente;
+* retomável;
+* controlada por versão;
+* registrada em inventário;
+* auditável.
 
-```bash
-python -m app.modules.normative.services update --manifest corpus_manifest.yaml
+A atualização de uma versão pode gerar diferenças entre versões sem sobrescrever os dados anteriores.
+
+---
+
+# 28. Ingestão documental
+
+A ingestão prepara os arquivos para utilização no RAG.
+
+O projeto possui suporte para diferentes formatos documentais, incluindo:
+
+```text
+JSON
+JSONL
+PDF
+HTML
+TXT
 ```
 
-Cria `v(n+1)` e gera `data/inventory/DIFF_v1_v2.md`, respondendo o que entrou,
-o que saiu, o que mudou de conteúdo e o que permaneceu idêntico. Esse diff é o
-insumo do teste de regressão das próximas sprints.
+Para documentos que necessitam de processamento adicional, pode ser utilizado o **Docling**.
 
-**3. Inventário** — gera os dois artefatos da versão:
+O processo geral é:
 
-```bash
-python -m app.modules.normative.services inventory --versao v1 --manifest corpus_manifest.yaml
+```text
+Arquivo
+   ↓
+Extração
+   ↓
+Limpeza
+   ↓
+Metadados
+   ↓
+Chunking
+   ↓
+Document
+   ↓
+DocumentChunk
+   ↓
+Indexação
 ```
 
-Produz `data/inventory/v1.json` (com `scenario_id`, `manifest_hash`, `totais`,
-`por_base`, `arquivos` e `falhas`) e `data/inventory/v1_editais_normativo.md`,
-legível.
+A ingestão utiliza identificadores determinísticos para permitir comportamento idempotente e reaproveitamento de conteúdos já processados.
 
-> O `v1.json` é **compartilhado pelas quatro bases**. Ele monta a partir do que
-> cada base gravou em `data/inventory/v1_<base_id>.json`. Base ainda não
-> coletada não aparece e entra sozinha quando a coleta dela rodar — ninguém
-> precisa esperar ninguém.
+---
 
-**4. Processamento** — transforma os documentos em trechos com metadados:
+# 29. Recuperação híbrida
 
-```bash
-python -m app.modules.ingest.services --versao v1
+A recuperação documental utiliza duas estratégias complementares.
+
+## Busca lexical
+
+Utiliza **BM25** para localizar termos diretamente relacionados à pergunta.
+
+## Busca semântica
+
+Utiliza **FAISS** e embeddings para encontrar conteúdos semanticamente relacionados.
+
+## Fusão
+
+Os resultados das duas estratégias são combinados utilizando **RRF — Reciprocal Rank Fusion**.
+
+Fluxo:
+
+```text
+              Pergunta
+                  ↓
+        ┌─────────┴─────────┐
+        ↓                   ↓
+      BM25                FAISS
+        ↓                   ↓
+        └─────────┬─────────┘
+                  ↓
+                 RRF
+                  ↓
+              Ranking
+                  ↓
+              Evidências
 ```
 
-Gera `data/processed/v1_editais_normativo.jsonl` com 794 trechos, pronto para a
-indexação.
+A recuperação híbrida foi validada com documentos reais do projeto.
 
-**5. Testes** — 41, todos offline, em segundos:
+---
 
-```bash
-python -m pytest tests/test_normative_coleta.py tests/test_ingest_normativa.py tests/test_logging.py -v
+# 30. API de geração
+
+A aplicação disponibiliza o fluxo de geração por API.
+
+Endpoint:
+
+```text
+POST /query/generate
 ```
 
-### Como o texto é dividido
+A consulta recebe a pergunta e parâmetros relacionados à recuperação.
 
-- **Lei e decretos:** 1 artigo = 1 chunk. O artigo fica inteiro, com seus
-  parágrafos, incisos e alíneas — cortar um artigo ao meio faria a busca
-  devolver metade da regra.
-- **Editais:** 1 cláusula de primeiro nível = 1 chunk.
-- **Trecho acima de 4.000 caracteres** é dividido em partes, e cada parte repete
-  os **200 caracteres finais da anterior** (overlap), cortados em palavra
-  inteira. Não há overlap entre artigos diferentes: artigo é unidade fechada, e
-  misturar dois faria a busca devolver um artigo com o texto do outro.
+A resposta pode conter:
 
-Dois cuidados que o código trata e valem saber:
+* resposta gerada;
+* fontes;
+* posição da fonte;
+* identificador do chunk;
+* relevância;
+* metadados.
 
-- O HTML do Planalto está em **cp1252** e mantém a redação revogada dentro de
-  `<strike>`. O texto riscado é descartado — se entrasse, o sistema responderia
-  com regra que não vale mais.
-- Os decretos são PDFs de impressão, com o rótulo "Art. Xº" numa coluna à
-  esquerda. São lidos com `extraction_mode="layout"`, senão os artigos saem
-  fora de ordem.
+Exemplo conceitual:
 
-### Metadados de cada trecho
+```text
+Pergunta
+   ↓
+RAG
+   ↓
+Recuperação híbrida
+   ↓
+Contexto
+   ↓
+LLM
+   ↓
+Resposta + fontes
+```
 
-Os cinco obrigatórios do enunciado — `source_file`, `doc_type`, `chunk_id`,
-`sensitivity`, `base_id` — mais:
+O fluxo também realiza persistência da consulta, resposta e fontes.
 
-| Metadado | O que é |
-| --- | --- |
-| `data_publicacao` | campo de vigência; nos editais vem da API oficial do PNCP |
-| `fonte_data` | de onde veio a data: `pncp` ou `indisponivel` |
-| `numero_norma` / `numero_edital` | identificação do documento |
-| `artigo` / `clausula` | qual artigo ou cláusula o trecho contém |
-| `parte` / `tem_overlap` | em trecho dividido, qual parte é e se repete texto |
-| `orgao`, `ano`, `altera` | órgão, ano-base e qual decreto este altera |
-| `dados_pessoais` | o que foi encontrado e tratado, quando houver |
+---
 
-### Política de sensibilidade
+# 31. Query Analyzer — estrutura
 
-A classificação é feita **na ingestão**, nunca na hora de responder: filtrar por
-metadado é barato e determinístico; pedir ao LLM que decida depois é caro e
-falível.
+O Query Analyzer possui schemas próprios para representar a análise.
 
-| Dado | Tratamento |
-| --- | --- |
-| CPF de pessoa física | **mascarado** (`[CPF MASCARADO]`) |
-| Telefone | **mascarado** (`[TELEFONE MASCARADO]`) |
-| E-mail | mantido e **sinalizado** em `dados_pessoais` |
-| CNPJ, nome de empresa, valores, objeto | mantidos — públicos por lei |
+A análise inclui conceitos como:
 
-Os e-mails encontrados são de setores (`licitacao.bomjardim@`), não de pessoas
-físicas. Por isso foram mantidos e sinalizados, para o time decidir. Depois do
-processamento não há nenhum CPF ou telefone visível no corpus.
+```text
+route
+intent
+entity
+operation
+field
+filters
+bases
+requires_sql
+requires_rag
+reasoning
+confidence
+original_question
+metadata
+```
 
-### Logs
+As entidades consideradas incluem:
 
-A coleta e a ingestão emitem log estruturado em JSONL, em
-`logs/pipeline-AAAA-MM-DD.jsonl`, uma linha por evento, pelo módulo
-[`app/core/logging.py`](app/core/logging.py).
+```text
+contratos
+contratacoes
+itens_contratacao
+resultados_item
+pca
+documentos
+atas
+emails
+fornecedores
+orgaos
+municipios
+normas
+```
 
-Cada execução recebe um `run_id`, impresso no fim do comando. É ele que amarra
-os eventos de uma mesma execução: sem isso, os logs são ruído.
+A análise é validada por schema antes de seguir para as próximas etapas.
 
-| Stage | Quando é emitido |
-| --- | --- |
-| `coleta` | um evento de resumo por execução + um por documento baixado |
-| `ingestao` | um evento por documento processado |
+---
 
-> Esses dois nomes complementam o `PIPELINE_STAGES`
-> (`app/modules/rag/model.py`), que hoje cobre só a fase de consulta
-> (`query_analysis`, `roteamento`, `retrieval_denso`, `retrieval_bm25`,
-> `fusao_rrf`, `rerank`, `geracao`, `validacao`, `feedback`). **Proposta ao
-> time:** acrescentar `coleta` e `ingestao` à lista canônica. Enquanto não há
-> decisão, eles ficam declarados em `app/core/logging.py`.
+# 32. Avaliação
 
-Um evento tem esta forma:
+A avaliação do sistema será realizada utilizando perguntas de referência relacionadas às personas e ao cenário.
+
+A avaliação deverá considerar, entre outros aspectos:
+
+* recuperação;
+* relevância;
+* geração;
+* fundamentação;
+* rastreabilidade;
+* escolha da rota;
+* comportamento do sistema diante de perguntas fora do escopo.
+
+A base normativa congelada foi utilizada como referência inicial para preparação das perguntas de benchmark.
+
+---
+
+# 33. Logs de pipeline
+
+A coleta e ingestão possuem logs estruturados em JSONL:
+
+```text
+logs/pipeline-AAAA-MM-DD.jsonl
+```
+
+O formato utiliza um `run_id` para relacionar os eventos de uma mesma execução.
+
+Exemplo:
 
 ```json
 {
@@ -1322,523 +1424,574 @@ Um evento tem esta forma:
   "latencia_ms": 2482,
   "input": "data/raw/v1/editais_normativo",
   "output": "13 ok, 0 falhas de 13",
-  "tokens": { "prompt": 0, "completion": 0, "total": 0 },
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
   "modelo": null,
-  "extra": { "base_id": "editais_normativo", "versao": "v1" }
+  "extra": {
+    "base_id": "editais_normativo",
+    "versao": "v1"
+  }
 }
 ```
 
-Três decisões que valem saber:
+Os eventos de consulta deverão evoluir para registrar também:
 
-- **`tokens` fica zerado nestas duas etapas**, porque nenhuma delas chama o LLM.
-  O campo existe mesmo assim, para que toda etapa tenha o mesmo formato e quem
-  instrumentar a geração só precise preencher.
-- **O log não engole falha.** Uma URL morta vira um evento com
-  `status: "falhou"` e o erro no `extra`, sem abortar a coleta. Uma exceção vira
-  `status: "erro"` e **continua subindo** — um log que esconde problema é pior
-  do que não ter log.
-- **A pasta `logs/` é ignorada pelo Git**, e os testes do módulo nunca escrevem
-  nela: eles apontam para um diretório temporário.
-
-Para ler o log da última execução:
-
-```bash
-python -c "import json,glob;p=sorted(glob.glob('logs/pipeline-*.jsonl'))[-1];[print(json.loads(l)['stage'],'|',json.loads(l)['status'],'|',json.loads(l)['latencia_ms'],'ms |',json.loads(l)['input']) for l in open(p,encoding='utf-8')]"
+```text
+guardrail
+query_analysis
+route
+tool
+retrieval
+generation
+sources
+errors
+timings
 ```
-
-### O que vai para o Git
-
-`data/raw/` é ignorado — qualquer pessoa reconstrói rodando o `fetch`. Vão para
-o Git o manifesto, o inventário, o diff e `data/manual/`, que guarda os decretos
-baixados à mão, com o `sha256` de cada um declarado no manifesto. Essa é a
-exceção consciente à regra: o site de origem bloqueia download automático
-(HTTP 403), e sem os arquivos versionados ninguém reproduz o corpus.
 
 ---
 
-## Base Estruturada\*\*
+# 34. Testes
 
-Responsáveis:
+Os testes são utilizados para validar as diferentes partes do sistema.
 
--   Alisson Lima de Souza
+Exemplo:
 
--   Luciano Costa
+```bash
+python -m unittest discover -s tests/integration -p "test_*.py" -v
+```
 
-Responsável por dados estruturados relacionados às contratações
-públicas.
+Também podem ser utilizados testes específicos com Pytest:
 
-**---**
+```bash
+python -m pytest -v
+```
 
-## Base Agregada\*\*
+As suítes existentes abrangem diferentes aspectos do projeto, incluindo:
 
-Responsáveis:
+* coleta;
+* checkpoints;
+* retries;
+* persistência;
+* ingestão;
+* recuperação híbrida;
+* geração;
+* autenticação;
+* banco;
+* integridade;
+* rastreabilidade;
+* idempotência;
+* Query Analyzer.
 
--   Felipe Antunes
+---
 
--   Renan Freitas
+# 35. Autenticação JWT e administração
 
-Responsável por indicadores, estatísticas e informações consolidadas.
+A autenticação utiliza a tabela `users` no SQLite.
 
-**---**
+O módulo `auth` contém:
 
-# 19. Documentação da sprint\*\*
+* model;
+* schemas;
+* serviços;
+* rotas.
 
-\| Documento \| Responsável \|
+O módulo `admin` utiliza o mesmo modelo de usuários.
 
-\|---\|---\|
+Hash de senha, JWT e dependências de autorização ficam em:
 
-\| \`ARQUITETURA.md\` \| Alisson Lima de Souza \|
+```text
+app/core/security.py
+```
 
-\| \`PERSONAS.md\` \| Luciano Costa \|
+As dependências de autenticação incluem:
 
-\| \`corpus_manifest.yaml\` \| Felipe Antunes \|
+```text
+PyJWT
+pwdlib[argon2]
+email-validator
+```
 
-**---**
+A API exige uma chave JWT de pelo menos 32 bytes.
 
-# 20. Coordenador\*\*
+O algoritmo utilizado nesta implementação é:
 
-**Luiz Felipe Antunes\*\***
+```text
+HS256
+```
 
-O coordenador acompanha as atividades, organiza as tarefas e auxilia na
-integração das diferentes partes do projeto, além de participar
-tecnicamente do desenvolvimento.
+---
 
-**---**
+# 36. Criar o primeiro administrador
 
-# 21. \`.gitignore\`\*\*
+Execute:
+
+```powershell
+python -m app.init_db
+python -m app.create_admin
+```
+
+O comando solicita:
+
+* username;
+* email;
+* senha;
+* confirmação.
+
+Somente o hash Argon2id da senha é armazenado.
+
+O primeiro administrador é provisionado exclusivamente pelo comando local.
+
+---
+
+# 37. Cadastro de usuários
+
+O cadastro público está disponível em:
+
+```text
+POST /auth/register
+```
+
+Exemplo:
+
+```json
+{
+  "username": "novo_usuario",
+  "email": "usuario@example.com",
+  "password": "uma senha de pelo menos 12 caracteres"
+}
+```
+
+Para criação administrativa de usuários:
+
+```text
+POST /admin/users
+```
+
+Exemplo:
+
+```json
+{
+  "username": "novo_admin",
+  "email": "novo_admin@example.com",
+  "password": "uma senha de pelo menos 12 caracteres",
+  "role": "admin"
+}
+```
+
+Somente administradores autenticados podem utilizar as rotas administrativas.
+
+---
+
+# 38. Uso do JWT pelo Swagger
+
+1. Faça login em `POST /auth/login`.
+2. Copie somente o `access_token`.
+3. Clique em **Authorize**.
+4. Em **BearerAuth**, cole o token.
+5. Confirme.
+6. Execute `GET /auth/me`.
+
+Administradores também podem testar:
+
+```text
+GET /admin/users
+GET /admin/users/{user_id}
+PATCH /admin/users/{user_id}/status
+```
+
+---
+
+# 39. `.gitignore`
 
 Arquivos locais não devem ser enviados para o GitHub.
 
-O \`.gitignore\` deve possuir pelo menos:
+Exemplo:
 
-\`\`\`gitignore
-
-\# Ambiente virtual
-
+```gitignore
+# Ambiente virtual
 .venv/
-
 venv/
 
-\# Variáveis de ambiente
-
+# Variáveis de ambiente
 .env
 
-\# Banco SQLite local
-
+# Banco SQLite local
 app.db
+*.db
 
-\*.db
+# Python
+__pycache__/
+*.py[cod]
 
-\# Python
-
-**pycache**/
-
-\*.py\[cod\]
-
-\# Pytest
-
+# Pytest
 .pytest_cache/
 
-\# IDE
-
+# IDE
 .vscode/
-
 .idea/
 
-\# Logs
+# Logs
+*.log
+logs/
 
-\*.log
+# Dados locais
+data/raw/
+```
 
-\`\`\`
+A `.venv` nunca deve ser versionada.
 
-\> A \`.venv\` nunca deve ser versionada. Cada integrante cria seu
-próprio ambiente virtual depois de clonar o projeto.
+---
 
-**---**
+# 40. Documentação do projeto
 
-# 22. Fluxo rápido para novos desenvolvedores\*\*
+Os principais documentos de apoio incluem:
 
-Depois de clonar o projeto:
+| Documento              | Responsável           |
+| ---------------------- | --------------------- |
+| `ARQUITETURA.md`       | Alisson Lima de Souza |
+| `PERSONAS.md`          | Luciano Costa         |
+| `corpus_manifest.yaml` | Felipe Antunes        |
 
-\`\`\`bash
+Outros documentos e materiais são mantidos conforme a necessidade das diferentes frentes do projeto.
 
-git clone
-https://github.com/grande-desafio-ia-rag-03/rag-grande-desafio-grupo03-contratacoes-publicas.git
+---
+
+# 41. Equipe
+
+**Time 03 — Contratações Públicas do Estado do Rio de Janeiro**
+
+* Luiz Felipe Antunes
+* Ana Karina
+* Luciano Oliveira
+* Marcio da Costa
+* Ester da Silva
+* Alisson Lima
+* Renan Freitas
+
+**Gerente / Coordenador:** Luiz Felipe Antunes
+
+O coordenador acompanha as atividades, organiza as tarefas e auxilia na integração das diferentes partes do projeto, além de participar tecnicamente do desenvolvimento.
+
+---
+
+# 42. Responsabilidades das bases
+
+| Base           | Responsáveis                          |
+| -------------- | ------------------------------------- |
+| Normativa      | Ana Karina e Ester Neves              |
+| Estruturada    | Alisson Lima de Souza e Luciano Costa |
+| Agregada       | Felipe Antunes e Renan Freitas        |
+| Conversacional | Base do corpus do projeto             |
+
+As atribuições acima permanecem de acordo com a divisão estabelecida pela equipe.
+
+---
+
+# 43. Responsabilidades técnicas e evolução do projeto
+
+As responsabilidades são distribuídas entre as diferentes frentes do projeto.
+
+A equipe atua de forma integrada nas etapas de:
+
+```text
+Coleta
+   ↓
+RAW
+   ↓
+Processamento
+   ↓
+Ingestão
+   ↓
+Indexação
+   ↓
+Recuperação
+   ↓
+Análise da pergunta
+   ↓
+Roteamento
+   ↓
+Geração
+   ↓
+Persistência
+   ↓
+Auditoria
+```
+
+Cada integrante mantém sua frente de desenvolvimento, enquanto as etapas de integração são acompanhadas conjuntamente pela equipe.
+
+---
+
+# 44. Estado atual da arquitetura
+
+A evolução do projeto pode ser resumida da seguinte forma:
+
+### Etapa inicial
+
+```text
+Corpus
+  ↓
+Ingestão
+  ↓
+Indexação
+  ↓
+BM25 + FAISS
+  ↓
+RRF
+  ↓
+LLM
+```
+
+### Arquitetura atual
+
+```text
+                         Pergunta
+                            ↓
+                        Guardrail
+                            ↓
+                      Query Analyzer
+                            ↓
+                          Router
+                            ↓
+              ┌─────────────┼─────────────┐
+              ↓             ↓             ↓
+          Structured       RAG          Hybrid
+              ↓             ↓             ↓
+           SQL Tool      RAG Tool     SQL + RAG
+              └─────────────┼─────────────┘
+                            ↓
+                        Generation
+                            ↓
+                        Persistence
+                            ↓
+                          Audit
+                            ↓
+                      Resposta final
+```
+
+Essa evolução permite que o sistema deixe de tratar todas as perguntas exclusivamente como consultas RAG e passe a selecionar a estratégia adequada de acordo com a intenção identificada.
+
+---
+
+# 45. Fluxo para novos desenvolvedores
+
+Depois de clonar:
+
+```bash
+git clone https://github.com/grande-desafio-ia-rag-03/rag-grande-desafio-grupo03-contratacoes-publicas.git
 
 cd rag-grande-desafio-grupo03-contratacoes-publicas
-
-\`\`\`
+```
 
 Criar ambiente:
 
-\`\`\`bash
-
+```bash
 py -m venv .venv
-
-\`\`\`
+```
 
 Ativar no PowerShell:
 
-\`\`\`powershell
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-.\\.venv`\Scripts`{=tex}`\Activate`{=tex}.ps1
+Instalar:
 
-\`\`\`
-
-Instalar dependências:
-
-\`\`\`bash
-
+```bash
 pip install -r requirements.txt
+```
 
-\`\`\`
+Criar `.env`:
 
-Criar \`.env\` e preencher \`JWT_SECRET_KEY\` com uma chave aleatória
-local
-
-(veja a seção 24; a API recusa uma chave vazia):
-
-\`\`\`env
-
+```env
 DATABASE_URL=sqlite:///./app.db
 
 JWT_SECRET_KEY=
-
 JWT_ALGORITHM=HS256
-
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
 
-\`\`\`
+Inicializar:
+
+```bash
+python -m app.init_db
+```
 
 Executar:
 
-\`\`\`bash
-
+```bash
 python -m uvicorn app.main:app --reload
-
-\`\`\`
+```
 
 Abrir:
 
-\`\`\`text
-
+```text
 http://127.0.0.1:8000/docs
+```
+
+---
+
+# 46. Histórico recente de evolução
+
+O projeto passou pelas seguintes etapas principais:
+
+### Encontros 1–3
+
+* definição do cenário;
+* arquitetura inicial;
+* criação do corpus;
+* início das coletas;
+* integração com PNCP;
+* definição das bases;
+* primeiros dados RAW;
+* coleta de resultados homologados;
+* início do processamento documental.
+
+### Encontros 4–6
+
+* evolução dos checkpoints;
+* retries e tratamento de falhas;
+* processamento da base normativa;
+* criação do inventário;
+* versionamento do corpus;
+* tratamento de dados pessoais;
+* expansão histórica das bases;
+* snapshots;
+* auditoria e integridade;
+* preparação da recuperação híbrida.
 
-\`\`\`
+### Encontro 7
 
-**---**
-
-# 23. Equipe\*\*
-
-**Time 03 --- Contratações Públicas do Estado do Rio de Janeiro\*\***
-
--   Luiz Felipe Antunes.
-
--   Ana Karina.
-
--   Luciano Oliveira.
-
--   Marcio da Costa.
-
--   Ester da Silva.
-
--   Alisson Lima.
-
--   Renan Freitas.
-
-**Gerente / Coordenador:\*\*** Luiz Felipe Antunes
-
-**---**
-
-# 24. Autenticação JWT e administração\*\*
-
-A autenticação usa a tabela \`users\` no mesmo SQLite, \`Base\`, engine
-e sessões
-
-do restante do projeto. O módulo \`auth\` contém o model, os schemas, os
-serviços
-
-e as rotas de autenticação. O módulo \`admin\` gerencia esse mesmo
-model, sem criar
-
-outra tabela de usuários. Hash de senha, JWT e dependências de
-autorização ficam
-
-em \`app/core/security.py\`.
-
-## Instalação e configuração\*\*
-
-Na raiz, com a \`.venv\` ativada:
-
-\`\`\`powershell
-
-python -m pip install -r requirements.txt
-
-\`\`\`
-
-As dependências de autenticação são \`PyJWT\`, \`pwdlib\[argon2\]\` e
-
-\`email-validator\`. Para os testes com \`TestClient\`, instale também:
-
-\`\`\`powershell
-
-python -m pip install -r requirements-dev.txt
-
-\`\`\`
-
-Gere uma chave local:
-
-\`\`\`powershell
-
-python -c "import secrets; print(secrets.token_urlsafe(48))"
-
-\`\`\`
-
-Copie o resultado para \`JWT_SECRET_KEY\` **somente no seu
-\`.env\`\*\***, preservando
-
-as demais variáveis. \`.env.example\` contém apenas a chave vazia:
-
-\`\`\`env
-
-DATABASE_URL=sqlite:///./app.db
-
-JWT_SECRET_KEY=
-
-JWT_ALGORITHM=HS256
-
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-\`\`\`
-
-A API exige uma chave de pelo menos 32 bytes. Nesta implementação, o
-algoritmo
-
-permitido é HS256; a expiração é configurável entre 1 e 10080 minutos.
-
-Não existe chave padrão embutida. A criação do banco e o comando de
-criação
-
-do administrador funcionam sem a chave JWT; a inicialização da API a
-exige.
-
-## Criar o primeiro administrador\*\*
-
-Execute em um terminal interativo:
-
-\`\`\`powershell
-
-python -m app.init_db
-
-python -m app.create_admin
-
-\`\`\`
-
-O comando pede username, email, senha e confirmação. A senha deve ter de
-
-12 a 128 caracteres e não aparece no terminal nem nos argumentos do
-processo.
-
-Somente seu hash Argon2id é salvo. O username aceita letras, números,
-\`\_\`,
-
-\`.\` e \`-\`, com 3 a 64 caracteres; ele é normalizado para minúsculas.
-
-Username e email são únicos sem diferenciação de maiúsculas ASCII.
-
-O comando recusa uma segunda criação se já existir qualquer
-administrador,
-
-inclusive inativo. Também não sobrescreve contas nem promove um
-username/email
-
-já cadastrado. A verificação e a criação usam uma transação SQLite com
-bloqueio
-
-de escrita para impedir dois administradores iniciais em execuções
-concorrentes.
-
-O cadastro público está disponível em **POST /auth/register\*\***, sem
-token.
-
-No Swagger, envie:
-
-\`\`\`json
-
-{
-
-  "username": "novo_usuario",
-
-  "email": "usuario@example.com",
-
-  "password": "uma senha de pelo menos 12 caracteres"
-
-}
-
-\`\`\`
-
-O endpoint retorna **201\*\*** com os dados da conta, sem senha ou hash.
-
-Username ou email duplicado retorna **409\*\***; dados inválidos
-retornam **422\*\***.
-
-Depois do cadastro, use \`/auth/login\` para obter o token.
-
-O serviço \`app.modules.auth.services.create_user(db, UserCreate(...))\`
-cria somente
-
-usuários com role \`user\`; o schema rejeita \`role\` e \`is_active\` na
-entrada.
-
-O primeiro admin é provisionado exclusivamente pelo comando local acima.
-
-Para criar outras contas como \`user\` ou \`admin\`, faça login como
-administrador,
-
-autorize o token no Swagger e execute **POST /admin/users\*\***:
-
-\`\`\`json
-
-{
-
-  "username": "novo_admin",
-
-  "email": "novo_admin@example.com",
-
-  "password": "uma senha de pelo menos 12 caracteres",
-
-  "role": "admin"
-
-}
-
-\`\`\`
-
-Use \`"role": "user"\` para usuário comum; esse também é o padrão se
-omitido.
-
-O endpoint retorna **201\*\***, rejeita roles diferentes com **422\*\***
-e duplicidades
-
-com **409\*\***. Somente administradores autenticados podem utilizá-lo:
-sem token
-
-retorna **401\*\***, e usuário comum recebe **403\*\***. O cadastro
-público
-
-\`POST /auth/register\` continua rejeitando o campo \`role\`.
-
-## Iniciar e fazer login\*\*
-
-\`\`\`powershell
-
-python -m uvicorn app.main:app --reload
-
-\`\`\`
-
-Abra \`http://127.0.0.1:8000/docs\`. Em **Auth → POST /auth/login\*\***,
-clique em
-
-**Try it out\*\*** e envie um JSON com as credenciais criadas:
-
-\`\`\`json
-
-{
-
-  "username": "seu_admin",
-
-  "password": "sua senha definida no comando local"
-
-}
-
-\`\`\`
-
-A resposta contém \`access_token\`, \`token_type: "bearer"\` e
-\`expires_in\`
-
-(segundos). O login recebe JSON, não formulário OAuth2.
-
-## Usar o JWT pelo Swagger\*\*
-
-1\. Copie apenas o valor de \`access_token\` retornado pelo login.
-
-2\. Clique em **Authorize\*\*** no topo do Swagger.
-
-3\. Em **BearerAuth\*\***, cole o token, sem escrever \`Bearer \` antes
-dele.
-
-4\. Confirme **Authorize\*\*** e feche a janela.
-
-5\. Execute **GET /auth/me\*\*** para consultar a conta autenticada.
-
-6\. Com o admin, teste **GET /admin/users\*\*** e **GET
-/admin/users/{user_id}\*\***.
-
-7\. Para alterar uma conta, use **PATCH
-/admin/users/{user_id}/status\*\*** com
-
-   \`{"is_active": false}\` ou \`{"is_active": true}\`.
-
-Em outros clientes HTTP, envie o cabeçalho \`Authorization: Bearer
-\<access_token\>\`.
-
-Todas as rotas administrativas possuem a dependência \`require_admin\`
-no router.
-
-A listagem aceita \`offset\` (padrão 0) e \`limit\` (padrão 50, máximo
-100).
-
-\| Situação \| HTTP \|
-
-\|---\|---\|
-
-\| Login válido, usuário ativo \| 200 \|
-
-\| Login inválido, usuário inexistente ou inativo \| 401 \|
-
-\| Token ausente, inválido, expirado ou conta inativa/excluída \| 401 \|
-
-\| Usuário comum acessando \`/admin/\*\` \| 403 \|
-
-\| Admin consulta/altera usuário inexistente \| 404 \|
-
-\| Admin tenta desativar a própria conta \| 409 \|
-
-\| Corpo inválido ou tentativa de alterar role pelo endpoint de status
-\| 422 \|
-
-Os tokens têm \`sub\` (ID do usuário), \`iat\` e \`exp\`, e a assinatura
-é validada
-
-com o algoritmo definido pelo servidor. A role e o estado ativo são
-consultados
-
-no banco em cada requisição: desativar uma conta bloqueia seus tokens já
-emitidos.
-
-Reativar a conta permite novamente tokens ainda válidos; não há
-revogação
-
-individual, refresh token nem tabela de tokens nesta etapa. As respostas
-de
-
-usuário nunca incluem senha ou \`password_hash\`.
-
-## Testar\*\*
-
-\`\`\`powershell
-
-python -m unittest discover -s tests/integration -p "test\_\*.py" -v
-
-\`\`\`
-
-Os testes usam SQLite temporário e chaves aleatórias de teste, sem
-depender de
-
-uma chave JWT no \`.env\` e sem criar contas no \`app.db\` real. Cobrem
-login,
-
-permissões, tokens inválidos/expirados, contas inativas, unicidade,
-hash, criação
-
-inicial concorrente, CLI, Swagger/OpenAPI e a persistência relacional
-existente.
+* evolução da ingestão documental;
+* processamento de documentos reais;
+* Docling;
+* chunks determinísticos;
+* ingestão idempotente;
+* BM25 + FAISS + RRF;
+* geração fundamentada;
+* persistência de Query, Response e ResponseSource;
+* integração das diferentes frentes.
+
+### Encontro 8
+
+* integração do RAG com a API;
+* endpoint `POST /query/generate`;
+* Swagger;
+* persistência das respostas e fontes;
+* logs estruturados;
+* correção de idempotência;
+* evolução da suíte de testes;
+* auditoria das coletas históricas;
+* início da estrutura do Query Analyzer.
+
+### Encontro 9
+
+* fechamento da cobertura de resultados do recorte trabalhado;
+* evolução da coleta do PCA;
+* nova frente para atas de registro de preços;
+* consolidação dos 794 chunks normativos;
+* início do benchmark;
+* desenvolvimento e validação do Query Analyzer;
+* identificação das rotas `structured`, `rag` e `hybrid`;
+* preparação da integração com Router e ferramentas de consulta.
+
+---
+
+# 47. Próximas etapas
+
+As próximas etapas técnicas do projeto estão organizadas em torno da integração das partes já desenvolvidas.
+
+## Corpus e dados
+
+* finalizar coletas pendentes;
+* ampliar e auditar as bases;
+* concluir normalização;
+* validar relacionamentos;
+* organizar artefatos e snapshots.
+
+## RAG
+
+* continuar indexação;
+* ampliar avaliação da recuperação;
+* validar geração;
+* manter rastreabilidade das evidências.
+
+## Consulta
+
+* integrar Query Analyzer;
+* implementar Router;
+* estruturar SQL Tool;
+* integrar RAG Tool;
+* implementar fluxo Hybrid.
+
+## Segurança e controle
+
+* manter Guardrails;
+* manter SQL somente leitura;
+* validar escopo das consultas;
+* preservar autenticação e autorização.
+
+## Observabilidade
+
+* consolidar logs;
+* registrar etapas da consulta;
+* medir latência;
+* registrar fontes;
+* registrar erros;
+* manter `trace_id`/`run_id` para auditoria.
+
+## Avaliação
+
+* ampliar benchmark;
+* testar perguntas estruturadas;
+* testar perguntas normativas;
+* testar perguntas conversacionais;
+* testar perguntas híbridas;
+* avaliar recuperação e geração;
+* validar rastreabilidade das respostas.
+
+---
+
+# 48. Objetivo final
+
+O objetivo é entregar uma aplicação capaz de responder perguntas sobre **Contratações Públicas do Estado do Rio de Janeiro** utilizando as diferentes fontes disponíveis no corpus.
+
+A aplicação deverá identificar a natureza da pergunta, selecionar a estratégia adequada e produzir uma resposta fundamentada e rastreável.
+
+O fluxo final esperado é:
+
+```text
+Usuário
+  ↓
+Pergunta
+  ↓
+Guardrail
+  ↓
+Query Analyzer
+  ↓
+Router
+  ↓
+┌─────────────────────────────┐
+│                             │
+│ Structured │ RAG │ Hybrid   │
+│                             │
+└─────────────────────────────┘
+  ↓
+Ferramentas de consulta
+  ↓
+Resultados / Evidências
+  ↓
+Generation
+  ↓
+Validação
+  ↓
+Persistence
+  ↓
+Audit
+  ↓
+Resposta fundamentada
+```
+
+A arquitetura foi estruturada para manter separadas as responsabilidades de **interpretação, roteamento, recuperação, consulta, geração, persistência e auditoria**, permitindo que cada componente possa evoluir independentemente sem comprometer as demais partes do sistema.

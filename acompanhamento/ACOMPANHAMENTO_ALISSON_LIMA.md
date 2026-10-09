@@ -1886,3 +1886,129 @@ Com essa etapa, o pipeline passou a possuir duas características importantes an
 
 A arquitetura resultante prepara o sistema para as próximas evoluções, principalmente a introdução de mecanismos capazes de analisar a intenção da pergunta e decidir qual estratégia de recuperação deve ser utilizada antes de consultar as fontes de dados.
 
+## Encontro 11 — Validação do Query Analyzer e Testes de Classificação de Consultas
+
+**Data:** 09/10/2026  
+**Projeto:** RAG — Contratações Públicas  
+**Tema:** Validação do Query Analyzer com consultas estruturadas, documentais e híbridas.
+
+## 1. Objetivo do encontro
+
+O décimo primeiro encontro teve como objetivo validar o funcionamento do **Query Analyzer**, componente responsável por interpretar as perguntas dos usuários e identificar a estratégia mais adequada para seu processamento.
+
+A validação buscou verificar se o componente consegue distinguir consultas que exigem acesso a dados estruturados (SQL), recuperação de informações documentais (RAG) ou uma combinação das duas abordagens (Hybrid).
+
+## 2. Atividades realizadas
+
+### 2.1. Execução e validação do Query Analyzer
+
+Foram realizados testes diretamente no ambiente virtual do projeto, utilizando o comando:
+
+```powershell
+python -m src.query.analyzer
+```
+
+As perguntas foram submetidas ao modelo de linguagem, e os resultados foram analisados a partir dos objetos JSON gerados pelo componente.
+
+Foram avaliados os principais campos de classificação, incluindo `route`, `intent`, `entity`, `operation`, `field`, `filters`, `requires_sql` e `requires_rag`.
+
+### 2.2. Validação de consultas estruturadas
+
+Foram testadas perguntas relacionadas à contagem de contratos, identificação de objetos contratuais e aplicação de filtros por período, município, número do contrato e órgão público.
+
+O Query Analyzer demonstrou capacidade de reconhecer consultas que dependem de dados estruturados, classificando-as com a rota `structured` e identificando a necessidade de execução SQL.
+
+### 2.3. Conferência dos dados no banco SQLite
+
+Foi realizada uma validação por meio de consultas SQL diretamente no banco de dados do projeto, utilizando os registros estruturados provenientes do PNCP.
+
+Os resultados encontrados foram:
+
+- **6.021 contratos distintos** publicados em agosto de 2026, considerando os dados disponíveis no banco.
+- **3.855 contratos distintos** publicados no mesmo período, com município identificado como Rio de Janeiro.
+
+A consulta utilizou informações armazenadas no campo JSON `payload` da tabela `raw_asset`, especialmente os atributos `dataPublicacaoPncp`, `numeroControlePNCP` e `unidadeOrgao.municipioNome`.
+
+Essa etapa permitiu verificar que os filtros reconhecidos pelo Analyzer podem ser traduzidos em consultas SQL sobre a estrutura real do banco de dados.
+
+### 2.4. Teste de classificação híbrida (SQL + RAG)
+
+Foi utilizada a seguinte pergunta:
+
+**“Quais contratos publicados em agosto de 2026 no município do Rio de Janeiro possuem cláusulas de penalidade por atraso?”**
+
+O Analyzer retornou:
+
+```json
+{
+  "route": "hybrid",
+  "requires_sql": true,
+  "requires_rag": true
+}
+```
+
+O resultado demonstrou que o componente reconheceu corretamente a necessidade de combinar filtros estruturados com análise de conteúdo documental.
+
+Entretanto, foi identificada uma oportunidade de melhoria: os termos relacionados a penalidades e atrasos não foram preenchidos no campo `filters.termos`, embora estivessem presentes na pergunta original.
+
+Também foi observada a necessidade de padronizar a representação dos períodos, pois algumas consultas retornaram os campos `ano` e `mes`, enquanto outras utilizaram `periodo_inicio` e `periodo_fim`.
+
+### 2.5. Teste com múltiplos identificadores
+
+Foi submetida a pergunta:
+
+**“Qual é o objeto do contrato 09/2026 do Ministério da Justiça?”**
+
+O Analyzer classificou corretamente a consulta como estruturada e identificou simultaneamente o número do contrato, o órgão público e o campo solicitado (`objeto`).
+
+Esse teste demonstrou a importância de utilizar identificadores combinados, considerando que números de contratos podem se repetir entre diferentes órgãos públicos.
+
+### 2.6. Identificação de falha em consulta ambígua
+
+Foi realizado um teste com a pergunta:
+
+**“Qual é o valor do contrato?”**
+
+O Analyzer retornou incorretamente uma operação de agregação (`SUM`), mesmo sem o usuário solicitar a soma de valores.
+
+A classificação esperada seria uma consulta individual (`lookup`), acompanhada do reconhecimento de que faltam informações para identificar o contrato.
+
+Essa falha representa um risco para a execução futura de consultas SQL, pois poderia resultar na soma de valores de vários contratos em vez da recuperação do valor de um contrato específico.
+
+Foi identificada a necessidade de aprimorar as regras de classificação e o tratamento de perguntas ambíguas.
+
+## 3. Resultados alcançados
+
+Ao longo da bateria de validação, foram realizados **sete testes manuais**, dos quais seis apresentaram classificações coerentes e um revelou uma falha de interpretação.
+
+Os principais resultados foram:
+
+- Validação da identificação de consultas estruturadas.
+- Reconhecimento de perguntas que exigem recuperação documental.
+- Identificação correta da necessidade de processamento híbrido.
+- Extração de filtros relacionados a datas, municípios, órgãos e números de contratos.
+- Conferência de filtros com registros reais do banco SQLite.
+- Identificação de inconsistências na padronização dos filtros e na interpretação de consultas ambíguas.
+
+Os testes confirmaram o funcionamento básico do Query Analyzer, mas também evidenciaram melhorias necessárias antes de sua integração completa ao fluxo de consultas.
+
+## 4. Pendências e próximos passos
+
+As próximas atividades previstas são:
+
+1. Corrigir a classificação de perguntas ambíguas, evitando operações de agregação indevidas.
+2. Melhorar a extração de termos relevantes em consultas híbridas.
+3. Padronizar os filtros temporais produzidos pelo Analyzer.
+4. Criar testes de regressão para os problemas identificados.
+5. Validar posteriormente a integração entre Query Analyzer, Query Router, SQL Executor e RAG, respeitando as responsabilidades de implementação de cada componente.
+
+## 5. Conclusão
+
+O Encontro 11 foi dedicado à **validação funcional do Query Analyzer**, utilizando perguntas reais e verificações sobre os dados de contratações públicas armazenados no projeto.
+
+Os resultados demonstraram que o componente consegue diferenciar consultas estruturadas, documentais e híbridas, além de extrair filtros relevantes para o processamento das perguntas.
+
+A principal contribuição do encontro foi identificar, por meio de testes práticos, tanto os comportamentos corretos quanto uma falha de interpretação que precisa ser corrigida. Dessa forma, a atividade contribuiu para o aprimoramento da confiabilidade do sistema RAG de Contratações Públicas.
+
+**Situação ao final do encontro:** validação manual realizada, resultados registrados e melhorias identificadas para implementação posterior.
+

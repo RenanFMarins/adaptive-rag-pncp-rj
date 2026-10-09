@@ -22,6 +22,7 @@ class Document(Base):
         ForeignKey("corpus_versions.id"), index=True
     )
     source_file: Mapped[str] = mapped_column(String)
+    title: Mapped[str | None] = mapped_column(String)
     base_id: Mapped[str] = mapped_column(String)
     doc_type: Mapped[str] = mapped_column(String)
     source_url: Mapped[str | None] = mapped_column(Text)
