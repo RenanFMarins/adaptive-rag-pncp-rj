@@ -1,3 +1,4 @@
+
 import unittest
 
 from src.query.analyzer import (
@@ -14,6 +15,22 @@ from src.query.schemas import (
 
 
 class QueryAnalyzerTests(unittest.TestCase):
+    def test_prompt_diferencia_valor_individual_de_soma(self):
+        prompt = montar_prompt_analise("Qual é o valor do contrato?")
+
+        self.assertIn(
+            'Use intent "lookup" e operations ["list"], nunca "sum"',
+            prompt,
+        )
+        self.assertIn(
+            'A palavra "valor", isoladamente, não indica uma operação de soma',
+            prompt,
+        )
+        self.assertIn(
+            "A identificação do contrato deverá ser esclarecida antes da execução",
+            prompt,
+        )
+
     def test_analisa_pergunta_estruturada_com_multiplas_operacoes(self):
         chamadas: list[str] = []
 

@@ -1,3 +1,4 @@
+
 """Prompts restritos usados exclusivamente pelo Query Analyzer."""
 
 from __future__ import annotations
@@ -61,6 +62,10 @@ Regras:
 - Use route "hybrid" somente quando a pergunta exigir dados estruturados e evidência documental.
 - Termos como "quantos", "quantidade" e "número de" exigem a operação "count".
 - Termos como "valor total", "soma" e "quanto foi gasto" exigem a operação "sum" e um aggregation_field de valor.
+- A palavra "valor", isoladamente, não indica uma operação de soma.
+- Perguntas como "Qual é o valor do contrato?" solicitam o valor de um contrato individual. Use intent "lookup" e operations ["list"], nunca "sum".
+- Quando a pergunta solicitar um contrato individual sem identificadores suficientes, não invente filtros nem transforme a consulta em agregação. A identificação do contrato deverá ser esclarecida antes da execução.
+- Para consultas individuais, use aggregation_field null, pois não existe operação de agregação.
 - Termos como "maior", "menor", "máximo" e "mínimo" exigem a operação agregada correspondente ou ordenação adequada.
 - Termos como "top", "ranking", "maiores" e "menores" exigem "list" e "order_by"; use limit quando a pergunta indicar uma quantidade.
 - Quando a pergunta pedir resultados "por" um campo, como "por modalidade" ou "por município", use "group_by" com esse campo e inclua a operação "group_by".
