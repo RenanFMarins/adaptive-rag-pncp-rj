@@ -5,8 +5,13 @@ import sqlite3
 import uuid
 from typing import Any, Mapping
 
+from src.ingestion.identity import (
+    CanonicalIdentity,
+    normalized_timestamp,
+    source_timestamps,
+)
 from src.obs import utc_now
-from src.schema import CollectedRecord
+from src.schema import CollectedRecord, value_at_path
 
 
 class RawRepository:
@@ -30,6 +35,65 @@ class RawRepository:
         row = self.find_latest(source, resource_type, external_id)
         return row["payload_hash"] if row else None
 
+    def _canonical_rows(self, identity: CanonicalIdentity):
+        return self.connection.execute(
+            "SELECT rowid AS _rowid, * FROM raw_asset "
+            "WHERE base_id = ? AND resource_type = ? AND external_id = ?",
+            identity.values,
+        ).fetchall()
+
+    @staticmethod
+    def _row_source_updated_at(row: sqlite3.Row) -> str | None:
+        stored = row["source_updated_at"]
+        if stored not in (None, ""):
+            return str(stored)
+        payload = json.loads(row["payload"])
+        _, updated_at = source_timestamps(payload, row["resource_type"])
+        return updated_at
+
+    @classmethod
+    def _current_order_key(cls, row: sqlite3.Row):
+        source_updated_at = normalized_timestamp(
+            cls._row_source_updated_at(row)
+        )
+        if source_updated_at is not None:
+            return (1, source_updated_at, row["fetched_at"], row["_rowid"])
+        return (0, row["fetched_at"], row["fetched_at"], row["_rowid"])
+
+    def find_current(self, identity: CanonicalIdentity):
+        """Retorna o estado atual pela identidade, não pelo job de coleta."""
+
+        rows = self._canonical_rows(identity)
+        return max(rows, key=self._current_order_key) if rows else None
+
+    def contains_observation(
+        self,
+        identity: CanonicalIdentity,
+        digest: str,
+        source_updated_at: str | None,
+    ) -> bool:
+        """Detecta replay da mesma versão sem bloquear reversões posteriores."""
+
+        expected_timestamp = normalized_timestamp(source_updated_at)
+        if expected_timestamp is None:
+            return self.connection.execute(
+                "SELECT 1 FROM raw_asset "
+                "WHERE base_id = ? AND resource_type = ? AND external_id = ? "
+                "AND payload_hash = ? LIMIT 1",
+                (*identity.values, digest),
+            ).fetchone() is not None
+        rows = self.connection.execute(
+            "SELECT rowid AS _rowid, * FROM raw_asset "
+            "WHERE base_id = ? AND resource_type = ? AND external_id = ? "
+            "AND payload_hash = ?",
+            (*identity.values, digest),
+        ).fetchall()
+        return any(
+            normalized_timestamp(self._row_source_updated_at(row))
+            == expected_timestamp
+            for row in rows
+        )
+
     def contains_version(
         self,
         source: str,
@@ -37,7 +101,6 @@ class RawRepository:
         external_id: str,
         digest: str,
     ) -> bool:
-    
         row = self.connection.execute(
             "SELECT 1 FROM raw_asset WHERE source = ? "
             "AND resource_type = ? AND external_id = ? "
@@ -47,16 +110,31 @@ class RawRepository:
         return row is not None
 
     def list_latest(self, source: str, resource_type: str):
-        return self.connection.execute(
-            "SELECT asset.* FROM raw_asset AS asset "
-            "JOIN ("
-            "  SELECT external_id, MAX(rowid) AS latest_rowid "
-            "  FROM raw_asset WHERE source = ? AND resource_type = ? "
-            "  GROUP BY external_id"
-            ") AS latest ON latest.latest_rowid = asset.rowid "
-            "ORDER BY asset.rowid",
+        return list(self._iter_current_source_rows(source, resource_type))
+
+    def _iter_current_source_rows(self, source: str, resource_type: str):
+        """Seleciona o estado atual sem confundir ordem de chegada com versão."""
+
+        cursor = self.connection.execute(
+            "SELECT rowid AS _rowid, * FROM raw_asset "
+            "WHERE source = ? AND resource_type = ? "
+            "ORDER BY external_id, rowid",
             (source, resource_type),
-        ).fetchall()
+        )
+        current_external_id = None
+        current_row = None
+        for row in cursor:
+            if row["external_id"] != current_external_id:
+                if current_row is not None:
+                    yield current_row
+                current_external_id = row["external_id"]
+                current_row = row
+            elif self._current_order_key(row) > self._current_order_key(
+                current_row
+            ):
+                current_row = row
+        if current_row is not None:
+            yield current_row
 
     def list_latest_with_payload(self, source: str, resource_type: str):
         """Retorna metadados e JSON dos ativos mais recentes para novos alvos."""
@@ -75,53 +153,22 @@ class RawRepository:
         resource_type: str,
         field_paths: Mapping[str, str],
     ):
-        """Extrai somente campos de alvo, sem carregar cada payload completo."""
-        expressions = ["asset.external_id"]
-        parameters: list[Any] = []
-        json_fields: list[tuple[str, str, str]] = []
-        for index, (name, path) in enumerate(field_paths.items()):
-            if path.startswith("@"):
-                continue
-            value_alias = f"target_value_{index}"
-            type_alias = f"target_type_{index}"
-            json_path = "$." + path
-            expressions.extend(
-                (
-                    f"json_extract(asset.payload, ?) AS {value_alias}",
-                    f"json_type(asset.payload, ?) AS {type_alias}",
-                )
-            )
-            parameters.extend((json_path, json_path))
-            json_fields.append((name, value_alias, type_alias))
+        """Extrai alvos do estado atual, inclusive com chegada fora de ordem."""
 
-        query = (
-            f"SELECT {', '.join(expressions)} FROM raw_asset AS asset "
-            "JOIN ("
-            "  SELECT external_id, MAX(rowid) AS latest_rowid "
-            "  FROM raw_asset WHERE source = ? AND resource_type = ? "
-            "  GROUP BY external_id"
-            ") AS latest ON latest.latest_rowid = asset.rowid "
-            "ORDER BY asset.external_id"
-        )
-        parameters.extend((source, resource_type))
-        cursor = self.connection.execute(query, parameters)
-        for row in cursor:
+        for row in self._iter_current_source_rows(source, resource_type):
             target = {}
             external_id = row["external_id"]
+            payload = None
             for name, path in field_paths.items():
                 if path == "@external_id":
                     target[name] = external_id
                 elif path == "@parent_external_id":
                     parent, separator, _ = external_id.rpartition("|")
                     target[name] = parent if separator else None
-            for name, value_alias, type_alias in json_fields:
-                value = row[value_alias]
-                json_type = row[type_alias]
-                if json_type == "true":
-                    value = True
-                elif json_type == "false":
-                    value = False
-                target[name] = value
+                else:
+                    if payload is None:
+                        payload = json.loads(row["payload"])
+                    target[name] = value_at_path(payload, path)
             yield target
 
     def insert_raw(
@@ -138,10 +185,15 @@ class RawRepository:
         sensitivity: str = "public",
         source_published_at: str | None = None,
         source_updated_at: str | None = None,
+        identity: CanonicalIdentity | None = None,
+        previous_version_id: str | None = None,
     ) -> str:
-        previous = self.find_latest(
-            record.source_id, resource_type, external_id
+        identity = identity or CanonicalIdentity(
+            base_id, resource_type, external_id
         )
+        if previous_version_id is None:
+            previous = self.find_current(identity)
+            previous_version_id = previous["id"] if previous else None
         asset_id = str(uuid.uuid4())
         payload_json = json.dumps(
             record.payload, ensure_ascii=False, separators=(",", ":")
@@ -171,7 +223,7 @@ class RawRepository:
                 corpus_version,
                 sensitivity,
                 run_id,
-                previous["id"] if previous else None,
+                previous_version_id,
                 "RAW",
                 utc_now(),
             ),

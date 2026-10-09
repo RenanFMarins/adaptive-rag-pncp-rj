@@ -303,7 +303,15 @@ class RawIngestionTests(unittest.TestCase):
         }
         self.assertEqual(
             tables,
-            {"ingestion_run", "sync_checkpoint", "raw_asset"},
+            {
+                "ingestion_run",
+                "sync_checkpoint",
+                "raw_asset",
+                "sync_job",
+                "sync_window",
+                "sync_target_progress",
+                "sync_watermark",
+            },
         )
         run = repository.connection.execute(
             "SELECT status, records_received FROM ingestion_run WHERE id = ?",

@@ -17,7 +17,23 @@ from ..schema import (
     records_from_response,
     value_at_path,
 )
+from .checkpoint import stable_target_metadata
 from .pncp_client import PNCPClient, PNCPClientError
+
+
+def _target_checkpoint(
+    cursor: int | str,
+    target: Mapping[str, Any],
+    *,
+    qualifier: str | None = None,
+    target_key: str | None = None,
+) -> CollectionCheckpoint:
+    """Anexa ao cursor legado a identidade estável usada pelo checkpoint v2."""
+
+    derived_key, fingerprint = stable_target_metadata(target, qualifier)
+    return CollectionCheckpoint(
+        str(cursor), target_key or derived_key, fingerprint
+    )
 
 
 class PNCPCollector:
@@ -193,7 +209,7 @@ class PCAFullCollector:
                 ano_pca=ano,
                 plans_count=len(plans),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, {"cnpj": cnpj})
 
     def _target_cnpj(self, target) -> str:
         missing = [
@@ -376,7 +392,11 @@ class PriceRegistryCollector:
                 pages_requested=pages_requested,
                 records_count=len(records),
             )
-            yield CollectionCheckpoint(str(work_index))
+            yield _target_checkpoint(
+                work_index,
+                context,
+                qualifier=f"{window_start}:{window_end}",
+            )
 
     def _target_context(self, target, expected_uf):
         missing = [
@@ -560,7 +580,7 @@ class PublishedContractCollector:
                 pages_requested=pages_requested,
                 contracts_count=len(contracts),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target, expected_uf):
         missing = [
@@ -730,7 +750,7 @@ class CommitmentCollector:
                 pages_requested=pages_requested,
                 commitments_count=len(commitments),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target):
         numero_controle = str(target.get("numero_controle") or "")
@@ -888,7 +908,17 @@ class ContractTimelineCollector:
                 pages_requested=pages_requested,
                 records_count=records_count,
             )
-            yield CollectionCheckpoint(str(work_index))
+            yield _target_checkpoint(
+                work_index,
+                {
+                    "window_start": window_start,
+                    "window_end": window_end,
+                    "modality": modality,
+                },
+                target_key=(
+                    f"{window_start}:{window_end}|modalidade={modality}"
+                ),
+            )
 
 
 class ContractCollector(PNCPCollector):
@@ -1169,7 +1199,7 @@ class PurchaseItemCollector:
                 numero_controle=context["numero_controle"],
                 items_count=len(items),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target):
         missing = [
@@ -1300,7 +1330,14 @@ class ItemResultCollector:
                 requested=requested,
                 results_count=len(results),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(
+                target_index,
+                {
+                    "numero_controle": context["numero_controle"],
+                    "numero_item": context["numeroItem"],
+                    "tem_resultado": requested,
+                },
+            )
 
     def _target_context(self, target):
         missing = [

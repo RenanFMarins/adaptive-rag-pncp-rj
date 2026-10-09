@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from .ingest import RawRepository, ingest_records
 from .ingestion.pncp_client import PNCPClient
+from .ingestion.checkpoint import stable_target_metadata
 from .ingestion.pncp_collector import (
     CommitmentCollector,
     ContractCollector,
@@ -81,6 +82,34 @@ def resolve_source_targets(
     if not targets:
         return source
     return replace(source, targets=tuple(targets))
+
+
+def prepare_window_targets(
+    sync_repository,
+    source: SourceConfig,
+    window_id: str,
+    *,
+    qualifier: str | None = None,
+) -> SourceConfig:
+    """Registra e filtra alvos v2 por identidade, nunca pela posição.
+
+    A ordem da lista pode mudar entre execuções. Um alvo só é retirado da
+    retomada quando a mesma identidade e o mesmo fingerprint já estiverem
+    confirmados na janela.
+    """
+
+    pending = []
+    for target in source.targets:
+        target_key, fingerprint = stable_target_metadata(target, qualifier)
+        row = sync_repository.register_target(
+            window_id, target_key, fingerprint
+        )
+        if not (
+            row["status"] == "COMPLETED"
+            and row["processed_fingerprint"] == fingerprint
+        ):
+            pending.append(target)
+    return replace(source, targets=tuple(pending))
 
 
 def _target_value(payload: dict, external_id: str, path: str):

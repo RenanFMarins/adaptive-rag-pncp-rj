@@ -128,6 +128,8 @@ class CollectionCheckpoint:
 	"""Marca um alvo concluído, mesmo quando ele não retorna registros."""
 
 	cursor: str
+	target_key: str | None = field(default=None, compare=False)
+	target_fingerprint: str | None = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
