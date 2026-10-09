@@ -346,6 +346,29 @@ def gerar_chunks(caminho: Path) -> list[dict]:
     return chunks
 
 
+def aviso_sem_data(chunks, versao="v1"):
+    """
+    Monta o aviso dos chunks que ficaram sem data de vigência.
+
+    A data dos editais vem das fichas .meta.json que a coleta grava em
+    data/raw/, pasta que o Git ignora. Quem clona o projeto e roda só a
+    ingestão gera o corpus inteiro sem data e não percebe: o JSONL sai com o
+    número certo de chunks e nenhum erro aparece.
+
+    Devolve lista vazia quando está tudo certo.
+    """
+    sem_data = [c for c in chunks if not c["metadata"].get("data_publicacao")]
+    if not sem_data:
+        return []
+    arquivos = sorted({c["metadata"]["source_file"] for c in sem_data})
+    return [
+        f"ATENÇÃO: {len(sem_data)} chunk(s) sem data de vigência, "
+        f"em {len(arquivos)} arquivo(s): {', '.join(arquivos)}",
+        "  Rode a coleta antes da ingestão, para gerar as fichas do PNCP:",
+        f"  python -m app.modules.normative.services fetch --versao {versao}",
+    ]
+
+
 def processar(versao="v1", raiz="data/raw", saida=None):
     """Processa todos os documentos da base e grava os chunks em JSONL."""
     pasta = Path(raiz) / versao / BASE_ID
@@ -375,6 +398,8 @@ def processar(versao="v1", raiz="data/raw", saida=None):
         for c in todos:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
     print(f"Total: {len(todos)} chunks em {saida}")
+    for linha in aviso_sem_data(todos, versao):
+        print(linha)
     print(f"Log em logs/ · run_id {run_id}")
     return todos
 
