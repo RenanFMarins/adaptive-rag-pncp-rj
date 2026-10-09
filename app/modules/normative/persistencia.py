@@ -170,6 +170,42 @@ def _criar_chunk(documento: Document, texto: str, metadata: dict) -> DocumentChu
 # 5. Persistência
 # ---------------------------------------------------------------------------
 
+def _preencher_titulo(
+    db: Session,
+    documentos: dict[str, Document],
+    corpus_version_id: int,
+    metadata: dict,
+) -> bool:
+    """
+    Preenche o title do documento quando ele está vazio e o JSONL já traz o
+    número. Devolve True quando preencheu.
+
+    Só preenche o que está vazio: um título já gravado não é sobrescrito, para
+    o carregamento não desfazer correção feita à mão no banco.
+    """
+    titulo = _titulo(metadata)
+    if not titulo:
+        return False
+
+    source_file = metadata["source_file"]
+    documento = documentos.get(source_file)
+    if documento is None:
+        documento = db.scalar(
+            select(Document).where(
+                Document.corpus_version_id == corpus_version_id,
+                Document.source_file == source_file,
+            )
+        )
+        if documento is None:
+            return False
+        documentos[source_file] = documento
+
+    if documento.title:
+        return False
+    documento.title = titulo
+    return True
+
+
 def persistir_jsonl(
     db: Session,
     corpus_version_id: int,
@@ -193,6 +229,7 @@ def persistir_jsonl(
         "invalidas": 0,
         "documentos_criados": 0,
         "documentos_reaproveitados": 0,
+        "titulos_preenchidos": 0,
         "chunks_criados": 0,
         "chunks_ja_existentes": 0,
     }
@@ -217,6 +254,14 @@ def persistir_jsonl(
             resumo["linhas"] += 1
             metadata = item["metadata"]
             chunk_id = metadata["chunk_id"]
+
+            # O título é conferido em toda passada, inclusive nos trechos que já
+            # estão gravados: quando a extração melhora e passa a achar o número
+            # do documento, o campo que ficou vazio é preenchido sem precisar
+            # apagar nada.
+            if _preencher_titulo(db, documentos, corpus_version_id, metadata):
+                resumo["titulos_preenchidos"] += 1
+
             if chunk_id in ja_no_banco:
                 resumo["chunks_ja_existentes"] += 1
                 continue
@@ -271,7 +316,8 @@ if __name__ == "__main__":
         f"  [versao]    {nome_da_versao(args.versao)}\n"
         f"  [linhas]    {relatorio['linhas']} lidas · {relatorio['invalidas']} inválidas\n"
         f"  [documento] {relatorio['documentos_criados']} criados · "
-        f"{relatorio['documentos_reaproveitados']} reaproveitados\n"
+        f"{relatorio['documentos_reaproveitados']} reaproveitados · "
+        f"{relatorio['titulos_preenchidos']} título(s) preenchido(s)\n"
         f"  [trecho]    {relatorio['chunks_criados']} gravados · "
         f"{relatorio['chunks_ja_existentes']} já estavam no banco"
     )

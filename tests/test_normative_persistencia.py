@@ -256,3 +256,43 @@ def test_tamanho_commit_invalido_avisa(db, versao, tmp_path):
     ])
     with pytest.raises(ValueError):
         persistencia.persistir_jsonl(db, versao.id, arquivo, tamanho_commit=0)
+
+
+# --- título que chega depois: a extração melhorou -------------------------
+
+def test_titulo_vazio_e_preenchido_numa_passada_seguinte(db, versao, tmp_path):
+    # Primeiro carregamento: a extração ainda não achava o número do edital.
+    arquivo = escrever_jsonl(tmp_path, "sem_titulo.jsonl", [
+        trecho("editais_normativo:edital-19:clausula-1:p1", "edital-19.pdf",
+               doc_type="edital"),
+    ])
+    persistencia.persistir_jsonl(db, versao.id, arquivo)
+    assert db.scalar(select(Document)).title is None
+
+    # Segundo carregamento, com o JSONL reprocessado: o número apareceu.
+    arquivo = escrever_jsonl(tmp_path, "com_titulo.jsonl", [
+        trecho("editais_normativo:edital-19:clausula-1:p1", "edital-19.pdf",
+               doc_type="edital", numero_edital="PREGÃO ELETRÔNICO N° 019/2025"),
+    ])
+    resumo = persistencia.persistir_jsonl(db, versao.id, arquivo)
+
+    assert resumo["titulos_preenchidos"] == 1
+    assert resumo["chunks_criados"] == 0, "nao pode duplicar trecho"
+    assert db.scalar(select(Document)).title == "PREGÃO ELETRÔNICO N° 019/2025"
+
+
+def test_titulo_ja_gravado_nao_e_sobrescrito(db, versao, tmp_path):
+    arquivo = escrever_jsonl(tmp_path, "v1_editais_normativo.jsonl", [
+        trecho("editais_normativo:lei-14133:art-1:p1", "lei-14133.html",
+               numero_norma="Lei 14.133"),
+    ])
+    persistencia.persistir_jsonl(db, versao.id, arquivo)
+
+    documento = db.scalar(select(Document))
+    documento.title = "Lei 14.133 (corrigido à mão)"
+    db.commit()
+
+    resumo = persistencia.persistir_jsonl(db, versao.id, arquivo)
+
+    assert resumo["titulos_preenchidos"] == 0
+    assert db.scalar(select(Document)).title == "Lei 14.133 (corrigido à mão)"
