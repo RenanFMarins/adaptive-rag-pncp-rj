@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.main import app
 from src.query.adaptive_executor import AdaptiveExecutionResult
+from src.query.analyzer import QueryAnalysisError
 from src.query.planner import planejar_execucao
 from src.query.schemas import (
     AdaptiveQueryResult,
@@ -69,6 +70,7 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.json()["route"], "structured")
         self.assertEqual(response.json()["structured_result"]["rows"], [{"ano": 2026}])
         self.assertIsNone(response.json()["answer"])
+        self.assertEqual(response.json()["external_documents"], [])
 
     def test_retorna_saida_rag_quando_plano_e_rag(self) -> None:
         analysis = QueryAnalysis(
@@ -161,6 +163,32 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.json()["route"], "hybrid")
         self.assertEqual(response.json()["structured_result"]["rows"], [{"valor_global": 100.0}])
         self.assertEqual(response.json()["answer"], rag_result.answer)
+
+    def test_retorna_campos_invalidos_quando_analyzer_rejeita_plano(self) -> None:
+        erro = QueryAnalysisError(
+            "A LLM retornou um plano inválido.",
+            erros_validacao=[
+                {
+                    "campo": "needs_document_retrieval",
+                    "mensagem": "A rota hybrid exige needs_document_retrieval igual a true.",
+                    "tipo": "value_error",
+                }
+            ],
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            side_effect=erro,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Compare dados e documento."},
+            )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.json()["detail"]["errosValidacao"][0]["campo"],
+            "needs_document_retrieval",
+        )
 
 
 if __name__ == "__main__":

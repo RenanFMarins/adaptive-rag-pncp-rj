@@ -116,7 +116,9 @@ MES = 8
 LIMITE_DOCUMENTOS = 500
 TAMANHO_MICROLOTE = 50
 PERFIL = "qualidade"
+TIMEOUT_DOCUMENTO = 180
 REPROCESSAR_ERROS = False
+REPROCESSAR_TIMEOUTS = False
 ```
 
 5. Execute as células em ordem.
@@ -128,7 +130,7 @@ O notebook copia o ZIP para o disco temporário do Colab, processa os PDFs e sal
 Após cada microlote, o notebook atualiza:
 
 ```text
-projeto/data/checkpoints/extracao/<ano>/estado_docling_<ano_mes>.json
+projeto/data/checkpoints/extracao/<ano>/estado_docling_<ano_mes>_lote_<nnn>.json
 ```
 
 Se a sessão cair, abra o mesmo notebook e execute novamente. Arquivos com status `concluido` serão ignorados; somente pendências serão processadas.
@@ -137,6 +139,15 @@ Para tentar novamente apenas documentos que falharam, ajuste:
 
 ```python
 REPROCESSAR_ERROS = True
+```
+
+Arquivos que ultrapassarem `TIMEOUT_DOCUMENTO` recebem status `timeout` e o
+processamento segue para o próximo arquivo. Por padrão eles também não são
+tentados de novo; só habilite abaixo após revisar se o caso merece nova
+tentativa:
+
+```python
+REPROCESSAR_TIMEOUTS = True
 ```
 
 Não apague o checkpoint sem antes verificar os resultados. Apagá-lo faz o Docling considerar todos os PDFs do período como pendentes novamente.

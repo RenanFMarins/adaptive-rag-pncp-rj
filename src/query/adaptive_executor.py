@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .executor import QueryExecutionError, executar_analise_estruturada
@@ -24,6 +24,9 @@ class AdaptiveExecutionResult:
     plan: ExecutionPlan
     structured_result: AdaptiveQueryResult | None = None
     rag_result: Any | None = None
+    # Referências catalogadas para arquivos ainda não processados. Não são
+    # baixadas automaticamente nem entram no prompt da LLM.
+    external_documents: list[dict[str, Any]] = field(default_factory=list)
 
 
 def executar_plano_adaptativo(

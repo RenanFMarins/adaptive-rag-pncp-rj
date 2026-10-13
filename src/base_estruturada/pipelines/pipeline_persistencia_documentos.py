@@ -9,6 +9,14 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
+
 from app.core.database import SessionLocal, init_db
 from app.modules.documents.services import persistir_chunks_jsonl_pncp
 from src.base_estruturada.pipelines.pipeline_documentos import PeriodoColeta
@@ -70,11 +78,45 @@ if __name__ == "__main__":
 
     init_db()
     with SessionLocal() as db:
-        resumo = persistir_chunks_jsonl_pncp(
-            db=db,
-            corpus_version_id=args.corpus_version_id,
-            arquivo_chunks=arquivo_chunks,
-            tipos_entidade=tipos_entidade,
-            limite_chunks_novos=args.limite_chunks_novos,
-        )
+        colunas_progresso = [
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("{task.completed}/{task.total}"),
+            TextColumn("{task.percentage:>5.1f}%"),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+        ]
+        with Progress(*colunas_progresso) as progresso_visual:
+            tarefa = progresso_visual.add_task("Persistindo chunks", total=1)
+
+            def atualizar_progresso(processados: int, total: int) -> None:
+                if total == 0:
+                    progresso_visual.update(
+                        tarefa,
+                        description="JSONL sem linhas",
+                        total=1,
+                        completed=1,
+                    )
+                    return
+                progresso_visual.update(
+                    tarefa,
+                    total=total,
+                    completed=processados,
+                )
+
+            resumo = persistir_chunks_jsonl_pncp(
+                db=db,
+                corpus_version_id=args.corpus_version_id,
+                arquivo_chunks=arquivo_chunks,
+                tipos_entidade=tipos_entidade,
+                limite_chunks_novos=args.limite_chunks_novos,
+                progresso=atualizar_progresso,
+            )
+            descricao = (
+                "Limite de inserções atingido"
+                if args.limite_chunks_novos is not None
+                and resumo["chunksCriados"] >= args.limite_chunks_novos
+                else "Persistência concluída"
+            )
+            progresso_visual.update(tarefa, description=descricao)
     print(f"Persistência JSONL → Document/DocumentChunk | {resumo}")

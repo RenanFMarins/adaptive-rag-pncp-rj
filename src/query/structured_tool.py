@@ -9,6 +9,8 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 
+from app.core.text_normalization import normalizar_para_busca
+
 from .schemas import (
     QueryAnalysis,
     QueryEntity,
@@ -172,8 +174,8 @@ def _where_clause(
     for field, value in text_filters:
         if value:
             expression = _field_expression(config, field)
-            clauses.append(f"LOWER({expression}) LIKE LOWER(?)")
-            params.append(f"%{value}%")
+            clauses.append(f"normalizar_busca({expression}) LIKE ?")
+            params.append(f"%{normalizar_para_busca(value)}%")
 
     if filters.ano is not None:
         clauses.append(f"{_field_expression(config, StructuredField.ANO)} = ?")
@@ -264,6 +266,15 @@ def executar_consulta_estruturada(
         raise StructuredQueryError(
             "A ferramenta estruturada suporta somente contrato ou contratação."
         )
+
+    # Conexões abertas diretamente por testes ou scripts não passam pelo
+    # evento do SQLAlchemy; registramos a função também aqui.
+    connection.create_function(
+        "normalizar_busca",
+        1,
+        normalizar_para_busca,
+        deterministic=True,
+    )
 
     config = _ENTITY_CONFIG[analysis.entity]
     clauses, params = _where_clause(analysis, config)

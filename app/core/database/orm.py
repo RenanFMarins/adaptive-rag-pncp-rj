@@ -6,6 +6,7 @@ from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
+from app.core.text_normalization import normalizar_para_busca
 
 
 def create_sqlite_engine(database_url: str) -> Engine:
@@ -20,6 +21,12 @@ def create_sqlite_engine(database_url: str) -> Engine:
         connection: sqlite3.Connection,
         _record: object,
     ) -> None:
+        connection.create_function(
+            "normalizar_busca",
+            1,
+            normalizar_para_busca,
+            deterministic=True,
+        )
         cursor = connection.cursor()
         try:
             cursor.execute("PRAGMA foreign_keys=ON")

@@ -82,6 +82,21 @@ class StructuredToolTests(unittest.TestCase):
                 "unidadeOrgao": {"municipioNome": "Niterói"},
             },
         )
+        self._inserir_asset(
+            "contrato-fiocruz",
+            "contrato",
+            "003-2-000001/2026",
+            {
+                "anoContrato": 2026,
+                "dataPublicacaoPncp": "2026-08-13T12:00:00",
+                "valorGlobal": 10.0,
+                "valorInicial": 10.0,
+                "objetoContrato": "Serviço de teste",
+                "nomeRazaoSocialFornecedor": "Empresa Teste",
+                "orgaoEntidade": {"razaoSocial": "FUNDACAO OSWALDO CRUZ"},
+                "unidadeOrgao": {"municipioNome": "Rio de Janeiro"},
+            },
+        )
 
     def tearDown(self) -> None:
         self.connection.close()
@@ -164,6 +179,23 @@ class StructuredToolTests(unittest.TestCase):
 
         self.assertEqual(result.row_count, 1)
         self.assertEqual(result.rows[0]["numero_controle_pncp"], "002-1-000002/2026")
+
+    def test_filtro_textual_nao_diferencia_acentos(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            filters=QueryFilters(orgao="Fundação Oswaldo Cruz", ano=2026),
+        )
+
+        result = executar_consulta_estruturada(self.connection, analysis)
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(
+            result.rows[0]["numero_controle_pncp"],
+            "003-2-000001/2026",
+        )
 
     def test_rejeita_filtro_de_documento_na_base_estruturada(self) -> None:
         analysis = QueryAnalysis(

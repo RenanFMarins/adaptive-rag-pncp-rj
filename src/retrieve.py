@@ -17,11 +17,13 @@ from typing import Callable
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.text_normalization import normalizar_para_busca
 from app.modules.documents.model import Document, DocumentChunk
 from llm_ecoa import gerar_embedding
 from src.fts import buscar_fts5
 from src.index import carregar_indice_faiss
-from src.query.schemas import QueryEntity, QueryFilters
+from src.query.base_catalog import resolver_base_ids
+from src.query.schemas import KnowledgeBase, QueryEntity, QueryFilters
 
 
 EmbeddingFn = Callable[[str], list[float]]
@@ -125,13 +127,22 @@ def buscar_dense(
 def resolver_chunk_ids_filtrados(
     db: Session,
     filters: QueryFilters | None,
+    base_ids: set[str] | None = None,
 ) -> set[str] | None:
     """Resolve no SQLite os IDs de chunks permitidos pelos filtros da pergunta."""
 
-    if filters is None or not filters.model_fields_set:
+    if (filters is None or not filters.model_fields_set) and base_ids is None:
         return None
 
+    if base_ids is not None and not base_ids:
+        return set()
+
     query = select(DocumentChunk.chunk_id).join(DocumentChunk.document)
+    if base_ids is not None:
+        query = query.where(Document.base_id.in_(sorted(base_ids)))
+    if filters is None:
+        return set(db.scalars(query))
+
     if filters.numero_controle_pncp:
         query = query.where(
             Document.source_file.contains(f"|{filters.numero_controle_pncp}|")
@@ -154,7 +165,11 @@ def resolver_chunk_ids_filtrados(
     )
     for column, value in text_filters:
         if value:
-            query = query.where(func.lower(column).like(f"%{value.lower()}%"))
+            query = query.where(
+                func.normalizar_busca(column).like(
+                    f"%{normalizar_para_busca(value)}%"
+                )
+            )
 
     if filters.ano is not None:
         query = query.where(DocumentChunk.ano == filters.ano)
@@ -168,6 +183,24 @@ def resolver_chunk_ids_filtrados(
         query = query.where(DocumentChunk.valor <= filters.valor_maximo)
 
     return set(db.scalars(query))
+
+
+def contar_chunks_por_base(
+    db: Session,
+    base_ids: set[str] | None,
+) -> dict[str, int]:
+    """Informa, para auditoria, quantos chunks existem em cada base permitida."""
+
+    query = (
+        select(Document.base_id, func.count(DocumentChunk.id))
+        .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+        .group_by(Document.base_id)
+    )
+    if base_ids is not None:
+        if not base_ids:
+            return {}
+        query = query.where(Document.base_id.in_(sorted(base_ids)))
+    return {str(base_id): int(total) for base_id, total in db.execute(query)}
 
 
 def reciprocal_rank_fusion(
@@ -191,10 +224,15 @@ def retrieve_hibrido(
     cache_dir: Path = Path("data/index/faiss"),
     embedding_fn: EmbeddingFn = gerar_embedding,
     filters: QueryFilters | None = None,
+    bases: list[KnowledgeBase] | None = None,
 ) -> list[RankedChunk]:
     """Combina ranking lexical persistente e ranking semântico vetorial."""
 
-    allowed_chunk_ids = resolver_chunk_ids_filtrados(db, filters)
+    allowed_chunk_ids = resolver_chunk_ids_filtrados(
+        db,
+        filters,
+        base_ids=resolver_base_ids(bases),
+    )
     if allowed_chunk_ids is not None and not allowed_chunk_ids:
         return []
 

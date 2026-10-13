@@ -4,7 +4,18 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -33,6 +44,49 @@ class Document(Base):
 
     corpus_version: Mapped[CorpusVersion] = relationship(back_populates="documents")
     chunks: Mapped[list[DocumentChunk]] = relationship(back_populates="document")
+
+
+class DocumentCatalogEntry(Base):
+    """Referência a um arquivo anunciado pelo PNCP, ainda sem texto processado.
+
+    O catálogo não é uma fonte para FTS5/FAISS. Ele permite saber quais
+    arquivos existem para uma contratação/contrato e recuperar sua URL quando
+    uma futura rota adaptativa decidir solicitar o documento sob demanda.
+    """
+
+    __tablename__ = "document_catalog_entries"
+    __table_args__ = (
+        UniqueConstraint(
+            "tipo_entidade",
+            "numero_controle_pncp",
+            "sequencial_documento",
+            name="uq_catalogo_documento_pncp",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tipo_entidade: Mapped[str] = mapped_column(String, index=True)
+    numero_controle_pncp: Mapped[str] = mapped_column(String, index=True)
+    cnpj_orgao: Mapped[str | None] = mapped_column(String)
+    ano: Mapped[int | None] = mapped_column(Integer, index=True)
+    sequencial_entidade: Mapped[int | None] = mapped_column(Integer)
+    sequencial_documento: Mapped[int] = mapped_column(Integer)
+    tipo_documento: Mapped[str | None] = mapped_column(String, index=True)
+    titulo: Mapped[str | None] = mapped_column(Text)
+    url_download: Mapped[str | None] = mapped_column(Text)
+    uri_original: Mapped[str | None] = mapped_column(Text)
+    data_publicacao_pncp: Mapped[datetime | None] = mapped_column(DateTime)
+    status_ativo: Mapped[bool | None] = mapped_column(Boolean)
+    periodo_coleta: Mapped[str] = mapped_column(String, index=True)
+    manifesto_origem: Mapped[str] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.current_timestamp()
+    )
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
 
 
 class DocumentChunk(Base):

@@ -26,6 +26,25 @@ class SourceResponse(BaseModel):
     metadata: dict[str, Any]
 
 
+class ExternalDocumentResponse(BaseModel):
+    """Arquivo anunciado pelo PNCP, mas ainda ausente do corpus processado."""
+
+    id: int
+    tipoEntidade: str
+    numeroControlePNCP: str
+    cnpjOrgao: str | None = None
+    ano: int | None = None
+    sequencialEntidade: int | None = None
+    sequencialDocumento: int
+    tipoDocumento: str | None = None
+    titulo: str | None = None
+    urlDownload: str | None = None
+    urlOriginal: str | None = None
+    dataPublicacaoPncp: str | None = None
+    statusAtivo: bool | None = None
+    periodoColeta: str
+
+
 class GenerateResponse(BaseModel):
     answer: str
     sources: list[SourceResponse]
@@ -65,3 +84,4 @@ class AdaptiveAskResponse(BaseModel):
     structured_result: StructuredQueryResult | None = None
     answer: str | None = None
     sources: list[SourceResponse] = Field(default_factory=list)
+    external_documents: list[ExternalDocumentResponse] = Field(default_factory=list)
