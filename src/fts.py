@@ -8,15 +8,9 @@ sincronizado para qualquer base que persista novos chunks.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
-
-from sqlalchemy import bindparam, text
+from sqlalchemy import Select, column, func, literal_column, select, table, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session
-
-if TYPE_CHECKING:
-    from app.modules.documents.model import DocumentChunk
-
 
 NOME_TABELA_FTS = "document_chunks_fts"
 
@@ -126,7 +120,7 @@ def buscar_fts5(
     db: Session,
     pergunta: str,
     top_k: int,
-    allowed_chunk_ids: set[str] | None = None,
+    eligible_chunks: Select | None = None,
 ) -> list[tuple[str, float]]:
     """Retorna ``(chunk_id, score_bm25)`` sem carregar o corpus na memória."""
 
@@ -135,25 +129,20 @@ def buscar_fts5(
     consulta = preparar_consulta_fts5(pergunta)
     if not consulta:
         return []
-    if allowed_chunk_ids is not None and not allowed_chunk_ids:
-        return []
+    from app.modules.documents.model import DocumentChunk
 
-    sql = """
-        SELECT chunks.chunk_id, bm25(document_chunks_fts) AS score
-        FROM document_chunks_fts
-        JOIN document_chunks AS chunks
-          ON chunks.id = document_chunks_fts.rowid
-        WHERE document_chunks_fts MATCH :consulta
-    """
-    params: dict[str, object] = {"consulta": consulta, "limite": top_k}
-    if allowed_chunk_ids is not None:
-        sql += " AND chunks.chunk_id IN :allowed_chunk_ids"
-        params["allowed_chunk_ids"] = sorted(allowed_chunk_ids)
-    statement = text(sql + " ORDER BY score ASC LIMIT :limite")
-    if allowed_chunk_ids is not None:
-        statement = statement.bindparams(
-            bindparam("allowed_chunk_ids", expanding=True)
+    fts = table(NOME_TABELA_FTS, column("rowid"))
+    score = func.bm25(literal_column(NOME_TABELA_FTS)).label("score")
+    statement = (
+        select(DocumentChunk.chunk_id, score)
+        .select_from(fts.join(DocumentChunk, DocumentChunk.id == fts.c.rowid))
+        .where(literal_column(NOME_TABELA_FTS).match(consulta))
+    )
+    if eligible_chunks is not None:
+        statement = statement.where(
+            DocumentChunk.chunk_id.in_(eligible_chunks.correlate(None))
         )
+    statement = statement.order_by(score.asc()).limit(top_k)
 
-    linhas = db.execute(statement, params).all()
+    linhas = db.execute(statement).all()
     return [(str(linha.chunk_id), float(linha.score)) for linha in linhas]

@@ -14,8 +14,9 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Callable
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
+from app.core.logging import perf_stage
 
 from app.core.text_normalization import normalizar_para_busca
 from app.modules.documents.model import Document, DocumentChunk
@@ -107,41 +108,50 @@ def buscar_dense(
 
     if top_k <= 0:
         return []
-    indice = carregar_indice_faiss(cache_dir)
+    with perf_stage("faiss_load"):
+        indice = carregar_indice_faiss(cache_dir)
     if allowed_chunk_ids is None:
-        return indice.search(embedding_fn(pergunta), top_k)
+        with perf_stage("embedding"):
+            embedding = embedding_fn(pergunta)
+        with perf_stage("faiss_search") as metrics:
+            ranking = indice.search(embedding, top_k)
+            metrics["candidatos"] = len(ranking)
+        return ranking
     if not allowed_chunk_ids:
         return []
 
     # O IndexFlat do FAISS não oferece filtro por metadados. Para manter a
     # correção do recorte, ordenamos o índice e só então preservamos IDs
     # autorizados pelo SQLite. Não há reconstrução nem gravação do índice.
-    ranking_completo = indice.search(embedding_fn(pergunta), len(indice.chunk_ids))
-    return [
-        (chunk_id, score)
-        for chunk_id, score in ranking_completo
-        if chunk_id in allowed_chunk_ids
-    ][:top_k]
+    with perf_stage("embedding"):
+        embedding = embedding_fn(pergunta)
+    with perf_stage("faiss_search") as metrics:
+        ranking_completo = indice.search(embedding, len(indice.chunk_ids))
+        metrics["candidatos"] = len(ranking_completo)
+    with perf_stage("faiss_filter") as metrics:
+        ranking = [
+            (chunk_id, score)
+            for chunk_id, score in ranking_completo
+            if chunk_id in allowed_chunk_ids
+        ][:top_k]
+        metrics["candidatos"] = len(ranking)
+    return ranking
 
 
-def resolver_chunk_ids_filtrados(
-    db: Session,
+def construir_consulta_chunks_elegiveis(
     filters: QueryFilters | None,
     base_ids: set[str] | None = None,
-) -> set[str] | None:
-    """Resolve no SQLite os IDs de chunks permitidos pelos filtros da pergunta."""
+) -> Select | None:
+    """Constrói o recorte compartilhado por FTS5 e FAISS, sem materializar IDs."""
 
     if (filters is None or not filters.model_fields_set) and base_ids is None:
         return None
-
-    if base_ids is not None and not base_ids:
-        return set()
 
     query = select(DocumentChunk.chunk_id).join(DocumentChunk.document)
     if base_ids is not None:
         query = query.where(Document.base_id.in_(sorted(base_ids)))
     if filters is None:
-        return set(db.scalars(query))
+        return query
 
     if filters.numero_controle_pncp:
         query = query.where(
@@ -182,7 +192,18 @@ def resolver_chunk_ids_filtrados(
     if filters.valor_maximo is not None:
         query = query.where(DocumentChunk.valor <= filters.valor_maximo)
 
-    return set(db.scalars(query))
+    return query
+
+
+def resolver_chunk_ids_filtrados(
+    db: Session,
+    filters: QueryFilters | None,
+    base_ids: set[str] | None = None,
+) -> set[str] | None:
+    """Resolve no SQLite os IDs de chunks permitidos pelos filtros da pergunta."""
+
+    query = construir_consulta_chunks_elegiveis(filters, base_ids)
+    return None if query is None else set(db.scalars(query))
 
 
 def contar_chunks_por_base(
@@ -228,35 +249,47 @@ def retrieve_hibrido(
 ) -> list[RankedChunk]:
     """Combina ranking lexical persistente e ranking semântico vetorial."""
 
-    allowed_chunk_ids = resolver_chunk_ids_filtrados(
-        db,
-        filters,
-        base_ids=resolver_base_ids(bases),
-    )
+    with perf_stage("base_filters"):
+        eligible_chunks = construir_consulta_chunks_elegiveis(
+            filters,
+            base_ids=resolver_base_ids(bases),
+        )
+    allowed_chunk_ids = None
+    if eligible_chunks is not None:
+        with perf_stage("chunk_ids") as metrics:
+            allowed_chunk_ids = set(db.scalars(eligible_chunks))
+            metrics["chunks_elegiveis"] = len(allowed_chunk_ids)
     if allowed_chunk_ids is not None and not allowed_chunk_ids:
         return []
 
-    lexical = buscar_fts5(
-        db,
-        pergunta,
-        bm25_k,
-        allowed_chunk_ids=allowed_chunk_ids,
-    )
-    dense = buscar_dense(
-        pergunta,
-        dense_k,
-        cache_dir,
-        embedding_fn,
-        allowed_chunk_ids=allowed_chunk_ids,
-    )
-    fused = reciprocal_rank_fusion([lexical, dense], k=rrf_k)
+    with perf_stage("fts5") as metrics:
+        lexical = buscar_fts5(
+            db,
+            pergunta,
+            bm25_k,
+            eligible_chunks=eligible_chunks,
+        )
+        metrics["candidatos"] = len(lexical)
+    with perf_stage("faiss") as metrics:
+        dense = buscar_dense(
+            pergunta,
+            dense_k,
+            cache_dir,
+            embedding_fn,
+            allowed_chunk_ids=allowed_chunk_ids,
+        )
+        metrics["candidatos"] = len(dense)
+    with perf_stage("rrf") as metrics:
+        fused = reciprocal_rank_fusion([lexical, dense], k=rrf_k)
+        metrics["candidatos"] = len(fused)
 
     bm25_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(lexical, start=1)}
     bm25_score = dict(lexical)
     dense_rank = {chunk_id: rank for rank, (chunk_id, _) in enumerate(dense, start=1)}
     dense_score = dict(dense)
     ordenados = sorted(fused.items(), key=lambda item: item[1], reverse=True)[:top_k]
-    chunks = carregar_chunks_por_ids(db, [chunk_id for chunk_id, _ in ordenados])
+    with perf_stage("source_load"):
+        chunks = carregar_chunks_por_ids(db, [chunk_id for chunk_id, _ in ordenados])
 
     resultados: list[RankedChunk] = []
     for chunk_id, rrf_score in ordenados:

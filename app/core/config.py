@@ -6,6 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str
+    rag_perf_log_enabled: bool = False
+    rag_llm_http_log_enabled: bool = False
+    analyzer_openai_fallback_enabled: bool = False
+    analyzer_openai_model: str = "gpt-4.1-mini"
+    analyzer_ecoa_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
+    openai_api_key: SecretStr = SecretStr("")
     jwt_secret_key: SecretStr = SecretStr("")
     jwt_algorithm: Literal["HS256"] = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=30, gt=0, le=10080)
