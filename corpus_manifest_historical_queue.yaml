@@ -1,0 +1,286 @@
+version: 1
+
+x-contract-common: &contract-common
+  base: https://pncp.gov.br
+  base_id: pncp
+  natureza: estruturada
+  resource_type: contrato
+  collector: pncp_published_contracts
+  sensitivity: public_with_personal_data
+  endpoint: /api/consulta/v1/contratos
+  target_source_id: pncp_contratacoes_rj_2023_t2_ate_hoje
+  target_resource_type: contratacao
+  target_field_paths:
+    cnpj: orgaoEntidade.cnpj
+    codigo_unidade: unidadeOrgao.codigoUnidade
+    uf: unidadeOrgao.ufSigla
+  pagination:
+    page_param: pagina
+    page_size_param: tamanhoPagina
+    page_size: 50
+  request:
+    timeout_seconds: 45
+    rate_limit_seconds: 2.0
+    max_retries: 5
+    retry_backoff_seconds: 2.0
+    max_concurrency: 1
+  item_path: data
+  key_fields:
+    - numeroControlePNCP
+
+x-pca-common: &pca-common
+  base: https://pncp.gov.br
+  base_id: pncp
+  natureza: agregada
+  resource_type: pca
+  collector: pncp_pca_plans
+  endpoint: /api/pncp/v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/plano
+  discovery_endpoint_template: /api/pncp/v1/orgaos/{cnpj}/pca/{ano}/consolidado/unidades
+  target_source_id: pncp_contratacoes_rj_2023_t2_ate_hoje
+  target_resource_type: contratacao
+  target_field_paths:
+    cnpj: orgaoEntidade.cnpj
+  request:
+    timeout_seconds: 45
+    rate_limit_seconds: 0.5
+    max_retries: 5
+    retry_backoff_seconds: 2.0
+    max_concurrency: 8
+  key_fields:
+    - idPcaPncp
+
+sources:
+  - <<: *contract-common
+    id: pncp_contratos_rj_2023_t3
+    params:
+      dataInicial: "20230701"
+      dataFinal: "20230930"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2023
+      trimestre_publicacao: 3
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2023_t4
+    params:
+      dataInicial: "20231001"
+      dataFinal: "20231231"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2023
+      trimestre_publicacao: 4
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2024_t1
+    params:
+      dataInicial: "20240101"
+      dataFinal: "20240331"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2024
+      trimestre_publicacao: 1
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2024_t2
+    params:
+      dataInicial: "20240401"
+      dataFinal: "20240630"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2024
+      trimestre_publicacao: 2
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2024_t3
+    params:
+      dataInicial: "20240701"
+      dataFinal: "20240930"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2024
+      trimestre_publicacao: 3
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2024_t4
+    params:
+      dataInicial: "20241001"
+      dataFinal: "20241231"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2024
+      trimestre_publicacao: 4
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2025_t1
+    params:
+      dataInicial: "20250101"
+      dataFinal: "20250331"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2025
+      trimestre_publicacao: 1
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2025_t2
+    params:
+      dataInicial: "20250401"
+      dataFinal: "20250630"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2025
+      trimestre_publicacao: 2
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2025_t3
+    params:
+      dataInicial: "20250701"
+      dataFinal: "20250930"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2025
+      trimestre_publicacao: 3
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2025_t4
+    params:
+      dataInicial: "20251001"
+      dataFinal: "20251231"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2025
+      trimestre_publicacao: 4
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2026_t1
+    params:
+      dataInicial: "20260101"
+      dataFinal: "20260331"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2026
+      trimestre_publicacao: 1
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2026_t2
+    params:
+      dataInicial: "20260401"
+      dataFinal: "20260630"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2026
+      trimestre_publicacao: 2
+      uf: RJ
+      tipo_execucao: completa
+
+  - <<: *contract-common
+    id: pncp_contratos_rj_2026_t3_ate_20260926
+    params:
+      dataInicial: "20260701"
+      dataFinal: "20260926"
+    audit_context:
+      source_id: pncp_contratos_rj
+      ano_publicacao: 2026
+      trimestre_publicacao: 3
+      periodo_final: "2026-09-26"
+      uf: RJ
+      tipo_execucao: completa
+
+  - id: pncp_empenhos_contratos_rj_2023_t3_ate_2026_09_26
+    base: https://pncp.gov.br
+    base_id: pncp
+    natureza: estruturada
+    resource_type: empenho
+    collector: pncp_commitments
+    sensitivity: public_with_personal_data
+    endpoint: /api/pncp/v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/empenhos
+    target_source_ids:
+      - pncp_contratos_rj_2023_t3
+      - pncp_contratos_rj_2023_t4
+      - pncp_contratos_rj_2024_t1
+      - pncp_contratos_rj_2024_t2
+      - pncp_contratos_rj_2024_t3
+      - pncp_contratos_rj_2024_t4
+      - pncp_contratos_rj_2025_t1
+      - pncp_contratos_rj_2025_t2
+      - pncp_contratos_rj_2025_t3
+      - pncp_contratos_rj_2025_t4
+      - pncp_contratos_rj_2026_t1
+      - pncp_contratos_rj_2026_t2
+      - pncp_contratos_rj_2026_t3_ate_20260926
+    target_resource_type: contrato
+    target_field_paths:
+      numero_controle: "@external_id"
+    audit_context:
+      source_id: pncp_contratos_rj
+      periodo_publicacao_inicial: "2023-07-01"
+      periodo_publicacao_final: "2026-09-26"
+      uf: RJ
+      tipo_execucao: completa
+    pagination:
+      page_param: pagina
+      page_size_param: tamanhoPagina
+      page_size: 50
+    request:
+      timeout_seconds: 45
+      rate_limit_seconds: 0.5
+      max_retries: 5
+      retry_backoff_seconds: 2.0
+      max_concurrency: 32
+    item_path: data
+    key_fields:
+      - cnpj
+      - ano
+      - sequencialContrato
+      - sequencialEmpenho
+
+  - <<: *pca-common
+    id: pncp_pca_rj_2024_historico
+    params:
+      anoPca: 2024
+    audit_context:
+      source_id: pncp_pca_rj_historico
+      ano_pca: 2024
+      recorte_orgaos: contratacoes_rj_2023_t2_ate_2026_09_26
+      tipo_execucao: completa
+
+  - <<: *pca-common
+    id: pncp_pca_rj_2025_historico
+    params:
+      anoPca: 2025
+    audit_context:
+      source_id: pncp_pca_rj_historico
+      ano_pca: 2025
+      recorte_orgaos: contratacoes_rj_2023_t2_ate_2026_09_26
+      tipo_execucao: completa
+
+  - <<: *pca-common
+    id: pncp_pca_rj_2026_historico
+    params:
+      anoPca: 2026
+    audit_context:
+      source_id: pncp_pca_rj_historico
+      ano_pca: 2026
+      recorte_orgaos: contratacoes_rj_2023_t2_ate_2026_09_26
+      tipo_execucao: completa
