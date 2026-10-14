@@ -9,7 +9,7 @@ from collections.abc import Callable
 from pydantic import ValidationError
 
 from app.core.logging import novo_run_id, registrar
-from llm_ecoa import gerar_resposta
+from app.core.llm_provider import gerar_resposta_com_fallback
 from src.query.prompts import montar_prompt_analise
 from src.query.schemas import QueryAnalysis, QueryRoute
 
@@ -291,7 +291,7 @@ def _extrair_json(resposta: str) -> str:
 
 def analisar_pergunta(
     pergunta: str,
-    llm_fn: AnalyzerLlmFn = gerar_resposta,
+    llm_fn: AnalyzerLlmFn | None = None,
     *,
     rota_obrigatoria: QueryRoute | None = None,
 ) -> QueryAnalysis:
@@ -301,7 +301,7 @@ def analisar_pergunta(
     if not pergunta_limpa:
         raise QueryAnalysisError("A pergunta não pode estar vazia.")
 
-    resposta = llm_fn(
+    resposta = (llm_fn or gerar_resposta_com_fallback)(
         montar_prompt_analise(
             pergunta_limpa,
             rota_obrigatoria=(
@@ -348,7 +348,7 @@ def analisar_pergunta(
 
 def analisar_pergunta_estruturada(
     pergunta: str,
-    llm_fn: AnalyzerLlmFn = gerar_resposta,
+    llm_fn: AnalyzerLlmFn | None = None,
 ) -> QueryAnalysis:
     """Analisa uma pergunta para o endpoint que aceita somente SQL seguro."""
 

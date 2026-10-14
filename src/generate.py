@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.modules.query.services import persistir_resultado_rag
 from app.modules.rag.services import recuperar_chunks_ranqueados
-from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
+from app.core.llm_provider import gerar_resposta_com_fallback_detalhada
+from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL
 from src.audit import new_trace_id, utc_now, write_audit_trace
 from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk, contar_chunks_por_base
@@ -135,7 +136,7 @@ def gerar_resposta_rag(
     cache_dir: Path = Path("data/index/faiss"),
     retrieval_fn: Callable[..., list[RankedChunk]
                            ] = recuperar_chunks_ranqueados,
-    llm_fn: Callable[[str], str] = gerar_resposta,
+    llm_fn: Callable[[str], str] | None = None,
     incluir_prompt: bool = False,
     persistir: bool = False,
     trace_id: str | None = None,
@@ -193,6 +194,9 @@ def gerar_resposta_rag(
         },
         "generation": {
             "model": GENERATION_MODEL,
+            "provider": None,
+            "fallback_used": False,
+            "fallback_reason": None,
             "max_tokens": GENERATION_MAX_TOKENS,
             "contexto": None,
             "prompt": None,
@@ -279,7 +283,13 @@ def gerar_resposta_rag(
         informar("Gerando resposta com a LLM...")
         trace["stage"] = "generation"
         generation_started = time.perf_counter()
-        resposta = llm_fn(prompt)
+        if llm_fn is None:
+            generation = gerar_resposta_com_fallback_detalhada(prompt)
+            resposta = generation.content
+            trace["generation"].update(generation.audit_metadata())
+        else:
+            resposta = llm_fn(prompt)
+            trace["generation"]["provider"] = "custom"
         trace["generation"]["elapsed_ms"] = int(
             (time.perf_counter() - generation_started) * 1000
         )

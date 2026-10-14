@@ -13,11 +13,16 @@ GENERATION_MODEL = os.getenv(
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
 GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "3072"))
+ECOA_TIMEOUT_SECONDS = float(os.getenv("ECOA_TIMEOUT_SECONDS", "30"))
 
 # Cliente OpenAI apontando para o servidor Ollama
 client = OpenAI(
     base_url=OLLAMA_URL,
     api_key=OLLAMA_API_KEY,
+    timeout=ECOA_TIMEOUT_SECONDS,
+    # Sem retries implícitos: uma Ecoa indisponível deve acionar o fallback
+    # rapidamente, em vez de consumir várias janelas de timeout.
+    max_retries=0,
 )
 
 
