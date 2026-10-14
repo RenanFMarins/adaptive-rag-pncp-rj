@@ -242,7 +242,7 @@ def retrieve_hibrido(
     bm25_k: int = 20,
     dense_k: int = 20,
     rrf_k: int = 60,
-    cache_dir: Path = Path("data/index/faiss"),
+    cache_dir: Path = Path("data/index/faiss/v1"),
     embedding_fn: EmbeddingFn = gerar_embedding,
     filters: QueryFilters | None = None,
     bases: list[KnowledgeBase] | None = None,
@@ -319,7 +319,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Executa retrieval híbrido sobre DocumentChunk.")
     parser.add_argument("pergunta")
     parser.add_argument("--top-k", type=int, default=5)
-    parser.add_argument("--cache-dir", default="data/index/faiss")
+    parser.add_argument("--cache-dir", default="data/index/faiss/v1")
     args = parser.parse_args()
 
     init_db()

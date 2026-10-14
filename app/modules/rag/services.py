@@ -16,7 +16,7 @@ def recuperar_chunks_ranqueados(
     db: Session,
     pergunta: str,
     top_k: int = 10,
-    cache_dir: Path = Path("data/index/faiss"),
+    cache_dir: Path = Path("data/index/faiss/v1"),
     embedding_fn: EmbeddingFn | None = None,
     filters: QueryFilters | None = None,
     bases: list[KnowledgeBase] | None = None,

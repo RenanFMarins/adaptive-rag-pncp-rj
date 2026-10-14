@@ -134,7 +134,7 @@ def gerar_resposta_rag(
     db: Session,
     pergunta: str,
     top_k: int = 5,
-    cache_dir: Path = Path("data/index/faiss"),
+    cache_dir: Path = Path("data/index/faiss/v1"),
     retrieval_fn: Callable[..., list[RankedChunk]
                            ] = recuperar_chunks_ranqueados,
     llm_fn: Callable[[str], str] = gerar_resposta,
@@ -344,7 +344,7 @@ if __name__ == "__main__":
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument(
         "--cache-dir",
-        default="data/index/faiss",
+        default="data/index/faiss/v1",
     )
     parser.add_argument(
         "--mostrar-prompt",
