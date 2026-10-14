@@ -12,8 +12,13 @@ from app.core.database import create_sqlite_engine, init_db
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
 from src.index import indexar_chunks_incrementalmente
-from src.query.schemas import QueryFilters
-from src.retrieve import resolver_chunk_ids_filtrados, retrieve_hibrido
+from src.query.base_catalog import resolver_base_ids
+from src.query.schemas import KnowledgeBase, QueryFilters
+from src.retrieve import (
+    contar_chunks_por_base,
+    resolver_chunk_ids_filtrados,
+    retrieve_hibrido,
+)
 
 
 def fake_embedding(texto: str) -> list[float]:
@@ -45,6 +50,22 @@ class RetrieveFiltersTests(unittest.TestCase):
             doc_type="contrato",
             sensitivity="publico",
         )
+        documento_normativo = Document(
+            corpus_version=corpus,
+            source_file="lei_14133.pdf",
+            title="Lei 14.133/2021",
+            base_id="editais_normativo",
+            doc_type="norma",
+            sensitivity="publico",
+        )
+        documento_conversacional = Document(
+            corpus_version=corpus,
+            source_file="email_teste.md",
+            title="E-mail simulado",
+            base_id="conversacional_pncp",
+            doc_type="conversa",
+            sensitivity="publico",
+        )
         self.chunk_a = DocumentChunk(
             document=documento_a,
             chunk_id="chunk-a",
@@ -65,7 +86,22 @@ class RetrieveFiltersTests(unittest.TestCase):
             objeto="Material hospitalar",
             valor=200.0,
         )
-        self.session.add_all([self.chunk_a, self.chunk_b])
+        self.chunk_normativo = DocumentChunk(
+            document=documento_normativo,
+            chunk_id="chunk-normativo",
+            content="alpha requisitos de habilitação na Lei 14.133",
+        )
+        self.chunk_conversacional = DocumentChunk(
+            document=documento_conversacional,
+            chunk_id="chunk-conversacional",
+            content="alpha troca de e-mails sobre habilitação",
+        )
+        self.session.add_all([
+            self.chunk_a,
+            self.chunk_b,
+            self.chunk_normativo,
+            self.chunk_conversacional,
+        ])
         self.session.commit()
 
     def test_resolve_apenas_chunks_do_numero_pncp_solicitado(self) -> None:
@@ -123,6 +159,38 @@ class RetrieveFiltersTests(unittest.TestCase):
         )
 
         self.assertEqual(allowed, {"chunk-a"})
+
+    def test_restringe_chunks_a_base_logica_solicitada(self) -> None:
+        normativos = resolver_chunk_ids_filtrados(
+            self.session,
+            filters=None,
+            base_ids=resolver_base_ids([KnowledgeBase.NORMATIVA]),
+        )
+        conversacionais = resolver_chunk_ids_filtrados(
+            self.session,
+            filters=None,
+            base_ids=resolver_base_ids([KnowledgeBase.CONVERSACIONAL]),
+        )
+        agregados = resolver_chunk_ids_filtrados(
+            self.session,
+            filters=None,
+            base_ids=resolver_base_ids([KnowledgeBase.AGREGADA]),
+        )
+
+        self.assertEqual(normativos, {"chunk-normativo"})
+        self.assertEqual(conversacionais, {"chunk-conversacional"})
+        self.assertEqual(agregados, {"chunk-a", "chunk-b"})
+
+    def test_conta_chunks_por_base_para_auditoria(self) -> None:
+        totais = contar_chunks_por_base(
+            self.session,
+            {"pncp_rj_estruturada", "editais_normativo"},
+        )
+
+        self.assertEqual(totais, {
+            "editais_normativo": 1,
+            "pncp_rj_estruturada": 2,
+        })
 
 
 if __name__ == "__main__":

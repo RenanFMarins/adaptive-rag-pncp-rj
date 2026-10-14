@@ -407,7 +407,7 @@ def gerar_fila_docling_do_lote(
 
 if __name__ == "__main__":
     PERIODO = PeriodoColeta(ano=2026, mes=8)
-    NOME_LOTE = "lote_004"
+    NOME_LOTE = "lote_005"
     LIMITE_DOCUMENTOS = 500
     TIPOS_PERMITIDOS = TIPOS_TESTE_EXTRACAO
 

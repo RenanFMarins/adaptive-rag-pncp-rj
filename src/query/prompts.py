@@ -60,6 +60,7 @@ Regras:
 - Use route "structured" para contagens, totais, médias, máximos, mínimos e listas de registros.
 - Use route "rag" para perguntas sobre conteúdo de editais, contratos, normas e documentos.
 - Use route "hybrid" somente quando a pergunta exigir dados estruturados e evidência documental.
+- Se a pergunta pedir valor, modalidade, órgão, data ou outro dado do registro **e** também pedir explicação baseada em edital, termo de referência, contrato ou anexo, use route "hybrid", com bases incluindo "estruturada" e "agregada".
 - Termos como "quantos", "quantidade" e "número de" exigem a operação "count".
 - Termos como "valor total", "soma" e "quanto foi gasto" exigem a operação "sum" e um aggregation_field de valor.
 - A palavra "valor", isoladamente, não indica uma operação de soma.
@@ -72,6 +73,8 @@ Regras:
 - Extraia ano, mês ou período somente quando estiverem explícitos ou forem inequivocamente informados na pergunta.
 - Não transforme uma pergunta quantitativa em RAG apenas porque existem documentos relacionados ao assunto.
 - Para route "rag", use intent "documental", entity "documento", operations como lista vazia e needs_document_retrieval como true.
+- `lookup` é válido apenas em intent. Nunca use "lookup" em operations. Para consultar um contrato ou contratação específico, use intent "lookup" e operations ["list"].
+- Quando operations for somente ["list"], aggregation_field DEVE ser null: os campos do registro são retornados pela listagem, sem agregação.
 - Em perguntas documentais sobre contratos ou contratações, tipo_entidade pode indicar a origem do documento ("contrato" ou "contratacao"), mas entity continua "documento".
 - "Contratação" e "contrato" não são modalidades. Só preencha modalidade quando a pergunta citar uma modalidade concreta, como "Pregão", "Dispensa" ou "Concorrência".
 - Use objeto somente quando a pergunta restringir claramente o objeto da compra ou do contrato. Preserve os termos completos e relevantes, por exemplo "manutenção de elevadores".
@@ -79,6 +82,22 @@ Regras:
 - Para perguntas sobre documentos do PNCP, use a base "agregada". Use "normativa" apenas se a pergunta pedir conteúdo de leis, decretos ou normas.
 - Para sum, avg, min ou max, informe aggregation_field.
 - Não invente filtros ausentes na pergunta.
+
+Exemplo obrigatório para pergunta híbrida com PNCP:
+{{
+  "route": "hybrid",
+  "intent": "lookup",
+  "entity": "contratacao",
+  "bases": ["estruturada", "agregada"],
+  "filters": {{"numero_controle_pncp": "00000000000000-1-000001/2026"}},
+  "operations": ["list"],
+  "aggregation_field": null,
+  "group_by": [],
+  "order_by": [],
+  "limit": null,
+  "semantic_query": "conteúdo documental solicitado pelo usuário",
+  "needs_document_retrieval": true
+}}
 
 {restricao_de_rota}
 

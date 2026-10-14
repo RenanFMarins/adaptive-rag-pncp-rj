@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query as QueryParameter
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from app.modules.query.schemas import (
     StructuredQueryRequest,
     StructuredQueryResponse,
 )
+from app.modules.documents.services import consultar_catalogo_documentos_pncp
 from app.modules.query.services import (
     executar_consulta_adaptativa_api,
     executar_consulta_estruturada,
@@ -29,6 +30,14 @@ from src.query.structured_tool import StructuredQueryError
 
 
 router = APIRouter(prefix="/query", tags=["Query"])
+
+
+def _detalhe_erro_consulta(exc: Exception) -> str | dict[str, object]:
+    """Mantém o 422 explicável sem expor a resposta bruta da LLM."""
+
+    if isinstance(exc, QueryAnalysisError):
+        return exc.detalhe_publico()
+    return str(exc)
 
 
 @router.post(
@@ -52,7 +61,7 @@ def ask(
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
+            detail=_detalhe_erro_consulta(exc),
         ) from exc
 
     structured_result = (
@@ -66,6 +75,7 @@ def ask(
             analysis=result.analysis,
             plan=result.plan,
             structured_result=structured_result,
+            external_documents=result.external_documents,
         )
 
     rag_result = result.rag_result
@@ -89,7 +99,40 @@ def ask(
             )
             for rank, source in enumerate(rag_result.sources, start=1)
         ],
+        external_documents=result.external_documents,
     )
+
+
+@router.get(
+    "/catalog/documents",
+    summary="Consultar localmente os documentos listados no PNCP",
+)
+def consultar_catalogo(
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+    numero_controle_pncp: str | None = None,
+    tipo_entidade: str | None = None,
+    tipo_documento: str | None = None,
+    titulo: str | None = None,
+    limite: int = QueryParameter(default=20, ge=1, le=100),
+) -> dict[str, object]:
+    """Consulta o catálogo local; não chama o endpoint do PNCP."""
+
+    try:
+        documentos = consultar_catalogo_documentos_pncp(
+            db,
+            numero_controle_pncp=numero_controle_pncp,
+            tipo_entidade=tipo_entidade,
+            tipo_documento=tipo_documento,
+            titulo=titulo,
+            limite=limite,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    return {"total": len(documentos), "documents": documentos}
 
 
 @router.post(
@@ -109,7 +152,7 @@ def structured(
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
+            detail=_detalhe_erro_consulta(exc),
         ) from exc
 
     return StructuredQueryResponse(**result.model_dump())

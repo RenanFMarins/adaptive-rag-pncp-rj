@@ -1,5 +1,6 @@
 
 import unittest
+from unittest.mock import patch
 
 from src.query.analyzer import (
     QueryAnalysisError,
@@ -219,29 +220,213 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.operations, [StructuredOperation.LIST])
         self.assertTrue(analysis.needs_document_retrieval)
 
+    def test_normaliza_lookup_em_operations_e_entidade_hibrida(self):
+        resposta = """{
+          "route": "hybrid",
+          "intent": "lookup",
+          "entity": "contrato",
+          "bases": ["estruturada", "agregada"],
+          "filters": {"numero_controle_pncp": "00394452000103-1-015448/2026"},
+          "operations": ["lookup", "list"],
+          "aggregation_field": "valor_estimado",
+          "group_by": [],
+          "order_by": [],
+          "limit": null,
+          "semantic_query": "qual equipamento será adquirido",
+          "needs_document_retrieval": true
+        }"""
+        with patch("src.query.analyzer._registrar_normalizacao") as registrar:
+            analysis = analisar_pergunta(
+                "Para a contratação 00394452000103-1-015448/2026, informe o valor estimado e o equipamento.",
+                llm_fn=lambda _prompt: resposta,
+            )
+
+        self.assertEqual(analysis.route, QueryRoute.HYBRID)
+        self.assertEqual(analysis.entity.value, "contratacao")
+        self.assertEqual(analysis.operations, [StructuredOperation.LIST])
+        self.assertIsNone(analysis.aggregation_field)
+        registrar.assert_called_once()
+
+    def test_normaliza_rag_com_valor_e_pncp_para_hybrid(self):
+        resposta = """{
+          "route": "rag",
+          "intent": "documental",
+          "entity": "contratacao",
+          "bases": ["agregada"],
+          "filters": {"numero_controle_pncp": "00394502000144-1-009055/2026"},
+          "operations": ["list"],
+          "aggregation_field": "valor_estimado",
+          "group_by": [],
+          "order_by": [],
+          "limit": null,
+          "semantic_query": "serviços de manutenção",
+          "needs_document_retrieval": true
+        }"""
+        with patch("src.query.analyzer._registrar_normalizacao"):
+            analysis = analisar_pergunta(
+                "Na contratação 00394502000144-1-009055/2026, informe o valor estimado e os serviços previstos no edital.",
+                llm_fn=lambda _prompt: resposta,
+            )
+
+        self.assertEqual(analysis.route, QueryRoute.HYBRID)
+        self.assertEqual(analysis.entity.value, "contratacao")
+        self.assertEqual(analysis.bases[0], KnowledgeBase.ESTRUTURADA)
+        self.assertEqual(analysis.operations, [StructuredOperation.LIST])
+        self.assertIsNone(analysis.aggregation_field)
+
+    def test_normaliza_operacoes_residuais_em_rag_documental(self):
+        resposta = """{
+          "route": "rag",
+          "intent": "documental",
+          "entity": "contratacao",
+          "bases": ["agregada"],
+          "filters": {
+            "numero_controle_pncp": "00394502000144-1-009055/2026",
+            "objeto": "manutenção dos elevadores"
+          },
+          "operations": ["count", "group_by"],
+          "aggregation_field": null,
+          "group_by": ["modalidade"],
+          "order_by": [],
+          "limit": null,
+          "semantic_query": "serviços de manutenção dos elevadores",
+          "needs_document_retrieval": true
+        }"""
+        with patch("src.query.analyzer._registrar_normalizacao") as registrar:
+            analysis = analisar_pergunta(
+                "No edital da contratação 00394502000144-1-009055/2026, quais serviços de manutenção dos elevadores estão previstos?",
+                llm_fn=lambda _prompt: resposta,
+            )
+
+        self.assertEqual(analysis.route, QueryRoute.RAG)
+        self.assertEqual(analysis.operations, [])
+        self.assertIsNone(analysis.filters.objeto)
+        self.assertTrue(analysis.needs_document_retrieval)
+        registrar.assert_called_once()
+
+    def test_normaliza_operacao_group_by_omitida(self):
+        resposta = """{
+          "route": "structured",
+          "intent": "aggregate",
+          "entity": "contratacao",
+          "bases": ["estruturada"],
+          "filters": {"ano": 2026, "modalidade": "Dispensa"},
+          "operations": ["count"],
+          "aggregation_field": null,
+          "group_by": ["modalidade"],
+          "order_by": [],
+          "limit": null,
+          "semantic_query": null,
+          "needs_document_retrieval": false
+        }"""
+        analysis = analisar_pergunta(
+            "Quantas contratações por dispensa existem em 2026?",
+            llm_fn=lambda _prompt: resposta,
+        )
+
+        self.assertIn(StructuredOperation.GROUP_BY, analysis.operations)
+
+    def test_normaliza_operacao_order_by_omitida(self):
+        resposta = """{
+          "route": "structured",
+          "intent": "lookup",
+          "entity": "contratacao",
+          "bases": ["estruturada"],
+          "filters": {"ano": 2026},
+          "operations": ["list"],
+          "aggregation_field": null,
+          "group_by": [],
+          "order_by": [{"field": "valor_estimado", "direction": "desc"}],
+          "limit": 10,
+          "semantic_query": null,
+          "needs_document_retrieval": false
+        }"""
+        analysis = analisar_pergunta(
+            "Liste as 10 contratações de 2026 com maior valor estimado.",
+            llm_fn=lambda _prompt: resposta,
+        )
+
+        self.assertIn(StructuredOperation.ORDER_BY, analysis.operations)
+
+    def test_normalizacao_nao_converte_erro_de_tipo_em_erro_interno(self):
+        resposta = """{
+          "route": "rag",
+          "intent": "documental",
+          "entity": "documento",
+          "bases": ["agregada"],
+          "filters": {"numero_controle_pncp": "00394502000144-1-009055/2026"},
+          "operations": [{"operacao": "list"}],
+          "aggregation_field": {"campo": "valor_estimado"},
+          "group_by": [],
+          "order_by": [],
+          "limit": null,
+          "semantic_query": "serviços de manutenção",
+          "needs_document_retrieval": true
+        }"""
+        with patch("src.query.analyzer._registrar_falha_validacao"):
+            with self.assertRaises(QueryAnalysisError) as contexto:
+                analisar_pergunta(
+                    "Na contratação 00394502000144-1-009055/2026, quais serviços existem?",
+                    llm_fn=lambda _prompt: resposta,
+                )
+
+        self.assertEqual(contexto.exception.erros_validacao[0]["campo"], "operations.0")
+
     def test_rejeita_json_invalido(self):
         with self.assertRaisesRegex(QueryAnalysisError, "JSON válido"):
             analisar_pergunta("Teste", llm_fn=lambda _prompt: "não é JSON")
 
-    def test_rejeita_schema_invalido(self):
-        with self.assertRaisesRegex(QueryAnalysisError, "plano inválido"):
-            analisar_pergunta(
-                "Teste",
-                llm_fn=lambda _prompt: """{
+    def test_rejeita_operacao_desconhecida_na_rota_rag(self):
+        with patch("src.query.analyzer._registrar_falha_validacao"):
+            with self.assertRaisesRegex(QueryAnalysisError, "plano inválido") as contexto:
+                analisar_pergunta(
+                    "Teste",
+                    llm_fn=lambda _prompt: """{
                     "route": "rag",
                     "intent": "documental",
                     "entity": "documento",
                     "bases": ["normativa"],
                     "filters": {},
-                    "operations": ["count"],
+                    "operations": ["operacao_inexistente"],
                     "aggregation_field": null,
                     "group_by": [],
                     "order_by": [],
                     "limit": null,
                     "semantic_query": "teste",
                     "needs_document_retrieval": true
-                }""",
-            )
+                    }""",
+                )
+        self.assertEqual(contexto.exception.erros_validacao[0]["campo"], "operations.0")
+        self.assertIn(
+            "Input should be",
+            contexto.exception.erros_validacao[0]["mensagem"],
+        )
+
+    def test_expoe_diagnostico_publico_sem_resposta_bruta_da_llm(self):
+        erro = QueryAnalysisError(
+            "A LLM retornou um plano inválido.",
+            erros_validacao=[
+                {
+                    "campo": "needs_document_retrieval",
+                    "mensagem": "A rota hybrid exige needs_document_retrieval igual a true.",
+                    "tipo": "value_error",
+                }
+            ],
+        )
+
+        self.assertEqual(
+            erro.detalhe_publico(),
+            {
+                "mensagem": "A LLM retornou um plano inválido.",
+                "errosValidacao": [
+                    {
+                        "campo": "needs_document_retrieval",
+                        "mensagem": "A rota hybrid exige needs_document_retrieval igual a true.",
+                        "tipo": "value_error",
+                    }
+                ],
+            },
+        )
 
     def test_rejeita_pergunta_vazia_sem_chamar_llm(self):
         def llm_fn(_prompt: str) -> str:

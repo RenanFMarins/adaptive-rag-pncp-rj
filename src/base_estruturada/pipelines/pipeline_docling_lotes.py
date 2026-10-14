@@ -15,8 +15,10 @@ ou projeto local), para ser possivel retomar uma sessao interrompida.
 from __future__ import annotations
 
 import importlib.metadata
+import multiprocessing as mp
 import os
 import platform
+import queue
 import re
 import sys
 import time
@@ -281,9 +283,187 @@ def _relativo_portavel(caminho: Path, raiz: Path) -> str:
         return str(caminho)
 
 
+def _remover_markdown_parcial(caminho: Path) -> None:
+    """Evita que uma escrita interrompida seja ingerida como Markdown valido."""
+
+    try:
+        caminho.unlink(missing_ok=True)
+    except OSError:
+        # O checkpoint continua registrando a falha; a proxima tentativa pode
+        # sobrescrever o destino se o sistema operacional liberar o arquivo.
+        pass
+
+
 def _microlotes(itens: list[dict[str, Any]], tamanho: int) -> Iterator[list[dict[str, Any]]]:
     for inicio in range(0, len(itens), tamanho):
         yield itens[inicio: inicio + tamanho]
+
+
+def _trabalhador_docling(
+    entrada: Any,
+    saida: Any,
+    perfil: str,
+    artifacts_path: str | None,
+) -> None:
+    """Converte um PDF por vez em processo isolado.
+
+    O processo e' mantido vivo para reutilizar os modelos carregados pelo
+    Docling. Se um PDF exceder o limite de tempo, o processo-pai o encerra e
+    inicia outro trabalhador apenas para os proximos documentos.
+    """
+
+    try:
+        conversor = _criar_conversor_docling(
+            perfil,
+            Path(artifacts_path) if artifacts_path else None,
+        )
+    except BaseException as exc:
+        saida.put(
+            {
+                "tipo": "falha_inicializacao",
+                "erro": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        return
+
+    while True:
+        tarefa = entrada.get()
+        if tarefa is None:
+            return
+
+        inicio = time.perf_counter()
+        try:
+            resultado = conversor.convert(
+                Path(tarefa["caminhoFonte"]),
+                raises_on_error=False,
+            )
+            if resultado.document is None:
+                raise RuntimeError(
+                    str(getattr(resultado, "status", "sem documento"))
+                )
+
+            markdown = resultado.document.export_to_markdown()
+            destino = Path(tarefa["caminhoDestino"])
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_text(markdown, encoding="utf-8")
+
+            saida.put(
+                {
+                    "tipo": "resultado",
+                    "idProcessamento": tarefa["idProcessamento"],
+                    "quantidadeCaracteres": len(markdown.strip()),
+                    "tempoConversaoSegundos": round(
+                        time.perf_counter() - inicio,
+                        2,
+                    ),
+                }
+            )
+        except BaseException as exc:
+            # Erros de um PDF nao encerram o trabalhador: o proximo item pode
+            # continuar usando o mesmo conversor e seus modelos ja carregados.
+            saida.put(
+                {
+                    "tipo": "erro_documento",
+                    "idProcessamento": tarefa["idProcessamento"],
+                    "erro": f"{type(exc).__name__}: {exc}",
+                    "tempoConversaoSegundos": round(
+                        time.perf_counter() - inicio,
+                        2,
+                    ),
+                }
+            )
+
+
+def _iniciar_trabalhador_docling(
+    perfil: str,
+    artifacts_path: Path | None,
+) -> tuple[Any, Any, Any]:
+    """Inicia um trabalhador com ``spawn``, seguro para CUDA no Colab."""
+
+    contexto = mp.get_context("spawn")
+    entrada = contexto.Queue()
+    saida = contexto.Queue()
+    processo = contexto.Process(
+        target=_trabalhador_docling,
+        args=(
+            entrada,
+            saida,
+            perfil,
+            str(artifacts_path) if artifacts_path else None,
+        ),
+        daemon=True,
+    )
+    processo.start()
+    return processo, entrada, saida
+
+
+def _encerrar_trabalhador_docling(
+    processo: Any,
+    entrada: Any,
+    saida: Any,
+) -> None:
+    """Encerra o subprocesso inclusive quando ele ficou preso no Docling."""
+
+    if processo.is_alive():
+        try:
+            entrada.put_nowait(None)
+            processo.join(timeout=3)
+        except Exception:
+            pass
+
+    if processo.is_alive():
+        processo.terminate()
+        processo.join(timeout=10)
+
+    for fila in (entrada, saida):
+        try:
+            fila.close()
+            fila.join_thread()
+        except Exception:
+            pass
+
+
+def _converter_com_timeout(
+    processo: Any,
+    entrada: Any,
+    saida: Any,
+    tarefa: dict[str, str],
+    timeout_documento: int,
+) -> dict[str, Any]:
+    """Envia uma tarefa e espera no maximo o tempo configurado.
+
+    Uma fila e usada no lugar de ``join(timeout)`` porque o trabalhador pode
+    permanecer vivo apos concluir o PDF, pronto para reutilizar o conversor.
+    """
+
+    entrada.put(tarefa)
+    limite = time.monotonic() + timeout_documento
+
+    while True:
+        restante = limite - time.monotonic()
+        if restante <= 0:
+            return {"tipo": "timeout"}
+
+        try:
+            retorno = saida.get(timeout=min(restante, 1.0))
+        except queue.Empty:
+            if not processo.is_alive():
+                return {
+                    "tipo": "falha_trabalhador",
+                    "erro": "O processo Docling foi encerrado inesperadamente.",
+                }
+            continue
+
+        if retorno.get("tipo") == "falha_inicializacao":
+            return retorno
+
+        if retorno.get("idProcessamento") != tarefa["idProcessamento"]:
+            return {
+                "tipo": "falha_trabalhador",
+                "erro": "Retorno Docling nao corresponde ao documento enviado.",
+            }
+
+        return retorno
 
 
 def executar_docling_por_lotes(
@@ -297,17 +477,23 @@ def executar_docling_por_lotes(
     limite_documentos: int | None = 1_000,
     perfil: str = "qualidade",
     artifacts_path: Path | None = None,
+    timeout_documento: int = 180,
     reprocessar_erros: bool = False,
+    reprocessar_timeouts: bool = False,
 ) -> dict[str, int]:
-    """Converte pendentes em microlotes e salva estado apos cada um.
+    """Converte pendentes com timeout individual e checkpoint por microlote.
 
     ``limite_documentos`` e' o lote logico da execucao. Por exemplo, 1.000
     documentos podem ser processados em vinte microlotes de 50, com vinte
-    pontos de retomada.
+    pontos de retomada. O Docling usa um processo isolado e persistente:
+    arquivos normais reutilizam os modelos; um timeout encerra apenas esse
+    processo e o proximo item inicia outro trabalhador.
     """
 
     if tamanho_microlote <= 0:
         raise ValueError("tamanho_microlote deve ser maior que zero.")
+    if timeout_documento <= 0:
+        raise ValueError("timeout_documento deve ser maior que zero.")
     documentos = fila.get("documentos")
     periodo = str(fila.get("periodo") or "sem_periodo")
     if not isinstance(documentos, list):
@@ -326,6 +512,8 @@ def executar_docling_por_lotes(
             continue
         if status == "erro" and not reprocessar_erros:
             continue
+        if status == "timeout" and not reprocessar_timeouts:
+            continue
         pendentes.append(documento)
 
     if limite_documentos is not None:
@@ -335,93 +523,164 @@ def executar_docling_por_lotes(
         "selecionados": len(pendentes),
         "concluidos": 0,
         "erros": 0,
+        "timeouts": 0,
         "arquivosNaoEncontrados": 0,
         "microlotes": 0,
     }
     if not pendentes:
         estado["atualizadoEm"] = _agora()
         salvar_json(caminho_estado, estado)
-        salvar_json(caminho_relatorio, {"resumo": resumo, "geradoEm": _agora()})
+        salvar_json(caminho_relatorio, {
+                    "resumo": resumo, "geradoEm": _agora()})
         return resumo
 
-    conversor = _criar_conversor_docling(perfil, artifacts_path)
+    processo: Any | None = None
+    entrada: Any | None = None
+    saida: Any | None = None
 
-    for numero_lote, microlote in enumerate(_microlotes(pendentes, tamanho_microlote), start=1):
-        existentes: list[tuple[dict[str, Any], Path]] = []
-        for documento in microlote:
-            caminho = raiz_documentos / documento["caminhoFonteRelativo"]
-            if not caminho.is_file():
-                registros_estado[documento["idProcessamento"]] = {
-                    **documento,
-                    "status": "erro",
-                    "erro": "arquivo_nao_encontrado_no_lote",
-                    "atualizadoEm": _agora(),
-                }
-                resumo["arquivosNaoEncontrados"] += 1
-                resumo["erros"] += 1
-            else:
-                existentes.append((documento, caminho))
+    try:
+        for numero_lote, microlote in enumerate(
+            _microlotes(pendentes, tamanho_microlote),
+            start=1,
+        ):
+            inicio_microlote = time.perf_counter()
 
-        if existentes:
-            inicio = time.perf_counter()
-            resultados = conversor.convert_all(
-                [caminho for _, caminho in existentes],
-                raises_on_error=False,
-            )
+            for indice_microlote, documento in enumerate(microlote, start=1):
+                indice_global = (
+                    (numero_lote - 1) * tamanho_microlote
+                    + indice_microlote
+                )
+                caminho = raiz_documentos / documento["caminhoFonteRelativo"]
 
-            for (documento, _), resultado in zip(existentes, resultados):
-                inicio_documento = time.perf_counter()
-                try:
-                    if resultado.document is None:
-                        raise RuntimeError(str(getattr(resultado, "status", "sem documento")))
-                    markdown = resultado.document.export_to_markdown()
-                    destino = _destino_markdown(pasta_saida, documento)
-                    destino.parent.mkdir(parents=True, exist_ok=True)
-                    destino.write_text(markdown, encoding="utf-8")
-                    registros_estado[documento["idProcessamento"]] = {
-                        **documento,
-                        "status": "concluido",
-                        "caminhoMarkdown": _relativo_portavel(destino, raiz_projeto_portavel),
-                        "quantidadeCaracteres": len(markdown.strip()),
-                        "atualizadoEm": _agora(),
-                        # A conversao ocorre em lote; este tempo mede apenas
-                        # exportacao/gravação deste item, nao a inferencia GPU.
-                        "tempoPersistenciaSegundos": round(time.perf_counter() - inicio_documento, 2),
-                    }
-                    resumo["concluidos"] += 1
-                except Exception as exc:
+                if not caminho.is_file():
                     registros_estado[documento["idProcessamento"]] = {
                         **documento,
                         "status": "erro",
-                        "erro": f"{type(exc).__name__}: {exc}",
+                        "erro": "arquivo_nao_encontrado_no_lote",
                         "atualizadoEm": _agora(),
                     }
+                    resumo["arquivosNaoEncontrados"] += 1
                     resumo["erros"] += 1
+                    continue
 
-            tempo_lote = round(time.perf_counter() - inicio, 2)
-        else:
-            tempo_lote = 0.0
+                if processo is None or not processo.is_alive():
+                    if processo is not None:
+                        _encerrar_trabalhador_docling(processo, entrada, saida)
+                    processo, entrada, saida = _iniciar_trabalhador_docling(
+                        perfil,
+                        artifacts_path,
+                    )
 
-        resumo["microlotes"] += 1
-        estado["atualizadoEm"] = _agora()
-        estado["ultimoMicrolote"] = {
-            "numero": numero_lote,
-            "documentos": len(microlote),
-            "tempoSegundos": tempo_lote,
-        }
-        estado["resumoParcial"] = resumo.copy()
-        # Este e' o checkpoint de retomada: e' salvo apos cada microlote.
-        salvar_json(caminho_estado, estado)
-        print(
-            f"Microlote {numero_lote} | documentos={len(microlote)} | "
-            f"concluidos={resumo['concluidos']} | erros={resumo['erros']}"
-        )
+                destino = _destino_markdown(pasta_saida, documento)
+                print(
+                    f"[{indice_global}/{len(pendentes)}] INICIANDO | "
+                    f"microlote={numero_lote} | {caminho}"
+                )
+                retorno = _converter_com_timeout(
+                    processo,
+                    entrada,
+                    saida,
+                    {
+                        "idProcessamento": documento["idProcessamento"],
+                        "caminhoFonte": str(caminho),
+                        "caminhoDestino": str(destino),
+                    },
+                    timeout_documento,
+                )
+
+                tipo_retorno = retorno.get("tipo")
+                if tipo_retorno == "resultado":
+                    registros_estado[documento["idProcessamento"]] = {
+                        **documento,
+                        "status": "concluido",
+                        "caminhoMarkdown": _relativo_portavel(
+                            destino,
+                            raiz_projeto_portavel,
+                        ),
+                        "quantidadeCaracteres": retorno["quantidadeCaracteres"],
+                        "tempoConversaoSegundos": retorno[
+                            "tempoConversaoSegundos"
+                        ],
+                        "atualizadoEm": _agora(),
+                    }
+                    resumo["concluidos"] += 1
+                    print(
+                        f"[{indice_global}/{len(pendentes)}] CONCLUIDO | "
+                        f"{retorno['tempoConversaoSegundos']}s | {caminho}"
+                    )
+                    continue
+
+                if tipo_retorno == "timeout":
+                    _remover_markdown_parcial(destino)
+                    registros_estado[documento["idProcessamento"]] = {
+                        **documento,
+                        "status": "timeout",
+                        "erro": "timeout_documento",
+                        "timeoutSegundos": timeout_documento,
+                        "atualizadoEm": _agora(),
+                    }
+                    resumo["timeouts"] += 1
+                    print(
+                        f"[{indice_global}/{len(pendentes)}] TIMEOUT | "
+                        f"limite={timeout_documento}s | {caminho}"
+                    )
+                    _encerrar_trabalhador_docling(processo, entrada, saida)
+                    processo = entrada = saida = None
+                    continue
+
+                erro = str(retorno.get("erro") or "falha_desconhecida_docling")
+                _remover_markdown_parcial(destino)
+                registros_estado[documento["idProcessamento"]] = {
+                    **documento,
+                    "status": "erro",
+                    "erro": erro,
+                    "tempoConversaoSegundos": retorno.get(
+                        "tempoConversaoSegundos"
+                    ),
+                    "atualizadoEm": _agora(),
+                }
+                resumo["erros"] += 1
+                print(
+                    f"[{indice_global}/{len(pendentes)}] ERRO | {erro} | {caminho}"
+                )
+
+                # Um trabalhador que caiu ou nao inicializou corretamente nao
+                # deve ser reutilizado para o proximo documento.
+                if tipo_retorno in {
+                    "falha_inicializacao",
+                    "falha_trabalhador",
+                }:
+                    _encerrar_trabalhador_docling(processo, entrada, saida)
+                    processo = entrada = saida = None
+
+            resumo["microlotes"] += 1
+            estado["atualizadoEm"] = _agora()
+            estado["ultimoMicrolote"] = {
+                "numero": numero_lote,
+                "documentos": len(microlote),
+                "tempoSegundos": round(
+                    time.perf_counter() - inicio_microlote,
+                    2,
+                ),
+            }
+            estado["resumoParcial"] = resumo.copy()
+            # Este e' o checkpoint de retomada: e' salvo apos cada microlote.
+            salvar_json(caminho_estado, estado)
+            print(
+                f"Microlote {numero_lote} | documentos={len(microlote)} | "
+                f"concluidos={resumo['concluidos']} | "
+                f"erros={resumo['erros']} | timeouts={resumo['timeouts']}"
+            )
+    finally:
+        if processo is not None:
+            _encerrar_trabalhador_docling(processo, entrada, saida)
 
     relatorio = {
         "schemaVersion": "relatorio_extracao_docling_v1",
         "geradoEm": _agora(),
         "periodo": periodo,
         "perfil": perfil,
+        "timeoutDocumentoSegundos": timeout_documento,
         "ambiente": estado.get("ambiente"),
         "resumo": resumo,
     }

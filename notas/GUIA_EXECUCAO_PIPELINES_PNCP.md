@@ -30,7 +30,9 @@ Validação do texto
         ↓
 Geração de chunks
         ↓
-Futura ingestão: banco estruturado + FAISS
+Persistência no SQLite + FTS5
+        ↓
+Indexação incremental no FAISS
 ```
 
 Nem toda etapa precisa ser repetida. O princípio é simples: **se o arquivo de saída já existe e está válido, inicie na próxima etapa**.
@@ -269,7 +271,9 @@ NOME_LOTE = "lote_001"
 LIMITE_DOCUMENTOS = 100
 TAMANHO_MICROLOTE = 50
 PERFIL = "qualidade"
+TIMEOUT_DOCUMENTO = 180
 REPROCESSAR_ERROS = False
+REPROCESSAR_TIMEOUTS = False
 ```
 
 ### O que esses limites significam
@@ -291,6 +295,11 @@ data/checkpoints/extracao/2026/estado_docling_2026_08_lote_001.json
 Se processar 100 documentos hoje e executar novamente amanhã, o Docling pula os concluídos e seleciona os próximos pendentes.
 
 Se a sessão do Colab cair, execute novamente o notebook com as mesmas configurações. Não apague o checkpoint sem motivo.
+
+Se um arquivo muito pesado, como uma planta anexada, ultrapassar
+`TIMEOUT_DOCUMENTO`, ele recebe status `timeout` e o Docling segue para o
+próximo. O padrão é não repetir esse caso; use `REPROCESSAR_TIMEOUTS = True`
+somente para uma nova tentativa consciente.
 
 ### Saídas
 
@@ -333,9 +342,68 @@ Saída esperada:
 data/chunks/
 ```
 
+Exemplo por lote:
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_chunks `
+  --periodo 2026/08 --lote lote_001 --versao v1
+```
+
+Essa pipeline mostra uma barra de progresso baseada nos Markdown elegíveis e
+produz `data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl`.
+
 ---
 
-## 10. Trabalho em equipe
+## 10. Etapa 8 — persistir chunks e atualizar FTS5
+
+### Pipeline
+
+```text
+src/base_estruturada/pipelines/pipeline_persistencia_documentos.py
+```
+
+Ela importa o JSONL canônico para `Document` e `DocumentChunk` no SQLite. O
+FTS5 é atualizado automaticamente pelo banco. A execução é idempotente:
+`chunk_id` já existentes são mantidos, sem duplicação.
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_persistencia_documentos `
+  --periodo 2026/08 --lote lote_001 --versao v1 `
+  --corpus-version-id 1
+```
+
+Use o mesmo `corpus-version-id` para lotes do mesmo corpus mensal. A barra
+mostra o andamento da leitura/persistência do JSONL.
+
+---
+
+## 11. Etapa 9 — indexar embeddings no FAISS
+
+### Pipeline
+
+```text
+src/base_estruturada/pipelines/pipeline_indexacao_faiss.py
+```
+
+O FAISS recebe vetor e `chunk_id`; o texto continua no SQLite. Para processar
+um lote inteiro, omita limites. Para avançar em blocos sem repetir chunks já
+indexados, use `--limite-chunks-novos`:
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+  --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
+  --indice-dir data/index/faiss/v1 `
+  --origem 2026_08_lote_001 `
+  --limite-chunks-novos 500 `
+  --tamanho-lote 10
+```
+
+Repita o comando para o próximo bloco. A barra considera apenas embeddings
+novos; o índice é salvo a cada microlote e retoma pelos `chunk_id` pendentes.
+
+---
+
+## 12. Trabalho em equipe
 
 ### O que é compartilhado
 
@@ -357,7 +425,7 @@ Não processe o mesmo período/lote em duas sessões diferentes ao mesmo tempo. 
 
 ---
 
-## 11. Decisão rápida: qual pipeline usar?
+## 13. Decisão rápida: qual pipeline usar?
 
 | Situação | O que executar |
 | --- | --- |
@@ -369,10 +437,12 @@ Não processe o mesmo período/lote em duas sessões diferentes ao mesmo tempo. 
 | Alguns downloads daquele lote falharam | `pipeline_lotes_documentos.py` com `ACAO = "reprocessar_erros"` |
 | Quero converter PDFs já baixados | `processar_lote_docling_colab.ipynb` |
 | Já tenho Markdown validado | `pipeline_chunks.py` |
+| Já tenho JSONL de chunks | `pipeline_persistencia_documentos.py` |
+| Já persisti os chunks no SQLite | `pipeline_indexacao_faiss.py` |
 
 ---
 
-## 12. O que não fazer
+## 14. O que não fazer
 
 1. Não apagar checkpoints para “tentar de novo” sem entender o impacto.
 2. Não alterar manualmente manifestos originais do PNCP.
@@ -383,7 +453,7 @@ Não processe o mesmo período/lote em duas sessões diferentes ao mesmo tempo. 
 
 ---
 
-## 13. Checklist final por lote
+## 15. Checklist final por lote
 
 ```text
 [ ] Manifestos do período existem
@@ -394,5 +464,7 @@ Não processe o mesmo período/lote em duas sessões diferentes ao mesmo tempo. 
 [ ] Docling processou os documentos pendentes
 [ ] Markdown foi validado por amostragem
 [ ] Chunks foram gerados
+[ ] JSONL foi persistido no SQLite / FTS5
+[ ] Chunks novos foram indexados no FAISS
 [ ] Planilha da equipe foi atualizada
 ```

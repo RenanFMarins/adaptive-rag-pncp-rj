@@ -62,7 +62,7 @@ duplicados nos índices.
      --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
      --indice-dir data/index/faiss/v1 `
      --origem 2026_08_lote_001 `
-     --tamanho-lote 50
+     --tamanho-lote 10
    ```
 
 5. Consultar. A consulta nunca gera embeddings dos documentos; ela somente usa
@@ -81,6 +81,29 @@ microlote. Se a execução falhar, rode o mesmo comando novamente. Apenas os
 
 Não apague manualmente somente um dos três arquivos do índice. Para começar um
 índice novo, use outro diretório, por exemplo `data/index/faiss/v2`.
+
+### Indexar por blocos de chunks novos
+
+Quando a máquina ou o serviço de embeddings não suportar um lote completo,
+use `--limite-chunks-novos`. Ele lê o JSONL inteiro, compara os `chunk_id` com
+o FAISS e seleciona somente os próximos registros ainda pendentes:
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+  --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
+  --indice-dir data/index/faiss/v1 `
+  --origem 2026_08_lote_001 `
+  --limite-chunks-novos 500 `
+  --tamanho-lote 10
+```
+
+Repita exatamente o mesmo comando para indexar o próximo bloco de 500. Quando
+não restarem pendências, a pipeline informa que não há chunks para indexar.
+
+`--tamanho-lote` controla somente quantos textos entram em cada chamada de
+embedding; ele **não** limita o total do comando. Já `--limite-chunks` limita
+os primeiros registros do JSONL antes da comparação com o índice e, por isso,
+não deve ser usado para retomada.
 
 ## Como outras bases da equipe entram
 

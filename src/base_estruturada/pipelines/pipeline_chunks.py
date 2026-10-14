@@ -5,7 +5,16 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
+
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from src.base_estruturada.chunking import (
     caminho_relativo_portavel,
@@ -143,6 +152,40 @@ def _indice_por_controle(registros: list[dict[str, Any]]) -> dict[str, dict[str,
     }
 
 
+def _contar_textos_processaveis(
+    manifestos: dict[str, list[dict[str, Any]]],
+    indices: dict[str, dict[str, dict[str, Any]]],
+    limite_textos: int | None,
+) -> int:
+    """Conta Markdown elegível antes de iniciar o chunking.
+
+    A contagem permite exibir progresso real sem carregar o conteúdo dos
+    arquivos em memória duas vezes. Textos ausentes ou sem registro
+    estruturado não entram no total porque não podem gerar chunks.
+    """
+
+    total = 0
+    for origem, manifesto in manifestos.items():
+        for entidade_manifesto in manifesto:
+            if not isinstance(entidade_manifesto, dict):
+                continue
+            controle = str(entidade_manifesto.get("numeroControlePNCP") or "")
+            if controle not in indices.get(origem, {}):
+                continue
+            for documento in entidade_manifesto.get("documentos") or []:
+                if not isinstance(documento, dict):
+                    continue
+                for registro_texto in documento.get("processamentoTexto") or []:
+                    ativo = registro_texto.get("textoAtivo") or {}
+                    caminho = Path(str(ativo.get("caminho") or ""))
+                    if not caminho.is_file():
+                        continue
+                    total += 1
+                    if limite_textos is not None and total >= limite_textos:
+                        return total
+    return total
+
+
 def gerar_chunks_do_periodo(
     manifestos: dict[str, list[dict[str, Any]]],
     bases: dict[str, list[dict[str, Any]]],
@@ -150,6 +193,7 @@ def gerar_chunks_do_periodo(
     arquivo_relatorio: Path,
     limite_textos: int | None,
     usar_langchain: bool,
+    progresso: Callable[[int, int], None] | None = None,
 ) -> dict[str, int]:
     """Gera um JSONL reproduzivel sem alterar manifestos nem arquivos fonte."""
 
@@ -165,6 +209,13 @@ def gerar_chunks_do_periodo(
         "textosSemArquivo": 0,
         "textosSemRegistroEstruturado": 0,
     }
+    total_textos = _contar_textos_processaveis(
+        manifestos,
+        indices,
+        limite_textos,
+    )
+    if progresso is not None:
+        progresso(0, total_textos)
 
     for origem, manifesto in manifestos.items():
         tipo_entidade = "contrato" if origem == "contratos" else "contratacao"
@@ -228,6 +279,8 @@ def gerar_chunks_do_periodo(
                         )
 
                     resumo["textosLidos"] += 1
+                    if progresso is not None:
+                        progresso(resumo["textosLidos"], total_textos)
 
             if limite_textos is not None and resumo["textosLidos"] >= limite_textos:
                 break
@@ -332,12 +385,44 @@ if __name__ == "__main__":
     arquivo_relatorio = pasta_saida / (
         f"relatorio_{PERIODO.identificador}{sufixo_lote}.json"
     )
-    resumo = gerar_chunks_do_periodo(
-        manifestos=manifestos,
-        bases=bases,
-        arquivo_saida=arquivo_saida,
-        arquivo_relatorio=arquivo_relatorio,
-        limite_textos=LIMITE_TEXTOS,
-        usar_langchain=USAR_LANGCHAIN,
-    )
+    colunas_progresso = [
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.completed}/{task.total}"),
+        TextColumn("{task.percentage:>5.1f}%"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+    ]
+    with Progress(*colunas_progresso) as progresso_visual:
+        tarefa = progresso_visual.add_task("Gerando chunks", total=1)
+
+        def atualizar_progresso(processados: int, total: int) -> None:
+            if total == 0:
+                progresso_visual.update(
+                    tarefa,
+                    description="Nenhum Markdown elegível",
+                    total=1,
+                    completed=1,
+                )
+                return
+            progresso_visual.update(
+                tarefa,
+                total=total,
+                completed=processados,
+            )
+
+        resumo = gerar_chunks_do_periodo(
+            manifestos=manifestos,
+            bases=bases,
+            arquivo_saida=arquivo_saida,
+            arquivo_relatorio=arquivo_relatorio,
+            limite_textos=LIMITE_TEXTOS,
+            usar_langchain=USAR_LANGCHAIN,
+            progresso=atualizar_progresso,
+        )
+        if resumo["textosLidos"]:
+            progresso_visual.update(
+                tarefa,
+                description="Chunks gerados",
+            )
     print(f"Chunks gerados | {resumo}")

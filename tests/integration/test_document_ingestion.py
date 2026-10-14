@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -8,7 +9,10 @@ from sqlalchemy.orm import Session
 from app.core.database import create_sqlite_engine, init_db
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
-from app.modules.documents.services import persistir_textos_ativos_pncp
+from app.modules.documents.services import (
+    persistir_chunks_jsonl_pncp,
+    persistir_textos_ativos_pncp,
+)
 
 
 class DocumentIngestionTests(unittest.TestCase):
@@ -131,6 +135,40 @@ class DocumentIngestionTests(unittest.TestCase):
         self.assertEqual(segundo["chunksReutilizados"], 3)
         self.assertEqual(chunks[0].orgao, "Orgao Teste")
         self.assertEqual(chunks[0].base_id, "pncp_rj_estruturada")
+
+    def test_persistencia_jsonl_informa_progresso(self):
+        with TemporaryDirectory() as pasta:
+            arquivo_chunks = Path(pasta) / "chunks.jsonl"
+            arquivo_chunks.write_text(
+                json.dumps(
+                    {
+                        "chunk_id": "chunk-jsonl-progresso",
+                        "content": "Conteúdo do chunk de teste.",
+                        "metadata": {
+                            "baseId": "pncp_rj_estruturada",
+                            "tipoEntidade": "contrato",
+                            "numeroControlePNCP": "123",
+                            "sequencialDocumento": 1,
+                            "tituloDocumento": "Contrato de teste",
+                            "urlFontePncp": "https://pncp.test/documento",
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            atualizacoes: list[tuple[int, int]] = []
+            resumo = persistir_chunks_jsonl_pncp(
+                db=self.session,
+                corpus_version_id=self.corpus_version_id,
+                arquivo_chunks=arquivo_chunks,
+                progresso=lambda atual, total: atualizacoes.append((atual, total)),
+            )
+
+        self.assertEqual(resumo["chunksCriados"], 1)
+        self.assertEqual(atualizacoes[0], (0, 1))
+        self.assertEqual(atualizacoes[-1], (1, 1))
 
 
 if __name__ == "__main__":

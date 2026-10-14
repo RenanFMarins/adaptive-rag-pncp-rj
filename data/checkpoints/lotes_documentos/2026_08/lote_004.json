@@ -16563,13 +16563,13 @@
     }
   ],
   "quantidadeSelecionada": 500,
-  "atualizadoEm": "2026-10-09T10:45:07.805161+00:00",
+  "atualizadoEm": "2026-10-11T22:04:25.232127+00:00",
   "ultimaExecucao": {
     "somenteErros": false,
-    "tentados": 496,
-    "baixadosNestaExecucao": 496,
-    "identificados": 496,
-    "zipsExtraidos": 81
+    "tentados": 0,
+    "baixadosNestaExecucao": 0,
+    "identificados": 0,
+    "zipsExtraidos": 0
   },
   "zip": {
     "status": "gerado",

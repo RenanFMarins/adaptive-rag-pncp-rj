@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, init_db
 from app.modules.documents.model import Document, DocumentChunk
 from llm_ecoa import EMBEDDING_MODEL, gerar_embedding
-from src.index import indexar_chunks_incrementalmente
+from src.index import carregar_indice_faiss, indexar_chunks_incrementalmente
 
 
 def _ids_do_jsonl(caminho: Path) -> list[str]:
@@ -79,6 +79,29 @@ def selecionar_chunks(
     return list(db.scalars(consulta))
 
 
+def selecionar_proximos_chunks_novos(
+    chunks: list[DocumentChunk],
+    *,
+    indice_dir: Path,
+    limite: int,
+) -> list[DocumentChunk]:
+    """Retorna, em ordem, somente os próximos chunks ausentes do FAISS.
+
+    Diferentemente de ``--limite-chunks``, o limite aqui é aplicado *depois*
+    de consultar o índice. Assim, uma nova execução não fica presa aos
+    primeiros registros do JSONL que já haviam sido indexados.
+    """
+
+    try:
+        indice = carregar_indice_faiss(indice_dir)
+        ids_indexados = set(indice.chunk_ids)
+    except FileNotFoundError:
+        ids_indexados = set()
+
+    pendentes = [chunk for chunk in chunks if chunk.chunk_id not in ids_indexados]
+    return pendentes[:limite]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Indexa incrementalmente DocumentChunk no FAISS."
@@ -96,6 +119,14 @@ def main() -> None:
     )
     parser.add_argument("--corpus-version-id", type=int)
     parser.add_argument("--limite-chunks", type=int)
+    parser.add_argument(
+        "--limite-chunks-novos",
+        type=int,
+        help=(
+            "Indexa somente os próximos N chunks ainda ausentes do FAISS. "
+            "Use para continuar por blocos sem repetir os já indexados."
+        ),
+    )
     parser.add_argument("--tamanho-lote", type=int, default=50)
     parser.add_argument(
         "--indice-dir",
@@ -110,6 +141,12 @@ def main() -> None:
 
     if args.limite_chunks is not None and args.limite_chunks <= 0:
         parser.error("--limite-chunks deve ser maior que zero.")
+    if args.limite_chunks_novos is not None and args.limite_chunks_novos <= 0:
+        parser.error("--limite-chunks-novos deve ser maior que zero.")
+    if args.limite_chunks is not None and args.limite_chunks_novos is not None:
+        parser.error(
+            "Use apenas um entre --limite-chunks e --limite-chunks-novos."
+        )
 
     init_db()
     with SessionLocal() as db:
@@ -120,6 +157,13 @@ def main() -> None:
             tipo=args.tipo,
             corpus_version_id=args.corpus_version_id,
             limite_chunks=args.limite_chunks,
+        )
+
+    if args.limite_chunks_novos is not None:
+        chunks = selecionar_proximos_chunks_novos(
+            chunks,
+            indice_dir=args.indice_dir,
+            limite=args.limite_chunks_novos,
         )
 
     if not chunks:

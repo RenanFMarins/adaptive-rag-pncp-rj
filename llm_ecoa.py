@@ -12,7 +12,7 @@ GENERATION_MODEL = os.getenv(
     "GENERATION_MODEL", "qcwind/qwen3-8b-instruct-Q4-K-M")
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
-GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "2048"))
+GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "3072"))
 
 # Cliente OpenAI apontando para o servidor Ollama
 client = OpenAI(

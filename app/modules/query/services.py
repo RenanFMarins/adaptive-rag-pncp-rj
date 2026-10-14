@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable
+from dataclasses import replace
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.modules.query.model import Query, Response, ResponseSource
+from app.modules.documents.services import consultar_catalogo_documentos_pncp
 from src.query.adaptive_executor import (
     AdaptiveExecutionResult,
     executar_plano_adaptativo,
@@ -69,6 +71,7 @@ def executar_consulta_adaptativa_api(
                 top_k=top_k,
                 persistir=True,
                 filters=analysis.filters,
+                bases=analysis.bases,
             )
 
     if hybrid_executor is None:
@@ -83,15 +86,37 @@ def executar_consulta_adaptativa_api(
                 top_k=top_k,
                 persistir=True,
                 filters=analysis.filters,
+                bases=analysis.bases,
                 structured_result=structured.structured_result,
             )
 
-    return executar_plano_adaptativo(
+    resultado = executar_plano_adaptativo(
         analysis,
         structured_connection=_sqlite_connection_from_session(db),
         rag_executor=rag_executor,
         hybrid_executor=hybrid_executor,
     )
+
+    # Fallback informativo: se uma pergunta documental por número de controle
+    # não encontrou chunks, mostramos os arquivos previamente listados no
+    # PNCP. Esta etapa NÃO baixa o documento e não chama a API externa.
+    fontes = getattr(resultado.rag_result, "sources", None)
+    controle = analysis.filters.numero_controle_pncp
+    if resultado.rag_result is not None and not fontes and controle:
+        tipo_entidade = (
+            analysis.entity.value
+            if analysis.entity.value in {"contrato", "contratacao"}
+            else None
+        )
+        referencias = consultar_catalogo_documentos_pncp(
+            db,
+            numero_controle_pncp=controle,
+            tipo_entidade=tipo_entidade,
+            tipo_documento=analysis.filters.tipo_documento,
+            limite=20,
+        )
+        return replace(resultado, external_documents=referencias)
+    return resultado
 
 
 def persistir_resultado_rag(
