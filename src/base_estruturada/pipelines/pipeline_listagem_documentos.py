@@ -73,7 +73,7 @@ def listar_documentos_do_periodo(
 
 if __name__ == "__main__":
     # Use o mesmo período usado no pipeline de coleta.
-    PERIODO = PeriodoColeta(ano=2026, mes=2)
+    PERIODO = PeriodoColeta(ano=2026, mes=1)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Número de novas consultas por execução. Ao rodar novamente, o pipeline
