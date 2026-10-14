@@ -1311,3 +1311,95 @@ Os próximos passos serão:
 - preparar a futura integração dos endpoints incrementais para PCA, contratações, contratos e atas;
 - definir estratégias de reconciliação para itens, resultados homologados e demais recursos dependentes;
 - manter a preservação e a rastreabilidade dos dados RAW antes do início da normalização.
+
+
+## Encontro 10 - 2026-10-14
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei as atividades na análise e no planejamento da evolução da ingestão incremental dos dados do Portal Nacional de Contratações Públicas (PNCP). O objetivo foi avaliar a segurança da arquitetura implementada, identificar possíveis problemas de integridade e recuperação de falhas e organizar as correções necessárias antes de iniciar a integração com os endpoints reais do PNCP.
+
+### Auditoria da arquitetura de ingestão incremental
+
+Foi realizada uma análise técnica da branch `feature/ingestao-incremental-pncp`, verificando os componentes responsáveis pelo versionamento dos registros RAW, controle de checkpoints, watermark, concorrência, paginação e tratamento de atualizações.
+
+A auditoria identificou problemas importantes:
+
+- possibilidade de gravações concorrentes não atômicas na camada RAW;
+- risco de um processo continuar gravando após perder o controle do lease;
+- avanço do watermark mesmo com janelas anteriores pendentes;
+- tratamento inadequado de timestamps inválidos ou atualizações fora de ordem;
+- possibilidade de conclusão de janelas sem garantir todos os alvos esperados;
+- riscos de perda de registros durante a retomada de páginas;
+- geração de versões artificiais em registros PCA distribuídos entre diferentes páginas.
+
+Esses problemas foram classificados de acordo com sua gravidade e impacto na confiabilidade da ingestão.
+
+### Validação dos testes e integridade do projeto
+
+Também foi realizada a verificação do estado atual do repositório e da suíte automatizada de testes.
+
+Os resultados apresentados foram:
+
+- 117 testes executados e aprovados;
+- nenhuma falha ou teste ignorado;
+- validação de sintaxe com `compileall`;
+- verificação de integridade das alterações com `git diff --check`;
+- nenhuma modificação nos bancos operacionais;
+- nenhuma chamada HTTP real durante a auditoria.
+
+Apesar dos testes aprovados, a análise demonstrou a necessidade de ampliar a cobertura de cenários relacionados à concorrência, consistência temporal e recuperação de falhas.
+
+### Organização do backlog e planejamento das correções
+
+Com base nos problemas identificados, foi elaborado um backlog técnico contendo 20 tarefas, classificadas por prioridade, dependências e esforço estimado.
+
+As correções críticas foram concentradas na integridade da persistência RAW, no controle de concorrência, na consistência temporal, no congelamento dos alvos esperados e no avanço seguro do watermark.
+
+Também foi definido um procedimento de execução por tarefa, dividido em investigação, reprodução do problema, proposta de solução, implementação controlada e testes de regressão.
+
+Como primeira atividade, foi priorizada a regularização dos arquivos de migração e documentação necessários para tornar a branch incremental reproduzível em outros ambientes.
+
+### Documentação e preservação do ambiente de desenvolvimento
+
+Foram preparados três documentos técnicos:
+
+- `DIAGNOSTICO_ATUAL_INCREMENTAL.md`;
+- `BACKLOG_PRIORIZADO_INCREMENTAL.md`;
+- `PLANO_EXECUCAO_INCREMENTAL.md`.
+
+Os documentos registram o estado atual da implementação, os riscos encontrados e a sequência recomendada para as próximas atividades.
+
+Também foi revisado o procedimento de utilização do Git stash para preservar os arquivos locais da auditoria e as migrações SQL antes da mudança de contexto para outras atividades do projeto.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- estruturar a auditoria técnica da ingestão incremental;
+- investigar riscos relacionados ao versionamento e à persistência RAW;
+- organizar os problemas encontrados por nível de criticidade;
+- elaborar um backlog com dependências e critérios de aceite;
+- revisar os cuidados necessários para preservar os bancos e checkpoints existentes.
+
+### Resultado do encontro
+
+Ao final do encontro, a arquitetura incremental estava documentada e avaliada.
+
+Foram identificados cinco problemas críticos que precisam ser corrigidos antes da integração HTTP real. A análise foi realizada sem modificar os dados operacionais ou executar novas coletas.
+
+A implementação das correções ficou planejada para as próximas atividades, priorizando a integridade dos registros RAW e a segurança do processamento incremental.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- regularizar e versionar os arquivos de migração e documentação da branch incremental;
+- validar as entradas e o tratamento de registros anômalos;
+- corrigir a interpretação de timestamps e atualizações fora de ordem;
+- garantir atomicidade nas operações de versionamento RAW;
+- implementar proteção contra gravações após a expiração do lease;
+- impedir o avanço do watermark quando houver janelas pendentes;
+- corrigir os mecanismos de paginação e retomada;
+- revisar a consolidação dos registros PCA;
+- implementar e testar os adaptadores HTTP incrementais em ambiente isolado, após a estabilização da arquitetura.
