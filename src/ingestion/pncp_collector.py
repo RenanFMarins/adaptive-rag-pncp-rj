@@ -12,6 +12,7 @@ from typing import Any, Callable, Iterable, Mapping, TypeVar
 from ..obs import JsonlLogger
 from ..schema import (
     CollectionCheckpoint,
+    CollectionFailure,
     CollectedRecord,
     SourceConfig,
     records_from_response,
@@ -429,7 +430,7 @@ class PublishedContractCollector:
 
     required_target_fields = ("cnpj", "codigo_unidade", "uf")
     control_number_pattern = re.compile(
-        r"^(?P<cnpj>\d{14})-2-(?P<sequencial>\d+)/(?P<ano>\d{4})$"
+        r"^(?P<cnpj>\d{14})-2-(?P<sequencial>\d+)/(?P<ano>\d+)$"
     )
 
     def __init__(
@@ -623,7 +624,18 @@ class PublishedContractCollector:
             or str(actual_cnpj) != context["cnpj"]
             or str(actual_uf) != context["uf"]
         ):
-            raise ValueError(f"Contrato fora do órgão/UF alvo em {source_url}")
+            self.logger.event(
+                "pncp_contract_scope_mismatch",
+                external_id=str(external_id),
+                expected_cnpj=context["cnpj"],
+                actual_control_number_cnpj=match.group("cnpj"),
+                actual_payload_cnpj=str(actual_cnpj),
+                expected_uf=context["uf"],
+                actual_uf=str(actual_uf),
+                source_url=source_url,
+                action="skipped_for_current_target",
+            )
+            return None
         if not self._same_unit_code(actual_unit, context["codigo_unidade"]):
             self.logger.event(
                 "pncp_contract_scope_mismatch",
@@ -633,6 +645,25 @@ class PublishedContractCollector:
                 action="skipped_for_current_target",
             )
             return None
+        control_year = match.group("ano")
+        payload_year = payload.get("anoContrato")
+        if (
+            len(control_year) != 4
+            or (
+                payload_year not in (None, "")
+                and str(payload_year) != control_year
+            )
+        ):
+            self.logger.event(
+                "pncp_contract_control_number_anomaly",
+                external_id=str(external_id),
+                control_year=control_year,
+                payload_year=(
+                    None if payload_year in (None, "") else str(payload_year)
+                ),
+                source_url=source_url,
+                action="preserved_raw",
+            )
         return str(external_id)
 
 
@@ -640,7 +671,7 @@ class CommitmentCollector:
     """Coleta empenhos paginados para os contratos preservados na RAW."""
 
     control_number_pattern = re.compile(
-        r"^(?P<cnpj>\d{14})-2-(?P<sequencial>\d+)/(?P<ano>\d{4})$"
+        r"^(?P<cnpj>\d{14})-2-(?P<sequencial>\d+)/(?P<ano>\d+)$"
     )
     required_fields = ("cnpj", "ano", "sequencialContrato", "sequencialEmpenho")
 
@@ -737,6 +768,13 @@ class CommitmentCollector:
         match = self.control_number_pattern.fullmatch(numero_controle)
         if not match:
             raise ValueError("Target de empenho com contrato pai inválido")
+        if len(match.group("ano")) != 4:
+            self.logger.event(
+                "pncp_commitment_parent_control_number_anomaly",
+                external_id=numero_controle,
+                control_year=match.group("ano"),
+                action="queried_as_received",
+            )
         return {
             "cnpj": match.group("cnpj"),
             "ano": int(match.group("ano")),
@@ -1218,9 +1256,12 @@ class ItemResultCollector:
                 "Fonte resultado_item sem itens RAW configurados como targets"
             )
 
-        targets = list(
-            enumerate(source.targets[start_page - 1 :], start=start_page)
-        )
+        targets = []
+        for ordinal, target in enumerate(
+            source.targets[start_page - 1 :], start=start_page
+        ):
+            target_index = int(target.get("_cursor", ordinal))
+            targets.append((target_index, target))
         if source.max_pages is not None:
             targets = targets[: source.max_pages]
         pacer = _RequestPacer(source.rate_limit_seconds)
@@ -1228,27 +1269,66 @@ class ItemResultCollector:
         def fetch(indexed_target):
             target_index, target = indexed_target
             context = self._target_context(target)
+            target_key = str(
+                target.get("_target_key")
+                or f"{context['numero_controle']}|{context['numeroItem']}"
+            )
+            target_payload = {
+                "numero_controle": context["numero_controle"],
+                "numero_item": context["numeroItem"],
+                "tem_resultado": target.get("tem_resultado"),
+            }
             requested = target.get("tem_resultado") is not False
             if not requested:
-                return target_index, context, False, None, []
+                return (
+                    target_index,
+                    context,
+                    False,
+                    None,
+                    [],
+                    None,
+                    target_key,
+                    target_payload,
+                )
             endpoint = source.endpoint.format(**context)
             source_url = self.client.build_url(endpoint, base_url=source.base)
             pacer.wait()
-            response = self.client.get(
-                endpoint,
-                base_url=source.base,
-                timeout_seconds=source.timeout_seconds,
-                headers=source.headers,
-                max_retries=source.max_retries,
-                retry_backoff_seconds=source.retry_backoff_seconds,
-                not_found_as_empty=True,
-            )
+            try:
+                response = self.client.get(
+                    endpoint,
+                    base_url=source.base,
+                    timeout_seconds=source.timeout_seconds,
+                    headers=source.headers,
+                    max_retries=source.max_retries,
+                    retry_backoff_seconds=source.retry_backoff_seconds,
+                    not_found_as_empty=True,
+                )
+            except PNCPClientError as error:
+                if (
+                    error.status_code is not None
+                    and error.status_code
+                    not in PNCPClient.RETRYABLE_HTTP_STATUS
+                ):
+                    raise
+                return (
+                    target_index,
+                    context,
+                    True,
+                    source_url,
+                    [],
+                    str(error),
+                    target_key,
+                    target_payload,
+                )
             return (
                 target_index,
                 context,
                 True,
                 source_url,
                 records_from_response(response),
+                None,
+                target_key,
+                target_payload,
             )
 
         ordinal = 0
@@ -1258,7 +1338,26 @@ class ItemResultCollector:
             requested,
             result_url,
             results,
+            request_error,
+            target_key,
+            target_payload,
         ) in _ordered_parallel_map(fetch, targets, source.max_concurrency):
+            if request_error is not None:
+                self.logger.event(
+                    "pncp_item_result_deferred",
+                    source_id=source.id,
+                    target_index=target_index,
+                    target_key=target_key,
+                    error=request_error,
+                )
+                yield CollectionFailure(
+                    str(target_index),
+                    target_key,
+                    target_payload,
+                    result_url,
+                    request_error,
+                )
+                continue
             query_params = {
                 **source.audit_context,
                 "numeroControlePNCP": context["numero_controle"],
@@ -1300,7 +1399,7 @@ class ItemResultCollector:
                 requested=requested,
                 results_count=len(results),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield CollectionCheckpoint(str(target_index), target_key)
 
     def _target_context(self, target):
         missing = [

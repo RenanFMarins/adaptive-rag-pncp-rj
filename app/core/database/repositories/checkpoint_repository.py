@@ -38,6 +38,9 @@ class CheckpointRepository:
                 "O checkpoint só pode avançar após o run terminar com SUCCESS"
             )
         now = utc_now()
+        current = self.get_checkpoint(source, resource_type)
+        if current is not None:
+            last_page = max(int(current["last_page"]), int(last_page))
         self.connection.execute(
             "INSERT INTO sync_checkpoint "
             "(id, source, resource_type, last_successful_sync, last_page, "
@@ -75,6 +78,9 @@ class CheckpointRepository:
                 "O progresso só pode avançar durante um run em execução"
             )
         now = utc_now()
+        current = self.get_checkpoint(source, resource_type)
+        if current is not None:
+            last_page = max(int(current["last_page"]), int(last_page))
         self.connection.execute(
             "INSERT INTO sync_checkpoint "
             "(id, source, resource_type, last_successful_sync, last_page, "

@@ -8,11 +8,17 @@ from app.core.database.repositories import (
     CheckpointRepository,
     RawRepository as RawAssetRepository,
     RunRepository,
+    TargetFailureRepository,
 )
 from .ingestion.change_detector import asset_key, detect_change
 from .ingestion.hashing import payload_hash
 from .obs import JsonlLogger
-from .schema import CollectionCheckpoint, CollectedRecord, IngestionResult
+from .schema import (
+    CollectionCheckpoint,
+    CollectionFailure,
+    CollectedRecord,
+    IngestionResult,
+)
 
 
 class RawRepository:
@@ -21,6 +27,7 @@ class RawRepository:
         self.assets = RawAssetRepository(self.connection)
         self.runs = RunRepository(self.connection)
         self.checkpoints = CheckpointRepository(self.connection)
+        self.target_failures = TargetFailureRepository(self.connection)
 
     def close(self) -> None:
         self.connection.close()
@@ -68,6 +75,45 @@ class RawRepository:
         self.checkpoints.update_progress(
             source_id, resource_type, run_id, last_page
         )
+
+    def record_target_failure(
+        self,
+        source_id: str,
+        resource_type: str,
+        run_id: str,
+        failure: CollectionFailure,
+    ) -> None:
+        self.target_failures.record(
+            source_id,
+            resource_type,
+            run_id,
+            int(failure.cursor),
+            failure.target_key,
+            failure.target,
+            failure.source_url,
+            failure.error_message,
+        )
+
+    def resolve_target_failure(
+        self,
+        source_id: str,
+        resource_type: str,
+        run_id: str,
+        target_key: str,
+    ) -> None:
+        self.target_failures.resolve(
+            source_id, resource_type, target_key, run_id
+        )
+
+    def pending_target_failures(
+        self, source_id: str, resource_type: str
+    ) -> list[dict]:
+        return self.target_failures.pending(source_id, resource_type)
+
+    def pending_target_failure_count(
+        self, source_id: str, resource_type: str
+    ) -> int:
+        return self.target_failures.pending_count(source_id, resource_type)
 
     def fail_progress(
         self,
@@ -153,7 +199,9 @@ def ingest_records(
     repository: RawRepository,
     source_id: str,
     key_fields: tuple[str, ...],
-    records: Iterable[CollectedRecord | CollectionCheckpoint],
+    records: Iterable[
+        CollectedRecord | CollectionCheckpoint | CollectionFailure
+    ],
     mode: str = "update",
     logger: JsonlLogger | None = None,
     resource_type: str = "records",
@@ -197,10 +245,38 @@ def ingest_records(
                     status="SUCCESS",
                 )
             if isinstance(record, CollectionCheckpoint):
+                if record.target_key:
+                    repository.resolve_target_failure(
+                        source_id,
+                        resource_type,
+                        run_id,
+                        record.target_key,
+                    )
                 repository.save_progress(
                     source_id, resource_type, run_id, page
                 )
                 last_page = page
+                continue
+            if isinstance(record, CollectionFailure):
+                counts["FAILED"] += 1
+                repository.record_target_failure(
+                    source_id, resource_type, run_id, record
+                )
+                repository.save_progress(
+                    source_id, resource_type, run_id, page
+                )
+                last_page = page
+                logger.event(
+                    "target_deferred",
+                    stage="pncp_fetch",
+                    run_id=run_id,
+                    resource_type=resource_type,
+                    page=page,
+                    status="FAILED",
+                    failed=counts["FAILED"],
+                    target_key=record.target_key,
+                    error=record.error_message,
+                )
                 continue
             status = repository.persist_record(
                 run_id,
@@ -267,6 +343,7 @@ def ingest_records(
             counts["NEW"],
             counts["UPDATED"],
             counts["UNCHANGED"],
+            counts["FAILED"],
         )
     except BaseException as error:
         last_page = max(processed_pages, default=initial_checkpoint)

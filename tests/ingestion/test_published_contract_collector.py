@@ -30,6 +30,14 @@ class FallbackPNCPClient(FakePNCPClient):
         return self.fallback_response
 
 
+class FakeLogger:
+    def __init__(self):
+        self.events = []
+
+    def event(self, event, **fields):
+        self.events.append((event, fields))
+
+
 class PublishedContractCollectorTests(unittest.TestCase):
     CNPJ = "12345678000199"
     UNIT = "000001"
@@ -136,12 +144,49 @@ class PublishedContractCollectorTests(unittest.TestCase):
 
         self.assertEqual(collected, [CollectionCheckpoint("1")])
 
-    def test_rejects_contract_outside_target_state(self):
+    def test_skips_and_audits_contract_outside_target_state(self):
         contract = self.contract(uf="SP")
         client = FakePNCPClient({1: {"data": [contract], "totalPaginas": 1}})
+        logger = FakeLogger()
 
-        with self.assertRaisesRegex(ValueError, "fora do órgão/UF"):
-            list(PublishedContractCollector(client).collect(self.source()))
+        collected = list(
+            PublishedContractCollector(client, logger=logger).collect(self.source())
+        )
+
+        self.assertEqual(collected, [CollectionCheckpoint("1")])
+        self.assertEqual(logger.events[0][0], "pncp_contract_scope_mismatch")
+        self.assertEqual(logger.events[0][1]["expected_uf"], "RJ")
+        self.assertEqual(logger.events[0][1]["actual_uf"], "SP")
+        self.assertEqual(
+            logger.events[0][1]["action"], "skipped_for_current_target"
+        )
+
+    def test_preserves_and_audits_contract_with_abnormal_year(self):
+        contract = self.contract()
+        malformed_id = f"{self.CNPJ}-2-000001/20024"
+        contract["numeroControlePNCP"] = malformed_id
+        contract["anoContrato"] = 20024
+        client = FakePNCPClient({
+            1: {"data": [contract], "totalPaginas": 1, "numeroPagina": 1},
+        })
+        logger = FakeLogger()
+
+        collected = list(
+            PublishedContractCollector(client, logger=logger).collect(self.source())
+        )
+        records = [item for item in collected if isinstance(item, CollectedRecord)]
+
+        self.assertEqual(len(records), 1)
+        self.assertIs(records[0].payload, contract)
+        self.assertEqual(records[0].external_id, malformed_id)
+        anomaly = next(
+            fields
+            for event, fields in logger.events
+            if event == "pncp_contract_control_number_anomaly"
+        )
+        self.assertEqual(anomaly["control_year"], "20024")
+        self.assertEqual(anomaly["payload_year"], "20024")
+        self.assertEqual(anomaly["action"], "preserved_raw")
 
 
 if __name__ == "__main__":

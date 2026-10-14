@@ -106,6 +106,10 @@ def run(
         checkpoint = repository.get_checkpoint(
             source.id, source.resource_type
         )
+        target_count = len(source.targets)
+        pending_failures = repository.pending_target_failures(
+            source.id, source.resource_type
+        )
         collector_classes = {
             "paged": PNCPCollector,
             "pca": PCACollector,
@@ -127,12 +131,31 @@ def run(
             raise ValueError(
                 f"Coletor não suportado: {collector_name}"
             ) from error
-        start_page = (
-            checkpoint + 1
-            if mode == "update"
-            and checkpoint
-            else 1
+        retrying_pending = (
+            mode == "update"
+            and bool(pending_failures)
+            and checkpoint >= target_count
         )
+        if retrying_pending:
+            source = replace(source, targets=tuple(pending_failures))
+            start_page = 1
+            print(
+                json.dumps(
+                    {
+                        "event": "retrying_pending_targets",
+                        "source": source.id,
+                        "resource_type": source.resource_type,
+                        "pending": len(pending_failures),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+        else:
+            start_page = (
+                checkpoint + 1
+                if mode == "update" and checkpoint
+                else 1
+            )
         result = ingest_records(
             repository,
             source.id,
@@ -151,6 +174,21 @@ def run(
             window_end=str(source.params.get("dataFinal") or "") or None,
         )
         print(json.dumps(result.__dict__, ensure_ascii=False, indent=2))
+        pending_after_run = repository.pending_target_failure_count(
+            source.id, source.resource_type
+        )
+        if pending_after_run:
+            print(
+                json.dumps(
+                    {
+                        "event": "pending_targets_remaining",
+                        "source": source.id,
+                        "resource_type": source.resource_type,
+                        "pending": pending_after_run,
+                    },
+                    ensure_ascii=False,
+                )
+            )
     finally:
         repository.close()
 

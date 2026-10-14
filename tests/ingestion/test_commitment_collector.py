@@ -17,6 +17,14 @@ class FakePNCPClient:
         return self.response
 
 
+class FakeLogger:
+    def __init__(self):
+        self.events = []
+
+    def event(self, event, **fields):
+        self.events.append((event, fields))
+
+
 class CommitmentCollectorTests(unittest.TestCase):
     CNPJ = "12345678000199"
     CONTRACT = "12345678000199-2-000007/2023"
@@ -77,6 +85,29 @@ class CommitmentCollectorTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "fora do contrato alvo"):
             list(CommitmentCollector(client).collect(self.source()))
+
+    def test_queries_abnormal_parent_year_without_changing_identity(self):
+        malformed_contract = f"{self.CNPJ}-2-000007/20024"
+        source = self.source()
+        source = SourceConfig(
+            **{
+                **source.__dict__,
+                "targets": ({"numero_controle": malformed_contract},),
+            }
+        )
+        client = FakePNCPClient([])
+        logger = FakeLogger()
+
+        collected = list(CommitmentCollector(client, logger=logger).collect(source))
+
+        self.assertEqual(collected, [CollectionCheckpoint("1")])
+        self.assertTrue(client.requests[0][0].endswith("/20024/7/empenhos"))
+        self.assertEqual(
+            logger.events[0][0],
+            "pncp_commitment_parent_control_number_anomaly",
+        )
+        self.assertEqual(logger.events[0][1]["control_year"], "20024")
+        self.assertEqual(logger.events[0][1]["action"], "queried_as_received")
 
 
 if __name__ == "__main__":

@@ -63,6 +63,26 @@ CREATE TABLE IF NOT EXISTS raw_asset (
     FOREIGN KEY (previous_version_id) REFERENCES raw_asset(id)
 );
 
+CREATE TABLE IF NOT EXISTS collection_target_failure (
+    id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    target_key TEXT NOT NULL,
+    cursor INTEGER NOT NULL,
+    target_payload TEXT NOT NULL,
+    source_url TEXT,
+    error_message TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING', 'RESOLVED')),
+    first_failed_at TEXT NOT NULL,
+    last_failed_at TEXT NOT NULL,
+    resolved_at TEXT,
+    last_run_id TEXT NOT NULL,
+    UNIQUE (source, resource_type, target_key),
+    FOREIGN KEY (last_run_id) REFERENCES ingestion_run(id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_raw_asset_identity
     ON raw_asset(source, resource_type, external_id);
 CREATE INDEX IF NOT EXISTS idx_raw_asset_payload_hash
@@ -73,6 +93,8 @@ CREATE INDEX IF NOT EXISTS idx_raw_asset_resource_type
     ON raw_asset(resource_type);
 CREATE INDEX IF NOT EXISTS idx_raw_asset_corpus_version
     ON raw_asset(corpus_version);
+CREATE INDEX IF NOT EXISTS idx_collection_target_failure_pending
+    ON collection_target_failure(source, resource_type, status, cursor);
 """
 
 

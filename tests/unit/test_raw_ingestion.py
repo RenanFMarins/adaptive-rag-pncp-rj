@@ -9,7 +9,11 @@ from app.core.database.repositories.raw_repository import (
 )
 from app.core.database.repositories.run_repository import RunRepository
 from app.core.database import initialize_database
-from src.schema import CollectionCheckpoint, CollectedRecord
+from src.schema import (
+    CollectionCheckpoint,
+    CollectionFailure,
+    CollectedRecord,
+)
 
 
 class RawIngestionTests(unittest.TestCase):
@@ -303,7 +307,12 @@ class RawIngestionTests(unittest.TestCase):
         }
         self.assertEqual(
             tables,
-            {"ingestion_run", "sync_checkpoint", "raw_asset"},
+            {
+                "ingestion_run",
+                "sync_checkpoint",
+                "raw_asset",
+                "collection_target_failure",
+            },
         )
         run = repository.connection.execute(
             "SELECT status, records_received FROM ingestion_run WHERE id = ?",
@@ -439,6 +448,71 @@ class RawIngestionTests(unittest.TestCase):
         self.assertEqual(checkpoint, 3)
         self.assertEqual(tuple(first_run), (0, 1))
         self.assertEqual(tuple(second_run), (0, 0))
+        repository.close()
+
+    def test_failed_target_is_queued_then_resolved_without_regression(self):
+        repository = RawRepository(self.database_url)
+        target_key = "compra-1|7"
+        first = ingest_records(
+            repository,
+            "pncp_resultados",
+            ("id",),
+            [
+                CollectionFailure(
+                    "4",
+                    target_key,
+                    {
+                        "numero_controle": "compra-1",
+                        "numero_item": 7,
+                        "tem_resultado": True,
+                    },
+                    "https://pncp.example/resultados",
+                    "timeout",
+                ),
+                CollectionCheckpoint("5", "compra-1|8"),
+            ],
+            resource_type="resultado_item",
+        )
+
+        pending = repository.pending_target_failures(
+            "pncp_resultados", "resultado_item"
+        )
+        checkpoint = repository.get_checkpoint(
+            "pncp_resultados", "resultado_item"
+        )
+        self.assertEqual(first.failed, 1)
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(pending[0]["_cursor"], 4)
+        self.assertEqual(pending[0]["_target_key"], target_key)
+        self.assertEqual(checkpoint, 5)
+
+        ingest_records(
+            repository,
+            "pncp_resultados",
+            ("id",),
+            [CollectionCheckpoint("4", target_key)],
+            resource_type="resultado_item",
+            initial_checkpoint=5,
+        )
+
+        self.assertEqual(
+            repository.pending_target_failure_count(
+                "pncp_resultados", "resultado_item"
+            ),
+            0,
+        )
+        self.assertEqual(
+            repository.get_checkpoint(
+                "pncp_resultados", "resultado_item"
+            ),
+            5,
+        )
+        status = repository.connection.execute(
+            "SELECT status, attempts FROM collection_target_failure "
+            "WHERE source=? AND resource_type=? AND target_key=?",
+            ("pncp_resultados", "resultado_item", target_key),
+        ).fetchone()
+        self.assertEqual(tuple(status), ("RESOLVED", 1))
         repository.close()
 
 

@@ -1,8 +1,14 @@
 import unittest
 
 from src.fetch_corpus import resolve_source_targets
+from src.ingestion.pncp_client import PNCPClientError
 from src.ingestion.pncp_collector import ItemResultCollector
-from src.schema import CollectionCheckpoint, CollectedRecord, SourceConfig
+from src.schema import (
+    CollectionCheckpoint,
+    CollectionFailure,
+    CollectedRecord,
+    SourceConfig,
+)
 
 
 class FakePNCPClient:
@@ -91,7 +97,84 @@ class ItemResultCollectorTests(unittest.TestCase):
         collected = list(ItemResultCollector(client).collect(source))
 
         self.assertEqual(client.requested, [])
-        self.assertEqual(collected, [CollectionCheckpoint("1")])
+        self.assertEqual(len(collected), 1)
+        self.assertIsInstance(collected[0], CollectionCheckpoint)
+        self.assertEqual(collected[0].cursor, "1")
+        self.assertEqual(
+            collected[0].target_key,
+            "12345678000199-1-000001/2025|2",
+        )
+
+    def test_request_failure_is_deferred_and_next_target_continues(self):
+        client = FakePNCPClient()
+
+        def fail_first_target(endpoint, params=None, **kwargs):
+            client.requested.append(endpoint)
+            if "/itens/1/resultados" in endpoint:
+                raise PNCPClientError("timeout")
+            return [
+                {
+                    "numeroControlePNCPCompra": (
+                        "12345678000199-1-000001/2025"
+                    ),
+                    "numeroItem": 2,
+                    "sequencialResultado": 1,
+                }
+            ]
+
+        client.get = fail_first_target
+        source = SourceConfig(
+            **{
+                **self.source().__dict__,
+                "targets": (
+                    self.source().targets[0],
+                    {
+                        **self.source().targets[1],
+                        "tem_resultado": True,
+                    },
+                ),
+            }
+        )
+
+        collected = list(ItemResultCollector(client).collect(source))
+
+        failures = [
+            item for item in collected if isinstance(item, CollectionFailure)
+        ]
+        records = [
+            item for item in collected if isinstance(item, CollectedRecord)
+        ]
+        checkpoints = [
+            item
+            for item in collected
+            if isinstance(item, CollectionCheckpoint)
+        ]
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0].cursor, "1")
+        self.assertEqual(
+            failures[0].target_key,
+            "12345678000199-1-000001/2025|1",
+        )
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].cursor, "2")
+        self.assertEqual([item.cursor for item in checkpoints], ["2"])
+
+    def test_pending_target_preserves_original_cursor(self):
+        target = {
+            **self.source().targets[0],
+            "_cursor": 508999,
+            "_target_key": "pending-target",
+        }
+        source = SourceConfig(
+            **{**self.source().__dict__, "targets": (target,)}
+        )
+
+        collected = list(
+            ItemResultCollector(FakePNCPClient()).collect(source)
+        )
+
+        self.assertEqual(collected[-1].cursor, "508999")
+        self.assertEqual(collected[-1].target_key, "pending-target")
 
     def test_rejects_result_without_composite_identifier(self):
         client = FakePNCPClient()

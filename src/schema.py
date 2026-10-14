@@ -128,6 +128,18 @@ class CollectionCheckpoint:
 	"""Marca um alvo concluído, mesmo quando ele não retorna registros."""
 
 	cursor: str
+	target_key: str | None = None
+
+
+@dataclass(frozen=True)
+class CollectionFailure:
+	"""Preserva um alvo que falhou para nova tentativa sem bloquear a fila."""
+
+	cursor: str
+	target_key: str
+	target: Mapping[str, Any]
+	source_url: str | None
+	error_message: str
 
 
 @dataclass(frozen=True)

@@ -938,9 +938,11 @@ sources:
       uf: RJ
       tipo_execucao: completa
     request:
-      timeout_seconds: 45
+      # Falha rápido: alvos indisponíveis entram na fila persistente e
+      # são tentados novamente sem bloquear os itens seguintes.
+      timeout_seconds: 15
       rate_limit_seconds: 0.5
-      max_retries: 5
+      max_retries: 0
       retry_backoff_seconds: 2.0
       max_concurrency: 16
     key_fields:
