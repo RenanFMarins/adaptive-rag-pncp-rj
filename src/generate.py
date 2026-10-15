@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.logging import perf_stage
 from app.core.config import resolver_caminho_indice_faiss
 from app.core.llm_http_observability import llm_http_operation
+from app.core.llm_provider import gerar_com_fallback
 
 from app.modules.query.services import persistir_resultado_rag
 from app.modules.rag.services import recuperar_chunks_ranqueados
@@ -138,7 +139,7 @@ def gerar_resposta_rag(
     cache_dir: Path | None = None,
     retrieval_fn: Callable[..., list[RankedChunk]
                            ] = recuperar_chunks_ranqueados,
-    llm_fn: Callable[[str], str] = gerar_resposta,
+    llm_fn: Callable[[str], str] | None = None,
     incluir_prompt: bool = False,
     persistir: bool = False,
     trace_id: str | None = None,
@@ -199,6 +200,9 @@ def gerar_resposta_rag(
         },
         "generation": {
             "model": GENERATION_MODEL,
+            "provider": None,
+            "fallback_used": False,
+            "fallback_reason": None,
             "max_tokens": GENERATION_MAX_TOKENS,
             "contexto": None,
             "prompt": None,
@@ -291,8 +295,21 @@ def gerar_resposta_rag(
         trace["stage"] = "generation"
         generation_started = time.perf_counter()
         with perf_stage("llm_generation"):
-            with llm_http_operation("generation"):
-                resposta = llm_fn(prompt)
+            if llm_fn is None:
+                generation = gerar_com_fallback(
+                    prompt,
+                    operation="generation",
+                    ecoa_fn=gerar_resposta,
+                    ecoa_model=GENERATION_MODEL,
+                )
+                resposta = generation.content
+                trace["generation"].update(generation.audit_metadata())
+            else:
+                # Funções injetadas são usadas pelos testes e por experimentos
+                # locais; o fallback real continua centralizado acima.
+                with llm_http_operation("generation", provider="custom"):
+                    resposta = llm_fn(prompt)
+                trace["generation"]["provider"] = "custom"
         trace["generation"]["elapsed_ms"] = int(
             (time.perf_counter() - generation_started) * 1000
         )
