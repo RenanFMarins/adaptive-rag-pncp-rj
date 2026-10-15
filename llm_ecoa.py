@@ -21,6 +21,7 @@ GENERATION_MODEL = os.getenv(
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
 GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "3072"))
+ECOA_TIMEOUT_SECONDS = float(os.getenv("ECOA_TIMEOUT_SECONDS", "30"))
 
 # Cliente OpenAI apontando para o servidor Ollama
 http_client = DefaultHttpxClient(event_hooks={

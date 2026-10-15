@@ -35,7 +35,8 @@ class LlmProviderTests(unittest.TestCase):
                 ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
                 ecoa_model="modelo-ecoa",
                 fallback_fn=lambda _prompt, provider, model: (
-                    self.assertEqual((provider, model), ("groq", "modelo-groq"))
+                    self.assertEqual((provider, model),
+                                     ("groq", "modelo-groq"))
                     or "resposta Groq"
                 ),
             )
@@ -50,10 +51,12 @@ class LlmProviderTests(unittest.TestCase):
             result = gerar_com_fallback(
                 "pergunta",
                 operation="analyzer",
-                ecoa_fn=lambda _prompt: (_ for _ in ()).throw(ConnectionError()),
+                ecoa_fn=lambda _prompt: (
+                    _ for _ in ()).throw(ConnectionError()),
                 ecoa_model="modelo-ecoa",
                 fallback_fn=lambda _prompt, provider, model: (
-                    self.assertEqual((provider, model), ("openai", "modelo-openai"))
+                    self.assertEqual((provider, model),
+                                     ("openai", "modelo-openai"))
                     or "resposta OpenAI"
                 ),
             )
@@ -68,7 +71,8 @@ class LlmProviderTests(unittest.TestCase):
                 gerar_com_fallback(
                     "pergunta",
                     operation="analyzer",
-                    ecoa_fn=lambda _prompt: (_ for _ in ()).throw(RuntimeError("plano inválido")),
+                    ecoa_fn=lambda _prompt: (_ for _ in ()).throw(
+                        RuntimeError("plano inválido")),
                     ecoa_model="modelo-ecoa",
                     fallback_fn=fallback,
                 )
@@ -80,9 +84,11 @@ class LlmProviderTests(unittest.TestCase):
                 gerar_com_fallback(
                     "pergunta",
                     operation="generation",
-                    ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
+                    ecoa_fn=lambda _prompt: (
+                        _ for _ in ()).throw(TimeoutError()),
                     ecoa_model="modelo-ecoa",
-                    fallback_fn=lambda *_args: (_ for _ in ()).throw(RuntimeError("indisponível")),
+                    fallback_fn=lambda *_args: (_ for _ in ()
+                                                ).throw(RuntimeError("indisponível")),
                 )
         self.assertIn("Ecoa falhou", str(captured.exception))
         self.assertIn("groq", str(captured.exception))
@@ -93,7 +99,8 @@ class LlmProviderTests(unittest.TestCase):
                 gerar_com_fallback(
                     "pergunta",
                     operation="generation",
-                    ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
+                    ecoa_fn=lambda _prompt: (
+                        _ for _ in ()).throw(TimeoutError()),
                     ecoa_model="modelo-ecoa",
                 )
 
@@ -111,4 +118,5 @@ class LlmProviderTests(unittest.TestCase):
             )
 
         self.assertEqual(result.provider, "groq")
-        executor.assert_called_once_with("pergunta", "groq", "modelo-groq", "analyzer")
+        executor.assert_called_once_with(
+            "pergunta", "groq", "modelo-groq", "analyzer")

@@ -287,7 +287,7 @@ def _extrair_json(resposta: str) -> str:
     fim = conteudo.rfind("}")
     if inicio == -1 or fim <= inicio:
         raise QueryAnalysisError("A LLM não retornou um objeto JSON válido.")
-    return conteudo[inicio : fim + 1]
+    return conteudo[inicio: fim + 1]
 
 
 def analisar_pergunta(

@@ -219,7 +219,8 @@ def gerar_resposta_rag(
         informar("Validando regras de segurança...")
         trace["stage"] = "guardrail"
         with perf_stage("guardrail"):
-            bloqueado, mensagem_guardrail = verificar_guardrails_pergunta(pergunta)
+            bloqueado, mensagem_guardrail = verificar_guardrails_pergunta(
+                pergunta)
         trace["guardrail"] = {
             "checked": True,
             "triggered": bloqueado,
@@ -283,9 +284,11 @@ def gerar_resposta_rag(
                 f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto..."
             )
         else:
-            informar("Nenhuma evidência documental foi encontrada. Usando dados estruturados...")
+            informar(
+                "Nenhuma evidência documental foi encontrada. Usando dados estruturados...")
         with perf_stage("context") as metrics:
-            contexto = montar_contexto(chunks, structured_result=structured_result)
+            contexto = montar_contexto(
+                chunks, structured_result=structured_result)
             prompt = montar_prompt(pergunta, contexto)
             metrics["fontes"] = len(chunks)
         trace["generation"]["contexto"] = contexto
