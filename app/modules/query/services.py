@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
 
 from app.modules.query.model import Query, Response, ResponseSource
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
@@ -71,6 +72,7 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,
@@ -86,6 +88,7 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,

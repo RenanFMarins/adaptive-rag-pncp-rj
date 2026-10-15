@@ -43,15 +43,23 @@ client = OpenAI(
 )
 
 
-def _chat_completion(llm_client: OpenAI, model: str, prompt: str):
-    return llm_client.chat.completions.create(
-        model=model,
-        messages=[
+def _chat_completion(
+    llm_client: OpenAI,
+    model: str,
+    prompt: str,
+    reasoning_effort: str | None = None,
+):
+    request_options = {
+        "model": model,
+        "messages": [
             {"role": "user", "content": prompt}
         ],
-        max_tokens=GENERATION_MAX_TOKENS,
-        temperature=0.2,
-    )
+        "max_tokens": GENERATION_MAX_TOKENS,
+        "temperature": 0.2,
+    }
+    if reasoning_effort is not None:
+        request_options["reasoning_effort"] = reasoning_effort
+    return llm_client.chat.completions.create(**request_options)
 
 
 def _conteudo_resposta(response) -> str:
@@ -79,7 +87,17 @@ def _conteudo_resposta(response) -> str:
 
 def gerar_resposta(prompt: str) -> str:
     """Gera texto pelo cliente ECOA compartilhado com o restante do RAG."""
-    return _conteudo_resposta(_chat_completion(client, GENERATION_MODEL, prompt))
+    reasoning_effort = (
+        "none" if settings.generation_disable_thinking else None
+    )
+    return _conteudo_resposta(
+        _chat_completion(
+            client,
+            GENERATION_MODEL,
+            prompt,
+            reasoning_effort=reasoning_effort,
+        )
+    )
 
 
 def _http_client_observado() -> DefaultHttpxClient:
@@ -156,7 +174,9 @@ def _resposta_analyzer_provedor(
 def gerar_resposta_analyzer(prompt: str) -> str:
     """Usa ECOA e, quando explicitamente habilitado, OpenAI como fallback."""
     if not settings.analyzer_openai_fallback_enabled:
-        return gerar_resposta(prompt)
+        return _conteudo_resposta(
+            _chat_completion(client, GENERATION_MODEL, prompt)
+        )
     primary_started = time.perf_counter()
     try:
         return _resposta_analyzer_provedor(

@@ -10,6 +10,7 @@ from typing import Callable
 from rich.console import Console
 from sqlalchemy.orm import Session
 from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
 from app.core.llm_http_observability import llm_http_operation
 
 from app.modules.query.services import persistir_resultado_rag
@@ -134,7 +135,7 @@ def gerar_resposta_rag(
     db: Session,
     pergunta: str,
     top_k: int = 5,
-    cache_dir: Path = Path("data/index/faiss/v1"),
+    cache_dir: Path | None = None,
     retrieval_fn: Callable[..., list[RankedChunk]
                            ] = recuperar_chunks_ranqueados,
     llm_fn: Callable[[str], str] = gerar_resposta,
@@ -147,6 +148,8 @@ def gerar_resposta_rag(
     bases: list[KnowledgeBase] | None = None,
     structured_result: StructuredQueryResult | None = None,
 ) -> RagAnswer:
+    cache_dir = resolver_caminho_indice_faiss(cache_dir)
+
     def informar(mensagem: str) -> None:
         if progresso is not None:
             progresso(mensagem)
@@ -344,7 +347,6 @@ if __name__ == "__main__":
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument(
         "--cache-dir",
-        default="data/index/faiss/v1",
     )
     parser.add_argument(
         "--mostrar-prompt",
@@ -369,7 +371,7 @@ if __name__ == "__main__":
                 db=db,
                 pergunta=args.pergunta,
                 top_k=args.top_k,
-                cache_dir=Path(args.cache_dir),
+                cache_dir=Path(args.cache_dir) if args.cache_dir else None,
                 incluir_prompt=args.mostrar_prompt,
                 persistir=args.persistir,
                 progresso=status.update,

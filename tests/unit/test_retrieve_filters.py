@@ -137,6 +137,7 @@ class RetrieveFiltersTests(unittest.TestCase):
                 ],
                 fake_embedding,
                 Path(directory),
+                modelo_embedding="fake-v1",
             )
             results = retrieve_hibrido(
                 self.session,
@@ -314,6 +315,7 @@ class RetrieveFiltersTests(unittest.TestCase):
                     self.chunk_a, self.chunk_b, self.chunk_normativo, self.chunk_conversacional
                 )],
                 fake_embedding, cache_dir,
+                modelo_embedding="fake-v1",
             )
             dense = buscar_dense(
                 "alpha", 2, cache_dir, fake_embedding, {"chunk-a", "chunk-b"}

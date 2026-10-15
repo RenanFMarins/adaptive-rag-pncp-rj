@@ -17,6 +17,7 @@ from typing import Callable
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
 from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
 
 from app.core.text_normalization import normalizar_para_busca
 from app.modules.documents.model import Document, DocumentChunk
@@ -242,13 +243,14 @@ def retrieve_hibrido(
     bm25_k: int = 20,
     dense_k: int = 20,
     rrf_k: int = 60,
-    cache_dir: Path = Path("data/index/faiss/v1"),
+    cache_dir: Path | None = None,
     embedding_fn: EmbeddingFn = gerar_embedding,
     filters: QueryFilters | None = None,
     bases: list[KnowledgeBase] | None = None,
 ) -> list[RankedChunk]:
     """Combina ranking lexical persistente e ranking semântico vetorial."""
 
+    cache_dir = resolver_caminho_indice_faiss(cache_dir)
     with perf_stage("base_filters"):
         eligible_chunks = construir_consulta_chunks_elegiveis(
             filters,
@@ -319,7 +321,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Executa retrieval híbrido sobre DocumentChunk.")
     parser.add_argument("pergunta")
     parser.add_argument("--top-k", type=int, default=5)
-    parser.add_argument("--cache-dir", default="data/index/faiss/v1")
+    parser.add_argument("--cache-dir")
     args = parser.parse_args()
 
     init_db()
@@ -328,6 +330,6 @@ if __name__ == "__main__":
             db=db,
             pergunta=args.pergunta,
             top_k=args.top_k,
-            cache_dir=Path(args.cache_dir),
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
         )
     print(json.dumps([asdict(item) for item in resultados], ensure_ascii=False, indent=2))

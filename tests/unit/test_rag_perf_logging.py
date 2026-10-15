@@ -53,7 +53,10 @@ class RagPerfHttpTests(unittest.TestCase):
         temporary = self.enterContext(TemporaryDirectory())
         cache_dir = Path(temporary) / "index"
         indexar_chunks_incrementalmente(
-            [("sensitive-id", "alpha sensitive-document")], lambda _: [1.0, 0.0], cache_dir
+            [("sensitive-id", "alpha sensitive-document")],
+            lambda _: [1.0, 0.0],
+            cache_dir,
+            modelo_embedding="fake-v1",
         )
         analysis = QueryAnalysis(
             route=QueryRoute.RAG, intent=QueryIntent.DOCUMENTAL, entity=QueryEntity.DOCUMENTO,

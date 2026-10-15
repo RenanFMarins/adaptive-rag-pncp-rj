@@ -42,12 +42,16 @@ class AnalyzerFallbackTests(unittest.TestCase):
         llm_ecoa._analyzer_openai_client.cache_clear()
 
     def test_disabled_preserves_original_analyzer_path(self):
+        bodies = []
+
+        def primary(request):
+            bodies.append(request.content)
+            return httpx.Response(200, json=_response(), request=request)
+
         with patch.object(settings, "analyzer_openai_fallback_enabled", False), \
-                patch.object(llm_ecoa, "gerar_resposta", return_value="original") as original, \
-                patch.object(llm_ecoa, "_analyzer_ecoa_client") as ecoa:
-            self.assertEqual(llm_ecoa.gerar_resposta_analyzer("pergunta"), "original")
-        original.assert_called_once_with("pergunta")
-        ecoa.assert_not_called()
+                patch.object(llm_ecoa, "client", _client(primary)):
+            self.assertEqual(llm_ecoa.gerar_resposta_analyzer("pergunta"), "resultado")
+        self.assertEqual(len(bodies), 1)
 
     def test_primary_success_does_not_call_openai(self):
         calls = []

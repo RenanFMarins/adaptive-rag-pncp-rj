@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -8,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str
     rag_perf_log_enabled: bool = False
     rag_llm_http_log_enabled: bool = False
+    generation_disable_thinking: bool = False
+    rag_faiss_index_dir: Path = Path("data/index/faiss/v1")
     analyzer_openai_fallback_enabled: bool = False
     analyzer_openai_model: str = "gpt-4.1-mini"
     analyzer_ecoa_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
@@ -24,3 +27,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def resolver_caminho_indice_faiss(caminho: Path | str | None = None) -> Path:
+    """Resolve em um só lugar o diretório FAISS efetivamente usado pelo RAG."""
+
+    selecionado = settings.rag_faiss_index_dir if caminho is None else Path(caminho)
+    return selecionado.expanduser().resolve()

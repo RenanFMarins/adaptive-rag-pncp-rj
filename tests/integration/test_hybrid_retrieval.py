@@ -57,6 +57,7 @@ class HybridRetrievalTests(unittest.TestCase):
                 [(chunk.chunk_id, chunk.content) for chunk in self.chunks],
                 fake_embedding,
                 Path(pasta),
+                modelo_embedding="fake-v1",
             )
             resultado = buscar_dense(
                 "beta",
@@ -78,6 +79,7 @@ class HybridRetrievalTests(unittest.TestCase):
                 [(chunk.chunk_id, chunk.content) for chunk in self.chunks],
                 fake_embedding,
                 Path(pasta),
+                modelo_embedding="fake-v1",
             )
             resultado = retrieve_hibrido(
                 self.session,
