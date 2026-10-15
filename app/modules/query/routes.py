@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.llm_provider import LlmProviderError
 from app.core.security import get_current_user
 from app.modules.auth.model import User
 from app.modules.query.schemas import (
@@ -58,6 +59,11 @@ def ask(
             request.pergunta,
             request.top_k,
         )
+    except LlmProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -149,6 +155,11 @@ def structured(
 
     try:
         result = executar_consulta_estruturada(db, request.pergunta)
+    except LlmProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -164,12 +175,18 @@ def generate(
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
 ):
-    resultado = gerar_resposta_rag(
-        db=db,
-        pergunta=request.pergunta,
-        top_k=request.top_k,
-        persistir=True,
-    )
+    try:
+        resultado = gerar_resposta_rag(
+            db=db,
+            pergunta=request.pergunta,
+            top_k=request.top_k,
+            persistir=True,
+        )
+    except LlmProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
 
     return GenerateResponse(
         answer=resultado.answer,

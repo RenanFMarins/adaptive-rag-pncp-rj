@@ -11,10 +11,21 @@ class Settings(BaseSettings):
     rag_llm_http_log_enabled: bool = False
     generation_disable_thinking: bool = False
     rag_faiss_index_dir: Path = Path("data/index/faiss/v1")
+    # Configuração canônica do fallback, compartilhada por Analyzer e geração.
+    # "none" desabilita a troca; OpenAI e Groq são selecionados apenas pelo .env.
+    llm_fallback_provider: Literal["none", "openai", "groq"] = "none"
+    llm_fallback_openai_model: str = ""
+    llm_fallback_groq_model: str = "openai/gpt-oss-120b"
+    llm_fallback_timeout_seconds: float = Field(default=45.0, gt=0, le=600)
+    groq_api_key: SecretStr = SecretStr("")
+    openai_api_key: SecretStr = SecretStr("")
+    ecoa_timeout_seconds: float = Field(default=30.0, gt=0, le=600)
+
+    # Compatibilidade temporária com a configuração que entrou na default.
+    # Se o provedor canônico estiver "none", ela ainda vale só para Analyzer.
     analyzer_openai_fallback_enabled: bool = False
     analyzer_openai_model: str = "gpt-4.1-mini"
     analyzer_ecoa_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
-    openai_api_key: SecretStr = SecretStr("")
     jwt_secret_key: SecretStr = SecretStr("")
     jwt_algorithm: Literal["HS256"] = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=30, gt=0, le=10080)
