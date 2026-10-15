@@ -6,6 +6,8 @@ from dataclasses import replace
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
+from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
 
 from app.modules.query.model import Query, Response, ResponseSource
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
@@ -57,7 +59,8 @@ def executar_consulta_adaptativa_api(
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
-    analysis = (analyzer_fn or analisar_pergunta)(pergunta)
+    with perf_stage("analyzer"):
+        analysis = (analyzer_fn or analisar_pergunta)(pergunta)
 
     if rag_executor is None:
         def rag_executor() -> object:
@@ -69,6 +72,7 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,
@@ -84,15 +88,18 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,
                 structured_result=structured.structured_result,
             )
 
+    with perf_stage("database_connection"):
+        structured_connection = _sqlite_connection_from_session(db)
     resultado = executar_plano_adaptativo(
         analysis,
-        structured_connection=_sqlite_connection_from_session(db),
+        structured_connection=structured_connection,
         rag_executor=rag_executor,
         hybrid_executor=hybrid_executor,
     )
@@ -108,13 +115,14 @@ def executar_consulta_adaptativa_api(
             if analysis.entity.value in {"contrato", "contratacao"}
             else None
         )
-        referencias = consultar_catalogo_documentos_pncp(
-            db,
-            numero_controle_pncp=controle,
-            tipo_entidade=tipo_entidade,
-            tipo_documento=analysis.filters.tipo_documento,
-            limite=20,
-        )
+        with perf_stage("catalog_fallback"):
+            referencias = consultar_catalogo_documentos_pncp(
+                db,
+                numero_controle_pncp=controle,
+                tipo_entidade=tipo_entidade,
+                tipo_documento=analysis.filters.tipo_documento,
+                limite=20,
+            )
         return replace(resultado, external_documents=referencias)
     return resultado
 

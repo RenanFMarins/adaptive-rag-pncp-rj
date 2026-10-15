@@ -14,9 +14,10 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal, init_db
+from app.core.config import settings
+from app.core.database.readonly import readonly_session
 from app.modules.documents.model import DocumentChunk
-from llm_ecoa import gerar_embedding
+from llm_ecoa import EMBEDDING_MODEL, gerar_embedding
 from src.fts import buscar_fts5
 from src.index import FaissChunkIndex, indexar_chunks_incrementalmente
 from src.retrieve import reciprocal_rank_fusion
@@ -53,6 +54,7 @@ def criar_indice(
         [(chunk.chunk_id, chunk.content) for chunk in chunks],
         gerar_embedding,
         diretorio_indice,
+        modelo_embedding=EMBEDDING_MODEL,
     )
     print(
         "Índice MVP pronto | "
@@ -118,15 +120,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cache-dir",
         type=Path,
-        default=Path("data/index/faiss_mvp"),
+        default=Path("data/index/faiss/staging/mvp"),
     )
     args = parser.parse_args()
 
     if args.acao == "buscar" and not args.pergunta:
         parser.error("--pergunta é obrigatório quando --acao buscar.")
 
-    init_db()
-    with SessionLocal() as db:
+    with readonly_session(settings.database_url) as db:
         chunks = carregar_amostra(db, args.limite_chunks, args.tipo)
         indice = criar_indice(chunks, args.cache_dir)
         if args.acao == "buscar":

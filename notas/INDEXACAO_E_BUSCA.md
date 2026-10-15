@@ -55,89 +55,145 @@ duplicados nos índices.
      --corpus-version-id 1
    ```
 
-4. Acrescentar somente os chunks daquele lote ao índice FAISS:
+4. Auditar o índice atual, preparar uma cópia de staging e indexar nessa cópia.
+   A CLI usa o SQLite em modo somente leitura e nunca inicializa/migra o banco:
 
    ```powershell
    python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
-     --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
-     --indice-dir data/index/faiss/v1 `
-     --origem 2026_08_lote_001 `
-     --tamanho-lote 10
+     --auditar `
+     --indice-dir data/index/faiss/v1
+
+   python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+     --preparar-staging `
+     --base-indice-dir data/index/faiss/v1 `
+     --indice-dir data/index/faiss/staging/v2
    ```
 
-5. Consultar. A consulta nunca gera embeddings dos documentos; ela somente usa
-   FTS5, FAISS e os chunks já persistidos.
+   A preparação copia os artefatos legados; não modifica a origem. O destino
+   deve ser um diretório novo/vazio. Revise a saída JSON e confirme o modelo
+   antes de indexar.
+
+5. Indexar pendências em staging. Sem `--arquivo-chunks`, a seleção consulta
+   todos os chunks persistidos; o limite é aplicado após excluir os IDs já
+   presentes. Os filtros funcionam também em conjunto com JSONL. Por segurança,
+   uma execução sem limite processa um checkpoint (500 chunks, por padrão);
+   `--ate-concluir` percorre toda a fila pendente e `--limite-chunks-novos` pode
+   ser combinado para impor um máximo total à execução.
 
    ```powershell
-   python -m src.retrieve "Qual é o prazo de vigência do contrato?" `
-     --cache-dir data/index/faiss/v1
+   python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+     --base-id pncp_rj_estruturada `
+     --indice-dir data/index/faiss/staging/v2 `
+     --ate-concluir `
+     --tamanho-lote 50 `
+     --tamanho-checkpoint 500 `
+     --origem reparo-pncp
    ```
 
-## Continuidade após interrupção
+   Para limitar uma execução, acrescente `--limite-chunks-novos 500`. Para a
+   base normativa use `--base-id editais_normativo`; para filtrar tipo/versão,
+   passe também `--tipo norma` e/ou `--corpus-version-id N`. A opção `--tipo`
+   aceita o valor exato persistido em `Document.doc_type`.
 
-O FAISS salva `chunks.faiss`, `chunk_ids.json` e `estado_indexacao.json` a cada
-microlote. Se a execução falhar, rode o mesmo comando novamente. Apenas os
-`chunk_id` que ainda não estiverem no índice receberão embeddings.
+6. Auditar a cópia depois da indexação e comparar as contagens:
 
-Não apague manualmente somente um dos três arquivos do índice. Para começar um
-índice novo, use outro diretório, por exemplo `data/index/faiss/v2`.
+   ```powershell
+   python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+     --auditar `
+     --indice-dir data/index/faiss/staging/v2
+   ```
 
-### Indexar por blocos de chunks novos
+## Checkpoints e retomada
 
-Quando a máquina ou o serviço de embeddings não suportar um lote completo,
-use `--limite-chunks-novos`. Ele lê o JSONL inteiro, compara os `chunk_id` com
-o FAISS e seleciona somente os próximos registros ainda pendentes:
+Os diretórios de staging usam arquivos imutáveis de base e shards de checkpoint.
+`estado_indexacao.json` é o ponteiro publicado atomicamente para o conjunto de
+checkpoints; cada shard contém checksums dos vetores, IDs e hashes de conteúdo.
+Um lock exclusivo do sistema operacional impede escritores simultâneos.
+`--tamanho-lote` limita o lote enviado ao gerador e
+`--tamanho-checkpoint` controla quantos vetores são confirmados em cada shard.
+O padrão de 500 vetores reduz a quantidade de arquivos novos sem exigir lotes
+de embeddings igualmente grandes. Checkpoints pequenos já existentes são
+preservados; compactação é uma operação separada e explícita, não uma etapa
+automática da indexação. Quando desejado, consolide os checkpoints publicados
+no staging:
 
 ```powershell
 python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
-  --arquivo-chunks data/chunks/v1/2026/chunks_2026_08_lote_001.jsonl `
-  --indice-dir data/index/faiss/v1 `
-  --origem 2026_08_lote_001 `
+  --compactar-checkpoints `
+  --indice-dir data/index/faiss/staging/v2
+```
+
+A compactação valida o índice e usa o mesmo lock exclusivo da escrita. Ela
+publica um único shard novo e troca o estado atomicamente; a base e os shards
+anteriores permanecem no diretório e o estado anterior é guardado em
+`archive/states/` para rollback. O comando não executa embeddings nem altera o
+SQLite. Faça auditoria antes e depois, e nunca execute compactação no índice de
+produção sem revisão e backup operacional.
+
+Para desfazer a compactação mais recente, valide e restaure o estado anterior:
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+  --restaurar-estado-anterior `
+  --indice-dir data/index/faiss/staging/v2
+```
+
+O rollback valida os shards referenciados pelo snapshot antes de publicar o
+estado, preserva também o estado substituído e não remove arquivos.
+
+Ctrl+C encerra entre checkpoints publicados; o checkpoint em geração não é
+publicado parcialmente. Se a interrupção ocorrer depois de o shard ser
+finalizado e antes da publicação do estado, a retomada valida seus checksums,
+dimensão, IDs e hashes antes de adotá-lo. Um shard órfão inválido ou duplicado
+bloqueia a retomada em vez de ser silenciosamente ignorado. A auditoria pode
+ser repetida a qualquer momento; ela não gera embeddings nem escreve no banco.
+
+O limite antigo `--limite-chunks` é alias para o limite de chunks novos e também
+é aplicado após remover IDs já indexados. Para consumo de memória, a pipeline
+consulta primeiro IDs e metadados e só carrega o texto dos pendentes em grupos
+de até 300. `--tamanho-lote` controla quantos textos são enviados por lote de
+embedding, não o total do comando.
+
+## Bases e promoção
+
+O ID físico PNCP é `pncp_rj_estruturada`; o normativo é
+`editais_normativo`. A pipeline não aplica uma lista fixa de tipos documentais.
+Com JSONL, os filtros informados continuam aplicados ao SQLite, em vez de serem
+ignorados.
+
+Após revisar a auditoria do staging, mantenha o índice anterior como rollback e
+aponte a aplicação para o diretório versionado do staging (por exemplo,
+`data/index/faiss/v2`). **Não copie/substitua os arquivos de `v1` em produção
+durante a indexação.** A promoção requer validação operacional e alteração
+controlada do `cache_dir` da aplicação; nenhum comando de promoção automática é
+executado pela pipeline.
+
+Exemplo para indexar os chunks PNCP e normativos pendentes, em execuções
+separadas:
+
+```powershell
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+  --base-id pncp_rj_estruturada `
+  --indice-dir data/index/faiss/staging/v2 `
+  --limite-chunks-novos 500 `
+  --tamanho-lote 10
+
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
+  --base-id editais_normativo `
+  --indice-dir data/index/faiss/staging/v2 `
   --limite-chunks-novos 500 `
   --tamanho-lote 10
 ```
 
-Repita exatamente o mesmo comando para indexar o próximo bloco de 500. Quando
-não restarem pendências, a pipeline informa que não há chunks para indexar.
-
-`--tamanho-lote` controla somente quantos textos entram em cada chamada de
-embedding; ele **não** limita o total do comando. Já `--limite-chunks` limita
-os primeiros registros do JSONL antes da comparação com o índice e, por isso,
-não deve ser usado para retomada.
-
-## Como outras bases da equipe entram
-
-Uma equipe não precisa gerar lote mensal. Após persistir `DocumentChunk`, ela
-usa a mesma pipeline com filtros. Exemplos:
-
-```powershell
-# Todos os chunks de uma base
-python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
-  --base-id base_normativa `
-  --indice-dir data/index/faiss/v1
-
-# Uma versão específica de corpus
-python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss `
-  --corpus-version-id 2 `
-  --indice-dir data/index/faiss/v1
-```
-
-O FTS5 é atualizado automaticamente por triggers quando um `DocumentChunk` é
-inserido, alterado ou removido. Se for necessário reparar ou conferir o índice
-lexical, execute:
-
-```powershell
-python -m src.base_estruturada.pipelines.pipeline_reconstruir_fts
-```
-
 ## Operação e limites
 
-- O primeiro FTS5 é preenchido automaticamente ao inicializar o banco após a
-  atualização. A reconstrução manual só é necessária para manutenção.
-- O progresso exibido pela indexação FAISS representa os embeddings novos do
-  comando atual; chunks já indexados não são recalculados.
 - O diretório `data/index/` é local e derivado, por isso não vai para Git.
-- Trocar o modelo de embedding exige um novo diretório de índice, pois a
-  dimensão ou o espaço vetorial podem mudar.
+- O modelo e a dimensão são fixados no estado. Alterar modelo exige um staging
+  separado e uma migração explícita; a pipeline não migra automaticamente.
+- Hashes de conteúdo são persistidos para shards novos. Índices legados não
+  contêm hashes históricos e, por isso, a mudança de conteúdo de chunks da base
+  legado não pode ser verificada retroativamente.
+- O modo de auditoria não gera embeddings e abre SQLite com URI `mode=ro` e
+  `PRAGMA query_only=ON`; não chama `init_db`, migrações nem inicialização FTS5.
 - Perguntas factuais devem ser respondidas por SQL sobre `raw_asset`; FTS5 e
   FAISS servem para recuperação textual e semântica de documentos.

@@ -66,6 +66,33 @@ class DocumentCatalogTests(unittest.TestCase):
             "compras/2026/9055/arquivos/1",
         )
 
+    def test_filtro_titulo_ignora_acentos_e_caixa(self) -> None:
+        for titulo in ("manutencao", "MANUTENCAO", "MaNuTeNçÃo"):
+            with self.subTest(titulo=titulo):
+                resultado = consultar_catalogo_documentos_pncp(self.db, titulo=titulo)
+                self.assertEqual(len(resultado), 1)
+                self.assertEqual(resultado[0]["titulo"], "Edital de manutenção de elevadores")
+        self.assertEqual(
+            consultar_catalogo_documentos_pncp(self.db, titulo="inexistente"), []
+        )
+
+    def test_filtro_tipo_documento_ignora_acentos_e_caixa(self) -> None:
+        documento = self.db.query(DocumentCatalogEntry).one()
+        documento.tipo_documento = "Termo de Referência"
+        self.db.commit()
+
+        for tipo_documento in ("referencia", "REFERENCIA", "ReFeRêNcIa"):
+            with self.subTest(tipo_documento=tipo_documento):
+                resultado = consultar_catalogo_documentos_pncp(
+                    self.db, tipo_documento=tipo_documento
+                )
+                self.assertEqual(len(resultado), 1)
+                self.assertEqual(resultado[0]["tipoDocumento"], "Termo de Referência")
+        self.assertEqual(
+            consultar_catalogo_documentos_pncp(self.db, tipo_documento="inexistente"),
+            [],
+        )
+
     def test_fallback_expoe_catalogo_quando_rag_nao_tem_chunks(self) -> None:
         analysis = QueryAnalysis(
             route=QueryRoute.RAG,
