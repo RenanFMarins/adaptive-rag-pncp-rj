@@ -8,8 +8,9 @@ from collections.abc import Callable
 
 from pydantic import ValidationError
 
-from app.core.logging import novo_run_id, registrar
-from app.core.llm_provider import gerar_resposta_com_fallback
+from app.core.logging import novo_run_id, perf_stage, registrar
+from app.core.llm_http_observability import llm_http_operation
+from llm_ecoa import gerar_resposta_analyzer
 from src.query.prompts import montar_prompt_analise
 from src.query.schemas import QueryAnalysis, QueryRoute
 
@@ -286,12 +287,12 @@ def _extrair_json(resposta: str) -> str:
     fim = conteudo.rfind("}")
     if inicio == -1 or fim <= inicio:
         raise QueryAnalysisError("A LLM não retornou um objeto JSON válido.")
-    return conteudo[inicio : fim + 1]
+    return conteudo[inicio: fim + 1]
 
 
 def analisar_pergunta(
     pergunta: str,
-    llm_fn: AnalyzerLlmFn | None = None,
+    llm_fn: AnalyzerLlmFn = gerar_resposta_analyzer,
     *,
     rota_obrigatoria: QueryRoute | None = None,
 ) -> QueryAnalysis:
@@ -301,14 +302,15 @@ def analisar_pergunta(
     if not pergunta_limpa:
         raise QueryAnalysisError("A pergunta não pode estar vazia.")
 
-    resposta = (llm_fn or gerar_resposta_com_fallback)(
-        montar_prompt_analise(
-            pergunta_limpa,
-            rota_obrigatoria=(
-                rota_obrigatoria.value if rota_obrigatoria is not None else None
-            ),
-        )
+    prompt = montar_prompt_analise(
+        pergunta_limpa,
+        rota_obrigatoria=(
+            rota_obrigatoria.value if rota_obrigatoria is not None else None
+        ),
     )
+    with perf_stage("analyzer_llm"):
+        with llm_http_operation("analyzer"):
+            resposta = llm_fn(prompt)
     try:
         plano_bruto = json.loads(_extrair_json(resposta))
     except json.JSONDecodeError as exc:
@@ -348,7 +350,7 @@ def analisar_pergunta(
 
 def analisar_pergunta_estruturada(
     pergunta: str,
-    llm_fn: AnalyzerLlmFn | None = None,
+    llm_fn: AnalyzerLlmFn = gerar_resposta_analyzer,
 ) -> QueryAnalysis:
     """Analisa uma pergunta para o endpoint que aceita somente SQL seguro."""
 

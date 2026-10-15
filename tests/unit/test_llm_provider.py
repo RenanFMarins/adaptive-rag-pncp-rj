@@ -1,64 +1,122 @@
+"""Testes sem rede para seleção e fallback de provedores de LLM."""
+
 from __future__ import annotations
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from app.core.llm_provider import (
-    LlmProviderError,
-    gerar_resposta_com_fallback_detalhada,
-)
+import app.core.llm_provider as llm_provider_module
+from app.core.config import settings
+from app.core.llm_provider import LlmProviderError, gerar_com_fallback
 
 
 class LlmProviderTests(unittest.TestCase):
-    def test_usa_ecoa_quando_primaria_responde(self):
-        groq = Mock(return_value="não deveria ser chamada")
+    def test_ecoa_responde_sem_chamar_fallback(self):
+        fallback = unittest.mock.Mock(return_value="não deveria executar")
+        with patch.object(settings, "llm_fallback_provider", "groq"):
+            result = gerar_com_fallback(
+                "pergunta",
+                operation="generation",
+                ecoa_fn=lambda _prompt: "resposta Ecoa",
+                ecoa_model="modelo-ecoa",
+                fallback_fn=fallback,
+            )
 
-        result = gerar_resposta_com_fallback_detalhada(
-            "pergunta",
-            ecoa_fn=lambda _prompt: "resposta Ecoa",
-            groq_fn=groq,
-        )
-
-        self.assertEqual(result.content, "resposta Ecoa")
         self.assertEqual(result.provider, "ecoa")
         self.assertFalse(result.fallback_used)
-        groq.assert_not_called()
+        fallback.assert_not_called()
 
-    @patch("app.core.llm_provider._registrar_fallback")
-    def test_timeout_da_ecoa_usa_groq(self, registrar_fallback):
-        result = gerar_resposta_com_fallback_detalhada(
-            "pergunta",
-            ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
-            groq_fn=lambda _prompt: "resposta Groq",
-        )
+    def test_timeout_da_ecoa_usa_groq_configurada(self):
+        with patch.object(settings, "llm_fallback_provider", "groq"), \
+                patch.object(settings, "llm_fallback_groq_model", "modelo-groq"):
+            result = gerar_com_fallback(
+                "pergunta",
+                operation="generation",
+                ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
+                ecoa_model="modelo-ecoa",
+                fallback_fn=lambda _prompt, provider, model: (
+                    self.assertEqual((provider, model),
+                                     ("groq", "modelo-groq"))
+                    or "resposta Groq"
+                ),
+            )
 
-        self.assertEqual(result.content, "resposta Groq")
         self.assertEqual(result.provider, "groq")
         self.assertTrue(result.fallback_used)
         self.assertEqual(result.fallback_reason, "timeout_or_connection")
-        registrar_fallback.assert_called_once()
 
-    def test_erro_de_validacao_nao_dispara_fallback(self):
-        groq = Mock(return_value="resposta Groq")
-
-        with self.assertRaisesRegex(RuntimeError, "resposta inválida"):
-            gerar_resposta_com_fallback_detalhada(
+    def test_timeout_da_ecoa_usa_openai_configurada(self):
+        with patch.object(settings, "llm_fallback_provider", "openai"), \
+                patch.object(settings, "llm_fallback_openai_model", "modelo-openai"):
+            result = gerar_com_fallback(
                 "pergunta",
-                ecoa_fn=lambda _prompt: (_ for _ in ()).throw(
-                    RuntimeError("resposta inválida")
+                operation="analyzer",
+                ecoa_fn=lambda _prompt: (
+                    _ for _ in ()).throw(ConnectionError()),
+                ecoa_model="modelo-ecoa",
+                fallback_fn=lambda _prompt, provider, model: (
+                    self.assertEqual((provider, model),
+                                     ("openai", "modelo-openai"))
+                    or "resposta OpenAI"
                 ),
-                groq_fn=groq,
             )
 
-        groq.assert_not_called()
+        self.assertEqual(result.provider, "openai")
+        self.assertTrue(result.fallback_used)
 
-    def test_dupla_falha_expoe_erro_claro(self):
-        with self.assertRaises(LlmProviderError) as captured:
-            gerar_resposta_com_fallback_detalhada(
-                "pergunta",
-                ecoa_fn=lambda _prompt: (_ for _ in ()).throw(ConnectionError()),
-                groq_fn=lambda _prompt: (_ for _ in ()).throw(RuntimeError("indisponível")),
-            )
+    def test_erro_nao_transitorio_nao_aciona_fallback(self):
+        fallback = unittest.mock.Mock(return_value="resposta")
+        with patch.object(settings, "llm_fallback_provider", "groq"):
+            with self.assertRaisesRegex(RuntimeError, "plano inválido"):
+                gerar_com_fallback(
+                    "pergunta",
+                    operation="analyzer",
+                    ecoa_fn=lambda _prompt: (_ for _ in ()).throw(
+                        RuntimeError("plano inválido")),
+                    ecoa_model="modelo-ecoa",
+                    fallback_fn=fallback,
+                )
+        fallback.assert_not_called()
 
+    def test_dupla_falha_retorna_erro_unificado(self):
+        with patch.object(settings, "llm_fallback_provider", "groq"):
+            with self.assertRaises(LlmProviderError) as captured:
+                gerar_com_fallback(
+                    "pergunta",
+                    operation="generation",
+                    ecoa_fn=lambda _prompt: (
+                        _ for _ in ()).throw(TimeoutError()),
+                    ecoa_model="modelo-ecoa",
+                    fallback_fn=lambda *_args: (_ for _ in ()
+                                                ).throw(RuntimeError("indisponível")),
+                )
         self.assertIn("Ecoa falhou", str(captured.exception))
-        self.assertIn("fallback Groq", str(captured.exception))
+        self.assertIn("groq", str(captured.exception))
+
+    def test_timeout_sem_fallback_retorna_erro_unificado(self):
+        with patch.object(settings, "llm_fallback_provider", "none"):
+            with self.assertRaises(LlmProviderError) as captured:
+                gerar_com_fallback(
+                    "pergunta",
+                    operation="generation",
+                    ecoa_fn=lambda _prompt: (
+                        _ for _ in ()).throw(TimeoutError()),
+                    ecoa_model="modelo-ecoa",
+                )
+
+        self.assertIn("não há fallback configurado", str(captured.exception))
+
+    def test_timeout_usa_executor_padrao_com_operacao(self):
+        with patch.object(settings, "llm_fallback_provider", "groq"), \
+                patch.object(settings, "llm_fallback_groq_model", "modelo-groq"), \
+                patch.object(llm_provider_module, "_executar_fallback", return_value="resposta") as executor:
+            result = gerar_com_fallback(
+                "pergunta",
+                operation="analyzer",
+                ecoa_fn=lambda _prompt: (_ for _ in ()).throw(TimeoutError()),
+                ecoa_model="modelo-ecoa",
+            )
+
+        self.assertEqual(result.provider, "groq")
+        executor.assert_called_once_with(
+            "pergunta", "groq", "modelo-groq", "analyzer")

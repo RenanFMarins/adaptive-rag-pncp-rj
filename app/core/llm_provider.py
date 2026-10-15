@@ -1,30 +1,34 @@
-"""Provedor de geração com Ecoa primária e Groq como fallback controlado.
+"""Fallback configurável de LLM para Analyzer e geração RAG.
 
-Embeddings não passam por este módulo. O índice FAISS deve continuar usando
-um único modelo de embedding para não misturar vetores incompatíveis.
+O módulo não participa da criação de embeddings. FAISS continua dependente de
+um único modelo Ecoa para preservar dimensão e comparabilidade dos vetores.
 """
 
 from __future__ import annotations
 
-import os
+import time
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Literal
 
-from app.core.logging import novo_run_id, registrar
-from llm_ecoa import GENERATION_MODEL as ECOA_MODEL
-from llm_ecoa import gerar_resposta as gerar_resposta_ecoa
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+
+from app.core.config import settings
+from app.core.llm_http_observability import llm_http_operation
+from app.core.logging import perf_event
+
+
+ProviderName = Literal["ecoa", "openai", "groq"]
+TextGenerator = Callable[[str], str]
 
 
 class LlmProviderError(RuntimeError):
-    """Falha de geração depois de esgotar os provedores permitidos."""
+    """Nenhum provedor configurado conseguiu gerar uma resposta."""
 
 
 @dataclass(frozen=True)
 class LlmGeneration:
-    """Texto gerado e metadados mínimos para auditoria."""
-
     content: str
-    provider: str
+    provider: ProviderName
     model: str
     fallback_used: bool = False
     fallback_reason: str | None = None
@@ -38,129 +42,155 @@ class LlmGeneration:
         }
 
 
-TextGenerator = Callable[[str], str]
+def _provedor_fallback(operation: str) -> str:
+    """Resolve o provedor canônico, preservando a flag legada do Analyzer."""
+
+    if settings.llm_fallback_provider != "none":
+        return settings.llm_fallback_provider
+    if operation == "analyzer" and settings.analyzer_openai_fallback_enabled:
+        return "openai"
+    return "none"
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().casefold() in {"1", "true", "t", "yes", "y", "sim", "s"}
+def _modelo_fallback(provider: str) -> str:
+    if provider == "openai":
+        # A variável nova prevalece; a antiga mantém ambientes já configurados.
+        return settings.llm_fallback_openai_model or settings.analyzer_openai_model
+    if provider == "groq":
+        return settings.llm_fallback_groq_model
+    raise ValueError(f"Provedor de fallback não suportado: {provider}.")
 
 
-def _fallback_habilitado() -> bool:
-    return _env_bool("LLM_FALLBACK_ENABLED", True)
-
-
-def _modelo_groq() -> str:
-    return os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-
-
-def _motivo_fallback(exc: Exception) -> str | None:
-    """Classifica apenas falhas transitórias que justificam trocar de provedor."""
-
-    if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
+def _motivo_fallback(error: Exception) -> str | None:
+    if isinstance(error, APITimeoutError):
+        return "timeout"
+    if isinstance(error, APIConnectionError):
+        return "erro_conexao"
+    if isinstance(error, APIStatusError):
+        if error.status_code == 429:
+            return "http_429"
+        if error.status_code >= 500:
+            return "http_5xx"
+    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
         return "timeout_or_connection"
-
-    # As classes OpenAI podem variar entre versões; por isso a classificação
-    # usa também atributos estáveis em vez de exigir uma versão específica.
-    error_name = type(exc).__name__
-    if error_name in {"APITimeoutError", "APIConnectionError", "InternalServerError"}:
-        return "timeout_or_connection"
-    status_code = getattr(exc, "status_code", None)
-    if isinstance(status_code, int) and status_code >= 500:
-        return f"http_{status_code}"
     return None
 
 
-def gerar_resposta_groq(prompt: str) -> str:
-    """Gera texto via Groq somente quando a chave e o pacote estão disponíveis."""
-
-    if not os.getenv("GROQ_API_KEY"):
-        raise LlmProviderError(
-            "Fallback Groq indisponível: configure GROQ_API_KEY no arquivo .env."
-        )
-    try:
-        from langchain_groq import ChatGroq
-    except ImportError as exc:
-        raise LlmProviderError(
-            "Fallback Groq indisponível: instale langchain-groq pelas dependências do projeto."
-        ) from exc
-
-    llm = ChatGroq(
-        model=_modelo_groq(),
-        temperature=float(os.getenv("GROQ_TEMPERATURE", "0")),
-        timeout=float(os.getenv("GROQ_TIMEOUT_SECONDS", "45")),
-        # A Groq é o último provedor desta chamada. Não prolongamos a espera
-        # com retries internos invisíveis ao usuário.
-        max_retries=0,
-    )
-    response = llm.invoke(prompt)
+def _conteudo(response: object, provider: str) -> str:
     content = getattr(response, "content", None)
     if content is None or not str(content).strip():
-        raise LlmProviderError("Groq retornou uma resposta vazia.")
+        raise LlmProviderError(f"{provider} retornou uma resposta vazia.")
     return str(content)
 
 
-def _registrar_fallback(motivo: str, model: str) -> None:
-    """Registra a troca sem gravar prompt ou credenciais no log."""
+def _gerar_openai(prompt: str, model: str) -> str:
+    api_key = settings.openai_api_key.get_secret_value()
+    if not api_key:
+        raise LlmProviderError("Fallback OpenAI indisponível: configure OPENAI_API_KEY no .env.")
+    client = OpenAI(
+        api_key=api_key,
+        timeout=settings.llm_fallback_timeout_seconds,
+        max_retries=0,
+    )
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+    content = response.choices[0].message.content
+    if content is None or not content.strip():
+        raise LlmProviderError("OpenAI retornou uma resposta vazia.")
+    return content
 
+
+def _gerar_groq(prompt: str, model: str) -> str:
+    api_key = settings.groq_api_key.get_secret_value()
+    if not api_key:
+        raise LlmProviderError("Fallback Groq indisponível: configure GROQ_API_KEY no .env.")
     try:
-        registrar(
-            novo_run_id(),
-            "llm_provider",
-            status="fallback",
-            saida="Ecoa indisponível; resposta gerada pelo fallback Groq.",
-            modelo=model,
-            provider="groq",
-            fallback_reason=motivo,
+        from langchain_groq import ChatGroq
+    except ImportError as error:
+        raise LlmProviderError(
+            "Fallback Groq indisponível: instale langchain-groq pelas dependências do projeto."
+        ) from error
+    llm = ChatGroq(
+        model=model,
+        temperature=0,
+        timeout=settings.llm_fallback_timeout_seconds,
+        max_retries=0,
+    )
+    return _conteudo(llm.invoke(prompt), "Groq")
+
+
+def _executar_fallback(prompt: str, provider: str, model: str, operation: str) -> str:
+    started = time.perf_counter()
+    perf_event(f"{operation}_fallback", "inicio", provedor=provider, modelo=model)
+    try:
+        with llm_http_operation(operation, provider=provider):
+            if provider == "openai":
+                content = _gerar_openai(prompt, model)
+            elif provider == "groq":
+                content = _gerar_groq(prompt, model)
+            else:
+                raise ValueError(f"Provedor de fallback inválido: {provider}.")
+    except BaseException as error:
+        perf_event(
+            f"{operation}_fallback", "erro", (time.perf_counter() - started) * 1000,
+            type(error).__name__, provedor=provider,
         )
-    except Exception:
-        # Observabilidade não pode impedir uma resposta já disponível.
-        pass
+        raise
+    perf_event(
+        f"{operation}_fallback", "ok", (time.perf_counter() - started) * 1000,
+        provedor=provider, modelo=model,
+    )
+    return content
 
 
-def gerar_resposta_com_fallback_detalhada(
+def gerar_com_fallback(
     prompt: str,
     *,
-    ecoa_fn: TextGenerator = gerar_resposta_ecoa,
-    groq_fn: TextGenerator | None = None,
+    operation: str,
+    ecoa_fn: TextGenerator,
+    ecoa_model: str,
+    fallback_fn: Callable[[str, str, str], str] | None = None,
 ) -> LlmGeneration:
-    """Tenta Ecoa e usa Groq apenas em falhas transitórias autorizadas."""
+    """Executa Ecoa e troca de provedor somente em falhas transitórias."""
 
     try:
-        return LlmGeneration(
-            content=ecoa_fn(prompt),
-            provider="ecoa",
-            model=ECOA_MODEL,
-        )
+        with llm_http_operation(operation, provider="ecoa"):
+            content = ecoa_fn(prompt)
+        return LlmGeneration(content=content, provider="ecoa", model=ecoa_model)
     except Exception as ecoa_error:
         motivo = _motivo_fallback(ecoa_error)
-        if motivo is None or not _fallback_habilitado():
+        provider = _provedor_fallback(operation)
+        if motivo is None:
             raise
 
-        gerador_groq = groq_fn or gerar_resposta_groq
-        try:
-            content = gerador_groq(prompt)
-        except Exception as groq_error:
+        # Um timeout do Ecoa sem fallback configurado é indisponibilidade de
+        # serviço, não erro interno da aplicação. Ao unificar a exceção, as
+        # rotas conseguem responder HTTP 503 em vez de HTTP 500.
+        if provider == "none":
             raise LlmProviderError(
-                "Ecoa falhou e o fallback Groq também não respondeu. "
-                f"Ecoa={type(ecoa_error).__name__}; "
-                f"Groq={type(groq_error).__name__}."
-            ) from groq_error
+                "Ecoa não respondeu a tempo e não há fallback configurado. "
+                "Configure LLM_FALLBACK_PROVIDER=groq ou openai no .env."
+            ) from ecoa_error
 
-        model = _modelo_groq()
-        _registrar_fallback(motivo, model)
+        model = _modelo_fallback(provider)
+        try:
+            if fallback_fn is not None:
+                content = fallback_fn(prompt, provider, model)
+            else:
+                content = _executar_fallback(prompt, provider, model, operation)
+        except Exception as fallback_error:
+            raise LlmProviderError(
+                "Ecoa falhou e o fallback também não respondeu. "
+                f"Ecoa={type(ecoa_error).__name__}; "
+                f"Fallback={provider}/{type(fallback_error).__name__}."
+            ) from fallback_error
         return LlmGeneration(
             content=content,
-            provider="groq",
+            provider=provider,
             model=model,
             fallback_used=True,
             fallback_reason=motivo,
         )
-
-
-def gerar_resposta_com_fallback(prompt: str) -> str:
-    """Adaptador compatível com os pontos do projeto que esperam apenas texto."""
-
-    return gerar_resposta_com_fallback_detalhada(prompt).content

@@ -1259,3 +1259,147 @@ Os próximos passos definidos foram:
 - concluir a coleta de contratos e empenhos necessários ao snapshot T2;
 - gerar o inventário e a Release do segundo trimestre;
 - iniciar a normalização dos dados preservados na camada RAW.
+- 
+## Encontro 10 - 2026-10-09
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei meu trabalho na evolução da arquitetura de ingestão da camada RAW das bases Estruturada e Agregada do Portal Nacional de Contratações Públicas (PNCP), com foco na preparação do sistema para realizar coletas incrementais e identificar alterações em registros históricos sem comprometer os dados já armazenados.
+
+Inicialmente, foi realizada uma auditoria técnica da implementação existente, identificando limitações no mecanismo de identificação das entidades, no versionamento dos registros e no controle de checkpoints. A partir dessa análise, foi estruturada uma abordagem para separar a coleta histórica da futura coleta incremental, preservando a compatibilidade com o fluxo atual do projeto.
+
+Uma das principais melhorias foi a correção da identidade canônica dos registros RAW. Anteriormente, a identificação dependia da fonte de coleta, o que poderia fazer uma mesma contratação aparecer como uma nova entidade ao ser encontrada por outro coletor. A identificação passou a considerar a combinação `base_id`, `resource_type` e `external_id`, permitindo reconhecer o mesmo registro independentemente da origem da execução.
+
+Também foi aprimorado o mecanismo de versionamento, mantendo a preservação imutável dos payloads originais e a detecção de alterações por SHA-256. O sistema passou a considerar a versão corrente do registro, evitando que informações antigas recebidas fora de ordem substituam indevidamente versões mais recentes.
+
+Para validar essas alterações, foi utilizada uma cópia isolada do banco SQLite referente ao primeiro trimestre de 2023, anteriormente disponibilizado em uma Release do GitHub. Foi aplicada exclusivamente nessa cópia uma migração responsável pela criação de um índice para otimizar as consultas por identidade canônica.
+
+Outra atividade importante foi a reformulação da arquitetura de checkpoints. O modelo anterior utilizava posições numéricas em listas dinâmicas, o que poderia ocasionar a perda de alvos quando novos registros fossem inseridos durante o processo de coleta.
+
+Para solucionar esse problema, foram implementadas quatro novas estruturas:
+
+- `sync_job`: identificação da configuração e do tipo de coleta;
+- `sync_window`: controle das janelas temporais de processamento;
+- `sync_target_progress`: acompanhamento individual dos alvos por identidade estável;
+- `sync_watermark`: registro do progresso temporal confirmado.
+
+O novo modelo também incorporou controle de concorrência por lease, recuperação de execuções interrompidas, separação entre checkpoints históricos e incrementais e confirmação do progresso somente após a persistência bem-sucedida dos registros RAW.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para analisar os problemas identificados na arquitetura de ingestão, estruturar as etapas de correção, discutir estratégias de versionamento, planejar a separação entre coleta histórica e incremental e elaborar instruções técnicas para implementação e validação.
+
+As alterações foram acompanhadas por verificações de integridade e testes, mantendo a preocupação com a preservação dos dados históricos.
+
+### Resultado do encontro
+
+Ao final do encontro, foram concluídas e validadas as melhorias de identidade canônica, versionamento RAW e controle de checkpoints v2. A migração do índice foi testada com sucesso no snapshot do primeiro trimestre de 2023, preservando todos os registros originais.
+
+A arquitetura passou a contar com mecanismos mais seguros para identificar atualizações, acompanhar janelas de processamento, controlar execuções concorrentes e retomar coletas interrompidas.
+
+Nenhum banco operacional foi modificado durante essas validações, e a coleta histórica existente permaneceu preservada.
+
+### Próximos passos
+
+Os próximos passos serão:
+
+- implementar o novo ponto de entrada `fetch_incremental.py`, separado do coletor histórico;
+- integrar o novo coletor aos checkpoints v2;
+- implementar e validar a renovação de lease durante execuções prolongadas;
+- realizar simulações offline de atualizações e retomadas;
+- analisar as datas de atualização fornecidas pelo PNCP;
+- preparar a futura integração dos endpoints incrementais para PCA, contratações, contratos e atas;
+- definir estratégias de reconciliação para itens, resultados homologados e demais recursos dependentes;
+- manter a preservação e a rastreabilidade dos dados RAW antes do início da normalização.
+
+
+## Encontro 10 - 2026-10-14
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, concentrei as atividades na análise e no planejamento da evolução da ingestão incremental dos dados do Portal Nacional de Contratações Públicas (PNCP). O objetivo foi avaliar a segurança da arquitetura implementada, identificar possíveis problemas de integridade e recuperação de falhas e organizar as correções necessárias antes de iniciar a integração com os endpoints reais do PNCP.
+
+### Auditoria da arquitetura de ingestão incremental
+
+Foi realizada uma análise técnica da branch `feature/ingestao-incremental-pncp`, verificando os componentes responsáveis pelo versionamento dos registros RAW, controle de checkpoints, watermark, concorrência, paginação e tratamento de atualizações.
+
+A auditoria identificou problemas importantes:
+
+- possibilidade de gravações concorrentes não atômicas na camada RAW;
+- risco de um processo continuar gravando após perder o controle do lease;
+- avanço do watermark mesmo com janelas anteriores pendentes;
+- tratamento inadequado de timestamps inválidos ou atualizações fora de ordem;
+- possibilidade de conclusão de janelas sem garantir todos os alvos esperados;
+- riscos de perda de registros durante a retomada de páginas;
+- geração de versões artificiais em registros PCA distribuídos entre diferentes páginas.
+
+Esses problemas foram classificados de acordo com sua gravidade e impacto na confiabilidade da ingestão.
+
+### Validação dos testes e integridade do projeto
+
+Também foi realizada a verificação do estado atual do repositório e da suíte automatizada de testes.
+
+Os resultados apresentados foram:
+
+- 117 testes executados e aprovados;
+- nenhuma falha ou teste ignorado;
+- validação de sintaxe com `compileall`;
+- verificação de integridade das alterações com `git diff --check`;
+- nenhuma modificação nos bancos operacionais;
+- nenhuma chamada HTTP real durante a auditoria.
+
+Apesar dos testes aprovados, a análise demonstrou a necessidade de ampliar a cobertura de cenários relacionados à concorrência, consistência temporal e recuperação de falhas.
+
+### Organização do backlog e planejamento das correções
+
+Com base nos problemas identificados, foi elaborado um backlog técnico contendo 20 tarefas, classificadas por prioridade, dependências e esforço estimado.
+
+As correções críticas foram concentradas na integridade da persistência RAW, no controle de concorrência, na consistência temporal, no congelamento dos alvos esperados e no avanço seguro do watermark.
+
+Também foi definido um procedimento de execução por tarefa, dividido em investigação, reprodução do problema, proposta de solução, implementação controlada e testes de regressão.
+
+Como primeira atividade, foi priorizada a regularização dos arquivos de migração e documentação necessários para tornar a branch incremental reproduzível em outros ambientes.
+
+### Documentação e preservação do ambiente de desenvolvimento
+
+Foram preparados três documentos técnicos:
+
+- `DIAGNOSTICO_ATUAL_INCREMENTAL.md`;
+- `BACKLOG_PRIORIZADO_INCREMENTAL.md`;
+- `PLANO_EXECUCAO_INCREMENTAL.md`.
+
+Os documentos registram o estado atual da implementação, os riscos encontrados e a sequência recomendada para as próximas atividades.
+
+Também foi revisado o procedimento de utilização do Git stash para preservar os arquivos locais da auditoria e as migrações SQL antes da mudança de contexto para outras atividades do projeto.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como apoio para:
+
+- estruturar a auditoria técnica da ingestão incremental;
+- investigar riscos relacionados ao versionamento e à persistência RAW;
+- organizar os problemas encontrados por nível de criticidade;
+- elaborar um backlog com dependências e critérios de aceite;
+- revisar os cuidados necessários para preservar os bancos e checkpoints existentes.
+
+### Resultado do encontro
+
+Ao final do encontro, a arquitetura incremental estava documentada e avaliada.
+
+Foram identificados cinco problemas críticos que precisam ser corrigidos antes da integração HTTP real. A análise foi realizada sem modificar os dados operacionais ou executar novas coletas.
+
+A implementação das correções ficou planejada para as próximas atividades, priorizando a integridade dos registros RAW e a segurança do processamento incremental.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- regularizar e versionar os arquivos de migração e documentação da branch incremental;
+- validar as entradas e o tratamento de registros anômalos;
+- corrigir a interpretação de timestamps e atualizações fora de ordem;
+- garantir atomicidade nas operações de versionamento RAW;
+- implementar proteção contra gravações após a expiração do lease;
+- impedir o avanço do watermark quando houver janelas pendentes;
+- corrigir os mecanismos de paginação e retomada;
+- revisar a consolidação dos registros PCA;
+- implementar e testar os adaptadores HTTP incrementais em ambiente isolado, após a estabilização da arquitetura.

@@ -9,11 +9,14 @@ from typing import Callable
 
 from rich.console import Console
 from sqlalchemy.orm import Session
+from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
+from app.core.llm_http_observability import llm_http_operation
+from app.core.llm_provider import gerar_com_fallback
 
 from app.modules.query.services import persistir_resultado_rag
 from app.modules.rag.services import recuperar_chunks_ranqueados
-from app.core.llm_provider import gerar_resposta_com_fallback_detalhada
-from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL
+from llm_ecoa import GENERATION_MAX_TOKENS, GENERATION_MODEL, gerar_resposta
 from src.audit import new_trace_id, utc_now, write_audit_trace
 from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk, contar_chunks_por_base
@@ -133,7 +136,7 @@ def gerar_resposta_rag(
     db: Session,
     pergunta: str,
     top_k: int = 5,
-    cache_dir: Path = Path("data/index/faiss"),
+    cache_dir: Path | None = None,
     retrieval_fn: Callable[..., list[RankedChunk]
                            ] = recuperar_chunks_ranqueados,
     llm_fn: Callable[[str], str] | None = None,
@@ -146,17 +149,20 @@ def gerar_resposta_rag(
     bases: list[KnowledgeBase] | None = None,
     structured_result: StructuredQueryResult | None = None,
 ) -> RagAnswer:
+    cache_dir = resolver_caminho_indice_faiss(cache_dir)
+
     def informar(mensagem: str) -> None:
         if progresso is not None:
             progresso(mensagem)
 
     trace_started = time.perf_counter()
-    base_ids_permitidos = resolver_base_ids(bases)
-    chunks_por_base = (
-        contar_chunks_por_base(db, base_ids_permitidos)
-        if db is not None
-        else {}
-    )
+    with perf_stage("audit_preparation"):
+        base_ids_permitidos = resolver_base_ids(bases)
+        chunks_por_base = (
+            contar_chunks_por_base(db, base_ids_permitidos)
+            if db is not None
+            else {}
+        )
     trace = {
         "trace_id": trace_id or new_trace_id(),
         "started_at": utc_now(),
@@ -212,7 +218,9 @@ def gerar_resposta_rag(
     try:
         informar("Validando regras de segurança...")
         trace["stage"] = "guardrail"
-        bloqueado, mensagem_guardrail = verificar_guardrails_pergunta(pergunta)
+        with perf_stage("guardrail"):
+            bloqueado, mensagem_guardrail = verificar_guardrails_pergunta(
+                pergunta)
         trace["guardrail"] = {
             "checked": True,
             "triggered": bloqueado,
@@ -233,14 +241,16 @@ def gerar_resposta_rag(
 
         informar("Consultando evidências no FTS5 e no FAISS...")
         trace["stage"] = "retrieval"
-        chunks = retrieval_fn(
-            db=db,
-            pergunta=pergunta,
-            top_k=top_k,
-            cache_dir=cache_dir,
-            filters=filters,
-            bases=bases,
-        )
+        with perf_stage("retrieval") as metrics:
+            chunks = retrieval_fn(
+                db=db,
+                pergunta=pergunta,
+                top_k=top_k,
+                cache_dir=cache_dir,
+                filters=filters,
+                bases=bases,
+            )
+            metrics["fontes"] = len(chunks)
 
         trace["retrieval"]["chunks"] = [
             {
@@ -274,22 +284,35 @@ def gerar_resposta_rag(
                 f"{len(chunks)} evidência(s) recuperada(s). Montando o contexto..."
             )
         else:
-            informar("Nenhuma evidência documental foi encontrada. Usando dados estruturados...")
-        contexto = montar_contexto(chunks, structured_result=structured_result)
-        prompt = montar_prompt(pergunta, contexto)
+            informar(
+                "Nenhuma evidência documental foi encontrada. Usando dados estruturados...")
+        with perf_stage("context") as metrics:
+            contexto = montar_contexto(
+                chunks, structured_result=structured_result)
+            prompt = montar_prompt(pergunta, contexto)
+            metrics["fontes"] = len(chunks)
         trace["generation"]["contexto"] = contexto
         trace["generation"]["prompt"] = prompt
 
         informar("Gerando resposta com a LLM...")
         trace["stage"] = "generation"
         generation_started = time.perf_counter()
-        if llm_fn is None:
-            generation = gerar_resposta_com_fallback_detalhada(prompt)
-            resposta = generation.content
-            trace["generation"].update(generation.audit_metadata())
-        else:
-            resposta = llm_fn(prompt)
-            trace["generation"]["provider"] = "custom"
+        with perf_stage("llm_generation"):
+            if llm_fn is None:
+                generation = gerar_com_fallback(
+                    prompt,
+                    operation="generation",
+                    ecoa_fn=gerar_resposta,
+                    ecoa_model=GENERATION_MODEL,
+                )
+                resposta = generation.content
+                trace["generation"].update(generation.audit_metadata())
+            else:
+                # Funções injetadas são usadas pelos testes e por experimentos
+                # locais; o fallback real continua centralizado acima.
+                with llm_http_operation("generation", provider="custom"):
+                    resposta = llm_fn(prompt)
+                trace["generation"]["provider"] = "custom"
         trace["generation"]["elapsed_ms"] = int(
             (time.perf_counter() - generation_started) * 1000
         )
@@ -298,13 +321,14 @@ def gerar_resposta_rag(
         if persistir:
             informar("Persistindo a consulta, a resposta e as fontes...")
             trace["stage"] = "persistence"
-            query, response = persistir_resultado_rag(
-                db=db,
-                pergunta=pergunta,
-                resposta=resposta,
-                sources=chunks,
-                is_refusal=False,
-            )
+            with perf_stage("persistence"):
+                query, response = persistir_resultado_rag(
+                    db=db,
+                    pergunta=pergunta,
+                    resposta=resposta,
+                    sources=chunks,
+                    is_refusal=False,
+                )
             trace["persistence"]["query_id"] = query.id
             trace["persistence"]["response_id"] = response.id
             trace["persistence"]["run_id"] = query.run_id
@@ -328,7 +352,8 @@ def gerar_resposta_rag(
     finally:
         trace["finished_at"] = utc_now()
         trace["elapsed_ms"] = int((time.perf_counter() - trace_started) * 1000)
-        write_audit_trace(trace, audit_dir)
+        with perf_stage("audit"):
+            write_audit_trace(trace, audit_dir)
 
 
 if __name__ == "__main__":
@@ -342,7 +367,6 @@ if __name__ == "__main__":
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument(
         "--cache-dir",
-        default="data/index/faiss",
     )
     parser.add_argument(
         "--mostrar-prompt",
@@ -367,7 +391,7 @@ if __name__ == "__main__":
                 db=db,
                 pergunta=args.pergunta,
                 top_k=args.top_k,
-                cache_dir=Path(args.cache_dir),
+                cache_dir=Path(args.cache_dir) if args.cache_dir else None,
                 incluir_prompt=args.mostrar_prompt,
                 persistir=args.persistir,
                 progresso=status.update,

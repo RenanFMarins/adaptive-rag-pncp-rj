@@ -2,7 +2,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from llm_ecoa import gerar_resposta
+from llm_ecoa import GENERATION_MAX_TOKENS, gerar_resposta
 
 
 class FakeCompletions:
@@ -38,7 +38,10 @@ class LlmEcoaTests(unittest.TestCase):
         fake_client = FakeClient("Resposta fundamentada.")
         with patch("llm_ecoa.client", fake_client):
             self.assertEqual(gerar_resposta("prompt"), "Resposta fundamentada.")
-        self.assertEqual(fake_client.completions.kwargs["max_tokens"], 1024)
+        self.assertEqual(
+            fake_client.completions.kwargs["max_tokens"],
+            GENERATION_MAX_TOKENS,
+        )
 
     def test_gerar_resposta_erro_quando_content_none(self):
         with patch("llm_ecoa.client", FakeClient(None)):

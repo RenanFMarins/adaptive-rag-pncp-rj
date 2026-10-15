@@ -55,6 +55,14 @@ def _exibir_status(status: int | None, conteudo: dict[str, Any] | str) -> None:
         st.warning("Token ausente, inválido ou expirado. Cole um token novo na barra lateral.")
     elif status >= 400:
         st.error(f"A API retornou HTTP {status}.")
+        # O corpo da FastAPI normalmente contém o motivo real (por exemplo,
+        # indisponibilidade temporária da LLM). Exibi-lo evita que o usuário
+        # tenha de alternar para o Swagger apenas para diagnosticar um erro.
+        with st.expander("Detalhe técnico da resposta", expanded=True):
+            if isinstance(conteudo, dict):
+                st.json(conteudo)
+            else:
+                st.code(str(conteudo))
     else:
         st.success(f"HTTP {status}")
 

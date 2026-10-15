@@ -10,6 +10,7 @@ from typing import Any, Iterable
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.text_normalization import normalizar_para_busca
 from app.modules.documents.model import Document, DocumentCatalogEntry, DocumentChunk
 from src.base_estruturada.chunking import (
     caminho_relativo_portavel,

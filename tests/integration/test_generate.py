@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 from uuid import UUID
 
 from src.generate import (
@@ -10,6 +11,7 @@ from src.generate import (
     montar_contexto,
     montar_prompt,
 )
+from app.core.llm_provider import LlmGeneration
 from src.guardrails import MENSAGEM_RECUSA_PADRAO
 from src.retrieve import RankedChunk
 from src.query.schemas import QueryEntity, StructuredQueryResult
@@ -105,6 +107,30 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(len(resposta.sources), 1)
         self.assertEqual(chamadas, [resposta.prompt])
         self.assertIn("Objeto recuperado", chamadas[0])
+
+    @patch("src.generate.gerar_com_fallback")
+    def test_geracao_registra_fallback_do_provedor(self, provider):
+        provider.return_value = LlmGeneration(
+            content="Resposta via fallback [1].",
+            provider="groq",
+            model="openai/gpt-oss-120b",
+            fallback_used=True,
+            fallback_reason="timeout",
+        )
+
+        resposta = gerar_resposta_rag(
+            db=None,
+            pergunta="Qual o objeto?",
+            retrieval_fn=lambda **_kwargs: [chunk("c1", "Objeto recuperado")],
+            llm_fn=None,
+            audit_dir=self.audit_dir,
+        )
+
+        self.assertEqual(resposta.answer, "Resposta via fallback [1].")
+        provider.assert_called_once()
+        trace = self.read_only_trace()
+        self.assertEqual(trace["generation"]["provider"], "groq")
+        self.assertTrue(trace["generation"]["fallback_used"])
 
     def test_sem_chunks_nao_chama_llm(self):
         def retrieval_fn(**_kwargs):
