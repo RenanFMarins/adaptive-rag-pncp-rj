@@ -19,14 +19,17 @@ class FakePNCPClient:
 
 
 class FallbackPNCPClient(FakePNCPClient):
-    def __init__(self, fallback_response):
+    def __init__(self, fallback_response, status_code=422):
         super().__init__({})
         self.fallback_response = fallback_response
+        self.status_code = status_code
 
     def get(self, endpoint, params=None, **kwargs):
         self.requests.append((endpoint, dict(params or {})))
         if "codigoUnidadeAdministrativa" in params:
-            raise PNCPClientError("HTTP 422", status_code=422)
+            raise PNCPClientError(
+                f"HTTP {self.status_code}", status_code=self.status_code
+            )
         return self.fallback_response
 
 
@@ -135,6 +138,47 @@ class PublishedContractCollectorTests(unittest.TestCase):
             records[0].query_params["codigoUnidadeAdministrativaOriginal"],
             self.UNIT,
         )
+
+    def test_falls_back_without_unit_filter_after_http_400(self):
+        contract = self.contract()
+        client = FallbackPNCPClient(
+            {
+                "data": [contract],
+                "totalPaginas": 1,
+                "numeroPagina": 1,
+            },
+            status_code=400,
+        )
+        logger = FakeLogger()
+
+        collected = list(
+            PublishedContractCollector(client, logger=logger).collect(
+                self.source()
+            )
+        )
+        records = [
+            item for item in collected if isinstance(item, CollectedRecord)
+        ]
+        fallback = next(
+            fields
+            for event, fields in logger.events
+            if event == "pncp_contract_unit_fallback"
+        )
+
+        self.assertEqual(len(client.requests), 2)
+        self.assertIn("codigoUnidadeAdministrativa", client.requests[0][1])
+        self.assertNotIn("codigoUnidadeAdministrativa", client.requests[1][1])
+        self.assertEqual(len(records), 1)
+        self.assertTrue(records[0].query_params["consultaSemFiltroUnidade"])
+        self.assertEqual(fallback["status_original"], 400)
+
+    def test_does_not_fall_back_for_unrelated_http_error(self):
+        client = FallbackPNCPClient([], status_code=500)
+
+        with self.assertRaisesRegex(PNCPClientError, "HTTP 500"):
+            list(PublishedContractCollector(client).collect(self.source()))
+
+        self.assertEqual(len(client.requests), 1)
 
     def test_skips_contract_outside_target_unit(self):
         contract = self.contract(unit="999999")

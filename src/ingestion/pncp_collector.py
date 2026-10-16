@@ -484,7 +484,7 @@ class PublishedContractCollector:
                         "consultaSemFiltroUnidade": False,
                     }
                 except PNCPClientError as error:
-                    if error.status_code != 422:
+                    if error.status_code not in (400, 422):
                         raise
                     fallback_params = dict(params)
                     fallback_params.pop("codigoUnidadeAdministrativa")
@@ -501,7 +501,7 @@ class PublishedContractCollector:
                         codigo_unidade=context["codigo_unidade"],
                         codigo_unidade_consulta=query_unit,
                         page=page,
-                        status_original=422,
+                        status_original=error.status_code,
                         action="retry_without_unit_filter",
                     )
                     pacer.wait()
