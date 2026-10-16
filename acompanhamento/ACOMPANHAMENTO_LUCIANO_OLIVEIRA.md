@@ -100,7 +100,7 @@ Além disso, melhorei as informações enviadas no contexto para a LLM, incluind
 
 O trabalho de hoje ficou concentrado principalmente na implementação do FTS5 e nos ajustes e testes do fluxo de recuperação e geração das respostas.
 
-## Encontro 10 - 2026-10-09
+## Encontro 11 - 2026-10-09
 
 ### Relato individual - Luciano Oliveira da Costa (4h)
 
@@ -112,7 +112,7 @@ Durante os testes, identifiquei que alguns cenários apresentaram os resultados 
 
 Dessa forma, o trabalho de hoje ficou concentrado principalmente na validação das funcionalidades implementadas, na identificação de falhas e nos ajustes necessários para melhorar o funcionamento das buscas.
 
-## Encontro 11 - 2026-10-14
+## Encontro 12 - 2026-10-14
 
 ### Relato individual - Luciano Oliveira da Costa (4h)
 
@@ -123,3 +123,15 @@ Também trabalhei na análise dos retornos das buscas, buscando identificar poss
 Além disso, realizei o download de novos documentos para complementar a base do projeto e fiz a ingestão de parte desses arquivos no banco de dados.
 
 Dessa forma, o trabalho de hoje ficou concentrado principalmente nos testes e ajustes do Query Analysis e dos filtros, além da ampliação e atualização da base de documentos utilizada pelo sistema.
+
+## Encontro 13 - 2026-10-16
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade aos testes e ajustes do Query Analysis e dos filtros, buscando melhorar a interpretação das perguntas e o direcionamento das buscas. Tenho realizado várias baterias de testes, nas quais algumas perguntas apresentam os resultados esperados, enquanto outras ainda precisam de ajustes e refinamentos.
+
+Também continuei a coleta de contratos e contratações, além da listagem dos documentos relacionados a esses registros, com o objetivo de ampliar a base de dados do projeto.
+
+Além disso, comecei a implementar um fluxo para tratar documentos que ainda não estão indexados no sistema. A ideia é permitir que o usuário visualize esses documentos e tenha a opção de solicitar sua indexação. Para isso, desenvolvi endpoints para acompanhar o processamento, consultar o status e realizar novas tentativas em caso de falhas.
+
+Essa implementação ainda está em desenvolvimento, pois falta integrar os diferentes fluxos e complementar a base com mais informações e documentos. Dessa forma, o trabalho de hoje ficou concentrado nos testes e refinamentos das buscas, na continuidade da coleta de dados e no desenvolvimento do fluxo de indexação de documentos ainda não disponíveis na base.
