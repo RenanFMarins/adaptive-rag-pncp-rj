@@ -278,8 +278,8 @@ class WindowedCheckpointTests(unittest.TestCase):
     def test_equal_watermark_timestamp_uses_tie_breaker_without_regression(self):
         job = self.job(INCREMENTAL_MODE)
         windows = [
-            self.window(job, "2023-01-01", "2023-01-10"),
-            self.window(job, "2023-01-11", "2023-01-20"),
+            self.window(job, "2023-01-01", "2023-01-31"),
+            self.window(job, "2023-01-11", "2023-01-31"),
             self.window(job, "2023-01-21", "2023-01-31"),
         ]
         for window, tie_breaker in zip(windows, ("b", "a", "c")):
@@ -288,7 +288,7 @@ class WindowedCheckpointTests(unittest.TestCase):
             self.sync.complete_window(
                 window.window_id,
                 lease.token,
-                "2023-02-01T00:00:00Z",
+                "2023-01-31T23:59:59Z",
                 tie_breaker,
             )
 
