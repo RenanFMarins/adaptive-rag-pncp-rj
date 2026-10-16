@@ -661,3 +661,31 @@ Os nossos testes foram de 50 para 81.
   50 para 81.
 - Travou: nada na nossa parte. 
 - Próximo passo: indexação FAISS e as perguntas de referência.
+
+## Encontro 12 · 14/10/2026 — Relatório de Ana
+
+### O que eu fiz hoje
+
+Trabalhei junto com a Ester na comparação entre dois carregadores de dados do projeto: o meu `persistencia.py` (base normativa) e a função `persistir_chunks_jsonl_normativos` do Luciano (após o merge do PR #46 dele). Identificamos juntas dois pontos de conflito importantes entre as duas abordagens e, em seguida, enviei ao Luciano uma mensagem detalhando esses pontos para alinharmos qual carregador vai prevalecer. Também comecei a configurar o ambiente de desenvolvimento (venv) para rodar a indexação FAISS (`pipeline_indexacao_faiss`), mas travei em erros de dependência antes de conseguir executar essa etapa.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claudinha (assistente de IA para mentoria da residência)
+- **Para quê:** Para me ajudar a comparar os dois carregadores de dados (lendo o código do meu `persistencia.py` e da função do Luciano) e identificar divergências de comportamento entre eles, além de me guiar na configuração do ambiente virtual Python e na investigação de erros de instalação de dependências.
+- **O que eu conferi / mudei:** Conferimos, eu e a Ester, que a chave de identificação do documento é diferente entre os dois carregadores (`source_file` no meu vs. `base_id|source_file` no do Luciano, via `_document_source_file`), o que gera risco de duplicidade/documentos órfãos se os dois rodarem sobre os mesmos dados. Também identificamos que o carregador do Luciano sempre sobrescreve `title` e `source_url` em `_atualizar_origem_documento`, enquanto o meu preserva o `title` já preenchido (tenho até um teste, `test_titulo_ja_gravado_nao_e_sobrescrito`). Notamos ainda que o código do Luciano já evoluiu desde o relatório da Ester anterior, resolvendo o problema de `title` ficar `None`. Além disso, na configuração do ambiente, verifiquei na documentação oficial do PyPI que `networkx==3.7` exige Python 3.12+, incompatível com meu Python 3.10.4, e ajustei a versão para `networkx==3.4.2`.
+
+### O que travou
+
+- Conflito entre os dois carregadores de dados (base normativa vs. carregador do Luciano, PR #46): chave de identificação do documento diferente e comportamento diferente ao sobrescrever campos já preenchidos manualmente.
+- Incompatibilidade de versões no `requirements.txt` do projeto (gerado aparentemente em Python 3.12+) com o Python 3.10.4 instalado na minha máquina, afetando `networkx` e, em seguida, `numpy==2.5.3` (sem distribuição compatível disponível para 3.10.4).
+
+### Próximo passo
+
+- Alinhar com o Luciano, via mensagem já enviada, qual padrão de chave de identificação e qual critério de sobrescrita de campos (`title`, `source_url`) o grupo vai adotar entre os dois carregadores.
+- Resolver a incompatibilidade de ambiente instalando Python 3.12+ e recriando o `.venv` do zero, para então conseguir rodar a indexação FAISS (`pipeline_indexacao_faiss`).
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** Diagnóstico comparativo entre os dois carregadores de dados (persistencia.py vs. carregador do Luciano) com os dois pontos de conflito identificados e comunicados ao responsável; diagnóstico da incompatibilidade de versão do Python no ambiente do projeto.
+- **Travou:** Decisão final sobre qual carregador/padrão de chave usar (depende de alinhamento com o Luciano); configuração de ambiente (Python 3.10.4 incompatível com dependências do `requirements.txt`), impedindo a execução da indexação FAISS.
+- **Próximo passo:** Fechar com o Luciano o padrão de chave e de sobrescrita de campos entre os carregadores; migrar o ambiente para Python 3.12+ e recriar o `.venv` para rodar a indexação FAISS.
