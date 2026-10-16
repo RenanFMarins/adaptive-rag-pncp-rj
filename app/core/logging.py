@@ -9,9 +9,11 @@ A pasta logs/ é ignorada pelo Git.
 """
 
 import json
+import logging
 import time
 import uuid
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
 
@@ -22,6 +24,111 @@ PASTA_LOGS = Path("logs")
 # Proposta ao time: acrescentar "coleta" e "ingestao" à lista canônica.
 STAGE_COLETA = "coleta"
 STAGE_INGESTAO = "ingestao"
+
+
+_perf_run_id: ContextVar[str | None] = ContextVar("rag_perf_run_id", default=None)
+_perf_logger = logging.getLogger("uvicorn.error")
+_PERF_METRICS = frozenset({
+    "chunks_elegiveis", "candidatos", "fontes", "vetores",
+    "tentativa", "status_http", "retry", "espera_ms", "fallback",
+    "tokens_entrada", "tokens_saida", "tokens_total",
+})
+_PERF_TEXT_METRICS = frozenset({"provedor", "motivo"})
+
+
+def _perf_event(stage, status, duration_ms=None, exception=None, metrics=None):
+    """Emite apenas campos técnicos; falhas de logging não afetam a consulta."""
+    run_id = _perf_run_id.get()
+    if run_id is None:
+        return
+    try:
+        fields = [f"[RAG-PERF] run_id={run_id}", f"etapa={stage}"]
+        if duration_ms is not None:
+            fields.append(f"duracao_ms={duration_ms:.3f}")
+        fields.append(f"status={status}")
+        if exception is not None:
+            fields.append(f"excecao={exception}")
+        for key, value in (metrics or {}).items():
+            if key in _PERF_METRICS and isinstance(value, (int, float)):
+                fields.append(f"{key}={value}")
+            elif key in _PERF_TEXT_METRICS and isinstance(value, str):
+                seguro = "".join(c for c in value if c.isalnum() or c == "_")
+                if seguro:
+                    fields.append(f"{key}={seguro}")
+        _perf_logger.info(" ".join(fields))
+    except Exception:
+        pass
+
+
+def perf_event(stage, status, duration_ms=None, exception=None, **metrics):
+    """Interface segura para eventos observacionais correlacionados."""
+    _perf_event(stage, status, duration_ms, exception, metrics)
+
+
+def current_perf_run_id():
+    return _perf_run_id.get()
+
+
+@contextmanager
+def perf_stage(stage):
+    """Mede somente etapas executadas dentro de uma requisição instrumentada."""
+    metrics = {}
+    from app.core.config import settings
+
+    if _perf_run_id.get() is None or not settings.rag_perf_log_enabled:
+        yield metrics
+        return
+    started = time.perf_counter()
+    _perf_event(stage, "inicio")
+    try:
+        yield metrics
+    except BaseException as error:
+        _perf_event(stage, "erro", (time.perf_counter() - started) * 1000,
+                    type(error).__name__, metrics)
+        raise
+    else:
+        _perf_event(stage, "ok", (time.perf_counter() - started) * 1000, metrics=metrics)
+
+
+class RagPerfMiddleware:
+    """Observa o ciclo ASGI de POST /query/ask sem consumir ou alterar mensagens."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        from app.core.config import settings
+
+        perf_enabled = settings.rag_perf_log_enabled
+        llm_http_enabled = settings.rag_llm_http_log_enabled
+        if (not (perf_enabled or llm_http_enabled) or scope["type"] != "http"
+                or scope.get("method") != "POST" or scope.get("path") != "/query/ask"):
+            await self.app(scope, receive, send)
+            return
+        started = time.perf_counter()
+        token = _perf_run_id.set(novo_run_id())
+        if perf_enabled:
+            _perf_event("recebimento", "ok", (time.perf_counter() - started) * 1000)
+            _perf_event("total", "inicio")
+        response_status = None
+        error_type = None
+
+        async def observed_send(message):
+            nonlocal response_status
+            if message["type"] == "http.response.start":
+                response_status = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, observed_send)
+        except BaseException as error:
+            error_type = type(error).__name__
+            raise
+        finally:
+            status = "erro" if error_type or (response_status is not None and response_status >= 400) else "ok"
+            if perf_enabled:
+                _perf_event("total", status, (time.perf_counter() - started) * 1000, error_type)
+            _perf_run_id.reset(token)
 
 
 def novo_run_id() -> str:

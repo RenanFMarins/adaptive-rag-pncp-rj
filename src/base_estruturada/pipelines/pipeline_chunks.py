@@ -90,6 +90,14 @@ def aplicar_estado_docling(
                         "caminhoFonteRelativo": relativo,
                     }
                     registros.append(registro)
+                for campo in (
+                    "arquivoPacote",
+                    "arquivoOriginal",
+                    "caminhoInternoPacote",
+                    "categoriaInterna",
+                ):
+                    if item.get(campo) is not None:
+                        registro[campo] = item[campo]
                 registro["docling"] = {
                     "status": "concluida",
                     "caminho": item.get("caminhoMarkdown"),

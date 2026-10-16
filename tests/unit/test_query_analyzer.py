@@ -348,6 +348,34 @@ class QueryAnalyzerTests(unittest.TestCase):
 
         self.assertIn(StructuredOperation.ORDER_BY, analysis.operations)
 
+    def test_normaliza_agrupamento_por_maior_quantidade_e_limiar_de_valor(self):
+        resposta = """{
+          "route": "structured",
+          "intent": "aggregate",
+          "entity": "contratacao",
+          "bases": ["estruturada"],
+          "filters": {"ano": 2026, "valor_estimado": 500000},
+          "operations": ["group_by"],
+          "aggregation_field": null,
+          "group_by": ["municipio"],
+          "order_by": [{"field": "count", "direction": "desc"}],
+          "limit": null,
+          "semantic_query": null,
+          "needs_document_retrieval": false
+        }"""
+        analysis = analisar_pergunta(
+            "Quais municípios possuem contratações com valor estimado acima de R$ 500.000 em 2026?",
+            llm_fn=lambda _prompt: resposta,
+        )
+
+        self.assertEqual(analysis.filters.valor_minimo, 500000)
+        self.assertEqual(analysis.filters.campo_valor.value, "valor_estimado")
+        self.assertIsNone(analysis.filters.valor_maximo)
+        self.assertIn(StructuredOperation.COUNT, analysis.operations)
+        self.assertIn(StructuredOperation.GROUP_BY, analysis.operations)
+        self.assertIn(StructuredOperation.ORDER_BY, analysis.operations)
+        self.assertEqual(analysis.order_by[0].field.value, "count")
+
     def test_normalizacao_nao_converte_erro_de_tipo_em_erro_interno(self):
         resposta = """{
           "route": "rag",
@@ -434,6 +462,21 @@ class QueryAnalyzerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(QueryAnalysisError, "não pode estar vazia"):
             analisar_pergunta("   ", llm_fn=llm_fn)
+
+    def test_pergunta_catalogo_e_deterministica_e_nao_chama_llm(self):
+        def llm_fn(_prompt: str) -> str:
+            raise AssertionError("A LLM não deveria ser chamada para catálogo")
+
+        analysis = analisar_pergunta(
+            "Qual é a URL do edital listado para a contratação "
+            "00394502000144-1-009055/2026?",
+            llm_fn=llm_fn,
+        )
+
+        self.assertEqual(analysis.route, QueryRoute.CATALOG)
+        self.assertEqual(analysis.entity.value, "documento")
+        self.assertEqual(analysis.filters.tipo_documento, "Edital")
+        self.assertFalse(analysis.needs_document_retrieval)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ from dataclasses import replace
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
+from app.core.logging import perf_stage
+from app.core.config import resolver_caminho_indice_faiss
 
 from app.modules.query.model import Query, Response, ResponseSource
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
@@ -15,7 +17,7 @@ from src.query.adaptive_executor import (
 )
 from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
 from src.query.executor import executar_consulta_adaptativa
-from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
+from src.query.schemas import AdaptiveQueryResult, QueryAnalysis, QueryRoute
 from src.retrieve import RankedChunk
 
 
@@ -54,10 +56,12 @@ def executar_consulta_adaptativa_api(
     analyzer_fn: AnalyzerFn | None = None,
     rag_executor: Callable[[], object] | None = None,
     hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
+    catalog_executor: Callable[[], list[dict[str, object]]] | None = None,
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
-    analysis = (analyzer_fn or analisar_pergunta)(pergunta)
+    with perf_stage("analyzer"):
+        analysis = (analyzer_fn or analisar_pergunta)(pergunta)
 
     if rag_executor is None:
         def rag_executor() -> object:
@@ -69,6 +73,7 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,
@@ -84,17 +89,36 @@ def executar_consulta_adaptativa_api(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
+                cache_dir=resolver_caminho_indice_faiss(),
                 persistir=True,
                 filters=analysis.filters,
                 bases=analysis.bases,
                 structured_result=structured.structured_result,
             )
 
+    if catalog_executor is None:
+        def catalog_executor() -> list[dict[str, object]]:
+            tipo_entidade = analysis.filters.tipo_entidade
+            return consultar_catalogo_documentos_pncp(
+                db,
+                numero_controle_pncp=analysis.filters.numero_controle_pncp,
+                tipo_entidade=(
+                    tipo_entidade.value if tipo_entidade is not None else None
+                ),
+                tipo_documento=analysis.filters.tipo_documento,
+                limite=20,
+            )
+
+    structured_connection = None
+    if analysis.route is not QueryRoute.CATALOG:
+        with perf_stage("database_connection"):
+            structured_connection = _sqlite_connection_from_session(db)
     resultado = executar_plano_adaptativo(
         analysis,
-        structured_connection=_sqlite_connection_from_session(db),
+        structured_connection=structured_connection,
         rag_executor=rag_executor,
         hybrid_executor=hybrid_executor,
+        catalog_executor=catalog_executor,
     )
 
     # Fallback informativo: se uma pergunta documental por número de controle
@@ -108,13 +132,14 @@ def executar_consulta_adaptativa_api(
             if analysis.entity.value in {"contrato", "contratacao"}
             else None
         )
-        referencias = consultar_catalogo_documentos_pncp(
-            db,
-            numero_controle_pncp=controle,
-            tipo_entidade=tipo_entidade,
-            tipo_documento=analysis.filters.tipo_documento,
-            limite=20,
-        )
+        with perf_stage("catalog_fallback"):
+            referencias = consultar_catalogo_documentos_pncp(
+                db,
+                numero_controle_pncp=controle,
+                tipo_entidade=tipo_entidade,
+                tipo_documento=analysis.filters.tipo_documento,
+                limite=20,
+            )
         return replace(resultado, external_documents=referencias)
     return resultado
 

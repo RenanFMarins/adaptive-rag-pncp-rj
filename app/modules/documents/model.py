@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -87,6 +88,41 @@ class DocumentCatalogEntry(Base):
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
+
+
+class DocumentProcessingTaskStatus(str, Enum):
+    """Estados da tarefa assíncrona de processamento documental."""
+
+    PENDENTE = "PENDENTE"
+    EM_PROCESSAMENTO = "EM_PROCESSAMENTO"
+    CONCLUIDO = "CONCLUIDO"
+    ERRO = "ERRO"
+
+
+class DocumentProcessingTask(Base):
+    """Tarefa persistente para processar um item listado no catálogo PNCP."""
+
+    # Mantém o nome físico legado para não exigir migração nem perder tarefas já gravadas.
+    __tablename__ = "document_processing_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    catalog_entry_id: Mapped[int] = mapped_column(
+        ForeignKey("document_catalog_entries.id"), index=True
+    )
+    status: Mapped[str] = mapped_column(String, index=True)
+    tentativas: Mapped[int] = mapped_column(Integer, default=0)
+    erro: Mapped[str | None] = mapped_column(Text)
+    motivo: Mapped[str | None] = mapped_column(String)
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.current_timestamp()
+    )
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    catalog_entry: Mapped[DocumentCatalogEntry] = relationship()
 
 
 class DocumentChunk(Base):

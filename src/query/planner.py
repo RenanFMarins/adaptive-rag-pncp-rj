@@ -17,6 +17,7 @@ def planejar_execucao(analysis: QueryAnalysis) -> ExecutionPlan:
             ExecutionTool.STRUCTURED_DATABASE,
             ExecutionTool.RAG_RETRIEVAL,
         ],
+        QueryRoute.CATALOG: [ExecutionTool.DOCUMENT_CATALOG],
     }
 
     return ExecutionPlan(

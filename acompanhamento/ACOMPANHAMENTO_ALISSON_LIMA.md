@@ -2011,4 +2011,40 @@ Os resultados demonstraram que o componente consegue diferenciar consultas estru
 A principal contribuição do encontro foi identificar, por meio de testes práticos, tanto os comportamentos corretos quanto uma falha de interpretação que precisa ser corrigida. Dessa forma, a atividade contribuiu para o aprimoramento da confiabilidade do sistema RAG de Contratações Públicas.
 
 **Situação ao final do encontro:** validação manual realizada, resultados registrados e melhorias identificadas para implementação posterior.
+## Acompanhamento – Encontro 12
+**Data:** 14/10/2026  
+**Projeto:** RAG – Contratações Públicas
 
+### Atividades realizadas
+
+No 12º encontro, demos continuidade ao desenvolvimento e à otimização do sistema RAG de Contratações Públicas, concentrando os esforços na investigação do elevado tempo de resposta do modelo de linguagem (LLM) disponibilizado pela infraestrutura ECOA.
+
+Durante os testes realizados na API FastAPI, identificamos que o sistema apresentava lentidão significativa na geração das respostas, chegando a ultrapassar sete minutos em determinadas consultas.
+
+Para investigar o problema, implementamos mecanismos de observabilidade e registros detalhados de desempenho, permitindo acompanhar individualmente o tempo gasto pelo Query Analyzer, pela recuperação híbrida (FTS5 e FAISS), pela geração de embeddings e pela LLM responsável pela resposta final.
+
+A análise demonstrou que o principal gargalo não estava na recuperação dos documentos, mas nas requisições ao modelo de linguagem hospedado na ECOA. Em uma das execuções, o Query Analyzer consumiu aproximadamente 213 segundos e a geração da resposta final levou cerca de 242 segundos.
+
+Como alternativa para melhorar a disponibilidade do sistema, implementamos um mecanismo de fallback da ECOA para a API da OpenAI, inicialmente aplicado apenas ao Query Analyzer. Dessa forma, em situações de falha ou timeout configurado, o sistema poderá recorrer a outro provedor para realizar a análise da pergunta.
+
+### Resultados obtidos
+
+Após as implementações e novos testes, registramos uma execução com tempo total de aproximadamente 61 segundos, representando uma redução significativa em relação à execução anterior de 456 segundos.
+
+Entretanto, em outro teste, o tempo total foi de aproximadamente 80 segundos, sendo 15,63 segundos consumidos pelo Query Analyzer e 63,39 segundos pela geração da resposta final.
+
+Esses resultados demonstram uma grande variação no tempo de processamento da LLM ECOA. Embora tenha ocorrido uma redução expressiva no tempo observado, ainda não é possível atribuir essa melhoria diretamente ao mecanismo de fallback, pois as chamadas analisadas foram concluídas com sucesso pelo provedor principal, sem indicação de acionamento da OpenAI.
+
+### Problemas identificados
+
+O principal problema permanece relacionado à latência e à instabilidade do tempo de resposta da LLM ECOA, que representa a maior parte do processamento das consultas.
+
+Também identificamos a necessidade de aprimorar os registros de observabilidade para informar explicitamente qual provedor, ECOA ou OpenAI, foi utilizado em cada requisição.
+
+### Próximos passos
+
+Continuar monitorando o desempenho das chamadas à ECOA, validar o funcionamento do fallback para OpenAI e avaliar alternativas para reduzir o tempo de geração das respostas finais.
+
+Também será necessário aprimorar os logs para identificar o provedor e o modelo utilizados, permitindo comparar o desempenho das diferentes soluções e tomar decisões com base nos resultados dos testes.
+
+**Conclusão:** o encontro permitiu identificar e medir o principal gargalo de desempenho do RAG, implementar uma estratégia inicial de contingência e estabelecer uma base de observabilidade para futuras otimizações.

@@ -103,6 +103,15 @@ def _iterar_pdfs_manifesto(
                 if chave in vistos:
                     continue
                 vistos.add(chave)
+                download_formato = str(download.get("formato") or "").upper()
+                caminho_pacote = str(download.get("caminho") or "")
+                arquivo_pacote = (
+                    Path(caminho_pacote).name
+                    if tipo_fonte == "pdf_expandido_de_zip"
+                    and download_formato in {"ZIP", "RAR", "7Z"}
+                    and caminho_pacote
+                    else None
+                )
                 yield {
                     "origem": origem,
                     "numeroControlePNCP": controle,
@@ -112,6 +121,12 @@ def _iterar_pdfs_manifesto(
                     "urlFontePncp": documento.get("url") or documento.get("uri"),
                     "tipoFonte": tipo_fonte,
                     "caminhoFonteRelativo": relativo,
+                    # O caminho interno exato pode ser preenchido por uma
+                    # futura extração que preserve a entrada do ZIP. Por ora,
+                    # o caminho relativo mantém a rastreabilidade portável.
+                    "arquivoPacote": arquivo_pacote,
+                    "arquivoOriginal": Path(relativo).name,
+                    "caminhoInternoPacote": None,
                 }
 
 
