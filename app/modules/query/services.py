@@ -17,7 +17,7 @@ from src.query.adaptive_executor import (
 )
 from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
 from src.query.executor import executar_consulta_adaptativa
-from src.query.schemas import AdaptiveQueryResult, QueryAnalysis
+from src.query.schemas import AdaptiveQueryResult, QueryAnalysis, QueryRoute
 from src.retrieve import RankedChunk
 
 
@@ -56,6 +56,7 @@ def executar_consulta_adaptativa_api(
     analyzer_fn: AnalyzerFn | None = None,
     rag_executor: Callable[[], object] | None = None,
     hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
+    catalog_executor: Callable[[], list[dict[str, object]]] | None = None,
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
@@ -95,13 +96,29 @@ def executar_consulta_adaptativa_api(
                 structured_result=structured.structured_result,
             )
 
-    with perf_stage("database_connection"):
-        structured_connection = _sqlite_connection_from_session(db)
+    if catalog_executor is None:
+        def catalog_executor() -> list[dict[str, object]]:
+            tipo_entidade = analysis.filters.tipo_entidade
+            return consultar_catalogo_documentos_pncp(
+                db,
+                numero_controle_pncp=analysis.filters.numero_controle_pncp,
+                tipo_entidade=(
+                    tipo_entidade.value if tipo_entidade is not None else None
+                ),
+                tipo_documento=analysis.filters.tipo_documento,
+                limite=20,
+            )
+
+    structured_connection = None
+    if analysis.route is not QueryRoute.CATALOG:
+        with perf_stage("database_connection"):
+            structured_connection = _sqlite_connection_from_session(db)
     resultado = executar_plano_adaptativo(
         analysis,
         structured_connection=structured_connection,
         rag_executor=rag_executor,
         hybrid_executor=hybrid_executor,
+        catalog_executor=catalog_executor,
     )
 
     # Fallback informativo: se uma pergunta documental por número de controle

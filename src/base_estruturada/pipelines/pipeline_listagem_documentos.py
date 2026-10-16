@@ -73,15 +73,15 @@ def listar_documentos_do_periodo(
 
 if __name__ == "__main__":
     # Use o mesmo período usado no pipeline de coleta.
-    PERIODO = PeriodoColeta(ano=2026, mes=1)
+    PERIODO = PeriodoColeta(ano=2025, mes=1)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Número de novas consultas por execução. Ao rodar novamente, o pipeline
     # pula itens que já estão no manifesto e avança para os próximos.
-    LIMITE_NOVOS_CONTRATOS = 5000
-    LIMITE_NOVAS_CONTRATACOES = 5000
+    LIMITE_NOVOS_CONTRATOS = 7000
+    LIMITE_NOVAS_CONTRATACOES = 7000
 
-    EXECUTAR_CONTRATOS = True
+    EXECUTAR_CONTRATOS = False
     EXECUTAR_CONTRATACOES = True
 
     if EXECUTAR_CONTRATOS:

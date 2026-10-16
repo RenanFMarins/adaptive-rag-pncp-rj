@@ -7,11 +7,17 @@ from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Iterable
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.text_normalization import normalizar_para_busca
-from app.modules.documents.model import Document, DocumentCatalogEntry, DocumentChunk
+from app.modules.documents.model import (
+    Document,
+    DocumentCatalogEntry,
+    DocumentChunk,
+    DocumentProcessingTask,
+    DocumentProcessingTaskStatus,
+)
 from src.base_estruturada.chunking import (
     caminho_relativo_portavel,
     gerar_chunk_id,
@@ -23,6 +29,10 @@ from src.base_estruturada.pipelines.pipeline_chunks import _indice_por_controle
 
 
 SENSIBILIDADE_PADRAO = "publico"
+_STATUS_TAREFA_ATIVA = {
+    DocumentProcessingTaskStatus.PENDENTE.value,
+    DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+}
 
 
 def _data(valor: Any) -> date | None:
@@ -47,6 +57,22 @@ def _document_source_file(metadata: dict[str, Any]) -> str:
     # Bases não-PNCP (por exemplo, a normativa) já possuem um nome de origem
     # estável. Nos chunks PNCP, a chave de negócio continua sendo o controle
     # do processo + sequência do documento.
+    identificador = metadata.get("identificadorDocumentoFonte")
+    # O identificador de filho só é adotado quando o extrator informou a
+    # entrada real do pacote. Sem isso, preservamos a chave v1 para que
+    # reprocessamentos de lotes atuais não criem Documents paralelos.
+    if (
+        metadata.get("caminhoInternoPacote")
+        and isinstance(identificador, str)
+        and identificador.strip()
+    ):
+        return "|".join(
+            [
+                str(metadata.get("baseId") or metadata.get("base_id") or ""),
+                identificador.strip(),
+            ]
+        )
+
     source_file = metadata.get("source_file")
     if isinstance(source_file, str) and source_file.strip():
         return "|".join(
@@ -284,7 +310,46 @@ def _url_canonica_pncp_catalogo(item: DocumentCatalogEntry) -> str | None:
     )
 
 
-def serializar_catalogo_documento(item: DocumentCatalogEntry) -> dict[str, Any]:
+def _status_processamento_catalogo(
+    db: Session,
+    item: DocumentCatalogEntry,
+) -> tuple[str, bool, int]:
+    """Calcula o estado local do arquivo anunciado pelo PNCP.
+
+    A associação não usa caminho do computador: a origem persistida dos
+    documentos PNCP contém ``tipo_entidade|numero_controle|sequencial``. Este
+    status é somente de leitura e não cria tarefa, download ou indexação.
+    """
+
+    sufixo_origem = (
+        f"|{item.tipo_entidade}|{item.numero_controle_pncp}|"
+        f"{item.sequencial_documento}"
+    )
+    documentos, chunks = db.execute(
+        select(
+            func.count(func.distinct(Document.id)),
+            func.count(DocumentChunk.id),
+        )
+        .select_from(Document)
+        .outerjoin(DocumentChunk, DocumentChunk.document_id == Document.id)
+        .where(Document.source_file.like(f"%{sufixo_origem}"))
+    ).one()
+    documento_persistido = bool(documentos)
+    chunks_persistidos = int(chunks or 0)
+    if chunks_persistidos:
+        return "PROCESSADO", documento_persistido, chunks_persistidos
+    if documento_persistido:
+        return "INCOMPLETO", documento_persistido, 0
+    return "PENDENTE", False, 0
+
+
+def serializar_catalogo_documento(
+    item: DocumentCatalogEntry,
+    *,
+    status_processamento: str = "PENDENTE",
+    documento_persistido: bool = False,
+    chunks_persistidos: int = 0,
+) -> dict[str, Any]:
     """Formato público do catálogo usado pelo endpoint e pelo fallback RAG."""
 
     return {
@@ -306,6 +371,9 @@ def serializar_catalogo_documento(item: DocumentCatalogEntry) -> dict[str, Any]:
         ),
         "statusAtivo": item.status_ativo,
         "periodoColeta": item.periodo_coleta,
+        "statusProcessamento": status_processamento,
+        "documentoPersistido": documento_persistido,
+        "chunksPersistidos": chunks_persistidos,
     }
 
 
@@ -347,7 +415,172 @@ def consultar_catalogo_documentos_pncp(
         DocumentCatalogEntry.periodo_coleta.desc(),
         DocumentCatalogEntry.sequencial_documento.asc(),
     ).limit(limite)
-    return [serializar_catalogo_documento(item) for item in db.scalars(consulta)]
+    documentos: list[dict[str, Any]] = []
+    for item in db.scalars(consulta):
+        status_processamento, documento_persistido, chunks_persistidos = (
+            _status_processamento_catalogo(db, item)
+        )
+        documentos.append(
+            serializar_catalogo_documento(
+                item,
+                status_processamento=status_processamento,
+                documento_persistido=documento_persistido,
+                chunks_persistidos=chunks_persistidos,
+            )
+        )
+    return documentos
+
+
+def solicitar_processamento_catalogo(
+    db: Session,
+    catalog_entry_id: int,
+    *,
+    motivo: str = "solicitacao_usuario",
+) -> tuple[DocumentProcessingTask, bool]:
+    """Cria uma tarefa pendente ou reaproveita uma tarefa ativa existente.
+
+    Esta função não baixa arquivos, não chama Docling e não altera índices.
+    Ela apenas registra, de forma idempotente, o trabalho que será consumido
+    pelo worker na próxima etapa.
+    """
+
+    item = db.get(DocumentCatalogEntry, catalog_entry_id)
+    if item is None:
+        raise ValueError("Documento do catálogo não encontrado.")
+
+    status_processamento, _, _ = _status_processamento_catalogo(db, item)
+    if status_processamento == "PROCESSADO":
+        raise ValueError("O documento já está processado e não exige nova tarefa.")
+
+    existente = db.scalar(
+        select(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.catalog_entry_id == catalog_entry_id,
+            DocumentProcessingTask.status.in_(_STATUS_TAREFA_ATIVA),
+        )
+        .order_by(DocumentProcessingTask.id.desc())
+    )
+    if existente is not None:
+        return existente, False
+
+    tarefa = DocumentProcessingTask(
+        catalog_entry_id=catalog_entry_id,
+        status=DocumentProcessingTaskStatus.PENDENTE.value,
+        tentativas=0,
+        motivo=motivo.strip()[:200] if motivo.strip() else None,
+    )
+    db.add(tarefa)
+    db.commit()
+    db.refresh(tarefa)
+    return tarefa, True
+
+
+def consultar_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+) -> DocumentProcessingTask:
+    """Retorna uma tarefa persistida sem tentar processá-la."""
+
+    tarefa = db.get(DocumentProcessingTask, tarefa_id)
+    if tarefa is None:
+        raise ValueError("Tarefa de processamento não encontrada.")
+    return tarefa
+
+
+def retentar_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+) -> DocumentProcessingTask:
+    """Reabre uma tarefa que falhou, sem criar outro documento ou outro chunk.
+
+    É útil para falhas transitórias (PNCP indisponível, índice FAISS ainda não
+    preparado). A execução continua idempotente: o worker pode reaproveitar
+    chunks já persistidos e o FAISS ignora IDs que já estejam indexados.
+    """
+
+    tarefa = db.get(DocumentProcessingTask, tarefa_id)
+    if tarefa is None:
+        raise ValueError("Tarefa de processamento não encontrada.")
+    if tarefa.status != DocumentProcessingTaskStatus.ERRO.value:
+        raise ValueError("Somente tarefas com erro podem ser retentadas.")
+    tarefa.status = DocumentProcessingTaskStatus.PENDENTE.value
+    tarefa.erro = None
+    db.commit()
+    db.refresh(tarefa)
+    return tarefa
+
+
+def reservar_proxima_tarefa_processamento(
+    db: Session,
+) -> DocumentProcessingTask | None:
+    """Reserva uma tarefa pendente de modo seguro para um worker local.
+
+    A atualização condicional impede que dois workers que leram a mesma linha
+    iniciem o mesmo processamento. Para o MVP, um worker é suficiente, mas a
+    regra continua válida se o processo for iniciado duas vezes por engano.
+    """
+
+    candidata = db.scalar(
+        select(DocumentProcessingTask)
+        .where(DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value)
+        .order_by(DocumentProcessingTask.id.asc())
+        .limit(1)
+    )
+    if candidata is None:
+        return None
+
+    reservado = db.execute(
+        update(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.id == candidata.id,
+            DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value,
+        )
+        .values(
+            status=DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            tentativas=DocumentProcessingTask.tentativas + 1,
+            erro=None,
+        )
+    )
+    if reservado.rowcount != 1:
+        db.rollback()
+        return None
+    db.commit()
+    return db.get(DocumentProcessingTask, candidata.id)
+
+
+def concluir_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+) -> DocumentProcessingTask:
+    """Marca como concluída somente uma tarefa que estava em execução."""
+
+    tarefa = db.get(DocumentProcessingTask, tarefa_id)
+    if tarefa is None:
+        raise ValueError("Tarefa de processamento não encontrada.")
+    if tarefa.status != DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value:
+        raise ValueError("A tarefa não está em processamento.")
+    tarefa.status = DocumentProcessingTaskStatus.CONCLUIDO.value
+    tarefa.erro = None
+    db.commit()
+    db.refresh(tarefa)
+    return tarefa
+
+
+def falhar_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+    erro: str,
+) -> DocumentProcessingTask:
+    """Registra falha explicável sem deixar uma tarefa presa em execução."""
+
+    tarefa = db.get(DocumentProcessingTask, tarefa_id)
+    if tarefa is None:
+        raise ValueError("Tarefa de processamento não encontrada.")
+    tarefa.status = DocumentProcessingTaskStatus.ERRO.value
+    tarefa.erro = erro.strip()[:2_000] or "falha_desconhecida"
+    db.commit()
+    db.refresh(tarefa)
+    return tarefa
 
 
 def persistir_chunks_jsonl_normativos(

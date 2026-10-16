@@ -8,6 +8,7 @@ from app.core.logging import RagPerfMiddleware
 from app.core.faiss_startup import validar_faiss_no_startup
 from app.modules.admin.routes import router as admin_router
 from app.modules.auth.routes import router as auth_router
+from app.modules.documents.routes import router as documents_router
 from app.modules.query.routes import router as query_router
 
 
@@ -29,6 +30,7 @@ app = FastAPI(
 app.add_middleware(RagPerfMiddleware)
 
 app.include_router(auth_router)
+app.include_router(documents_router)
 app.include_router(admin_router)
 app.include_router(query_router)
 

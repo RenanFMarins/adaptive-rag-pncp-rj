@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from src.base_estruturada.metadata_contract import normalizar_metadata_pncp
+
 
 @dataclass(frozen=True)
 class ConfiguracaoChunk:
@@ -260,7 +262,9 @@ def montar_metadata_base(
     )
 
     metadata: dict[str, Any] = {
-        "schemaVersion": "chunks_pncp_v1",
+        # O contrato v2 é aplicado ao final, preservando chaves já consumidas
+        # pelos lotes existentes e acrescentando a identidade de arquivo.
+        "schemaVersion": "chunks_pncp_v2",
         "baseId": "pncp_rj_estruturada",
         "tipoEntidade": tipo_entidade,
         "numeroControlePNCP": entidade.get("numeroControlePNCP"),
@@ -278,6 +282,10 @@ def montar_metadata_base(
         "caminhoRelativo": caminho_relativo,
         "tipoFonte": registro_texto.get("tipoFonte"),
         "extrator": (registro_texto.get("textoAtivo") or {}).get("origem"),
+        "arquivoPacote": registro_texto.get("arquivoPacote"),
+        "arquivoOriginal": registro_texto.get("arquivoOriginal"),
+        "caminhoInternoPacote": registro_texto.get("caminhoInternoPacote"),
+        "categoriaInterna": registro_texto.get("categoriaInterna"),
     }
 
     if tipo_entidade == "contrato":
@@ -304,15 +312,25 @@ def montar_metadata_base(
             }
         )
 
-    return {chave: valor for chave, valor in metadata.items() if valor is not None}
+    return normalizar_metadata_pncp(metadata)
 
 
 def gerar_chunk_id(metadata: dict[str, Any], indice: int, conteudo: str) -> str:
+    # Só substituímos a chave legada pelo identificador canônico quando a
+    # entrada do pacote é conhecida. Assim, reprocessar os JSONLs v1 atuais
+    # mantém os mesmos IDs; arquivos internos de ZIP futuros ganham identidade
+    # própria e estável entre o worker adaptativo e os lotes.
+    identidade_fonte = metadata.get("caminhoRelativo", "")
+    if metadata.get("caminhoInternoPacote"):
+        identidade_fonte = metadata.get(
+            "identificadorDocumentoFonte",
+            identidade_fonte,
+        )
     chave = "|".join(
         [
             str(metadata.get("numeroControlePNCP", "")),
             str(metadata.get("sequencialDocumento", "")),
-            str(metadata.get("caminhoRelativo", "")),
+            str(identidade_fonte),
             str(indice),
             conteudo,
         ]

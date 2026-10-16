@@ -8,6 +8,7 @@ import unittest
 
 from app.core.database.init_db import init_db
 from src.query.schemas import (
+    AggregateSortField,
     KnowledgeBase,
     OrderBy,
     QueryAnalysis,
@@ -18,6 +19,7 @@ from src.query.schemas import (
     SortDirection,
     StructuredField,
     StructuredOperation,
+    ValueFilterField,
 )
 from src.query.structured_tool import (
     StructuredQueryError,
@@ -152,6 +154,57 @@ class StructuredToolTests(unittest.TestCase):
         self.assertEqual(result.row_count, 2)
         self.assertEqual(result.rows[0], {"modalidade": "Dispensa", "count": 1, "sum_valor_global": 200.0})
         self.assertEqual(result.rows[1], {"modalidade": "Pregão Eletrônico", "count": 1, "sum_valor_global": 100.0})
+
+    def test_ordena_agrupamento_pela_quantidade(self) -> None:
+        self._inserir_asset(
+            "contratacao-3",
+            "contratacao",
+            "002-1-000003/2026",
+            {
+                "anoCompra": 2026,
+                "dataPublicacaoPncp": "2026-08-13T12:00:00",
+                "valorTotalHomologado": 300.0,
+                "valorTotalEstimado": 350.0,
+                "modalidadeNome": "Dispensa",
+                "objetoCompra": "Material hospitalar complementar",
+                "orgaoEntidade": {"razaoSocial": "Órgão B"},
+                "unidadeOrgao": {"municipioNome": "Niterói"},
+            },
+        )
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.AGGREGATE,
+            entity=QueryEntity.CONTRATACAO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            operations=[
+                StructuredOperation.COUNT,
+                StructuredOperation.GROUP_BY,
+                StructuredOperation.ORDER_BY,
+            ],
+            group_by=[StructuredField.MODALIDADE],
+            order_by=[OrderBy(field=AggregateSortField.COUNT)],
+        )
+
+        result = executar_consulta_estruturada(self.connection, analysis)
+
+        self.assertEqual(result.rows[0], {"modalidade": "Dispensa", "count": 2})
+
+    def test_faixa_de_valor_estimado_nao_usa_valor_global(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATACAO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            filters=QueryFilters(
+                campo_valor=ValueFilterField.VALOR_ESTIMADO,
+                valor_minimo=210,
+            ),
+        )
+
+        result = executar_consulta_estruturada(self.connection, analysis)
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["numero_controle_pncp"], "002-1-000002/2026")
 
     def test_parametros_nao_permitem_injecao_em_filtro_textual(self) -> None:
         analysis = QueryAnalysis(
