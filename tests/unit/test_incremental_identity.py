@@ -10,7 +10,13 @@ from app.core.database.repositories.raw_repository import (
 from app.core.database.repositories.run_repository import RunRepository
 from src.ingest import RawRepository, ingest_records
 from src.ingestion.hashing import payload_hash
-from src.ingestion.identity import CanonicalIdentity
+from src.ingestion.identity import (
+    CanonicalIdentity,
+    TimestampKind,
+    TimestampStatus,
+    extract_source_timestamps,
+    parse_timestamp,
+)
 from src.schema import CollectedRecord
 
 
@@ -30,7 +36,12 @@ class IncrementalIdentityTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     @staticmethod
-    def record(source, state, updated_at, external_id="compra-1"):
+    def record(
+        source,
+        state,
+        updated_at="2023-04-01T10:00:00Z",
+        external_id="compra-1",
+    ):
         return CollectedRecord(
             source,
             {
@@ -52,6 +63,73 @@ class IncrementalIdentityTests(unittest.TestCase):
             records,
             resource_type=resource_type,
             logger=self.logger,
+        )
+
+    def ingest_window(
+        self,
+        repository,
+        source,
+        records,
+        window_start,
+        window_end,
+        resource_type="contratacao",
+    ):
+        return ingest_records(
+            repository,
+            source,
+            ("numeroControlePNCP",),
+            records,
+            resource_type=resource_type,
+            logger=self.logger,
+            window_start=window_start,
+            window_end=window_end,
+        )
+
+    def test_timestamp_parser_distinguishes_valid_missing_and_invalid(self):
+        valid = parse_timestamp("2023-04-01T10:00:00Z")
+        missing = parse_timestamp(None)
+        invalid = parse_timestamp("nao-e-uma-data")
+
+        self.assertEqual(valid.status, TimestampStatus.VALID)
+        self.assertEqual(valid.kind, TimestampKind.AWARE_DATETIME)
+        self.assertEqual(valid.normalized, "2023-04-01T10:00:00.000000")
+        self.assertEqual(missing.status, TimestampStatus.MISSING)
+        self.assertIsNone(missing.normalized)
+        self.assertEqual(invalid.status, TimestampStatus.INVALID)
+        self.assertIsNone(invalid.normalized)
+
+    def test_equivalent_timezone_offsets_have_same_normalized_timestamp(self):
+        utc = parse_timestamp("2023-04-01T13:00:00Z")
+        brazil = parse_timestamp("2023-04-01T10:00:00-03:00")
+
+        self.assertEqual(utc.normalized, brazil.normalized)
+        self.assertEqual(utc.kind, brazil.kind)
+
+    def test_date_and_naive_datetime_keep_distinct_semantics(self):
+        date_only = parse_timestamp("2023-04-01")
+        naive = parse_timestamp("2023-04-01T00:00:00")
+
+        self.assertEqual(date_only.kind, TimestampKind.DATE)
+        self.assertEqual(naive.kind, TimestampKind.NAIVE_DATETIME)
+        self.assertNotEqual(date_only.kind, naive.kind)
+
+    def test_invalid_preferred_field_uses_valid_fallback(self):
+        timestamps = extract_source_timestamps(
+            {
+                "dataAtualizacaoGlobal": "invalida",
+                "dataAtualizacao": "2023-04-01T10:00:00Z",
+            },
+            "contratacao",
+        )
+
+        self.assertEqual(timestamps.updated.status, TimestampStatus.VALID)
+        self.assertEqual(timestamps.updated.field, "dataAtualizacao")
+        self.assertEqual(
+            timestamps.updated.normalized, "2023-04-01T10:00:00.000000"
+        )
+        self.assertEqual(
+            timestamps.updated.invalid_candidates,
+            (("dataAtualizacaoGlobal", "invalida"),),
         )
 
     def test_historical_and_incremental_collectors_share_canonical_identity(self):
@@ -151,6 +229,143 @@ class IncrementalIdentityTests(unittest.TestCase):
         self.assertEqual(states, ["A", "B", "A"])
         repository.close()
 
+    def test_same_timestamp_reversion_in_new_window_is_preserved(self):
+        repository = RawRepository(self.database_url)
+        timestamp = "2023-04-01T10:00:00Z"
+        observations = (
+            ("A", "2023-04-01", "2023-04-01"),
+            ("B", "2023-04-02", "2023-04-02"),
+            ("A", "2023-04-03", "2023-04-03"),
+        )
+
+        results = [
+            self.ingest_window(
+                repository,
+                "pncp_incremental",
+                [self.record("pncp_incremental", state, timestamp)],
+                start,
+                end,
+            )
+            for state, start, end in observations
+        ]
+        replay = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "A", timestamp)],
+            "2023-04-03",
+            "2023-04-03",
+        )
+
+        self.assertEqual(
+            [(result.new, result.updated) for result in results],
+            [(1, 0), (0, 1), (0, 1)],
+        )
+        self.assertEqual(replay.unchanged, 1)
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_asset"
+            ).fetchone()[0],
+            3,
+        )
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_observation"
+            ).fetchone()[0],
+            3,
+        )
+        links = repository.connection.execute(
+            "SELECT raw_asset_id FROM raw_observation ORDER BY observed_at"
+        ).fetchall()
+        self.assertEqual(len({row["raw_asset_id"] for row in links}), 3)
+        repository.close()
+
+    def test_missing_timestamp_reversion_in_new_window_is_preserved(self):
+        repository = RawRepository(self.database_url)
+        observations = (
+            ("A", "2023-04-01"),
+            ("B", "2023-04-02"),
+            ("A", "2023-04-03"),
+        )
+
+        results = [
+            self.ingest_window(
+                repository,
+                "pncp_incremental",
+                [self.record("pncp_incremental", state, None)],
+                window,
+                window,
+            )
+            for state, window in observations
+        ]
+        replay = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "A", None)],
+            "2023-04-03",
+            "2023-04-03",
+        )
+
+        self.assertEqual(
+            [(result.new, result.updated) for result in results],
+            [(1, 0), (0, 1), (0, 1)],
+        )
+        self.assertEqual(replay.unchanged, 1)
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_asset"
+            ).fetchone()[0],
+            3,
+        )
+        repository.close()
+
+    def test_invalid_timestamp_never_replaces_valid_current_state(self):
+        repository = RawRepository(self.database_url)
+        self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "VALIDO", "2023-04-01T10:00:00Z")],
+            "2023-04-01",
+            "2023-04-01",
+        )
+        result = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "INVALIDO", "zzzz")],
+            "2023-04-02",
+            "2023-04-02",
+        )
+
+        current = repository.assets.find_current(
+            CanonicalIdentity("pncp", "contratacao", "compra-1")
+        )
+        self.assertEqual(result.updated, 1)
+        self.assertEqual(json.loads(current["payload"])["estado"], "VALIDO")
+        repository.close()
+
+    def test_missing_timestamp_never_replaces_valid_current_state(self):
+        repository = RawRepository(self.database_url)
+        self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "VALIDO", "2023-04-01T10:00:00Z")],
+            "2023-04-01",
+            "2023-04-01",
+        )
+        result = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [self.record("pncp_incremental", "SEM_DATA", None)],
+            "2023-04-02",
+            "2023-04-02",
+        )
+
+        current = repository.assets.find_current(
+            CanonicalIdentity("pncp", "contratacao", "compra-1")
+        )
+        self.assertEqual(result.updated, 1)
+        self.assertEqual(json.loads(current["payload"])["estado"], "VALIDO")
+        repository.close()
+
     def test_previous_version_chain_is_preserved(self):
         repository = RawRepository(self.database_url)
         for state, timestamp in (
@@ -202,6 +417,63 @@ class IncrementalIdentityTests(unittest.TestCase):
         self.assertEqual(
             (replay.new, replay.updated, replay.unchanged), (0, 0, 2)
         )
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_asset"
+            ).fetchone()[0],
+            2,
+        )
+        repository.close()
+
+    def test_replay_remains_idempotent_when_pagination_changes(self):
+        repository = RawRepository(self.database_url)
+        first = CollectedRecord(
+            "pncp_incremental",
+            {
+                "numeroControlePNCP": "compra-1",
+                "estado": "A",
+                "dataAtualizacaoGlobal": "2023-04-01T10:00:00Z",
+            },
+            "https://pncp.example/contratacoes",
+            "1",
+            1,
+            external_id="compra-1",
+        )
+        second = self.record(
+            "pncp_incremental", "B", "2023-04-02T10:00:00Z"
+        )
+        replay_with_new_page = CollectedRecord(
+            first.source_id,
+            first.payload,
+            first.source_url,
+            "9",
+            25,
+            external_id=first.external_id,
+        )
+
+        self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [first],
+            "2023-04-01",
+            "2023-04-01",
+        )
+        self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [second],
+            "2023-04-01",
+            "2023-04-01",
+        )
+        replay = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [replay_with_new_page],
+            "2023-04-01",
+            "2023-04-01",
+        )
+
+        self.assertEqual(replay.unchanged, 1)
         self.assertEqual(
             repository.connection.execute(
                 "SELECT COUNT(*) FROM raw_asset"
@@ -285,6 +557,7 @@ class IncrementalIdentityTests(unittest.TestCase):
 
     def test_existing_historical_schema_and_null_metadata_remain_compatible(self):
         connection = initialize_database(self.database_url)
+        connection.execute("DROP TABLE raw_observation")
         connection.execute("DROP TABLE sync_watermark")
         connection.execute("DROP TABLE sync_target_progress")
         connection.execute("DROP TABLE sync_window")
@@ -388,6 +661,59 @@ class CanonicalIdentityMigrationTests(unittest.TestCase):
             self.assertEqual(tuple(after_checkpoint), tuple(before_checkpoint))
             self.assertIsNotNone(index)
             self.assertEqual(integrity, "ok")
+            repository.close()
+
+    def test_observation_migration_is_idempotent_and_preserves_raw(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database_url = f"sqlite:///{Path(temp_dir) / 'migration.db'}"
+            repository = RawRepository(database_url)
+            record = IncrementalIdentityTests.record(
+                "pncp_historico", "A", "2023-04-01T10:00:00Z"
+            )
+            ingest_records(
+                repository,
+                "pncp_historico",
+                ("numeroControlePNCP",),
+                [record],
+                resource_type="contratacao",
+                logger=SilentLogger(),
+            )
+            repository.connection.execute("DROP TABLE raw_observation")
+            before = repository.connection.execute(
+                "SELECT id, payload, payload_hash, previous_version_id "
+                "FROM raw_asset ORDER BY rowid"
+            ).fetchall()
+            migration = (
+                Path(__file__).parents[2]
+                / "migrations"
+                / "003_raw_observation.sql"
+            ).read_text(encoding="utf-8")
+
+            repository.connection.executescript(migration)
+            repository.connection.executescript(migration)
+
+            after = repository.connection.execute(
+                "SELECT id, payload, payload_hash, previous_version_id "
+                "FROM raw_asset ORDER BY rowid"
+            ).fetchall()
+            table = repository.connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' "
+                "AND name = 'raw_observation'"
+            ).fetchone()
+            integrity = repository.connection.execute(
+                "PRAGMA integrity_check"
+            ).fetchone()[0]
+            foreign_keys = repository.connection.execute(
+                "PRAGMA foreign_key_check"
+            ).fetchall()
+
+            self.assertEqual(
+                [tuple(row) for row in after],
+                [tuple(row) for row in before],
+            )
+            self.assertIsNotNone(table)
+            self.assertEqual(integrity, "ok")
+            self.assertEqual(foreign_keys, [])
             repository.close()
 
 
