@@ -12,10 +12,62 @@ from app.core.logging import novo_run_id, perf_stage, registrar
 from app.core.llm_http_observability import llm_http_operation
 from llm_ecoa import gerar_resposta_analyzer
 from src.query.prompts import montar_prompt_analise
-from src.query.schemas import QueryAnalysis, QueryRoute
+from src.query.schemas import (
+    KnowledgeBase,
+    QueryAnalysis,
+    QueryEntity,
+    QueryFilters,
+    QueryIntent,
+    QueryRoute,
+)
 
 
 AnalyzerLlmFn = Callable[[str], str]
+
+
+_NUMERO_CONTROLE_PNCP_RE = re.compile(r"\b\d{14}-\d-\d{6}/\d{4}\b")
+
+
+def _analisar_pergunta_catalogo(pergunta: str) -> QueryAnalysis | None:
+    """Reconhece consultas objetivas ao catálogo sem chamar a LLM.
+
+    A regra exige número de controle PNCP e vocabulário de disponibilidade,
+    URL ou estado de processamento. Assim, uma pergunta *sobre o conteúdo* do
+    edital continua na rota RAG, mesmo que cite o mesmo processo.
+    """
+
+    texto = pergunta.casefold()
+    controle = _NUMERO_CONTROLE_PNCP_RE.search(pergunta)
+    termos_catalogo = (
+        "catálogo", "catalogo", "listado", "listada", "disponível",
+        "disponivel", "url", "link", "download", "baixar", "processado",
+        "processada", "processamento", "pendente",
+    )
+    if controle is None or not any(termo in texto for termo in termos_catalogo):
+        return None
+
+    tipo_documento = None
+    if "termo de referência" in texto or "termo de referencia" in texto:
+        tipo_documento = "Termo de Referência"
+    elif "edital" in texto:
+        tipo_documento = "Edital"
+    elif "ata de registro" in texto:
+        tipo_documento = "Ata de Registro de Preço"
+    elif "contrato" in texto:
+        tipo_documento = "Contrato"
+
+    return QueryAnalysis(
+        route=QueryRoute.CATALOG,
+        intent=QueryIntent.LOOKUP,
+        entity=QueryEntity.DOCUMENTO,
+        bases=[KnowledgeBase.AGREGADA],
+        filters=QueryFilters(
+            numero_controle_pncp=controle.group(0),
+            tipo_documento=tipo_documento,
+        ),
+        semantic_query=None,
+        needs_document_retrieval=False,
+    )
 
 
 class QueryAnalysisError(ValueError):
@@ -141,7 +193,61 @@ def _normalizar_plano_conhecido(
         if operations_completas != operations:
             normalizado["operations"] = operations_completas
 
+    # Um agrupamento sem agregação não produz uma resposta quantitativa útil
+    # na Structured Tool. Quando o plano estruturado já escolheu group_by,
+    # ``count`` é a agregação mínima e determinística para completar o plano.
+    operations = normalizado.get("operations")
+    aggregate_operations = {"count", "sum", "avg", "min", "max"}
+    if (
+        normalizado.get("route") in {"structured", "hybrid"}
+        and isinstance(normalizado.get("group_by"), list)
+        and normalizado["group_by"]
+        and isinstance(operations, list)
+        and all(isinstance(operacao, str) for operacao in operations)
+        and not aggregate_operations.intersection(operations)
+    ):
+        normalizado["operations"] = [*operations, "count"]
+        correcoes.append("operations.count_adicionado_por_group_by")
+
     filtros = normalizado.get("filters")
+    # ``valor_estimado`` é um campo de saída, não um filtro aceito. Para
+    # perguntas com limiar explícito, convertemos a chave recorrente da LLM
+    # para o filtro semântico correto, sem aceitar campos livres no schema.
+    if isinstance(filtros, dict) and "valor_estimado" in filtros:
+        valor = filtros.get("valor_estimado")
+        texto = pergunta.casefold()
+        filtros_normalizados = dict(filtros)
+        if (
+            isinstance(valor, (int, float))
+            and not isinstance(valor, bool)
+            and filtros_normalizados.get("valor_minimo") is None
+            and any(termo in texto for termo in (
+                "acima de", "acima do", "mais de", "maior que",
+                "maiores que", "superior a", "superiores a", "a partir de",
+            ))
+        ):
+            filtros_normalizados["valor_minimo"] = valor
+            filtros_normalizados["campo_valor"] = "valor_estimado"
+            filtros_normalizados.pop("valor_estimado", None)
+            normalizado["filters"] = filtros_normalizados
+            filtros = filtros_normalizados
+            correcoes.append("filters.valor_estimado_para_valor_minimo")
+        elif (
+            isinstance(valor, (int, float))
+            and not isinstance(valor, bool)
+            and filtros_normalizados.get("valor_maximo") is None
+            and any(termo in texto for termo in (
+                "abaixo de", "abaixo do", "menos de", "menor que",
+                "menores que", "inferior a", "inferiores a", "até ",
+            ))
+        ):
+            filtros_normalizados["valor_maximo"] = valor
+            filtros_normalizados["campo_valor"] = "valor_estimado"
+            filtros_normalizados.pop("valor_estimado", None)
+            normalizado["filters"] = filtros_normalizados
+            filtros = filtros_normalizados
+            correcoes.append("filters.valor_estimado_para_valor_maximo")
+
     tem_pncp = isinstance(filtros, dict) and bool(
         filtros.get("numero_controle_pncp")
     )
@@ -301,6 +407,13 @@ def analisar_pergunta(
     pergunta_limpa = pergunta.strip()
     if not pergunta_limpa:
         raise QueryAnalysisError("A pergunta não pode estar vazia.")
+
+    # Esta pré-classificação reduz latência e elimina uma dependência
+    # desnecessária da Ecoa/Groq para perguntas puramente administrativas.
+    if rota_obrigatoria is None:
+        plano_catalogo = _analisar_pergunta_catalogo(pergunta_limpa)
+        if plano_catalogo is not None:
+            return plano_catalogo
 
     prompt = montar_prompt_analise(
         pergunta_limpa,

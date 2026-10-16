@@ -75,7 +75,9 @@ def ask(
         if result.structured_result is not None
         else None
     )
-    if structured_result is not None and result.rag_result is None:
+    if result.rag_result is None and (
+        structured_result is not None or result.plan.route.value == "catalog"
+    ):
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,

@@ -20,6 +20,9 @@ class QueryRoute(str, Enum):
     STRUCTURED = "structured"
     RAG = "rag"
     HYBRID = "hybrid"
+    # Consulta somente os metadados locais dos arquivos anunciados pelo PNCP.
+    # Não baixa arquivo, não usa FAISS/FTS5 e não chama a LLM geradora.
+    CATALOG = "catalog"
 
 
 class ExecutionTool(str, Enum):
@@ -27,6 +30,7 @@ class ExecutionTool(str, Enum):
 
     STRUCTURED_DATABASE = "structured_database"
     RAG_RETRIEVAL = "rag_retrieval"
+    DOCUMENT_CATALOG = "document_catalog"
 
 
 class QueryIntent(str, Enum):
@@ -82,6 +86,19 @@ class StructuredField(str, Enum):
     OBJETO = "objeto"
 
 
+class AggregateSortField(str, Enum):
+    """Campos calculados que podem ordenar uma consulta agregada."""
+
+    COUNT = "count"
+
+
+class ValueFilterField(str, Enum):
+    """Campos monetários permitidos em filtros por faixa de valor."""
+
+    VALOR_GLOBAL = "valor_global"
+    VALOR_ESTIMADO = "valor_estimado"
+
+
 class SortDirection(str, Enum):
     ASC = "asc"
     DESC = "desc"
@@ -92,7 +109,10 @@ class OrderBy(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    field: StructuredField
+    # ``count`` não é uma coluna do asset: é o alias produzido por
+    # ``COUNT(*)`` nas consultas agrupadas. Mantê-lo separado dos campos
+    # públicos evita abrir espaço para SQL arbitrário.
+    field: StructuredField | AggregateSortField
     direction: SortDirection = SortDirection.DESC
 
 
@@ -113,6 +133,8 @@ class QueryFilters(BaseModel):
     ano: int | None = Field(default=None, ge=2000, le=2100)
     period_start: date | None = None
     period_end: date | None = None
+    # Ausente preserva o comportamento histórico: a faixa usa valor global.
+    campo_valor: ValueFilterField | None = None
     valor_minimo: float | None = Field(default=None, ge=0)
     valor_maximo: float | None = Field(default=None, ge=0)
 
@@ -171,6 +193,9 @@ class QueryAnalysis(BaseModel):
             raise ValueError("A operação group_by exige ao menos um campo.")
         if self.order_by and StructuredOperation.ORDER_BY not in self.operations:
             raise ValueError("order_by exige a operação order_by.")
+        if any(order.field is AggregateSortField.COUNT for order in self.order_by):
+            if StructuredOperation.COUNT not in self.operations:
+                raise ValueError("order_by por count exige a operação count.")
 
         if self.route is QueryRoute.STRUCTURED:
             if KnowledgeBase.ESTRUTURADA not in self.bases:
@@ -193,6 +218,19 @@ class QueryAnalysis(BaseModel):
             if not self.needs_document_retrieval:
                 raise ValueError(
                     "A rota hybrid exige needs_document_retrieval igual a true."
+                )
+        elif self.route is QueryRoute.CATALOG:
+            if self.intent is not QueryIntent.LOOKUP:
+                raise ValueError("A rota catalog exige intent lookup.")
+            if self.entity is not QueryEntity.DOCUMENTO:
+                raise ValueError("A rota catalog exige entity documento.")
+            if self.bases != [KnowledgeBase.AGREGADA]:
+                raise ValueError("A rota catalog exige somente a base agregada.")
+            if self.operations or self.aggregation_field or self.group_by or self.order_by:
+                raise ValueError("A rota catalog não aceita operações estruturadas.")
+            if self.needs_document_retrieval:
+                raise ValueError(
+                    "A rota catalog não deve solicitar recuperação documental."
                 )
 
         return self
@@ -219,6 +257,7 @@ class ExecutionPlan(BaseModel):
                 ExecutionTool.STRUCTURED_DATABASE,
                 ExecutionTool.RAG_RETRIEVAL,
             ],
+            QueryRoute.CATALOG: [ExecutionTool.DOCUMENT_CATALOG],
         }
         ferramentas_esperadas = ferramentas_por_rota[self.route]
         if self.tools != ferramentas_esperadas:

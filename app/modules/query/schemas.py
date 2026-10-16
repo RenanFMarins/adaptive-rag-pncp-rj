@@ -27,7 +27,7 @@ class SourceResponse(BaseModel):
 
 
 class ExternalDocumentResponse(BaseModel):
-    """Arquivo anunciado pelo PNCP, mas ainda ausente do corpus processado."""
+    """Arquivo anunciado pelo PNCP e seu estado local de processamento."""
 
     id: int
     tipoEntidade: str
@@ -43,6 +43,9 @@ class ExternalDocumentResponse(BaseModel):
     dataPublicacaoPncp: str | None = None
     statusAtivo: bool | None = None
     periodoColeta: str
+    statusProcessamento: str
+    documentoPersistido: bool
+    chunksPersistidos: int = Field(ge=0)
 
 
 class GenerateResponse(BaseModel):

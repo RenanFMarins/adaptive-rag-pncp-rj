@@ -15,7 +15,7 @@ import app.modules.feedback.model  # noqa: F401
 import app.modules.query.model  # noqa: F401
 import app.modules.rag.model  # noqa: F401
 from app.modules.corpus.model import CorpusVersion
-from app.modules.documents.model import DocumentCatalogEntry
+from app.modules.documents.model import Document, DocumentCatalogEntry, DocumentChunk
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
 from app.modules.query.services import executar_consulta_adaptativa_api
 from src.query.schemas import (
@@ -60,11 +60,59 @@ class DocumentCatalogTests(unittest.TestCase):
         )
         self.assertEqual(len(resultado), 1)
         self.assertEqual(resultado[0]["tipoDocumento"], "Edital")
+        self.assertEqual(resultado[0]["statusProcessamento"], "PENDENTE")
+        self.assertFalse(resultado[0]["documentoPersistido"])
+        self.assertEqual(resultado[0]["chunksPersistidos"], 0)
         self.assertEqual(
             resultado[0]["urlDownload"],
             "https://pncp.gov.br/pncp-api/v1/orgaos/00394502000144/"
             "compras/2026/9055/arquivos/1",
         )
+
+    def test_catalogo_indica_documento_processado_e_incompleto(self) -> None:
+        corpus = self.db.query(CorpusVersion).one()
+        documento = Document(
+            corpus_version_id=corpus.id,
+            source_file=(
+                "pncp_rj_estruturada|contratacao|"
+                "00394502000144-1-009055/2026|1"
+            ),
+            title="Edital de manutenção de elevadores",
+            base_id="pncp_rj_estruturada",
+            doc_type="contratacao",
+            source_url="https://pncp.gov.br/documento",
+            sensitivity="publico",
+        )
+        self.db.add(documento)
+        self.db.commit()
+
+        incompleto = consultar_catalogo_documentos_pncp(
+            self.db,
+            numero_controle_pncp="00394502000144-1-009055/2026",
+        )[0]
+        self.assertEqual(incompleto["statusProcessamento"], "INCOMPLETO")
+        self.assertTrue(incompleto["documentoPersistido"])
+        self.assertEqual(incompleto["chunksPersistidos"], 0)
+
+        self.db.add(
+            DocumentChunk(
+                document_id=documento.id,
+                chunk_id="chunk-catalogo-processado",
+                content="Trecho processado do edital.",
+                doc_type="contratacao",
+                base_id="pncp_rj_estruturada",
+                sensitivity="publico",
+            )
+        )
+        self.db.commit()
+
+        processado = consultar_catalogo_documentos_pncp(
+            self.db,
+            numero_controle_pncp="00394502000144-1-009055/2026",
+        )[0]
+        self.assertEqual(processado["statusProcessamento"], "PROCESSADO")
+        self.assertTrue(processado["documentoPersistido"])
+        self.assertEqual(processado["chunksPersistidos"], 1)
 
     def test_filtro_titulo_ignora_acentos_e_caixa(self) -> None:
         for titulo in ("manutencao", "MANUTENCAO", "MaNuTeNçÃo"):
@@ -120,6 +168,32 @@ class DocumentCatalogTests(unittest.TestCase):
             resultado.external_documents[0]["numeroControlePNCP"],
             "00394502000144-1-009055/2026",
         )
+
+    def test_rota_catalogo_nao_executa_rag(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.CATALOG,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.DOCUMENTO,
+            bases=[KnowledgeBase.AGREGADA],
+            filters=QueryFilters(
+                numero_controle_pncp="00394502000144-1-009055/2026",
+                tipo_documento="Edital",
+            ),
+            needs_document_retrieval=False,
+        )
+
+        resultado = executar_consulta_adaptativa_api(
+            self.db,
+            "Qual a URL do edital?",
+            top_k=3,
+            analyzer_fn=lambda _pergunta: analysis,
+            rag_executor=lambda: self.fail("RAG não deveria executar"),
+        )
+
+        self.assertEqual(resultado.plan.route, QueryRoute.CATALOG)
+        self.assertIsNone(resultado.rag_result)
+        self.assertEqual(len(resultado.external_documents), 1)
+        self.assertEqual(resultado.external_documents[0]["tipoDocumento"], "Edital")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from .schemas import (
     StructuredField,
     StructuredOperation,
     StructuredQueryResult,
+    ValueFilterField,
 )
 
 
@@ -189,12 +190,16 @@ def _where_clause(
         clauses.append(f"date({publication_date}) <= date(?)")
         params.append(filters.period_end.isoformat())
 
-    global_value = _field_expression(config, StructuredField.VALOR_GLOBAL)
+    value_filter_field = filters.campo_valor or ValueFilterField.VALOR_GLOBAL
+    value_expression = _field_expression(
+        config,
+        StructuredField(value_filter_field.value),
+    )
     if filters.valor_minimo is not None:
-        clauses.append(f"{global_value} >= ?")
+        clauses.append(f"{value_expression} >= ?")
         params.append(filters.valor_minimo)
     if filters.valor_maximo is not None:
-        clauses.append(f"{global_value} <= ?")
+        clauses.append(f"{value_expression} <= ?")
         params.append(filters.valor_maximo)
 
     return clauses, params
@@ -244,10 +249,15 @@ def _order_clause(
 ) -> str:
     if not analysis.order_by:
         return ""
-    fields = [
-        f"{_field_expression(config, order.field)} {order.direction.value.upper()}"
-        for order in analysis.order_by
-    ]
+    fields: list[str] = []
+    for order in analysis.order_by:
+        if order.field.value == "count":
+            # Só chega aqui se QueryAnalysis validou a operação COUNT. Usamos
+            # a expressão, não texto vindo da LLM, preservando SQL seguro.
+            expression = "COUNT(*)"
+        else:
+            expression = _field_expression(config, order.field)
+        fields.append(f"{expression} {order.direction.value.upper()}")
     return " ORDER BY " + ", ".join(fields)
 
 

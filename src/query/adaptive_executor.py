@@ -15,6 +15,7 @@ from .schemas import AdaptiveQueryResult, ExecutionPlan, QueryAnalysis, QueryRou
 
 RagExecutorFn = Callable[[], Any]
 HybridExecutorFn = Callable[[AdaptiveQueryResult], Any]
+CatalogExecutorFn = Callable[[], list[dict[str, Any]]]
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ def executar_plano_adaptativo(
     structured_connection: sqlite3.Connection | None = None,
     rag_executor: RagExecutorFn | None = None,
     hybrid_executor: HybridExecutorFn | None = None,
+    catalog_executor: CatalogExecutorFn | None = None,
 ) -> AdaptiveExecutionResult:
     """Executa exclusivamente a ferramenta indicada pela rota planejada.
 
@@ -63,6 +65,15 @@ def executar_plano_adaptativo(
             analysis=analysis,
             plan=plan,
             rag_result=rag_executor(),
+        )
+
+    if plan.route is QueryRoute.CATALOG:
+        if catalog_executor is None:
+            raise QueryExecutionError("A rota catalog requer um executor de catálogo.")
+        return AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=plan,
+            external_documents=catalog_executor(),
         )
 
     if structured_connection is None:
