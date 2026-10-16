@@ -7,7 +7,9 @@ from typing import Any, Mapping
 
 from src.ingestion.identity import (
     CanonicalIdentity,
-    normalized_timestamp,
+    ParsedTimestamp,
+    TimestampStatus,
+    parse_timestamp,
     source_timestamps,
 )
 from src.obs import utc_now
@@ -42,6 +44,12 @@ class RawRepository:
             identity.values,
         ).fetchall()
 
+    def _table_exists(self, table_name: str) -> bool:
+        return self.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone() is not None
+
     @staticmethod
     def _row_source_updated_at(row: sqlite3.Row) -> str | None:
         stored = row["source_updated_at"]
@@ -52,29 +60,73 @@ class RawRepository:
         return updated_at
 
     @classmethod
-    def _current_order_key(cls, row: sqlite3.Row):
-        source_updated_at = normalized_timestamp(
-            cls._row_source_updated_at(row)
-        )
-        if source_updated_at is not None:
-            return (1, source_updated_at, row["fetched_at"], row["_rowid"])
-        return (0, row["fetched_at"], row["fetched_at"], row["_rowid"])
+    def _row_timestamp(cls, row: sqlite3.Row) -> ParsedTimestamp:
+        return parse_timestamp(cls._row_source_updated_at(row))
+
+    @staticmethod
+    def _arrival_key(row: sqlite3.Row):
+        return row["fetched_at"], row["_rowid"]
+
+    @classmethod
+    def _is_more_current(
+        cls, candidate: sqlite3.Row, current: sqlite3.Row
+    ) -> bool:
+        candidate_timestamp = cls._row_timestamp(candidate)
+        current_timestamp = cls._row_timestamp(current)
+        candidate_valid = candidate_timestamp.status == TimestampStatus.VALID
+        current_valid = current_timestamp.status == TimestampStatus.VALID
+        if candidate_valid != current_valid:
+            return candidate_valid
+        if (
+            candidate_valid
+            and candidate_timestamp.kind == current_timestamp.kind
+        ):
+            candidate_key = (
+                candidate_timestamp.normalized,
+                *cls._arrival_key(candidate),
+            )
+            current_key = (
+                current_timestamp.normalized,
+                *cls._arrival_key(current),
+            )
+            return candidate_key > current_key
+        # Timestamps inválidos/ausentes e formatos com semânticas de fuso
+        # diferentes não são comparados lexicograficamente.
+        return cls._arrival_key(candidate) > cls._arrival_key(current)
+
+    @classmethod
+    def _select_current(cls, rows):
+        current = None
+        for row in rows:
+            if current is None or cls._is_more_current(row, current):
+                current = row
+        return current
 
     def find_current(self, identity: CanonicalIdentity):
         """Retorna o estado atual pela identidade, não pelo job de coleta."""
 
         rows = self._canonical_rows(identity)
-        return max(rows, key=self._current_order_key) if rows else None
+        return self._select_current(rows)
 
     def contains_observation(
         self,
         identity: CanonicalIdentity,
         digest: str,
         source_updated_at: str | None,
+        observation_key: str | None = None,
     ) -> bool:
         """Detecta replay da mesma versão sem bloquear reversões posteriores."""
 
-        expected_timestamp = normalized_timestamp(source_updated_at)
+        if observation_key and self._table_exists("raw_observation"):
+            return self.connection.execute(
+                "SELECT 1 FROM raw_observation "
+                "WHERE observation_key = ? AND base_id = ? "
+                "AND resource_type = ? AND external_id = ? "
+                "AND payload_hash = ? LIMIT 1",
+                (observation_key, *identity.values, digest),
+            ).fetchone() is not None
+
+        expected_timestamp = parse_timestamp(source_updated_at).normalized
         if expected_timestamp is None:
             return self.connection.execute(
                 "SELECT 1 FROM raw_asset "
@@ -89,7 +141,7 @@ class RawRepository:
             (*identity.values, digest),
         ).fetchall()
         return any(
-            normalized_timestamp(self._row_source_updated_at(row))
+            parse_timestamp(self._row_source_updated_at(row)).normalized
             == expected_timestamp
             for row in rows
         )
@@ -129,9 +181,7 @@ class RawRepository:
                     yield current_row
                 current_external_id = row["external_id"]
                 current_row = row
-            elif self._current_order_key(row) > self._current_order_key(
-                current_row
-            ):
+            elif self._is_more_current(row, current_row):
                 current_row = row
         if current_row is not None:
             yield current_row
@@ -187,6 +237,11 @@ class RawRepository:
         source_updated_at: str | None = None,
         identity: CanonicalIdentity | None = None,
         previous_version_id: str | None = None,
+        source_timestamp: ParsedTimestamp | None = None,
+        observation_key: str | None = None,
+        window_start: str | None = None,
+        window_end: str | None = None,
+        commit: bool = True,
     ) -> str:
         identity = identity or CanonicalIdentity(
             base_id, resource_type, external_id
@@ -198,6 +253,7 @@ class RawRepository:
         payload_json = json.dumps(
             record.payload, ensure_ascii=False, separators=(",", ":")
         )
+        observed_at = utc_now()
         self.connection.execute(
             "INSERT INTO raw_asset "
             "(id, source, base_id, natureza, resource_type, endpoint, "
@@ -219,16 +275,50 @@ class RawRepository:
                 digest,
                 source_published_at,
                 source_updated_at,
-                utc_now(),
+                observed_at,
                 corpus_version,
                 sensitivity,
                 run_id,
                 previous_version_id,
                 "RAW",
-                utc_now(),
+                observed_at,
             ),
         )
-        self.connection.commit()
+        if observation_key and self._table_exists("raw_observation"):
+            source_timestamp = source_timestamp or parse_timestamp(
+                source_updated_at
+            )
+            self.connection.execute(
+                "INSERT INTO raw_observation "
+                "(observation_key, raw_asset_id, base_id, resource_type, "
+                "external_id, payload_hash, source, window_start, window_end, "
+                "cursor, ordinal, source_timestamp_status, "
+                "source_timestamp_kind, source_updated_at_normalized, "
+                "ingestion_run_id, observed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    observation_key,
+                    asset_id,
+                    *identity.values,
+                    digest,
+                    record.source_id,
+                    window_start,
+                    window_end,
+                    str(record.cursor),
+                    int(record.ordinal),
+                    source_timestamp.status.value,
+                    (
+                        source_timestamp.kind.value
+                        if source_timestamp.kind is not None
+                        else None
+                    ),
+                    source_timestamp.normalized,
+                    run_id,
+                    observed_at,
+                ),
+            )
+        if commit:
+            self.connection.commit()
         return asset_id
 
     def save_asset(
