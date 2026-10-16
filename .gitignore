@@ -82,3 +82,5 @@ data/adaptive_tasks/
 Thumbs.db
 app.db
 app.db
+
+.venv312/
