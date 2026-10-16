@@ -26,6 +26,10 @@ class WindowCompletedError(RuntimeError):
     pass
 
 
+class WindowContinuityError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class WindowLease:
     window_id: str
@@ -464,13 +468,6 @@ class SyncRepository:
             ).fetchone()[0]
             if incomplete:
                 raise ValueError("Janela possui alvos incompletos")
-            now_text = current_time.isoformat(timespec="microseconds")
-            self.connection.execute(
-                "UPDATE sync_window SET status='COMPLETED', "
-                "lease_owner=NULL, lease_token=NULL, lease_expires_at=NULL, "
-                "error_message=NULL, completed_at=?, updated_at=? WHERE id=?",
-                (now_text, now_text, window_id),
-            )
             current = self.connection.execute(
                 "SELECT * FROM sync_watermark WHERE job_id=?",
                 (window["job_id"],),
@@ -480,6 +477,16 @@ class SyncRepository:
                 (current["watermark_value"], current["tie_breaker"])
                 if current is not None
                 else None
+            )
+            self._require_watermark_matches_window(window, watermark_text)
+            if existing is None or candidate > existing:
+                self._require_contiguous_coverage(window, current)
+            now_text = current_time.isoformat(timespec="microseconds")
+            self.connection.execute(
+                "UPDATE sync_window SET status='COMPLETED', "
+                "lease_owner=NULL, lease_token=NULL, lease_expires_at=NULL, "
+                "error_message=NULL, completed_at=?, updated_at=? WHERE id=?",
+                (now_text, now_text, window_id),
             )
             if existing is None or candidate > existing:
                 self.connection.execute(
@@ -502,6 +509,58 @@ class SyncRepository:
                     ),
                 )
 
+    @staticmethod
+    def _require_watermark_matches_window(window, watermark_text: str) -> None:
+        watermark_date = (
+            datetime.fromisoformat(watermark_text).date().isoformat()
+        )
+        if watermark_date != window["window_end"]:
+            raise WindowContinuityError(
+                "Watermark deve pertencer à data final da janela: "
+                f"esperado={window['window_end']}, recebido={watermark_date}"
+            )
+
+    def _require_contiguous_coverage(self, window, current) -> None:
+        covered_date = None
+        if current is not None:
+            covered_date = datetime.fromisoformat(
+                current["watermark_value"]
+            ).date()
+            next_uncovered = covered_date + timedelta(days=1)
+            window_start = date.fromisoformat(window["window_start"])
+            if window_start > next_uncovered:
+                raise WindowContinuityError(
+                    "Janela deixa lacuna após o watermark confirmado: "
+                    f"watermark={covered_date.isoformat()}, "
+                    f"window_start={window['window_start']}"
+                )
+
+        parameters: list[str] = [
+            window["job_id"],
+            window["id"],
+            window["window_start"],
+            window["window_start"],
+            window["window_end"],
+        ]
+        coverage_filter = ""
+        if covered_date is not None:
+            coverage_filter = "AND window_end > ? "
+            parameters.append(covered_date.isoformat())
+        blocker = self.connection.execute(
+            "SELECT id, window_start, window_end, status FROM sync_window "
+            "WHERE job_id=? AND id<>? AND status<>'COMPLETED' AND ("
+            "window_start < ? OR (window_start = ? AND window_end < ?)) "
+            f"{coverage_filter}"
+            "ORDER BY window_start, window_end, id LIMIT 1",
+            parameters,
+        ).fetchone()
+        if blocker is not None:
+            raise WindowContinuityError(
+                "Janela anterior ainda não foi concluída: "
+                f"id={blocker['id']}, status={blocker['status']}, "
+                f"intervalo={blocker['window_start']}..{blocker['window_end']}"
+            )
+
     def get_watermark(self, job_id: str):
         return self.connection.execute(
             "SELECT * FROM sync_watermark WHERE job_id=?", (job_id,)
@@ -518,6 +577,34 @@ class SyncRepository:
             "ORDER BY window_start, window_end",
             (job_id, now_text),
         ).fetchall()
+
+    def require_active_lease(
+        self,
+        window_id: str,
+        lease_token: str,
+        run_id: str,
+        now: datetime | str | None = None,
+    ):
+        """Aplica fencing ao efeito protegido pela transação atual.
+
+        A validação deve compartilhar a transação de escrita com o
+        efeito protegido. Desse modo, outro worker não pode recuperar a janela
+        entre a verificação do token e o commit desse efeito.
+        """
+
+        if not self.connection.in_transaction:
+            raise RuntimeError(
+                "Validação de lease para escrita exige transação ativa"
+            )
+        window = self._require_lease(
+            window_id, lease_token, _utc_datetime(now)
+        )
+        self._require_active_run(window)
+        if window["active_run_id"] != run_id:
+            raise LeaseConflictError(
+                "Lease não está vinculado a esta execução"
+            )
+        return window
 
     def _require_lease(
         self, window_id: str, lease_token: str, now: datetime
