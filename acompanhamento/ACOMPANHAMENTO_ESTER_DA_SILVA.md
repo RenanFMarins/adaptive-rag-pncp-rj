@@ -869,8 +869,37 @@ Os nossos testes foram de 50 para 81.
 - **Próximo passo:** indexação FAISS e as perguntas de referência.
 
 ---
+## Encontro 12 · 14/10/2026
 
-## Encontro 12 · DD/MM/AAAA
+### O que eu fiz hoje
+
+Trabalhei junto com a Ana na comparação entre dois carregadores de dados do projeto: o persistencia.py da base normativa e a função persistir_chunks_jsonl_normativos do Luciano (após o merge do PR #46 dele). Identificamos juntas dois pontos de conflito importantes entre as duas abordagens, que a Ana depois comunicou ao Luciano. Também acompanhei a tentativa de configuração do ambiente de desenvolvimento (venv) para rodar a indexação FAISS, ajudando a interpretar os erros de dependência que apareceram.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claudinha (assistente de IA para mentoria da residência), usada em conjunto com a Ana
+- **Para quê:** Para comparar o código dos dois carregadores e entender as divergências de comportamento entre eles, além de interpretar as mensagens de erro de instalação de dependências do ambiente virtual.
+- **O que eu conferi / mudei:** Validei junto com a Ana que a chave de identificação do documento é diferente entre os dois carregadores (source_file vs. base_id|source_file, via _document_source_file), o que gera risco de duplicidade/documentos órfãos. Também confirmamos que o carregador do Luciano sempre sobrescreve title e source_url, enquanto o da Ana preserva o title já preenchido. Observei que esse comportamento do Luciano já evoluiu desde um relatório meu anterior, onde eu tinha apontado que o title ficava None — isso já foi corrigido do lado dele. Acompanhei também a verificação na documentação do PyPI de que networkx==3.7 exige Python 3.12+, incompatível com o Python 3.10.4 do ambiente.
+
+### O que travou
+
+- Mesmo conflito identificado com a Ana: divergência de chave de identificação e de critério de sobrescrita de campos entre os dois carregadores (base normativa vs. carregador do Luciano).
+- Mesma incompatibilidade de ambiente: Python 3.10.4 incompatível com networkx e numpy==2.5.3 exigidos no requirements.txt, impedindo avançar para a indexação FAISS.
+
+### Próximo passo
+
+- Apoiar o alinhamento com o Luciano sobre qual padrão de chave e de sobrescrita de campos o grupo vai adotar entre os dois carregadores.
+- Apoiar a migração do ambiente para Python 3.12+, para viabilizar a execução da indexação FAISS.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** Diagnóstico completo do conflito entre os dois carregadores de dados (chave de identificação de documento e política de sobrescrita de campos), formalizado e enviado ao Luciano para alinhamento.
+- **Travou:** Decisão final sobre qual carregador/padrão de chave usar (depende do Luciano); configuração de ambiente impedindo a execução da indexação FAISS.
+- **Próximo passo:** Fechar com o Luciano o padrão de chave e de sobrescrita de campos; migrar o ambiente para Python 3.12+ e recriar o .venv.
+
+---
+
+## Encontro 13 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 

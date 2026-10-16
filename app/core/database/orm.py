@@ -66,8 +66,9 @@ def _migrar_colunas_documents(banco: Engine) -> None:
             )
 
 
-def init_db(bind: Engine | None = None) -> None:
-    """Register domain models, create ORM tables and initialize FTS5."""
+def register_models() -> None:
+    """Import all ORM models so every relationship target is registered."""
+
     for module in (
         "corpus",
         "documents",
@@ -78,6 +79,11 @@ def init_db(bind: Engine | None = None) -> None:
     ):
         import_module(f"app.modules.{module}.model")
 
+
+def init_db(bind: Engine | None = None) -> None:
+    """Register domain models, create ORM tables and initialize FTS5."""
+
+    register_models()
     banco = engine if bind is None else bind
     Base.metadata.create_all(bind=banco)
     _migrar_colunas_documents(banco)

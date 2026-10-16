@@ -111,3 +111,15 @@ Também trabalhei na criação e nos testes de endpoints para verificar o funcio
 Durante os testes, identifiquei que alguns cenários apresentaram os resultados esperados, enquanto outros ainda precisam de ajustes. Por isso, dediquei boa parte do dia à análise desses comportamentos, buscando identificar possíveis problemas e melhorias no fluxo.
 
 Dessa forma, o trabalho de hoje ficou concentrado principalmente na validação das funcionalidades implementadas, na identificação de falhas e nos ajustes necessários para melhorar o funcionamento das buscas.
+
+## Encontro 11 - 2026-10-14
+
+### Relato individual - Luciano Oliveira da Costa (4h)
+
+Hoje, dei continuidade aos testes do projeto, criando um fallback para auxiliar na validação do Query Analysis e dos filtros. Realizei testes diretamente pelo console para verificar se as perguntas estão sendo interpretadas e processadas corretamente, fazendo ajustes e refinamentos conforme os resultados apresentados.
+
+Também trabalhei na análise dos retornos das buscas, buscando identificar possíveis falhas e melhorar o comportamento do sistema antes de avançar para as próximas etapas.
+
+Além disso, realizei o download de novos documentos para complementar a base do projeto e fiz a ingestão de parte desses arquivos no banco de dados.
+
+Dessa forma, o trabalho de hoje ficou concentrado principalmente nos testes e ajustes do Query Analysis e dos filtros, além da ampliação e atualização da base de documentos utilizada pelo sistema.

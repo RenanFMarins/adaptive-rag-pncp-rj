@@ -393,7 +393,7 @@ def processar_documentos(
 
 if __name__ == "__main__":
     # Mude somente ano e mês para fazer outra coleta mensal.
-    PERIODO = PeriodoColeta(ano=2026, mes=1)
+    PERIODO = PeriodoColeta(ano=2025, mes=1)
     CAMINHOS = caminhos_do_periodo(PERIODO)
 
     # Valores seguros para teste. Para percorrer o mês inteiro, mude o
@@ -408,8 +408,8 @@ if __name__ == "__main__":
     # Use "coletar" para a busca mensal e "reprocessar" somente quando
     # quiser tentar novamente as páginas do checkpoint.
     MODO_EXECUCAO = "coletar"
-    EXECUTAR_CONTRATOS = True
-    EXECUTAR_CONTRATACOES = False
+    EXECUTAR_CONTRATOS = False
+    EXECUTAR_CONTRATACOES = True
 
     if MODO_EXECUCAO not in {"coletar", "reprocessar"}:
         raise ValueError("MODO_EXECUCAO deve ser 'coletar' ou 'reprocessar'.")

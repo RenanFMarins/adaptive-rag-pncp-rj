@@ -6,6 +6,7 @@ import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+from app.core.logging import perf_stage
 
 from .executor import QueryExecutionError, executar_analise_estruturada
 from .planner import planejar_execucao
@@ -14,6 +15,7 @@ from .schemas import AdaptiveQueryResult, ExecutionPlan, QueryAnalysis, QueryRou
 
 RagExecutorFn = Callable[[], Any]
 HybridExecutorFn = Callable[[AdaptiveQueryResult], Any]
+CatalogExecutorFn = Callable[[], list[dict[str, Any]]]
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,7 @@ def executar_plano_adaptativo(
     structured_connection: sqlite3.Connection | None = None,
     rag_executor: RagExecutorFn | None = None,
     hybrid_executor: HybridExecutorFn | None = None,
+    catalog_executor: CatalogExecutorFn | None = None,
 ) -> AdaptiveExecutionResult:
     """Executa exclusivamente a ferramenta indicada pela rota planejada.
 
@@ -42,11 +45,13 @@ def executar_plano_adaptativo(
     documental, que é responsável por manter os dois contextos separados.
     """
 
-    plan = planejar_execucao(analysis)
+    with perf_stage("planner"):
+        plan = planejar_execucao(analysis)
     if plan.route is QueryRoute.STRUCTURED:
         if structured_connection is None:
             raise QueryExecutionError("A rota structured requer conexão SQLite.")
-        structured = executar_analise_estruturada(structured_connection, analysis)
+        with perf_stage("structured_query"):
+            structured = executar_analise_estruturada(structured_connection, analysis)
         return AdaptiveExecutionResult(
             analysis=analysis,
             plan=plan,
@@ -62,11 +67,21 @@ def executar_plano_adaptativo(
             rag_result=rag_executor(),
         )
 
+    if plan.route is QueryRoute.CATALOG:
+        if catalog_executor is None:
+            raise QueryExecutionError("A rota catalog requer um executor de catálogo.")
+        return AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=plan,
+            external_documents=catalog_executor(),
+        )
+
     if structured_connection is None:
         raise QueryExecutionError("A rota hybrid requer conexão SQLite.")
     if hybrid_executor is None:
         raise QueryExecutionError("A rota hybrid requer um executor híbrido.")
-    structured = executar_analise_estruturada(structured_connection, analysis)
+    with perf_stage("structured_query"):
+        structured = executar_analise_estruturada(structured_connection, analysis)
     return AdaptiveExecutionResult(
         analysis=analysis,
         plan=plan,
