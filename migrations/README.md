@@ -89,3 +89,21 @@ em uma cópia e nesta ordem, `sync_watermark`, `sync_target_progress`,
 auditoria; portanto, devem ser exportados e preservados antes de qualquer
 remoção. A reversão nunca exige alterar `raw_asset`, `ingestion_run` ou
 `sync_checkpoint`.
+
+## 003_raw_observation.sql
+
+Adiciona `raw_observation` sem alterar nenhuma linha de `raw_asset`. A tabela
+separa a observação feita por uma execução da versão RAW observada:
+
+- `observation_key` identifica de forma determinística a mesma observação
+  quando uma janela é reexecutada;
+- `raw_asset_id` aponta para a versão append-only que foi persistida;
+- a janela distingue uma reversão posterior de um replay;
+- cursor e ordinal ficam registrados para auditoria, mas não integram a chave,
+  pois a paginação da API pode mudar entre execuções;
+- status, tipo e valor normalizado do timestamp registram se a ordenação
+  temporal é confiável.
+
+Registros históricos permanecem válidos mesmo sem uma linha correspondente
+em `raw_observation`. Depois da migração, novas versões persistidas recebem o
+metadado sem atualizar ou remover qualquer payload anterior.

@@ -17,7 +17,11 @@ from app.core.database.repositories.sync_repository import (
 )
 from .ingestion.change_detector import asset_key, detect_change
 from .ingestion.hashing import payload_hash
-from .ingestion.identity import CanonicalIdentity, source_timestamps
+from .ingestion.identity import (
+    CanonicalIdentity,
+    build_observation_key,
+    extract_source_timestamps,
+)
 from .obs import JsonlLogger
 from .schema import CollectionCheckpoint, CollectedRecord, IngestionResult
 
@@ -31,6 +35,13 @@ class RawRepository:
 
     def close(self) -> None:
         self.connection.close()
+
+    def _begin_immediate(self) -> None:
+        if self.connection.in_transaction:
+            raise RuntimeError(
+                "Persistência RAW atômica exige conexão sem transação pendente"
+            )
+        self.connection.execute("BEGIN IMMEDIATE")
 
     def start_run(
         self,
@@ -118,38 +129,76 @@ class RawRepository:
         query_params: dict | None = None,
         corpus_version: str = "v1",
         sensitivity: str = "public",
+        window_start: str | None = None,
+        window_end: str | None = None,
+        lease_window_id: str | None = None,
+        lease_token: str | None = None,
     ) -> str:
+        if (lease_window_id is None) != (lease_token is None):
+            raise ValueError(
+                "Persistência protegida exige window_id e lease_token"
+            )
         key = record.external_id or asset_key(record.payload, key_fields)
         digest = payload_hash(record.payload)
         identity = CanonicalIdentity(base_id, resource_type, key)
-        current = self.assets.find_current(identity)
-        latest_digest = current["payload_hash"] if current else None
-        source_published_at, source_updated_at = source_timestamps(
-            record.payload, resource_type
+        timestamps = extract_source_timestamps(record.payload, resource_type)
+        observation_key = build_observation_key(
+            identity,
+            digest,
+            timestamps.updated,
+            source_id=record.source_id,
+            window_start=window_start,
+            window_end=window_end,
         )
-        status = detect_change(latest_digest, digest)
-        if status == "UPDATED" and self.assets.contains_observation(
-            identity, digest, source_updated_at
-        ):
-            status = "UNCHANGED"
-        if status != "UNCHANGED":
-            self.assets.insert_raw(
-                run_id,
-                record,
-                key,
+        self._begin_immediate()
+        try:
+            lease_guard = None
+            if lease_window_id is not None and lease_token is not None:
+                lease_guard = SyncRepository(self.connection)
+                lease_guard.require_active_lease(
+                    lease_window_id, lease_token, run_id
+                )
+            current = self.assets.find_current(identity)
+            latest_digest = current["payload_hash"] if current else None
+            status = detect_change(latest_digest, digest)
+            if status == "UPDATED" and self.assets.contains_observation(
+                identity,
                 digest,
-                resource_type=resource_type,
-                base_id=base_id,
-                natureza=natureza,
-                query_params=query_params,
-                corpus_version=corpus_version,
-                sensitivity=sensitivity,
-                source_published_at=source_published_at,
-                source_updated_at=source_updated_at,
-                identity=identity,
-                previous_version_id=current["id"] if current else None,
-            )
-        return status
+                timestamps.updated.raw,
+                observation_key,
+            ):
+                status = "UNCHANGED"
+            if status != "UNCHANGED":
+                self.assets.insert_raw(
+                    run_id,
+                    record,
+                    key,
+                    digest,
+                    resource_type=resource_type,
+                    base_id=base_id,
+                    natureza=natureza,
+                    query_params=query_params,
+                    corpus_version=corpus_version,
+                    sensitivity=sensitivity,
+                    source_published_at=timestamps.published.raw,
+                    source_updated_at=timestamps.updated.raw,
+                    identity=identity,
+                    previous_version_id=current["id"] if current else None,
+                    source_timestamp=timestamps.updated,
+                    observation_key=observation_key,
+                    window_start=window_start,
+                    window_end=window_end,
+                    commit=False,
+                )
+            if lease_guard is not None:
+                lease_guard.require_active_lease(
+                    lease_window_id, lease_token, run_id
+                )
+            self.connection.commit()
+            return status
+        except BaseException:
+            self.connection.rollback()
+            raise
 
     def finish_run(
         self,
@@ -229,6 +278,8 @@ def ingest_records(
                 ),
                 corpus_version,
                 sensitivity,
+                window_start,
+                window_end,
             )
             counts["records_seen"] += 1
             counts[status] += 1
@@ -282,6 +333,7 @@ def ingest_records(
             counts["UNCHANGED"],
         )
     except BaseException as error:
+        repository.connection.rollback()
         last_page = max(processed_pages, default=initial_checkpoint)
         error_message = str(error) or type(error).__name__
         counts["FAILED"] += 1
@@ -392,6 +444,10 @@ def ingest_window_records(
                 ),
                 corpus_version,
                 sensitivity,
+                window["window_start"],
+                window["window_end"],
+                lease_window_id=window_id,
+                lease_token=lease_token,
             )
             counts["records_seen"] += 1
             counts[status] += 1
@@ -429,6 +485,7 @@ def ingest_window_records(
             counts["UNCHANGED"],
         )
     except BaseException as error:
+        repository.connection.rollback()
         error_message = str(error) or type(error).__name__
         if not run_finished:
             counts["FAILED"] += 1

@@ -80,6 +80,35 @@ CREATE INDEX IF NOT EXISTS idx_raw_asset_canonical_identity
     ON raw_asset(base_id, resource_type, external_id);
 """
 
+RAW_OBSERVATION_SCHEMA = """
+CREATE TABLE IF NOT EXISTS raw_observation (
+    observation_key TEXT PRIMARY KEY,
+    raw_asset_id TEXT NOT NULL UNIQUE,
+    base_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    source TEXT NOT NULL,
+    window_start TEXT,
+    window_end TEXT,
+    cursor TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    source_timestamp_status TEXT NOT NULL
+        CHECK (source_timestamp_status IN ('VALID', 'MISSING', 'INVALID')),
+    source_timestamp_kind TEXT,
+    source_updated_at_normalized TEXT,
+    ingestion_run_id TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    FOREIGN KEY (raw_asset_id) REFERENCES raw_asset(id),
+    FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_run(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_raw_observation_identity
+    ON raw_observation(base_id, resource_type, external_id);
+CREATE INDEX IF NOT EXISTS idx_raw_observation_run
+    ON raw_observation(ingestion_run_id);
+"""
+
 SYNC_V2_SCHEMA = """
 CREATE TABLE IF NOT EXISTS sync_job (
     id TEXT PRIMARY KEY,
@@ -166,6 +195,7 @@ def init_db(connection: sqlite3.Connection) -> None:
     # controlada deve ser aplicada depois de backup e validação.
     if not raw_table_existed:
         connection.executescript(CANONICAL_IDENTITY_INDEX_SQL)
+        connection.executescript(RAW_OBSERVATION_SCHEMA)
         connection.executescript(SYNC_V2_SCHEMA)
     connection.commit()
 

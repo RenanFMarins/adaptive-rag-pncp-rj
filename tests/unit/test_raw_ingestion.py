@@ -311,6 +311,7 @@ class RawIngestionTests(unittest.TestCase):
                 "sync_window",
                 "sync_target_progress",
                 "sync_watermark",
+                "raw_observation",
             },
         )
         run = repository.connection.execute(

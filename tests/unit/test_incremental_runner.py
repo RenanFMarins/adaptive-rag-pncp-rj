@@ -282,6 +282,200 @@ class IncrementalRunnerTests(unittest.TestCase):
         )
         connection.close()
 
+    def test_endpoint_resume_replays_window_after_repagination(self):
+        failing = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {
+                        "cursor": "1",
+                        "records": [self.record("A"), self.record("B")],
+                    },
+                    {
+                        "cursor": "2",
+                        "records": [self.record("C"), self.record("D")],
+                    },
+                ],
+                "fail_after_checkpoints": 1,
+            },
+            "before-repagination.json",
+        )
+        with self.assertRaisesRegex(RuntimeError, "paginação"):
+            run_offline_incremental(self.config(failing))
+
+        repaginated = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {
+                        "cursor": "1",
+                        "records": [self.record("X"), self.record("A")],
+                    },
+                    {
+                        "cursor": "2",
+                        "records": [self.record("B"), self.record("C")],
+                    },
+                    {"cursor": "3", "records": [self.record("D")]},
+                ],
+            },
+            "after-repagination.json",
+        )
+
+        report = run_offline_incremental(
+            self.config(
+                repaginated,
+                resume=True,
+                worker_id="recovery-worker",
+            )
+        )
+
+        self.assertEqual(
+            (report.records_seen, report.new, report.unchanged),
+            (5, 3, 2),
+        )
+        connection = sqlite3.connect(self.database)
+        ids = {
+            row[0]
+            for row in connection.execute(
+                "SELECT external_id FROM raw_asset"
+            )
+        }
+        window = connection.execute(
+            "SELECT status, progress_cursor FROM sync_window"
+        ).fetchone()
+        watermark_count = connection.execute(
+            "SELECT COUNT(*) FROM sync_watermark"
+        ).fetchone()[0]
+        connection.close()
+        self.assertEqual(ids, {"A", "B", "C", "D", "X"})
+        self.assertEqual(window, ("COMPLETED", "3"))
+        self.assertEqual(watermark_count, 1)
+
+    def test_endpoint_resume_does_not_depend_on_saved_cursor_existing(self):
+        failing = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {"cursor": "old-page", "records": [self.record("A")]},
+                ],
+                "fail_after_checkpoints": 1,
+            },
+            "old-cursor.json",
+        )
+        with self.assertRaises(RuntimeError):
+            run_offline_incremental(self.config(failing))
+
+        changed = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {
+                        "cursor": "new-page",
+                        "records": [self.record("A"), self.record("B")],
+                    }
+                ],
+            },
+            "new-cursor.json",
+        )
+
+        report = run_offline_incremental(
+            self.config(changed, resume=True, worker_id="recovery-worker")
+        )
+
+        self.assertEqual(
+            (report.status, report.new, report.unchanged),
+            ("SUCCEEDED", 1, 1),
+        )
+
+    def test_endpoint_continues_after_empty_intermediate_page(self):
+        fixture = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {"cursor": "1", "records": [self.record("A")]},
+                    {"cursor": "2", "records": []},
+                    {"cursor": "3", "records": [self.record("B")]},
+                ],
+            },
+            "empty-intermediate-page.json",
+        )
+
+        report = run_offline_incremental(self.config(fixture))
+
+        self.assertEqual((report.records_seen, report.new), (2, 2))
+        connection = sqlite3.connect(self.database)
+        cursor = connection.execute(
+            "SELECT progress_cursor FROM sync_window"
+        ).fetchone()[0]
+        connection.close()
+        self.assertEqual(cursor, "3")
+
+    def test_relationship_resume_still_skips_completed_target(self):
+        failing = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "targets": [
+                    {
+                        "target": {"numero_controle": "A"},
+                        "pages": [
+                            {"records": [self.record("A|1")]},
+                        ],
+                    },
+                    {
+                        "target": {"numero_controle": "B"},
+                        "pages": [
+                            {"records": [self.record("B|1")]},
+                        ],
+                    },
+                ],
+                "fail_after_checkpoints": 1,
+            },
+            "relationship-failure.json",
+        )
+        with self.assertRaises(RuntimeError):
+            run_offline_incremental(
+                self.config(failing, resource="contratacao_item")
+            )
+
+        recovered = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "targets": [
+                    {
+                        "target": {"numero_controle": "A"},
+                        "pages": [
+                            {"records": [self.record("A|1")]},
+                        ],
+                    },
+                    {
+                        "target": {"numero_controle": "B"},
+                        "pages": [
+                            {"records": [self.record("B|1")]},
+                        ],
+                    },
+                ],
+            },
+            "relationship-recovery.json",
+        )
+
+        report = run_offline_incremental(
+            self.config(
+                recovered,
+                resource="contratacao_item",
+                resume=True,
+                worker_id="recovery-worker",
+            )
+        )
+
+        self.assertEqual((report.records_seen, report.new), (1, 1))
+        connection = sqlite3.connect(self.database)
+        statuses = connection.execute(
+            "SELECT target_key, status FROM sync_target_progress "
+            "ORDER BY target_key"
+        ).fetchall()
+        connection.close()
+        self.assertEqual(statuses, [("A", "COMPLETED"), ("B", "COMPLETED")])
+
     def test_existing_entity_is_updated_in_later_window(self):
         first = self.endpoint_fixture([self.record(state="A")], name="a.json")
         second = self.endpoint_fixture(

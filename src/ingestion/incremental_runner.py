@@ -531,15 +531,15 @@ def run_offline_incremental(config: IncrementalRunConfig):
                 ):
                     pending_target_keys.add(target_key)
 
-        current = sync.get_window(window.window_id)
-        start_after = (
-            None
-            if config.reprocess or definition.strategy != ENDPOINT_STRATEGY
-            else current["progress_cursor"]
-        )
+        # O PNCP não oferece snapshot paginado nem garante ordenação
+        # estável. Uma retomada baseada no número/cursor da última página
+        # poderia ignorar registros movidos para páginas anteriores. Por isso,
+        # endpoints sempre repetem a janela completa; a identidade canônica e
+        # o hash tornam essa repetição idempotente. progress_cursor permanece
+        # apenas como evidência operacional da última página confirmada.
         events = fixture.events(
             source_id,
-            start_after_cursor=start_after,
+            start_after_cursor=None,
             pending_target_keys=pending_target_keys,
         )
         renewing = LeaseRenewingIterable(
