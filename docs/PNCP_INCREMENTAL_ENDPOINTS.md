@@ -93,11 +93,29 @@ O modelo atual separa `sync_job`, `sync_window`, `sync_target_progress` e
 
 1. a execução associada terminou com `SUCCESS`;
 2. nenhum alvo da janela ficou incompleto;
-3. o worker ainda possui um lease válido.
+3. o worker ainda possui um lease válido;
+4. o valor pertence à data final da janela;
+5. não existe janela anterior ainda não coberta no mesmo job;
+6. a nova janela é contígua ou sobreposta à cobertura já confirmada.
 
 Falha de paginação deixa a janela recuperável e não avança o watermark. O
 `tie_breaker` existe no esquema, mas não deve virar cursor HTTP enquanto o PNCP
 não garantir ordenação compatível. [CÓDIGO]
+
+Para recursos globais por endpoint, uma retomada repete a janela desde a
+primeira página. O `progress_cursor` é evidência operacional, não uma fronteira
+segura para pular páginas: registros podem mudar de página entre tentativas. A
+identidade canônica e o hash tornam a repetição idempotente, e o watermark só
+avança depois da nova varredura completa. Recursos por relacionamento mantêm
+retomada por alvo estável já concluído. [CÓDIGO, RECOMENDAÇÃO]
+
+Os coletores paginados validam `numeroPagina` e mantêm o primeiro
+`totalPaginas` como contrato da tentativa. Uma página vazia anterior ao total
+declarado é repetida com limite e backoff; se continuar vazia, se o total mudar
+ou se o número retornado não corresponder ao solicitado, a coleta falha sem
+confirmar o alvo/janela. Lista vazia sem envelope, `204` convertido em lista
+vazia e página final declarada vazia continuam representando ausência legítima
+de registros. [CÓDIGO]
 
 ### RAW e timestamps
 
