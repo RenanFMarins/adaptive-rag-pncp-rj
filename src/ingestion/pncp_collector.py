@@ -21,6 +21,157 @@ from .checkpoint import stable_target_metadata
 from .pncp_client import PNCPClient, PNCPClientError
 
 
+class PNCPPaginationError(RuntimeError):
+    """Envelope paginado inconsistente, sem cobertura segura comprovável."""
+
+
+class _PaginationGuard:
+    def __init__(
+        self,
+        source_id: str,
+        logger: JsonlLogger,
+        **log_context: Any,
+    ) -> None:
+        self.source_id = source_id
+        self.logger = logger
+        self.log_context = log_context
+        self.expected_total_pages: int | None = None
+
+    def inspect(
+        self,
+        response: Any,
+        page: int,
+        record_count: int,
+    ) -> str:
+        total_pages = self._envelope_integer(
+            response, "totalPaginas", page=page, minimum=0
+        )
+        response_page = self._envelope_integer(
+            response, "numeroPagina", page=page, minimum=0
+        )
+        if response_page is not None and response_page != page:
+            self._fail(
+                "unexpected_page_number",
+                page,
+                reported_page=response_page,
+                total_pages=total_pages,
+            )
+        if total_pages is not None:
+            if self.expected_total_pages is None:
+                self.expected_total_pages = total_pages
+            elif total_pages != self.expected_total_pages:
+                self._fail(
+                    "total_pages_changed",
+                    page,
+                    expected_total_pages=self.expected_total_pages,
+                    reported_total_pages=total_pages,
+                )
+            if total_pages == 0:
+                if page != 1 or record_count:
+                    self._fail(
+                        "invalid_zero_total",
+                        page,
+                        record_count=record_count,
+                    )
+                return "last"
+            if page > total_pages:
+                self._fail(
+                    "page_exceeds_total",
+                    page,
+                    total_pages=total_pages,
+                )
+            if not record_count and page < total_pages:
+                return "empty_intermediate"
+            if page >= total_pages:
+                return "last"
+        return "last" if not record_count else "continue"
+
+    def _envelope_integer(
+        self,
+        response: Any,
+        field: str,
+        *,
+        page: int,
+        minimum: int,
+    ) -> int | None:
+        if not isinstance(response, Mapping) or field not in response:
+            return None
+        value = response[field]
+        if isinstance(value, bool):
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        if parsed < minimum:
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        return parsed
+
+    def _fail(self, reason: str, page: int, **fields: Any) -> None:
+        self.logger.event(
+            "pncp_pagination_anomaly",
+            source_id=self.source_id,
+            page=page,
+            reason=reason,
+            **self.log_context,
+            **fields,
+        )
+        raise PNCPPaginationError(
+            f"Paginação PNCP inconsistente em {self.source_id}: "
+            f"{reason} (página {page})"
+        )
+
+
+def _fetch_validated_page(
+    request: Callable[[], tuple[Any, Any]],
+    source: SourceConfig,
+    page: int,
+    guard: _PaginationGuard,
+) -> tuple[Any, list[Mapping[str, Any]], Any, int, str]:
+    """Busca uma página e nunca aceita vazio intermediário silencioso."""
+
+    attempts = 0
+    empty_retries = 0
+    while True:
+        response, context = request()
+        attempts += 1
+        records = (
+            []
+            if response == []
+            else records_from_response(response, source.item_path)
+        )
+        outcome = guard.inspect(response, page, len(records))
+        if outcome != "empty_intermediate":
+            return response, records, context, attempts, outcome
+
+        retrying = empty_retries < source.max_retries
+        guard.logger.event(
+            "pncp_pagination_empty_intermediate",
+            source_id=source.id,
+            page=page,
+            total_pages=guard.expected_total_pages,
+            attempt=empty_retries + 1,
+            retrying=retrying,
+            **guard.log_context,
+        )
+        if not retrying:
+            raise PNCPPaginationError(
+                "Página intermediária vazia persistente no PNCP: "
+                f"fonte={source.id}, página={page}, "
+                f"total={guard.expected_total_pages}"
+            )
+        delay = source.retry_backoff_seconds * (2**empty_retries)
+        if delay:
+            time.sleep(delay)
+        empty_retries += 1
+
+
 def _target_checkpoint(
     cursor: int | str,
     target: Mapping[str, Any],
@@ -48,12 +199,13 @@ class PNCPCollector:
     def collect(self, source: SourceConfig, start_page: int = 1):
         ordinal = 0
         page = start_page
+        guard = _PaginationGuard(source.id, self.logger)
         while source.max_pages is None or page < start_page + source.max_pages:
-            response, url = self.client.fetch_page(source, page)
-            records = (
-                []
-                if response == []
-                else records_from_response(response, source.item_path)
+            response, records, url, _, outcome = _fetch_validated_page(
+                lambda: self.client.fetch_page(source, page),
+                source,
+                page,
+                guard,
             )
             query_params = {
                 **source.audit_context,
@@ -83,7 +235,7 @@ class PNCPCollector:
                     ordinal,
                     query_params=query_params,
                 )
-            if _is_last_response_page(response, page):
+            if outcome == "last":
                 break
             page += 1
             if source.rate_limit_seconds:
@@ -304,6 +456,13 @@ class PriceRegistryCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                work_index=work_index,
+                cnpj=context["cnpj"],
+                codigo_unidade=context["codigo_unidade"],
+            )
             while True:
                 params = {
                     "dataInicial": window_start,
@@ -318,27 +477,33 @@ class PriceRegistryCollector:
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            source.endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = self._validate_ata(payload, context, url)
                     if external_id is not None:
                         found.append((payload, external_id, url, params))
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             return (
@@ -478,6 +643,13 @@ class PublishedContractCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                target_index=target_index,
+                cnpj=context["cnpj"],
+                codigo_unidade=context["codigo_unidade"],
+            )
             while True:
                 query_unit = self._query_unit_code(
                     context["codigo_unidade"]
@@ -492,52 +664,58 @@ class PublishedContractCollector:
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                try:
-                    response = self._request(source, params)
-                    record_params = {
-                        **params,
-                        "codigoUnidadeAdministrativaOriginal": context[
-                            "codigo_unidade"
-                        ],
-                        "consultaSemFiltroUnidade": False,
-                    }
-                except PNCPClientError as error:
-                    if error.status_code != 422:
-                        raise
-                    fallback_params = dict(params)
-                    fallback_params.pop("codigoUnidadeAdministrativa")
-                    url = self.client.build_url(
-                        source.endpoint,
-                        fallback_params,
-                        base_url=source.base,
-                    )
-                    self.logger.event(
-                        "pncp_contract_unit_fallback",
-                        source_id=source.id,
-                        target_index=target_index,
-                        cnpj=context["cnpj"],
-                        codigo_unidade=context["codigo_unidade"],
-                        codigo_unidade_consulta=query_unit,
-                        page=page,
-                        status_original=422,
-                        action="retry_without_unit_filter",
-                    )
+
+                def request():
                     pacer.wait()
-                    response = self._request(source, fallback_params)
-                    record_params = {
-                        **fallback_params,
-                        "codigoUnidadeAdministrativaOriginal": context[
-                            "codigo_unidade"
-                        ],
-                        "consultaSemFiltroUnidade": True,
-                    }
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
+                    try:
+                        response = self._request(source, params)
+                        request_url = url
+                        record_params = {
+                            **params,
+                            "codigoUnidadeAdministrativaOriginal": context[
+                                "codigo_unidade"
+                            ],
+                            "consultaSemFiltroUnidade": False,
+                        }
+                    except PNCPClientError as error:
+                        if error.status_code != 422:
+                            raise
+                        fallback_params = dict(params)
+                        fallback_params.pop("codigoUnidadeAdministrativa")
+                        request_url = self.client.build_url(
+                            source.endpoint,
+                            fallback_params,
+                            base_url=source.base,
+                        )
+                        self.logger.event(
+                            "pncp_contract_unit_fallback",
+                            source_id=source.id,
+                            target_index=target_index,
+                            cnpj=context["cnpj"],
+                            codigo_unidade=context["codigo_unidade"],
+                            codigo_unidade_consulta=query_unit,
+                            page=page,
+                            status_original=422,
+                            action="retry_without_unit_filter",
+                        )
+                        pacer.wait()
+                        response = self._request(source, fallback_params)
+                        record_params = {
+                            **fallback_params,
+                            "codigoUnidadeAdministrativaOriginal": context[
+                                "codigo_unidade"
+                            ],
+                            "consultaSemFiltroUnidade": True,
+                        }
+                    return response, (request_url, record_params)
+
+                response, records, request_context, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
+                pages_requested += attempts
+                url, record_params = request_context
                 for payload in records:
                     external_id = self._validate_contract(
                         payload, context, url
@@ -546,7 +724,7 @@ class PublishedContractCollector:
                         found.append(
                             (payload, external_id, url, record_params)
                         )
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             return target_index, context, found, pages_requested
@@ -687,6 +865,12 @@ class CommitmentCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                target_index=target_index,
+                numero_controle=context["numero_controle"],
+            )
             while True:
                 params = {
                     source.page_param: page,
@@ -695,29 +879,35 @@ class CommitmentCollector:
                 url = self.client.build_url(
                     endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
-                    not_found_as_empty=True,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                            not_found_as_empty=True,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = self._validate_commitment(
                         payload, context, url
                     )
                     found.append((payload, external_id, url, params))
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             return target_index, context, found, pages_requested
@@ -836,6 +1026,14 @@ class ContractTimelineCollector:
             page = 1
             pages_requested = 0
             records_count = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                work_index=work_index,
+                window_start=window_start,
+                window_end=window_end,
+                modality=modality,
+            )
             while True:
                 params = {
                     **base_params,
@@ -848,22 +1046,28 @@ class ContractTimelineCollector:
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            source.endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = payload.get(self.external_id_field)
                     actual_uf = value_at_path(payload, self.uf_field_path)
@@ -894,7 +1098,7 @@ class ContractTimelineCollector:
                             "work_index": work_index,
                         },
                     )
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             self.logger.event(
@@ -989,16 +1193,6 @@ def _response_envelope_summary(response: Any) -> dict[str, Any]:
         if key in response:
             summary[key] = response[key]
     return summary
-
-
-def _is_last_response_page(response: Any, current_page: int) -> bool:
-    if not isinstance(response, Mapping):
-        return False
-    total_pages = response.get("totalPaginas")
-    try:
-        return total_pages is not None and current_page >= int(total_pages)
-    except (TypeError, ValueError):
-        return False
 
 
 def _quarter_date_windows(
