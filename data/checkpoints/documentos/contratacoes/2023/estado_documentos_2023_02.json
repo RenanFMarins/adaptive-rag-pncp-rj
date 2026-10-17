@@ -1,0 +1,5936 @@
+{
+  "entidades": {
+    "00394452000103-1-008777/2022": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.436148+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000027/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.477684+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000033/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.509482+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "31846918000180-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.539826+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000044/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.583320+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000049/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.615500+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000123/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.644987+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42521088000137-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.677894+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000058/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.714321+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000048/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.755153+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000062/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.789874+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "08772020000192-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.825286+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000013/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.860557+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000014/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.898635+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000015/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.928021+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000126/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:32.971853+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000127/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.004190+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000016/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.037588+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000074/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.068358+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000169/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.099081+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000017/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.133818+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000170/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.171555+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000018/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.216641+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394445000101-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.480107+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000053/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.514509+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000174/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.556689+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000175/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.595117+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "62658737000153-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.630274+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000020/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.660521+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000128/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.700360+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000054/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.733837+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000129/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.776028+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000130/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.816960+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000131/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.846407+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000133/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.879519+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000028/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.907989+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000134/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:33.976081+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000181/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.006750+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000136/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.038129+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000013/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.066032+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000182/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.098056+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000006/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.138195+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000137/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.171950+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000138/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.202003+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000076/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.237931+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000056/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.283304+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000140/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.317838+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000141/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.355800+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000142/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.393443+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000057/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.425275+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000143/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.462159+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000188/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.496157+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000190/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.533352+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000144/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.563214+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000029/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.594996+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000146/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.627636+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000147/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.657903+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000148/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.689768+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000149/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.723721+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000014/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.754714+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394494000136-1-000026/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.788770+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000150/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.820310+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000151/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.853396+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000152/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.881341+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000153/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.912742+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000154/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.942630+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000155/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:34.974604+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000156/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.004467+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "30051023000196-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.035839+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000018/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.067205+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000157/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.096542+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000158/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.141406+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000030/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.172063+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000159/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.200466+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000160/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.231176+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000161/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.274920+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000162/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.308477+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000021/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.339532+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000207/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.377165+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000208/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.407012+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000016/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.441080+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000211/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.470619+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000058/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.512856+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000059/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.545907+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000022/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.579790+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000022/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.609021+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000031/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.635548+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.664757+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000032/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.693462+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000163/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.724588+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000081/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.757055+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000165/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.794914+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000231/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.847602+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000166/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.878590+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000240/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.911379+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000243/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.941478+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000168/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:35.975500+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000034/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.014855+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000169/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.044453+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000171/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.074889+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000172/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.104949+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000085/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.134732+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000173/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.164126+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000174/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.198913+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000175/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.231296+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000176/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.269754+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394445000101-1-000004/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.530704+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000249/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.560253+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.596866+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00508903000188-1-000046/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.626964+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000178/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.656481+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000060/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.685069+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000089/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.721300+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000020/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.752480+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000258/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.794460+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000090/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.836631+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000179/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.877016+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000264/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.910659+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00508903000188-1-000048/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.940306+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000035/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:36.972489+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000004/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.001235+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000183/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.032070+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000021/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.066810+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000056/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.095330+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000184/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.126326+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000036/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.156175+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000008/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.227272+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000282/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.256149+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000037/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.295983+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "31027527000133-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.559854+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000095/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.594766+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000019/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.625114+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000187/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.655707+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000020/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.689042+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000188/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.721778+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000189/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.754073+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000190/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.784193+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000191/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.813596+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000192/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.854052+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000193/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.885523+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000009/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.914187+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000038/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.941808+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000195/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:37.976483+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000196/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.016255+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000197/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.054894+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000198/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.087061+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "31027527000133-1-000008/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.174075+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000199/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.206411+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000200/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.236849+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000202/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.270164+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000203/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.301482+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000021/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.573972+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000205/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.603580+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000206/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.634656+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000207/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.722821+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000209/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.757589+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000063/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.787933+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000064/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.820095+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42414284000102-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.859018+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000211/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.893172+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000012/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.936737+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000212/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:38.970428+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000214/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.001659+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000215/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.031208+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000216/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.057396+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000039/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.089258+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000101/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.124818+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.154359+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000066/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.198296+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000219/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.230339+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000220/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.265074+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00508903000188-1-000056/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.344658+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000315/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.379701+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000023/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.407007+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000221/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.439917+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000222/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.476805+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000040/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.506325+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000223/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.534349+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42414284000102-1-000006/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.565037+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000320/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.597786+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000224/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.625506+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000041/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.656504+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000067/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.692768+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000042/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.722339+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000324/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.752038+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000068/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.792803+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000028/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.825716+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000031/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.864027+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000032/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.900993+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000023/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.931746+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000004/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:39.969045+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000043/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.007214+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000331/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.038601+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.069100+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "31027527000133-1-000009/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.102711+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28523215000106-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.132124+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000105/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.163284+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000226/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.194749+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000227/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.222642+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000228/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.249642+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000072/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.279267+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000348/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.307858+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000229/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.336579+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000230/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.365769+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000349/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.397902+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000350/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.426340+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000351/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.463689+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "10952708000104-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.492525+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000353/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.522934+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000045/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.555497+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000236/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.586030+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000237/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.616812+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000238/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.652929+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42414284000102-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.683005+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000239/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.722173+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000240/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.757158+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000241/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.798451+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000024/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.835505+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000243/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:40.874727+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000006/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.201050+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000069/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.231452+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000244/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.263623+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000245/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.302991+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000070/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.334743+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000010/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.605792+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000011/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.637168+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000247/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.666702+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34023077000107-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.696086+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000248/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.725384+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000249/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.757985+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000250/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.785490+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000251/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.817307+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000252/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:41.852285+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000253/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.114192+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000254/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.142718+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000256/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.174080+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000257/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.202984+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34023077000107-1-000006/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.231749+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000260/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.264115+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000261/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.297693+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000262/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.334775+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33892175000100-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.366818+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000264/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.396335+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000377/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.434243+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000266/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.467295+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000378/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.497379+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000267/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.527574+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33892175000100-1-000004/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.561284+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "10952708000104-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.595308+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000268/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.647080+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000046/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.679816+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000269/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.719206+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000270/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.769193+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000047/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.799742+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000271/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.835810+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000025/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.878264+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000048/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.920864+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000026/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:42.951590+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000272/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.001378+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000050/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.031330+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000035/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.060180+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000025/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.099863+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000397/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.127929+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000071/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.159510+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000400/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.187950+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000026/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.217947+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000408/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.252939+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000027/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.294401+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000410/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.330684+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000111/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.359412+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000278/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.391078+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000081/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.420809+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000279/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.458801+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000280/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.488197+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000281/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.520680+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000282/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.560734+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000283/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.600861+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000414/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.632231+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000285/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.693157+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000017/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.734171+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.767843+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000051/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.798130+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000018/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.831394+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000052/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.863287+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000418/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.899619+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000053/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.937429+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000022/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:43.972705+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000115/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.006936+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000286/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.038276+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000072/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.074952+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000423/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.102684+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000023/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.133535+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000288/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.163763+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000024/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.193949+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000425/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.227333+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000054/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.261574+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000428/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.291881+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000429/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.329331+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000055/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.361594+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000118/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.645438+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000290/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.684822+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000291/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.717141+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000031/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.749110+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000292/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.781149+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000293/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.810930+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000294/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.845036+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000434/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.874372+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000087/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.901068+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000295/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.933141+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000296/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:44.965600+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000297/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.002194+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000440/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.033679+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000038/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.083399+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000039/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.117893+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000056/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.148417+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000298/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.184024+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "31027527000133-1-000010/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.216197+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000299/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.253974+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000012/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.281694+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000301/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.307740+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000302/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.340720+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000452/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.373829+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000028/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.403690+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000303/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.433987+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000029/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.468102+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000304/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.497133+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000030/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.532438+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000454/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.558523+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000455/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.587958+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000022/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.620880+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000031/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.662681+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000306/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.697005+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000032/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.726996+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "26963660000161-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.758861+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "10898596000142-1-000012/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.786696+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000032/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.817676+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000307/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.851122+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000308/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.883832+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000309/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.915337+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000310/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:45.951551+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000311/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.212768+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000312/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.243694+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000313/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.272776+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000033/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.304835+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000315/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.337115+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "10898596000142-1-000013/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.364411+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "10898596000142-1-000014/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.395912+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000091/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.434838+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000317/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.699203+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000318/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.733403+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000319/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.762970+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000092/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.794756+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000320/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.826443+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000321/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.859101+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000322/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.888872+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000025/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.922774+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394460000141-1-000094/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.953033+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000482/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:46.983719+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000323/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.018527+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000324/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.047244+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000488/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.082690+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.113604+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000326/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.142835+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000327/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.170421+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000328/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.202728+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000329/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.235029+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000330/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.267892+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000008/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.297885+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000033/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.331228+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000331/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.360793+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000332/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.393023+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000333/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.424674+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000493/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.463167+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000042/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.505437+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000334/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.544071+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000335/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.576674+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000125/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.613483+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000127/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.653530+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000512/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.691614+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000515/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.726166+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000516/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.756890+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000336/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.789010+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000030/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.816330+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000527/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.846897+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000338/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.877754+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000340/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.908908+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000341/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.936633+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000535/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:47.967699+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00402552000126-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.002141+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000343/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.031800+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000031/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.061848+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000344/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.093116+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000078/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.125719+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000036/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.155320+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000346/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.184537+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000348/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.221534+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "28305936000140-1-000013/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.247745+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "26963660000161-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.281425+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000057/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.313629+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000133/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.347140+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000032/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.377944+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000079/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.411317+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000351/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.448432+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000352/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.487307+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000353/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.530866+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000355/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.567700+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000357/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.595559+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000059/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.629073+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000358/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.659168+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34023077000107-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.688398+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000359/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.718691+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000060/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.747583+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000360/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.777164+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000361/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.806245+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000362/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.834444+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000036/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.898161+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000363/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.928264+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000061/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.961658+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "29991262000147-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:48.994516+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000364/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.026782+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000365/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.067162+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000366/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.105109+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000367/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.135036+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000368/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.163719+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000369/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.196170+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000370/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.232308+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000371/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.260106+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000372/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.287925+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000373/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.331502+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000374/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.365113+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "40176679000199-1-000008/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.390751+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000375/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.447775+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000380/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.476731+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000381/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.513270+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000382/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.549368+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000082/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.584057+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "34164319000174-1-000026/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.616548+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000037/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.644109+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000083/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.676743+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000584/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.703542+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000386/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.745449+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000387/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.775107+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000591/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.806265+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000556/2022": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.847354+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000063/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.884368+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000388/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.917579+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000389/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.948235+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000040/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:49.982558+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000390/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.022812+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000064/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.055958+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000391/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.088076+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000392/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.118095+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000394/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.147239+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000397/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.178702+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000398/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.207914+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000399/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.239227+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000038/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.272705+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000400/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.310852+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000605/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.343936+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000402/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.372807+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000403/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.402187+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000405/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.433740+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "12292556000188-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.464808+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000085/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.727542+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000406/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.756927+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000036/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.789841+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000407/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.823188+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000086/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.856474+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000087/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.891555+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000620/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.917715+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000408/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.960694+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000621/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:50.997795+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000409/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.030148+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000410/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.061734+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000412/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.089889+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000413/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.124147+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000414/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.157461+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000415/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.190291+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000627/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.220883+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000417/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.255131+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000418/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.287770+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42498600000171-1-000065/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.320235+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000419/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.357241+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000088/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.398078+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000421/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.439994+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000633/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.514202+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000422/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.545331+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000423/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.576757+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "15126437000143-1-000143/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.611290+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000043/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.641247+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000424/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.672330+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000089/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.702205+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42422253000527-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.735019+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000425/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.770170+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000019/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.802343+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000012/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.836856+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394544000185-1-000055/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.873226+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "08829974000194-1-000022/2022": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.906132+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000021/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.936598+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000227/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:51.971596+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000017/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.001496+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000018/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.030144+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394452000103-1-000257/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.295819+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "42414284000102-1-000004/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.327149+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.357944+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000204/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.415775+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000029/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.453665+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000231/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.493799+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000232/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.756640+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000233/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.788127+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000234/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.821634+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394494000136-1-000037/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.865012+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394536000139-1-000033/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.895388+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394494000136-1-000039/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.923271+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33892175000100-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.955514+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00662270000168-1-000001/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:52.988755+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-000263/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.021429+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000014/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.055535+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394494000136-1-000043/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.087981+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "29427465000105-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.119985+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "37115375000700-1-000006/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.150260+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33892175000100-1-000005/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.188511+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000023/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.213259+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000024/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.244251+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000025/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.272944+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000026/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.303964+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000027/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.335164+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "02313673000127-1-000002/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.365088+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000045/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.397090+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394429000100-1-000047/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.430523+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "00394502000144-1-008283/2022": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.460098+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "01263896000164-1-000035/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.503721+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000034/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.765997+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33663683000116-1-000035/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.804493+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000038/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.832856+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000039/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.867170+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "03204421000122-1-000007/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.898436+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "02313673000127-1-000003/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.929464+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    },
+    "33781055000135-1-000045/2023": {
+      "statusListagem": "concluida",
+      "consultadaEm": "2026-10-17T03:29:53.962428+00:00",
+      "ultimoErro": null,
+      "tentativas": 1
+    }
+  },
+  "documentos": {
+    "00394452000103-1-008777/2022|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000027/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000033/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "31846918000180-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000044/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000049/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000123/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42521088000137-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000058/2023|2": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000048/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000062/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "08772020000192-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000013/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000014/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000015/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000126/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000127/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000016/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000074/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000169/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000017/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000170/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000018/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000053/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000174/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000175/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "62658737000153-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000020/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000128/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000054/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000129/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000130/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000131/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000133/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000028/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000134/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000181/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000136/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000013/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000182/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000006/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000137/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000138/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000076/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000056/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000140/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000141/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000142/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000057/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000143/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000188/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000190/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000144/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000029/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000146/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000147/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000148/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000149/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000014/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394494000136-1-000026/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000150/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000151/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000152/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000153/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000154/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000155/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000156/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "30051023000196-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000018/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000157/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000158/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000030/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000159/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000160/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000161/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000162/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000021/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000207/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000208/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000016/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000211/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000058/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000059/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000022/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000022/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000031/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000032/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000163/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000081/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000165/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000231/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000166/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000240/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000243/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000168/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000034/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000169/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000171/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000172/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000085/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000173/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000174/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000175/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000176/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394445000101-1-000004/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000249/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00508903000188-1-000046/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000178/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000060/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000089/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000020/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000258/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000090/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000179/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000264/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00508903000188-1-000048/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000035/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000004/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000183/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000021/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000056/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000184/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000036/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000008/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000282/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000037/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "31027527000133-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000095/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000019/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000187/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000020/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000188/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000189/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000190/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000191/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000192/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000193/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000009/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000038/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000195/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000196/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000197/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000198/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "31027527000133-1-000008/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000199/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000200/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000202/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000203/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000021/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000205/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000206/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000207/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000209/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000063/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000064/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42414284000102-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000211/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000012/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000212/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000214/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000215/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000216/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000039/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000101/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000066/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000219/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000220/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00508903000188-1-000056/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000315/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000023/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000221/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000222/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000040/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000223/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42414284000102-1-000006/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000320/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000224/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000041/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000067/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000042/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000324/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000068/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000028/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000031/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000032/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000023/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000004/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000043/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000331/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "31027527000133-1-000009/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28523215000106-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000105/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000226/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000227/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000228/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000072/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000348/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000229/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000230/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000349/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000350/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000351/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "10952708000104-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000353/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000045/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000236/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000237/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000238/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42414284000102-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000239/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000240/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000241/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000024/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000243/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000006/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000069/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000244/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000245/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000070/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000010/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000011/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000247/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34023077000107-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000248/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000249/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000250/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000251/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000252/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000253/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000254/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000256/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000257/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34023077000107-1-000006/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000260/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000261/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000262/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33892175000100-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000264/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000377/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000266/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000378/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000267/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33892175000100-1-000004/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "10952708000104-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000268/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000046/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000269/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000270/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000047/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000271/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000025/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000048/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000026/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000272/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000050/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000035/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000025/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000397/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000071/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000400/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000026/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000408/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000027/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000410/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000111/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000278/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000081/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000279/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000280/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000281/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000282/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000283/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000414/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000285/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000017/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000051/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000018/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000052/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000418/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000053/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000022/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000115/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000286/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000072/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000423/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000023/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000288/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000024/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000425/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000054/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000428/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000429/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000055/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000118/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000290/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000291/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000031/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000292/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000293/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000294/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000434/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000087/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000295/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000296/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000297/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000440/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000038/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000039/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000056/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000298/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "31027527000133-1-000010/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000299/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000012/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000301/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000302/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000452/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000028/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000303/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000029/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000304/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000030/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000454/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000455/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000022/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000031/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000306/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000032/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "26963660000161-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "10898596000142-1-000012/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000032/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000307/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000308/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000309/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000310/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000311/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000312/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000313/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000033/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000315/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "10898596000142-1-000013/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "10898596000142-1-000014/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000091/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000317/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000318/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000319/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000092/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000320/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000321/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000322/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000025/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394460000141-1-000094/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000482/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000323/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000324/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000488/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000326/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000327/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000328/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000329/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000330/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000008/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000033/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000331/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000332/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000333/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000493/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000042/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000334/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000335/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000125/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000127/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000512/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000515/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000516/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000336/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000030/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000527/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000338/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000340/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000341/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000535/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00402552000126-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000343/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000031/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000344/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000078/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000036/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000346/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000348/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "28305936000140-1-000013/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "26963660000161-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000057/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000133/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000032/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000079/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000351/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000352/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000353/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000355/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000357/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000059/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000358/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34023077000107-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000359/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000060/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000360/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000361/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000362/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000036/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000363/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000061/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29991262000147-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000364/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000365/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000366/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000367/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000368/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000369/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000370/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000371/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000372/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000373/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000374/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "40176679000199-1-000008/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000375/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000380/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000381/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000382/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000082/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "34164319000174-1-000026/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000037/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000083/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000584/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000386/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000387/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000591/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000556/2022|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000063/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000388/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000389/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000040/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000390/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000064/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000391/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000392/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000394/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000397/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000398/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000399/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000038/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000400/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000605/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000402/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000403/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000405/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "12292556000188-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000085/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000406/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000036/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000407/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000086/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000087/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000620/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000408/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000621/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000409/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000410/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000412/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000413/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000414/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000415/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000627/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000417/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000418/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42498600000171-1-000065/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000419/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000088/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000421/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000633/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000422/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000423/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "15126437000143-1-000143/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000043/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000424/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000089/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42422253000527-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000425/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000019/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000012/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394544000185-1-000055/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "08829974000194-1-000022/2022|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000021/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000227/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000017/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000018/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394452000103-1-000257/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "42414284000102-1-000004/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000204/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000029/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000231/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000232/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000233/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000234/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394494000136-1-000037/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394536000139-1-000033/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394494000136-1-000039/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33892175000100-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00662270000168-1-000001/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-000263/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000014/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394494000136-1-000043/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "29427465000105-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "37115375000700-1-000006/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33892175000100-1-000005/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000023/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000024/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000025/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000026/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000027/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "02313673000127-1-000002/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000045/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394429000100-1-000047/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "00394502000144-1-008283/2022|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "01263896000164-1-000035/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000034/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33663683000116-1-000035/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000038/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000039/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "03204421000122-1-000007/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "02313673000127-1-000003/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    },
+    "33781055000135-1-000045/2023|1": {
+      "download": {
+        "status": "pendente"
+      }
+    }
+  },
+  "schemaVersion": "estado_documentos_pncp_v1"
+}
