@@ -392,12 +392,14 @@ def processar_documentos(
 
 
 if __name__ == "__main__":
-    # Mude somente ano e mês para fazer outra coleta mensal.
-    PERIODO = PeriodoColeta(ano=2025, mes=1)
-    CAMINHOS = caminhos_do_periodo(PERIODO)
+    # 📆 AJUSTE AQUI O ANO E OS MESES QUE DESEJA RODAR:
+    ANO_ALVO = 2026
 
-    # Valores seguros para teste. Para percorrer o mês inteiro, mude o
-    # respectivo limite para None depois de validar as primeiras páginas.
+    # Exemplo 1: Para rodar de Janeiro a Março (1 a 3), use range(1, 4)
+    # Exemplo 2: Para rodar de Abril a Junho (4 a 6), use range(4, 7)
+    MESES_A_COLETAR = range(9, 10)
+
+    # Configurações de paginação e limites
     TAMANHO_PAGINA_CONTRATO = 500
     LIMITE_PAGINAS_CONTRATOS = None
     TAMANHO_PAGINA_CONTRATACAO = 50
@@ -405,46 +407,74 @@ if __name__ == "__main__":
     LIMITE_PAGINAS_POR_MODALIDADE = None
     MAX_TENTATIVAS_REPROCESSAMENTO = 3
 
-    # Use "coletar" para a busca mensal e "reprocessar" somente quando
-    # quiser tentar novamente as páginas do checkpoint.
+    # Modos de execução
     MODO_EXECUCAO = "coletar"
-    EXECUTAR_CONTRATOS = False
+    EXECUTAR_CONTRATOS = True
     EXECUTAR_CONTRATACOES = True
 
     if MODO_EXECUCAO not in {"coletar", "reprocessar"}:
         raise ValueError("MODO_EXECUCAO deve ser 'coletar' ou 'reprocessar'.")
 
-    if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATOS:
-        coletar_e_salvar_contratos(
-            periodo=PERIODO,
-            arquivo_saida=CAMINHOS["contratos"],
-            arquivo_falhas=CAMINHOS["falhas_contratos"],
-            tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
-            limite_paginas=LIMITE_PAGINAS_CONTRATOS,
-        )
+    # 🔄 O LOOP "FOR" ENTRA AQUI COMPORTANDO TODO O PROCESSO:
+    for mes in MESES_A_COLETAR:
+        # Criando o período dinamicamente com a variável do 'for'
+        PERIODO = PeriodoColeta(ano=ANO_ALVO, mes=mes)
+        CAMINHOS = caminhos_do_periodo(PERIODO)
 
-    if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATACOES:
-        coletar_e_salvar_contratacoes(
-            periodo=PERIODO,
-            arquivo_saida=CAMINHOS["contratacoes"],
-            arquivo_falhas=CAMINHOS["falhas_contratacoes"],
-            modalidades=MODALIDADES_CONTRATACOES,
-            tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
-            limite_paginas_por_modalidade=LIMITE_PAGINAS_POR_MODALIDADE,
-        )
+        print("\n" + "="*60)
+        print(
+            f"📅 INICIANDO MÊS {mes:02d}/{ANO_ALVO} - MODO: '{MODO_EXECUCAO}'")
+        print("="*60)
 
-    if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATOS:
-        reprocessar_falhas_contratos(
-            arquivo_saida=CAMINHOS["contratos"],
-            arquivo_falhas=CAMINHOS["falhas_contratos"],
-            tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
-            max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
-        )
+        # 1️⃣ BLOCO DE CONTRATOS (COLETAR)
+        if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATOS:
+            print(f"⏳ [{mes:02d}/{ANO_ALVO}] Iniciando coleta de CONTRATOS...")
+            coletar_e_salvar_contratos(
+                periodo=PERIODO,
+                arquivo_saida=CAMINHOS["contratos"],
+                arquivo_falhas=CAMINHOS["falhas_contratos"],
+                tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
+                limite_paginas=LIMITE_PAGINAS_CONTRATOS,
+            )
+            print(f"✅ [{mes:02d}/{ANO_ALVO}] CONTRATOS finalizados.\n")
 
-    if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATACOES:
-        reprocessar_falhas_contratacoes(
-            arquivo_saida=CAMINHOS["contratacoes"],
-            arquivo_falhas=CAMINHOS["falhas_contratacoes"],
-            tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
-            max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
-        )
+        # 2️⃣ BLOCO DE CONTRATAÇÕES (COLETAR)
+        if MODO_EXECUCAO == "coletar" and EXECUTAR_CONTRATACOES:
+            print(f"⏳ [{mes:02d}/{ANO_ALVO}] Iniciando coleta de CONTRATAÇÕES...")
+            coletar_e_salvar_contratacoes(
+                periodo=PERIODO,
+                arquivo_saida=CAMINHOS["contratacoes"],
+                arquivo_falhas=CAMINHOS["falhas_contratacoes"],
+                modalidades=MODALIDADES_CONTRATACOES,
+                tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
+                limite_paginas_por_modalidade=LIMITE_PAGINAS_POR_MODALIDADE,
+            )
+            print(f"✅ [{mes:02d}/{ANO_ALVO}] CONTRATAÇÕES finalizadas.\n")
+
+        # 3️⃣ BLOCO DE CONTRATOS (REPROCESSAR)
+        if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATOS:
+            print(
+                f"⏳ [{mes:02d}/{ANO_ALVO}] Reprocessando falhas de CONTRATOS...")
+            reprocessar_falhas_contratos(
+                arquivo_saida=CAMINHOS["contratos"],
+                arquivo_falhas=CAMINHOS["falhas_contratos"],
+                tamanho_pagina=TAMANHO_PAGINA_CONTRATO,
+                max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
+            )
+            print(
+                f"✅ [{mes:02d}/{ANO_ALVO}] Reprocessamento de CONTRATOS finalizado.\n")
+
+        # 4️⃣ BLOCO DE CONTRATAÇÕES (REPROCESSAR)
+        if MODO_EXECUCAO == "reprocessar" and EXECUTAR_CONTRATACOES:
+            print(
+                f"⏳ [{mes:02d}/{ANO_ALVO}] Reprocessando falhas de CONTRATAÇÕES...")
+            reprocessar_falhas_contratacoes(
+                arquivo_saida=CAMINHOS["contratacoes"],
+                arquivo_falhas=CAMINHOS["falhas_contratacoes"],
+                tamanho_pagina=TAMANHO_PAGINA_CONTRATACAO,
+                max_tentativas=MAX_TENTATIVAS_REPROCESSAMENTO,
+            )
+            print(
+                f"✅ [{mes:02d}/{ANO_ALVO}] Reprocessamento de CONTRATAÇÕES finalizado.\n")
+
+    print("\n🎉 [FIM] Todos os meses selecionados foram processados em sequência!")
