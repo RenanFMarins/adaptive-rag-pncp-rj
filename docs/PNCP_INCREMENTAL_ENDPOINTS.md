@@ -593,11 +593,12 @@ explicitamente `FOUND`, `EMPTY` ou `NOT_FOUND` para a fila de reconciliação.
 Ambos permanecem desacoplados do CLI e são testados sem rede.
 
 `run_adapter_incremental()` conecta os adaptadores injetados à RAW e aos
-checkpoints v2. O caminho é restrito a SQLite dentro de `/tmp`, repete a janela
-de endpoint desde a primeira página numa retomada e exige a confirmação de
-todos os alvos dependentes antes do watermark. Uma falha intermediária deixa a
-janela recuperável e não cria watermark. O CLI expõe somente a rota protegida
-de contratações.
+checkpoints v2. Por padrão, o caminho é restrito a SQLite dentro de `/tmp`;
+fora dele, o modo operacional exige a confirmação redundante do banco. O
+runner repete a janela de endpoint desde a primeira página numa retomada e
+exige a confirmação de todos os alvos dependentes antes do watermark. Uma
+falha intermediária deixa a janela recuperável e não cria watermark. O CLI
+expõe somente a rota protegida de contratações.
 
 `plan_closed_windows()` materializa a sobreposição como política testável. O
 padrão atual revisita dois dias confirmados e cria janelas diárias, sem tratar
@@ -610,13 +611,16 @@ estável e fornece diretamente os membros do manifesto de cobertura. A função
 recusa campos ausentes e UF divergente; ela não pode, sozinha, provar que a RAW
 histórica de origem cobriu todos os órgãos do RJ.
 
-Pendências obrigatórias antes da ativação operacional:
+Pendências para ampliar a ativação operacional aos demais recursos:
 
 - separação semântica de publicação/inclusão/evento nos metadados;
 - comprovação da completude da RAW usada para congelar o inventário do RJ;
 - validação empírica de mutação de conteúdo entre páginas;
 - confirmação empírica de como empenhos dependentes afetam o contrato-pai;
-- autorização específica para migrar o banco oficial.
+- planejamento supervisionado da cobertura composta no banco oficial.
+
+A autorização e a migração do banco oficial foram concluídas na Fase 4. As
+modalidades 1 a 14 de contratação foram homologadas em `/tmp` na Fase 5.
 
 ## Validação desta etapa
 
@@ -625,5 +629,6 @@ Pendências obrigatórias antes da ativação operacional:
 - `git diff --check`: concluído sem erro.
 - A suíte automatizada não acessa a rede. O piloto real foi executado
   separadamente em banco migrado dentro de `/tmp`.
-- O banco oficial permaneceu sem as tabelas v2; migração e piloto foram feitos
-  em cópias independentes.
+- Esta seção registra a validação original da etapa. O banco oficial recebeu
+  posteriormente as tabelas v2 e a primeira janela controlada, conforme
+  `FASE_4_ATIVACAO_INCREMENTAL_OPERACIONAL.md`.
