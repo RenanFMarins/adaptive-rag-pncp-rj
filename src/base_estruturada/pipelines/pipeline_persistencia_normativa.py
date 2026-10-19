@@ -1,27 +1,17 @@
-"""Persiste a base normativa já processada no SQLite, sem embeddings/FAISS."""
+"""Persiste a base normativa já processada no SQLite, sem embeddings/FAISS.
+
+Este comando continua existindo com os mesmos argumentos, mas a gravação em si
+é feita por app/modules/normative/persistencia.py, o carregador único da base
+normativa. Assim há uma só implementação, uma só chave de documento
+("editais_normativo|<arquivo>") e uma só versão de corpus ("normativo-<versao>").
+"""
 
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
-from app.core.database import SessionLocal, init_db
-from app.modules.documents.services import persistir_chunks_jsonl_normativos
-
-
-def _urls_por_arquivo(caminho_inventario: Path) -> dict[str, str]:
-    if not caminho_inventario.is_file():
-        return {}
-    registros = json.loads(caminho_inventario.read_text(encoding="utf-8"))
-    if not isinstance(registros, list):
-        return {}
-    return {
-        Path(str(item.get("path", ""))).name: str(item["origem"])
-        for item in registros
-        if isinstance(item, dict) and item.get("path") and item.get("origem")
-    }
-
+from app.modules.normative.persistencia import persistir
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -30,21 +20,18 @@ if __name__ == "__main__":
     parser.add_argument("--versao", default="v1")
     parser.add_argument("--arquivo-chunks", type=Path)
     parser.add_argument("--inventario", type=Path)
-    parser.add_argument("--corpus-version-id", type=int, default=1)
+    parser.add_argument(
+        "--corpus-version-id",
+        type=int,
+        default=None,
+        help="padrão: a versão normativo-<versao>, criada se ainda não existir",
+    )
     args = parser.parse_args()
 
-    arquivo_chunks = args.arquivo_chunks or Path(
-        f"data/processed/{args.versao}_editais_normativo.jsonl"
+    resumo = persistir(
+        versao=args.versao,
+        arquivo=args.arquivo_chunks,
+        inventario=args.inventario,
+        corpus_version_id=args.corpus_version_id,
     )
-    inventario = args.inventario or Path(
-        f"data/inventory/{args.versao}_editais_normativo.json"
-    )
-    init_db()
-    with SessionLocal() as db:
-        resumo = persistir_chunks_jsonl_normativos(
-            db=db,
-            corpus_version_id=args.corpus_version_id,
-            arquivo_chunks=arquivo_chunks,
-            urls_por_arquivo=_urls_por_arquivo(inventario),
-        )
     print(f"Base normativa persistida no SQLite | {resumo}")

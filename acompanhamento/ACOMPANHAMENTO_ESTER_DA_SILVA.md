@@ -899,7 +899,49 @@ Trabalhei junto com a Ana na comparação entre dois carregadores de dados do pr
 
 ---
 
-## Encontro 13 · DD/MM/AAAA
+## Encontro 13 · 16/10/2026
+
+### O que eu fiz hoje
+
+- Eu e Ana criamos o ambiente virtual `.venv312` com Python 3.12.10.
+- Instalei as dependências do `requirements.txt`.
+- Verifiquei a versão do SQLAlchemy (2.1.1) (feito em conjunto com a Ana).
+- Adicionei `.venv312/` ao `.gitignore` (feito em conjunto com a Ana).
+- Fiz o commit `1f82b7b` na branch `base-normativa` e enviei ao GitHub, com conferência do escopo por `git show --stat HEAD` (feito em conjunto com a Ana).
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude Haiku
+- **Para quê:** orientação de comandos do PowerShell e do Git, organização do plano de trabalho e rascunho do relatório.
+- **O que conferi / mudei:**
+  - Corrigimos o comando de busca, porque `Select-String` não aceita `-Recurse`. A recursão fica no `Get-ChildItem`.
+  - Conferimos o escopo do commit antes de considerá-lo concluído.
+  - Retiramos do rascunho afirmações não confirmadas, como o papel do ECOA e os motivos dos atrasos.
+
+### O que travou
+
+- A indexação ainda não foi iniciada.
+- O comando para localizar a configuração do projeto ainda não foi executado com sucesso.
+- O servidor ECOA caiu em alguns momentos .
+- Falta confirmar o papel da Groq no projeto e se o `.venv312` vai virar padrão do grupo.
+- Comparação dos carregadores de chunks (`persistencia.py` do grupo e `persistir_chunks_jsonl_normativos`, do Luciano, PR #46) ainda não executada. A decisão que o nosso carregador fica como padrão.
+
+### Próximo passo
+
+- Rodar o comando corrigido de busca e confirmar a configuração do projeto, sem expor chaves.
+- Comparar os dois carregadores em ambiente de teste, antes de rodar qualquer um na base principal.
+- Executar a consulta de documentos órfãos após cada carga.
+- Confirmar o acesso ao servidor e, se estiver liberado, testar a conexão antes de indexar.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** commit `1f82b7b` na branch `base-normativa`, com `.venv312/` no `.gitignore` (Ana e Ester).
+- **Travou:** indexação parada; acesso ao servidor a confirmar; decisão sobre o carregador depende de conversa com o Luciano.
+- **Próximo passo:** confirmar a configuração e o acesso ao servidor e, depois, iniciar a indexação.
+
+---
+
+## Encontro 14 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
