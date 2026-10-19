@@ -941,34 +941,6 @@ Trabalhei junto com a Ana na comparação entre dois carregadores de dados do pr
 
 ---
 
-## Encontro 14 · DD/MM/AAAA
-
-### O que eu fiz hoje
-
-
-
-### Onde usei IA e o que mudei no resultado
-
-- **Ferramenta:** 
-- **Para quê:** 
-- **O que eu conferi / mudei:** 
-
-### O que travou
-
-- 
-
-### Próximo passo
-
-- 
-
-### Resumo do time no dia
-
-- **Entregamos (base normativa):**
-- **Travou:**
-- **Próximo passo:** 
-
----
-
 ## Encontro 14 · 19/10/2026
 
 ### O que eu fiz hoje
