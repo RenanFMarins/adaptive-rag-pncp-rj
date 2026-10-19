@@ -774,6 +774,40 @@ class SyncRepository:
                     now_text,
                 )
 
+    def validate_window_candidate(
+        self,
+        spec: SyncWindowSpec,
+        watermark_value: datetime | date | str,
+        tie_breaker: str = "",
+    ) -> str:
+        """Rejeita lacunas antes de iniciar trabalho ou acessar transporte.
+
+        A mesma regra continua sendo verificada por ``complete_window`` dentro
+        da transação final. Esta validação antecipada evita chamadas HTTP e
+        execuções RAW que jamais poderiam confirmar o watermark.
+        """
+
+        if self.get_job(spec.job_id) is None:
+            raise ValueError("Job não registrado para validação da janela")
+        watermark_text = normalized_watermark(watermark_value)
+        window = {
+            "id": spec.window_id,
+            "job_id": spec.job_id,
+            "window_start": spec.start,
+            "window_end": spec.end,
+        }
+        current = self.get_watermark(spec.job_id)
+        candidate = (watermark_text, str(tie_breaker))
+        existing = (
+            (current["watermark_value"], current["tie_breaker"])
+            if current is not None
+            else None
+        )
+        self._require_watermark_matches_window(window, watermark_text)
+        if existing is None or candidate > existing:
+            self._require_contiguous_coverage(window, current)
+        return watermark_text
+
     def _confirm_coverage_member_locked(
         self,
         sync_window,

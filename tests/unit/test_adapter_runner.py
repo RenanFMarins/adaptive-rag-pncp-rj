@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from app.core.database.init_db import SCHEMA, initialize_database
+from app.core.database.repositories.sync_repository import WindowContinuityError
 from src.ingestion.adapter_runner import (
     IncrementalAdapterPlan,
     run_adapter_incremental,
@@ -272,6 +273,53 @@ class AdapterRunnerTests(unittest.TestCase):
         )
         self.assertEqual(
             connection.execute("SELECT COUNT(*) FROM sync_watermark").fetchone()[0],
+            1,
+        )
+        connection.close()
+
+    def test_gap_is_rejected_before_transport_is_consumed(self):
+        first_adapter = PNCPEndpointIncrementalAdapter(
+            FakeTransport([page(1, ())])
+        )
+        run_adapter_incremental(
+            self.config(
+                "contratacao",
+                "2023-04-01",
+                "2023-04-01",
+                modality=6,
+            ),
+            self._contracting_plan(first_adapter),
+        )
+
+        def transport_must_not_be_consumed(_):
+            raise AssertionError("transporte foi consumido antes do preflight")
+            yield
+
+        gap_plan = IncrementalAdapterPlan(
+            endpoint="/api/consulta/v1/contratacoes/atualizacao",
+            filters={"codigoModalidadeContratacao": 6, "uf": "RJ"},
+            event_provider=transport_must_not_be_consumed,
+        )
+        with self.assertRaisesRegex(
+            WindowContinuityError, "deixa lacuna"
+        ):
+            run_adapter_incremental(
+                self.config(
+                    "contratacao",
+                    "2023-04-03",
+                    "2023-04-03",
+                    modality=6,
+                ),
+                gap_plan,
+            )
+
+        connection = sqlite3.connect(self.database)
+        self.assertEqual(
+            connection.execute("SELECT COUNT(*) FROM sync_window").fetchone()[0],
+            1,
+        )
+        self.assertEqual(
+            connection.execute("SELECT COUNT(*) FROM ingestion_run").fetchone()[0],
             1,
         )
         connection.close()

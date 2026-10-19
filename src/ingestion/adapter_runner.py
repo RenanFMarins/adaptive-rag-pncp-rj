@@ -215,6 +215,9 @@ def run_adapter_incremental(
     window = SyncWindowSpec(
         job.job_id, config.normalized_start, config.normalized_end
     )
+    watermark_value = plan.watermark_value or (
+        f"{config.normalized_end}T23:59:59.999999Z"
+    )
     repository = RawRepository(config.database_url)
     sync = SyncRepository(repository.connection)
     lease = None
@@ -222,6 +225,11 @@ def run_adapter_incremental(
     try:
         _require_incremental_schema(repository.connection)
         sync.register_job(job)
+        sync.validate_window_candidate(
+            window,
+            watermark_value,
+            tie_breaker=plan.tie_breaker,
+        )
         existing = sync.get_window(window.window_id)
         sync.create_window(window)
         _validate_existing_window(existing, config)
@@ -314,9 +322,6 @@ def run_adapter_incremental(
             lease.token,
             config.lease_seconds,
             config.lease_renewal_seconds,
-        )
-        watermark_value = plan.watermark_value or (
-            f"{config.normalized_end}T23:59:59.999999Z"
         )
         result = ingest_window_records(
             repository,
