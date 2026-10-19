@@ -2048,3 +2048,34 @@ Continuar monitorando o desempenho das chamadas à ECOA, validar o funcionamento
 Também será necessário aprimorar os logs para identificar o provedor e o modelo utilizados, permitindo comparar o desempenho das diferentes soluções e tomar decisões com base nos resultados dos testes.
 
 **Conclusão:** o encontro permitiu identificar e medir o principal gargalo de desempenho do RAG, implementar uma estratégia inicial de contingência e estabelecer uma base de observabilidade para futuras otimizações.
+## Encontro 13 — Relatório de Atividades
+**Data:** 16/10/2026  
+**Projeto:** RAG — Contratações Públicas
+
+### Objetivo
+Realizar testes de integração e funcionamento do sistema RAG, verificando a comunicação com os modelos de linguagem, a recuperação de documentos e a geração de respostas.
+
+### Atividades realizadas
+
+1. **Correção das configurações do ambiente (`.env`):** ajustada a URL de conexão com o servidor ECOA e configurado o fallback para a OpenAI em caso de falha na geração de respostas.
+
+2. **Testes da API FastAPI:** execução do servidor Uvicorn e realização de consultas pelo endpoint `/query/ask`, com retorno HTTP 200.
+
+3. **Validação do modelo ECOA:** análise dos logs confirmou que o ECOA realizou a interpretação da pergunta (Query Analyzer) e a geração da resposta final.
+
+4. **Validação da recuperação RAG:** confirmado o funcionamento da busca híbrida utilizando FTS5, FAISS e RRF, com recuperação de cinco fontes documentais na consulta analisada.
+
+5. **Teste da OpenAI:** realizada uma chamada direta ao modelo `gpt-4.1-mini`, confirmando o funcionamento da API. O fallback automático do RAG ainda não foi testado.
+
+6. **Interface Streamlit:** identificado o arquivo `app/streamlit_console.py` e definido o comando para executar a interface do sistema.
+
+7. **Arquitetura do banco de dados:** revisada a utilização do SQLAlchemy como ORM, SQLite como banco de dados e Alembic para migrações.
+
+### Resultados
+O sistema RAG conseguiu executar o fluxo completo de consulta, desde a interpretação da pergunta até a recuperação de documentos e geração da resposta. A consulta analisada foi concluída em aproximadamente 38 segundos, utilizando o ECOA como provedor de linguagem.
+
+### Próximas atividades
+Validar o fallback automático para OpenAI, avaliar a qualidade das respostas geradas, verificar a correspondência entre respostas e fontes documentais e continuar os testes de integração com o Streamlit.
+
+### Conclusão
+O Encontro 13 foi dedicado à correção de configurações e à validação operacional do sistema RAG. Os testes demonstraram o funcionamento dos principais componentes, permanecendo como próxima etapa a avaliação da precisão e da fundamentação das respostas.

@@ -934,6 +934,8 @@ PCA
 
 A relação entre PCA e contratação não deverá ser assumida como direta, pois os itens planejados e os itens efetivamente contratados são entidades diferentes. A futura associação poderá utilizar critérios como CNPJ, período, unidade administrativa, classificação, descrição dos itens, similaridade textual ou semântica e nível de confiança.
 
+
+
 Utilizei o ChatGPT como apoio para revisar a estratégia de expansão do corpus, analisar a ordem correta entre coleta RAW e normalização, discutir a utilização de contratações para identificar órgãos do RJ, analisar as diferenças entre os filtros disponíveis nos endpoints de PCA e contratação, estruturar a coleta dos três anos por trimestre, definir a estratégia de checkpoint por período, modalidade e página e revisar a relação entre PCA, contratação, item e resultado homologado.
 
 Ao final do encontro, foi definida a estratégia de expansão do corpus para o período de três anos, priorizando primeiro a coleta de contratações do Estado do Rio de Janeiro na camada RAW.
@@ -1313,7 +1315,7 @@ Os próximos passos serão:
 - manter a preservação e a rastreabilidade dos dados RAW antes do início da normalização.
 
 
-## Encontro 10 - 2026-10-14
+## Encontro 11 - 2026-10-14
 
 ### Relato individual — José Renan Freitas Marins (4h)
 
@@ -1403,3 +1405,98 @@ Os próximos passos definidos foram:
 - corrigir os mecanismos de paginação e retomada;
 - revisar a consolidação dos registros PCA;
 - implementar e testar os adaptadores HTTP incrementais em ambiente isolado, após a estabilização da arquitetura.
+
+## Encontro 12 - 2026-10-16
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Continuidade às atividades de desenvolvimento e estabilização da arquitetura de ingestão incremental dos dados do Portal Nacional de Contratações Públicas (PNCP). O objetivo foi iniciar a execução das tarefas definidas no backlog técnico, corrigir problemas de reprodutibilidade identificados na auditoria anterior e organizar o versionamento das alterações realizadas na branch `feature/ingestao-incremental-pncp`.
+
+### Implementação da tarefa INC-001 — Migrações e documentação
+
+A primeira atividade foi a execução da tarefa INC-001, relacionada à ausência de arquivos essenciais de migração e documentação no repositório.
+
+Durante a investigação, foi identificado que determinados arquivos haviam sido desenvolvidos localmente e preservados no Git stash, mas não estavam incluídos no histórico da branch. Essa situação provocava falhas em testes automatizados e impedia que um clone limpo do repositório reproduzisse corretamente o ambiente de ingestão incremental.
+
+Foram recuperados e incorporados ao versionamento os seguintes arquivos:
+
+- `migrations/001_raw_canonical_identity_index.sql`, responsável pela criação do índice de identidade canônica dos registros RAW;
+- `migrations/002_sync_window_checkpoint.sql`, responsável pelas estruturas de controle de sincronização incremental;
+- `docs/PNCP_INCREMENTAL_ENDPOINTS.md`, contendo a documentação dos endpoints e das regras de processamento incremental.
+
+A recuperação foi realizada seletivamente, sem aplicar integralmente os stashes e sem alterar os bancos operacionais existentes.
+
+### Validação das migrações e integridade dos dados
+
+Após a recuperação dos arquivos, foram executados testes específicos para verificar a compatibilidade das migrações com a estrutura atual do SQLite.
+- preservação dos registros existentes na camada RAW;
+- preservação dos checkpoints legados;
+- criação correta do índice de identidade canônica;
+- criação das tabelas de checkpoint v2;
+- execução idempotente das migrações;
+- resultado `ok` na verificação de integridade do SQLite;
+- ausência de violações de chaves estrangeiras.
+
+Também foram executados os testes automatizados do projeto, com os seguintes resultados:
+
+- 2 testes específicos de migração aprovados;
+- 117 testes da suíte completa aprovados;
+- validação de sintaxe Python aprovada;
+- verificação `git diff --check` aprovada;
+- nenhuma modificação nos bancos operacionais;
+- nenhuma chamada HTTP real durante a validação.
+
+Com esses resultados, a INC-001 foi considerada implementada e validada.
+
+### Organização e versionamento das alterações no Git
+
+Em seguida, concentrei as atividades na organização do histórico de desenvolvimento da branch incremental.
+Entre os componentes identificados estavam:
+- identidade canônica e versionamento dos registros RAW;
+- persistência e controle de atomicidade;
+- checkpoints e execução incremental;
+- proteção de leases e concorrência;
+- continuidade do watermark;
+- paginação e recuperação de falhas nos coletores;
+- testes automatizados de integridade e sincronização.
+
+### Revisão da documentação incremental
+
+Durante a organização das alterações, também foi revisada a documentação técnica dos endpoints incrementais.
+
+Foram identificadas atualizações relacionadas às condições necessárias para confirmar uma janela de sincronização e avançar o watermark, considerando a existência de janelas anteriores pendentes e a continuidade da cobertura temporal.
+
+A documentação também passou a descrever estratégias de recuperação de paginação, incluindo a repetição de janelas desde a primeira página quando não houver garantia de estabilidade na ordenação dos registros, além do tratamento de páginas intermediárias vazias e inconsistências nas respostas da API.
+
+Essas definições contribuem para estabelecer critérios mais rigorosos de recuperação e confirmação das coletas incrementais.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+
+- investigar a ausência dos arquivos necessários à reprodução do ambiente incremental;
+- analisar a estrutura das migrações SQL e seus impactos;
+- validar os resultados dos testes e verificações de integridade;
+- analisar as alterações pendentes na branch;
+- revisar as regras de sincronização, paginação e continuidade do watermark.
+
+### Resultado do encontro
+
+Ao final do encontro, a tarefa INC-001 estava implementada, validada e registrada no histórico local da branch incremental.
+Foram recuperados os arquivos essenciais de migração e documentação, eliminando as falhas de reprodutibilidade identificadas nos testes específicos. A suíte completa de 117 testes foi executada com sucesso durante a validação dessa tarefa.
+Também foi realizada a organização dos commits referentes às alterações da ingestão incremental, preparando o projeto para dar continuidade às correções de integridade, concorrência e recuperação de falhas.
+As atividades de validação da INC-001 ocorreram sem alterações nos bancos operacionais e sem execução de requisições HTTP reais.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- verificar e validar individualmente as correções já desenvolvidas na branch incremental;
+- concluir o tratamento de timestamps inválidos, ausentes e fora de ordem;
+- garantir atomicidade nas operações de persistência e versionamento RAW;
+- validar a proteção contra gravações após a perda ou expiração do lease;
+- assegurar o avanço contíguo do watermark;
+- revisar os mecanismos de paginação, retomada e reconciliação de alvos;
+- ampliar os testes de regressão para cenários de concorrência e falhas;
+- preparar a integração com os endpoints HTTP reais do PNCP em ambiente isolado;
+- após a estabilização da ingestão incremental, avançar na integração com a camada de normalização dos dados.
