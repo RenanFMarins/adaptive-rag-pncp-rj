@@ -212,7 +212,9 @@ class RawIngestionTests(unittest.TestCase):
         )
         repository.close()
 
-    def test_same_pca_in_multiple_pages_is_idempotent(self):
+    def test_repository_versions_distinct_pca_payloads_without_merging_them(self):
+        # A RAW não deve adivinhar se dois JSONs são fragmentos. O coletor
+        # de PCA é responsável por entregar apenas o plano completo.
         repository = RawRepository(self.database_url)
         page_one = CollectedRecord(
             "pncp_pca_rj",
@@ -310,6 +312,11 @@ class RawIngestionTests(unittest.TestCase):
                 "sync_job",
                 "sync_window",
                 "sync_target_progress",
+                "sync_reconciliation_target",
+                "sync_coverage_plan",
+                "sync_coverage_window",
+                "sync_coverage_member",
+                "sync_coverage_watermark",
                 "sync_watermark",
                 "raw_observation",
             },

@@ -16,11 +16,17 @@ from app.core.database.repositories.sync_repository import (
 )
 from src.ingest import RawRepository, ingest_window_records
 from src.ingestion.checkpoint import (
+    CoveragePlanSpec,
+    CoverageWindowSpec,
     INCREMENTAL_MODE,
     SyncJobSpec,
     SyncWindowSpec,
     normalized_date,
     stable_target_metadata,
+)
+from src.ingestion.pca import (
+    pca_plan_context,
+    validate_complete_pca_plan,
 )
 from src.schema import CollectionCheckpoint, CollectedRecord
 from src.obs import JsonlLogger
@@ -37,6 +43,8 @@ class IncrementalResource:
     strategy: str
     key_fields: tuple[str, ...]
     natureza: str = "estruturada"
+    reconciliation_cadence_days: int | None = None
+    reconciliation_horizon_days: int | None = None
 
 
 RESOURCE_ALIASES = {"ata": "ata_registro_preco"}
@@ -69,6 +77,8 @@ INCREMENTAL_RESOURCES = {
         "contratacao_item",
         RELATIONSHIP_STRATEGY,
         ("numeroItem",),
+        reconciliation_cadence_days=1,
+        reconciliation_horizon_days=365,
     ),
     "resultado_item": IncrementalResource(
         "resultado_item",
@@ -76,12 +86,16 @@ INCREMENTAL_RESOURCES = {
         RELATIONSHIP_STRATEGY,
         ("sequencialResultado",),
         "agregada",
+        reconciliation_cadence_days=1,
+        reconciliation_horizon_days=365,
     ),
     "empenho": IncrementalResource(
         "empenho",
         "empenho",
         RELATIONSHIP_STRATEGY,
         ("sequencialEmpenho",),
+        reconciliation_cadence_days=7,
+        reconciliation_horizon_days=730,
     ),
 }
 
@@ -113,7 +127,7 @@ class IncrementalRunConfig:
     end_date: str
     uf: str
     database_url: str
-    fixture_path: Path
+    fixture_path: Path | None = None
     modality: int | None = None
     job_name: str | None = None
     worker_id: str = "offline-worker"
@@ -121,6 +135,11 @@ class IncrementalRunConfig:
     reprocess: bool = False
     lease_seconds: float = 300.0
     lease_renewal_seconds: float = 120.0
+    reconciliation_cadence_days: int | None = None
+    reconciliation_horizon_days: int | None = None
+    coverage_name: str | None = None
+    coverage_member: str | None = None
+    coverage_members: tuple[str, ...] = ()
     log_path: Path | None = None
 
     def __post_init__(self) -> None:
@@ -130,8 +149,10 @@ class IncrementalRunConfig:
             raise IncrementalConfigurationError(
                 "Intervalo incremental possui data final anterior à inicial"
             )
-        if not self.uf.strip() or len(self.uf.strip()) != 2:
+        normalized_uf = self.uf.strip().upper()
+        if len(normalized_uf) != 2 or not normalized_uf.isalpha():
             raise IncrementalConfigurationError("UF deve possuir duas letras")
+        object.__setattr__(self, "uf", normalized_uf)
         if self.resume and self.reprocess:
             raise IncrementalConfigurationError(
                 "Retomada e reprocessamento são opções mutuamente exclusivas"
@@ -143,6 +164,54 @@ class IncrementalRunConfig:
         if not 0 < self.lease_renewal_seconds < self.lease_seconds:
             raise IncrementalConfigurationError(
                 "Renovação deve ser positiva e menor que a duração do lease"
+            )
+        if (
+            self.reconciliation_cadence_days is not None
+            and self.reconciliation_cadence_days <= 0
+        ):
+            raise IncrementalConfigurationError(
+                "Cadência de reconciliação deve ser positiva"
+            )
+        if (
+            self.reconciliation_horizon_days is not None
+            and self.reconciliation_horizon_days < 0
+        ):
+            raise IncrementalConfigurationError(
+                "Horizonte de reconciliação não pode ser negativo"
+            )
+        coverage_values = (
+            self.coverage_name is not None,
+            self.coverage_member is not None,
+            bool(self.coverage_members),
+        )
+        if any(coverage_values) and not all(coverage_values):
+            raise IncrementalConfigurationError(
+                "Cobertura composta requer nome, membro atual e membros esperados"
+            )
+        if self.coverage_members:
+            normalized_members = tuple(
+                str(member).strip() for member in self.coverage_members
+            )
+            if any(not member for member in normalized_members):
+                raise IncrementalConfigurationError(
+                    "Cobertura composta possui membro vazio"
+                )
+            if len(set(normalized_members)) != len(normalized_members):
+                raise IncrementalConfigurationError(
+                    "Cobertura composta possui membros duplicados"
+                )
+            if str(self.coverage_member).strip() not in normalized_members:
+                raise IncrementalConfigurationError(
+                    "Membro atual não pertence ao manifesto de cobertura"
+                )
+            object.__setattr__(
+                self, "coverage_members", tuple(sorted(normalized_members))
+            )
+            object.__setattr__(
+                self, "coverage_member", str(self.coverage_member).strip()
+            )
+            object.__setattr__(
+                self, "coverage_name", str(self.coverage_name).strip()
             )
 
     @property
@@ -159,6 +228,7 @@ class OfflineFixture:
     strategy: str
     pages: tuple[Mapping[str, Any], ...] = ()
     targets: tuple[Mapping[str, Any], ...] = ()
+    discoveries: tuple[Mapping[str, Any], ...] = ()
     watermark_value: str | None = None
     tie_breaker: str = ""
     fail_after_records: int | None = None
@@ -185,34 +255,22 @@ class OfflineFixture:
                 f"{expected_strategy!r}"
             )
         pages = cls._validated_pages(document.get("pages", []), "pages")
-        targets_value = document.get("targets", [])
-        if not isinstance(targets_value, list):
-            raise OfflineFixtureError("targets deve ser uma lista")
-        targets = []
-        seen_target_keys = set()
-        for index, entry in enumerate(targets_value, start=1):
-            if not isinstance(entry, Mapping):
-                raise OfflineFixtureError(
-                    f"targets[{index}] deve ser um objeto"
-                )
-            target = entry.get("target")
-            if not isinstance(target, Mapping) or not target:
-                raise OfflineFixtureError(
-                    f"targets[{index}].target deve ser um objeto não vazio"
-                )
-            target_key, _ = stable_target_metadata(target)
-            if target_key in seen_target_keys:
-                raise OfflineFixtureError(
-                    f"Alvo duplicado na fixture: {target_key}"
-                )
-            seen_target_keys.add(target_key)
-            target_pages = cls._validated_pages(
-                entry.get("pages", []), f"targets[{index}].pages"
-            )
-            targets.append({"target": dict(target), "pages": target_pages})
-        if strategy == ENDPOINT_STRATEGY and targets:
+        if "targets" in document and "responses" in document:
             raise OfflineFixtureError(
-                "Estratégia endpoint deve utilizar pages, não targets"
+                "Use targets (legado) ou discoveries/responses, não ambos"
+            )
+        response_name = "responses" if "responses" in document else "targets"
+        targets = cls._validated_targets(
+            document.get(response_name, []), response_name
+        )
+        discoveries_value = document.get("discoveries")
+        if discoveries_value is None:
+            discoveries = tuple(dict(entry["target"]) for entry in targets)
+        else:
+            discoveries = cls._validated_discoveries(discoveries_value)
+        if strategy == ENDPOINT_STRATEGY and (targets or discoveries):
+            raise OfflineFixtureError(
+                "Estratégia endpoint deve utilizar pages, não alvos"
             )
         if strategy == RELATIONSHIP_STRATEGY and pages:
             raise OfflineFixtureError(
@@ -235,6 +293,7 @@ class OfflineFixture:
             strategy=strategy,
             pages=pages,
             targets=tuple(targets),
+            discoveries=discoveries,
             watermark_value=(
                 str(document["watermark_value"])
                 if document.get("watermark_value") not in (None, "")
@@ -252,6 +311,71 @@ class OfflineFixture:
             for page in target["pages"]:
                 fixture._validate_records(page["records"])
         return fixture
+
+    @classmethod
+    def _validated_targets(cls, value, name: str):
+        if not isinstance(value, list):
+            raise OfflineFixtureError(f"{name} deve ser uma lista")
+        targets = []
+        seen_target_keys = set()
+        for index, entry in enumerate(value, start=1):
+            if not isinstance(entry, Mapping):
+                raise OfflineFixtureError(f"{name}[{index}] deve ser objeto")
+            target = entry.get("target")
+            if not isinstance(target, Mapping) or not target:
+                raise OfflineFixtureError(
+                    f"{name}[{index}].target deve ser um objeto não vazio"
+                )
+            target_key, _ = stable_target_metadata(target)
+            if target_key in seen_target_keys:
+                raise OfflineFixtureError(
+                    f"Alvo duplicado na fixture: {target_key}"
+                )
+            seen_target_keys.add(target_key)
+            target_pages = cls._validated_pages(
+                entry.get("pages", []), f"{name}[{index}].pages"
+            )
+            record_count = sum(len(page["records"]) for page in target_pages)
+            outcome = str(
+                entry.get("outcome")
+                or ("FOUND" if record_count else "EMPTY")
+            ).upper()
+            if outcome not in {"FOUND", "EMPTY", "NOT_FOUND"}:
+                raise OfflineFixtureError(
+                    f"{name}[{index}].outcome inválido: {outcome}"
+                )
+            if (outcome == "FOUND") != (record_count > 0):
+                raise OfflineFixtureError(
+                    f"{name}[{index}] possui outcome incompatível com records"
+                )
+            targets.append(
+                {
+                    "target": dict(target),
+                    "pages": target_pages,
+                    "outcome": outcome,
+                }
+            )
+        return tuple(targets)
+
+    @staticmethod
+    def _validated_discoveries(value):
+        if not isinstance(value, list):
+            raise OfflineFixtureError("discoveries deve ser uma lista")
+        discoveries = []
+        seen = set()
+        for index, target in enumerate(value, start=1):
+            if not isinstance(target, Mapping) or not target:
+                raise OfflineFixtureError(
+                    f"discoveries[{index}] deve ser um objeto não vazio"
+                )
+            key, _ = stable_target_metadata(target)
+            if key in seen:
+                raise OfflineFixtureError(
+                    f"Alvo duplicado em discoveries: {key}"
+                )
+            seen.add(key)
+            discoveries.append(dict(target))
+        return tuple(discoveries)
 
     @staticmethod
     def _optional_positive_int(value, name: str) -> int | None:
@@ -308,6 +432,42 @@ class OfflineFixture:
         for entry in self.targets:
             key, fingerprint = stable_target_metadata(entry["target"])
             yield key, fingerprint, entry
+
+    def discovery_metadata(self):
+        for target in self.discoveries:
+            key, fingerprint = stable_target_metadata(target)
+            yield key, fingerprint, target
+
+    def validate_resource(self, resource: str) -> None:
+        if resource != "pca":
+            return
+        seen: set[str] = set()
+        for page in self.pages:
+            for record in page["records"]:
+                external_id = str(record["external_id"])
+                if record.get("payload_kind") != "complete_pca_plan":
+                    raise OfflineFixtureError(
+                        "Fixture incremental de PCA deve conter somente "
+                        "complete_pca_plan obtido pelo endpoint direto"
+                    )
+                if external_id in seen:
+                    raise OfflineFixtureError(
+                        "Fixture incremental de PCA repetiu o mesmo plano; "
+                        "fragmentos paginados não podem virar versões RAW"
+                    )
+                seen.add(external_id)
+                try:
+                    context = pca_plan_context(external_id)
+                    validate_complete_pca_plan(
+                        record["payload"],
+                        context,
+                        str(
+                            record.get("source_url")
+                            or "offline://fixture/pca"
+                        ),
+                    )
+                except ValueError as error:
+                    raise OfflineFixtureError(str(error)) from error
 
     def events(
         self,
@@ -384,7 +544,12 @@ class OfflineFixture:
                     yield emit_record(value, page["cursor"])
                     after_record()
             maybe_delay()
-            yield CollectionCheckpoint(key, key, fingerprint)
+            yield CollectionCheckpoint(
+                key,
+                key,
+                fingerprint,
+                reconciliation_outcome=entry["outcome"],
+            )
             after_checkpoint()
 
 
@@ -456,17 +621,38 @@ class IncrementalRunReport:
     watermark_value: str
     resumed: bool
     reprocessed: bool
+    coverage_window_id: str | None = None
+    coverage_status: str | None = None
 
 
 def run_offline_incremental(config: IncrementalRunConfig):
     definition = resource_definition(config.resource)
+    if config.fixture_path is None:
+        raise IncrementalConfigurationError(
+            "Execução offline requer fixture_path"
+        )
     fixture = OfflineFixture.load(config.fixture_path, definition.strategy)
+    fixture.validate_resource(definition.name)
     source_id = config.job_name or f"pncp_incremental_{definition.name}"
+    reconciliation_cadence = (
+        config.reconciliation_cadence_days
+        if config.reconciliation_cadence_days is not None
+        else definition.reconciliation_cadence_days
+    )
+    reconciliation_horizon = (
+        config.reconciliation_horizon_days
+        if config.reconciliation_horizon_days is not None
+        else definition.reconciliation_horizon_days
+    )
     filters = {
         "uf": config.uf.upper(),
         "modality": config.modality,
         "strategy": definition.strategy,
         "offline_contract_version": 1,
+        "reconciliation_cadence_days": reconciliation_cadence,
+        "reconciliation_horizon_days": reconciliation_horizon,
+        "coverage_name": config.coverage_name,
+        "coverage_member": config.coverage_member,
     }
     job = SyncJobSpec(
         source=source_id,
@@ -484,6 +670,7 @@ def run_offline_incremental(config: IncrementalRunConfig):
     repository = RawRepository(config.database_url)
     sync = SyncRepository(repository.connection)
     lease = None
+    coverage_window = None
     try:
         try:
             sync.register_job(job)
@@ -496,6 +683,35 @@ def run_offline_incremental(config: IncrementalRunConfig):
             ) from error
         existing = sync.get_window(window.window_id)
         sync.create_window(window)
+        if config.coverage_name is not None:
+            try:
+                coverage_plan = CoveragePlanSpec(
+                    config.coverage_name,
+                    "pncp",
+                    definition.resource_type,
+                    config.uf.upper(),
+                    tuple(config.coverage_members),
+                )
+                sync.register_coverage_plan(coverage_plan)
+                coverage_spec = CoverageWindowSpec(
+                    coverage_plan.plan_id,
+                    config.normalized_start,
+                    config.normalized_end,
+                )
+                coverage_window = sync.create_coverage_window(coverage_spec)
+                sync.attach_coverage_member(
+                    coverage_spec.window_id,
+                    str(config.coverage_member),
+                    job.job_id,
+                    window.window_id,
+                )
+            except sqlite3.OperationalError as error:
+                if "sync_coverage_" not in str(error):
+                    raise
+                raise IncrementalConfigurationError(
+                    "Banco existente não possui manifesto de cobertura; "
+                    "aplique a migração 005 somente em uma cópia isolada"
+                ) from error
         if existing is not None:
             status = existing["status"]
             attempted = int(existing["attempt_count"]) > 0
@@ -520,8 +736,60 @@ def run_offline_incremental(config: IncrementalRunConfig):
 
         pending_target_keys = None
         if definition.strategy == RELATIONSHIP_STRATEGY:
+            if reconciliation_cadence is None or reconciliation_horizon is None:
+                raise IncrementalConfigurationError(
+                    "Recurso dependente sem política de reconciliação"
+                )
             pending_target_keys = set()
-            for target_key, fingerprint, _ in fixture.target_metadata():
+            try:
+                for target_key, fingerprint, target in (
+                    fixture.discovery_metadata()
+                ):
+                    sync.register_reconciliation_target(
+                        job.job_id,
+                        target_key,
+                        dict(target),
+                        fingerprint,
+                        config.normalized_end,
+                        cadence_days=reconciliation_cadence,
+                        horizon_days=reconciliation_horizon,
+                    )
+                responses = {
+                    key: (fingerprint, entry)
+                    for key, fingerprint, entry in fixture.target_metadata()
+                }
+                if config.reprocess:
+                    selected_keys = set(responses)
+                else:
+                    selected_keys = {
+                        row["target_key"]
+                        for row in sync.list_due_reconciliation_targets(
+                            job.job_id, config.normalized_end
+                        )
+                    }
+            except sqlite3.OperationalError as error:
+                if "sync_reconciliation_target" not in str(error):
+                    raise
+                raise IncrementalConfigurationError(
+                    "Banco existente não possui a fila de reconciliação; "
+                    "aplique a migração 004 somente em uma cópia isolada"
+                ) from error
+            missing_responses = sorted(selected_keys.difference(responses))
+            if missing_responses:
+                raise OfflineFixtureError(
+                    "Fixture não forneceu resposta para alvos de reconciliação "
+                    "devidos: " + ", ".join(missing_responses)
+                )
+            for target_key in sorted(selected_keys):
+                fingerprint, _ = responses[target_key]
+                queued = sync.get_reconciliation_target(
+                    job.job_id, target_key
+                )
+                if queued is None or queued["target_fingerprint"] != fingerprint:
+                    raise OfflineFixtureError(
+                        "Resposta de reconciliação diverge do alvo enfileirado: "
+                        + target_key
+                    )
                 row = sync.register_target(
                     window.window_id, target_key, fingerprint
                 )
@@ -580,8 +848,17 @@ def run_offline_incremental(config: IncrementalRunConfig):
                 "modalidade": config.modality,
                 "strategy": definition.strategy,
             },
+            coverage_window_id=(
+                coverage_window["id"] if coverage_window is not None else None
+            ),
+            coverage_member_key=config.coverage_member,
         )
         watermark = sync.get_watermark(job.job_id)
+        completed_coverage = (
+            sync.get_coverage_window(coverage_window["id"])
+            if coverage_window is not None
+            else None
+        )
         return IncrementalRunReport(
             job_id=job.job_id,
             window_id=window.window_id,
@@ -597,6 +874,16 @@ def run_offline_incremental(config: IncrementalRunConfig):
             watermark_value=watermark["watermark_value"],
             resumed=config.resume,
             reprocessed=config.reprocess,
+            coverage_window_id=(
+                completed_coverage["id"]
+                if completed_coverage is not None
+                else None
+            ),
+            coverage_status=(
+                completed_coverage["status"]
+                if completed_coverage is not None
+                else None
+            ),
         )
     except BaseException as error:
         if lease is not None:

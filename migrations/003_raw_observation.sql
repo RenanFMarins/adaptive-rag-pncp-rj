@@ -4,7 +4,7 @@ BEGIN IMMEDIATE;
 
 CREATE TABLE IF NOT EXISTS raw_observation (
     observation_key TEXT PRIMARY KEY,
-    raw_asset_id TEXT NOT NULL UNIQUE,
+    raw_asset_id TEXT NOT NULL,
     base_id TEXT NOT NULL,
     resource_type TEXT NOT NULL,
     external_id TEXT NOT NULL,
@@ -28,5 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_raw_observation_identity
     ON raw_observation(base_id, resource_type, external_id);
 CREATE INDEX IF NOT EXISTS idx_raw_observation_run
     ON raw_observation(ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_raw_observation_asset
+    ON raw_observation(raw_asset_id);
 
 COMMIT;

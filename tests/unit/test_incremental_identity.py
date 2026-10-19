@@ -201,6 +201,56 @@ class IncrementalIdentityTests(unittest.TestCase):
             ).fetchone()[0],
             1,
         )
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_observation"
+            ).fetchone()[0],
+            1,
+        )
+        repository.close()
+
+    def test_unchanged_in_new_window_records_observation_without_new_version(self):
+        repository = RawRepository(self.database_url)
+        first = self.record(
+            "pncp_incremental", "A", "2023-04-01T10:00:00Z"
+        )
+        second = self.record(
+            "pncp_incremental", "A", "2023-04-01T10:00:00Z"
+        )
+
+        self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [first],
+            "2023-04-01",
+            "2023-04-01",
+        )
+        result = self.ingest_window(
+            repository,
+            "pncp_incremental",
+            [second],
+            "2023-04-02",
+            "2023-04-02",
+        )
+
+        self.assertEqual(result.unchanged, 1)
+        self.assertEqual(
+            repository.connection.execute(
+                "SELECT COUNT(*) FROM raw_asset"
+            ).fetchone()[0],
+            1,
+        )
+        observations = repository.connection.execute(
+            "SELECT raw_asset_id, window_start FROM raw_observation "
+            "ORDER BY window_start"
+        ).fetchall()
+        self.assertEqual(
+            [row["window_start"] for row in observations],
+            ["2023-04-01", "2023-04-02"],
+        )
+        self.assertEqual(
+            len({row["raw_asset_id"] for row in observations}), 1
+        )
         repository.close()
 
     def test_reversion_a_b_a_preserves_three_observations(self):
@@ -558,6 +608,11 @@ class IncrementalIdentityTests(unittest.TestCase):
     def test_existing_historical_schema_and_null_metadata_remain_compatible(self):
         connection = initialize_database(self.database_url)
         connection.execute("DROP TABLE raw_observation")
+        connection.execute("DROP TABLE sync_coverage_watermark")
+        connection.execute("DROP TABLE sync_coverage_member")
+        connection.execute("DROP TABLE sync_coverage_window")
+        connection.execute("DROP TABLE sync_coverage_plan")
+        connection.execute("DROP TABLE sync_reconciliation_target")
         connection.execute("DROP TABLE sync_watermark")
         connection.execute("DROP TABLE sync_target_progress")
         connection.execute("DROP TABLE sync_window")

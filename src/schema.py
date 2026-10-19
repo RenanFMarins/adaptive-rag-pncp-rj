@@ -25,6 +25,7 @@ class SourceConfig:
 	target_resource_type: str | None = None
 	target_field_paths: Mapping[str, str] = field(default_factory=dict)
 	discovery_endpoint_template: str | None = None
+	detail_endpoint_template: str | None = None
 	items_endpoint_template: str | None = None
 	items_page_size: int = 50
 	max_items_per_purchase: int | None = None
@@ -67,6 +68,7 @@ class SourceConfig:
 			discovery_endpoint_template=value.get(
 				"discovery_endpoint_template"
 			),
+			detail_endpoint_template=value.get("detail_endpoint_template"),
 			items_endpoint_template=value.get("items_endpoint_template"),
 			items_page_size=int(value.get("items_page_size", 50)),
 			max_items_per_purchase=(
@@ -130,6 +132,7 @@ class CollectionCheckpoint:
 	cursor: str
 	target_key: str | None = field(default=None, compare=False)
 	target_fingerprint: str | None = field(default=None, compare=False)
+	reconciliation_outcome: str | None = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import sqlite3
 import tempfile
 import unittest
 
@@ -9,6 +10,8 @@ from app.core.database.repositories import SyncRepository
 from src.fetch_corpus import prepare_window_targets
 from src.ingest import RawRepository, ingest_records, ingest_window_records
 from src.ingestion.checkpoint import (
+    CoveragePlanSpec,
+    CoverageWindowSpec,
     HISTORICAL_MODE,
     INCREMENTAL_MODE,
     SyncJobSpec,
@@ -208,6 +211,111 @@ class WindowedCheckpointTests(unittest.TestCase):
         self.assertEqual(target["status"], "PENDING")
         self.assertIsNone(target["processed_fingerprint"])
         self.assertIsNone(self.sync.get_watermark(job.job_id))
+
+    def test_target_confirmation_and_reconciliation_update_are_atomic(self):
+        job = self.job(INCREMENTAL_MODE)
+        window = self.window(job, "2023-01-01", "2023-01-01")
+        target = {"numero_controle": "compra-1"}
+        key, fingerprint = stable_target_metadata(target)
+        self.sync.register_reconciliation_target(
+            job.job_id,
+            key,
+            target,
+            fingerprint,
+            "2023-01-01",
+            cadence_days=1,
+            horizon_days=30,
+        )
+        self.sync.register_target(window.window_id, key, fingerprint)
+        lease = self.sync.acquire_window(window.window_id, "worker-a")
+        self.running_run(window, lease)
+        self.repository.connection.executescript(
+            "CREATE TRIGGER fail_reconciliation_update "
+            "BEFORE UPDATE ON sync_reconciliation_target "
+            "BEGIN SELECT RAISE(ABORT, 'queue failure'); END;"
+        )
+
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "queue failure"):
+            self.sync.confirm_reconciled_target(
+                window.window_id,
+                key,
+                fingerprint,
+                "EMPTY",
+                lease.token,
+            )
+
+        progress = self.sync.get_target(window.window_id, key)
+        queued = self.sync.get_reconciliation_target(job.job_id, key)
+        self.assertEqual(progress["status"], "PENDING")
+        self.assertIsNone(progress["processed_fingerprint"])
+        self.assertIsNone(queued["last_checked_at"])
+        self.assertIsNone(queued["last_outcome"])
+
+    def test_composite_coverage_failure_rolls_back_individual_completion(self):
+        job = self.job(INCREMENTAL_MODE)
+        plan = CoveragePlanSpec(
+            "contratacoes-rj",
+            "pncp",
+            "contratacao",
+            "RJ",
+            ("modalidade:6",),
+        )
+        self.sync.register_coverage_plan(plan)
+        earlier = CoverageWindowSpec(plan.plan_id, "2023-01-01", "2023-01-01")
+        later = CoverageWindowSpec(plan.plan_id, "2023-01-02", "2023-01-02")
+        self.sync.create_coverage_window(earlier)
+        self.sync.create_coverage_window(later)
+        shard = self.window(job, "2023-01-02", "2023-01-02")
+        self.sync.attach_coverage_member(
+            later.window_id,
+            "modalidade:6",
+            job.job_id,
+            shard.window_id,
+        )
+        lease = self.sync.acquire_window(shard.window_id, "worker-a")
+        self.successful_run(shard, lease)
+
+        from app.core.database.repositories.sync_repository import (
+            WindowContinuityError,
+        )
+
+        with self.assertRaisesRegex(WindowContinuityError, "composta anterior"):
+            self.sync.complete_window(
+                shard.window_id,
+                lease.token,
+                "2023-01-02T23:59:59Z",
+                coverage_window_id=later.window_id,
+                coverage_member_key="modalidade:6",
+            )
+
+        member = self.repository.connection.execute(
+            "SELECT status FROM sync_coverage_member "
+            "WHERE coverage_window_id=? AND member_key='modalidade:6'",
+            (later.window_id,),
+        ).fetchone()
+        self.assertEqual(self.sync.get_window(shard.window_id)["status"], "RUNNING")
+        self.assertEqual(member["status"], "PENDING")
+        self.assertIsNone(self.sync.get_watermark(job.job_id))
+        self.assertIsNone(self.sync.get_coverage_watermark(plan.plan_id))
+
+    def test_coverage_plan_identity_canonicalizes_configuration(self):
+        first = CoveragePlanSpec(
+            " contratacoes-rj ",
+            " pncp ",
+            " contratacao ",
+            " rj ",
+            (" modalidade:8 ", "modalidade:6"),
+        )
+        second = CoveragePlanSpec(
+            "contratacoes-rj",
+            "pncp",
+            "contratacao",
+            "RJ",
+            ("modalidade:6", "modalidade:8"),
+        )
+
+        self.assertEqual(first, second)
+        self.assertEqual(first.plan_id, second.plan_id)
 
     def test_restart_after_failure_reuses_window_and_preserves_progress(self):
         job = self.job()
@@ -491,6 +599,11 @@ class WindowedCheckpointTests(unittest.TestCase):
             resource_type="contratacao",
         )
         connection = self.repository.connection
+        connection.execute("DROP TABLE sync_coverage_watermark")
+        connection.execute("DROP TABLE sync_coverage_member")
+        connection.execute("DROP TABLE sync_coverage_window")
+        connection.execute("DROP TABLE sync_coverage_plan")
+        connection.execute("DROP TABLE sync_reconciliation_target")
         connection.execute("DROP TABLE sync_watermark")
         connection.execute("DROP TABLE sync_target_progress")
         connection.execute("DROP TABLE sync_window")
@@ -523,6 +636,126 @@ class WindowedCheckpointTests(unittest.TestCase):
         self.assertEqual(
             [tuple(row) for row in before_checkpoint],
             [tuple(row) for row in after_checkpoint],
+        )
+        self.assertEqual(
+            connection.execute("PRAGMA integrity_check").fetchone()[0],
+            "ok",
+        )
+        self.assertEqual(
+            connection.execute("PRAGMA foreign_key_check").fetchall(), []
+        )
+
+    def test_reconciliation_migration_is_additive_and_idempotent(self):
+        ingest_records(
+            self.repository,
+            "pncp_legado",
+            ("numeroControlePNCP",),
+            [self.record("pncp_legado")],
+            logger=self.logger,
+            resource_type="contratacao",
+        )
+        connection = self.repository.connection
+        connection.execute("DROP TABLE sync_reconciliation_target")
+        connection.commit()
+        before_raw = connection.execute(
+            "SELECT id, payload, payload_hash FROM raw_asset"
+        ).fetchall()
+        before_checkpoint = connection.execute(
+            "SELECT * FROM sync_checkpoint"
+        ).fetchall()
+        migration = (
+            Path(__file__).parents[2]
+            / "migrations"
+            / "004_sync_reconciliation_target.sql"
+        ).read_text(encoding="utf-8")
+
+        connection.executescript(migration)
+        connection.executescript(migration)
+
+        after_raw = connection.execute(
+            "SELECT id, payload, payload_hash FROM raw_asset"
+        ).fetchall()
+        after_checkpoint = connection.execute(
+            "SELECT * FROM sync_checkpoint"
+        ).fetchall()
+        table = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name='sync_reconciliation_target'"
+        ).fetchone()
+        index = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' "
+            "AND name='idx_sync_reconciliation_due'"
+        ).fetchone()
+        self.assertEqual(
+            [tuple(row) for row in before_raw],
+            [tuple(row) for row in after_raw],
+        )
+        self.assertEqual(
+            [tuple(row) for row in before_checkpoint],
+            [tuple(row) for row in after_checkpoint],
+        )
+        self.assertIsNotNone(table)
+        self.assertIsNotNone(index)
+        self.assertEqual(
+            connection.execute("PRAGMA integrity_check").fetchone()[0],
+            "ok",
+        )
+        self.assertEqual(
+            connection.execute("PRAGMA foreign_key_check").fetchall(), []
+        )
+
+    def test_coverage_manifest_migration_is_additive_and_idempotent(self):
+        ingest_records(
+            self.repository,
+            "pncp_legado",
+            ("numeroControlePNCP",),
+            [self.record("pncp_legado")],
+            logger=self.logger,
+            resource_type="contratacao",
+        )
+        connection = self.repository.connection
+        for table in (
+            "sync_coverage_watermark",
+            "sync_coverage_member",
+            "sync_coverage_window",
+            "sync_coverage_plan",
+        ):
+            connection.execute(f"DROP TABLE {table}")
+        connection.commit()
+        before_raw = connection.execute(
+            "SELECT id, payload, payload_hash FROM raw_asset"
+        ).fetchall()
+        migration = (
+            Path(__file__).parents[2]
+            / "migrations"
+            / "005_sync_coverage_manifest.sql"
+        ).read_text(encoding="utf-8")
+
+        connection.executescript(migration)
+        connection.executescript(migration)
+
+        after_raw = connection.execute(
+            "SELECT id, payload, payload_hash FROM raw_asset"
+        ).fetchall()
+        tables = {
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name LIKE 'sync_coverage_%'"
+            )
+        }
+        self.assertEqual(
+            [tuple(row) for row in before_raw],
+            [tuple(row) for row in after_raw],
+        )
+        self.assertEqual(
+            tables,
+            {
+                "sync_coverage_plan",
+                "sync_coverage_window",
+                "sync_coverage_member",
+                "sync_coverage_watermark",
+            },
         )
         self.assertEqual(
             connection.execute("PRAGMA integrity_check").fetchone()[0],

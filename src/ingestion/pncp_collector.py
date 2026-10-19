@@ -18,6 +18,7 @@ from ..schema import (
     value_at_path,
 )
 from .checkpoint import stable_target_metadata
+from .pca import pca_plan_context, validate_complete_pca_plan
 from .pncp_client import PNCPClient, PNCPClientError
 
 
@@ -243,29 +244,90 @@ class PNCPCollector:
 
 
 class PCACollector(PNCPCollector):
-    """Collector PCA que preserva o registro sem normalização."""
+    """Usa o feed fragmentado para descobrir e buscar cada PCA completo."""
 
     external_id_field = "idPcaPncp"
 
     def collect(self, source: SourceConfig, start_page: int = 1):
+        if not source.detail_endpoint_template:
+            raise ValueError(
+                "Fonte PCA por atualização sem detail_endpoint_template"
+            )
+        discovered: dict[str, dict[str, Any]] = {}
         for record in super().collect(source, start_page):
             if isinstance(record, CollectionCheckpoint):
-                yield record
                 continue
-            if not record.payload.get(self.external_id_field):
+            external_id = record.payload.get(self.external_id_field)
+            if not external_id:
                 raise ValueError(
                     "Registro PCA sem idPcaPncp; coleta interrompida"
                 )
-            yield record
+            external_id = str(external_id)
+            context = pca_plan_context(external_id)
+            entry = discovered.setdefault(
+                external_id,
+                {
+                    "context": context,
+                    "pages": [],
+                    "fragment_count": 0,
+                },
+            )
+            if record.cursor not in entry["pages"]:
+                entry["pages"].append(record.cursor)
+            entry["fragment_count"] += 1
+
+        # Busca e valida todos os planos antes de emitir o primeiro registro.
+        # Assim, uma falha no detalhe não deixa um checkpoint parcial.
+        plans = []
+        for external_id, entry in discovered.items():
+            context = entry["context"]
+            endpoint = source.detail_endpoint_template.format(**context)
+            url = self.client.build_url(endpoint, base_url=source.base)
+            payload = self.client.get(
+                endpoint,
+                base_url=source.base,
+                timeout_seconds=source.timeout_seconds,
+                headers=source.headers,
+                max_retries=source.max_retries,
+                retry_backoff_seconds=source.retry_backoff_seconds,
+            )
+            validate_complete_pca_plan(payload, context, url)
+            plans.append((external_id, entry, url, payload))
+
+        for ordinal, (external_id, entry, url, payload) in enumerate(
+            plans, start=1
+        ):
+            pages = entry["pages"]
+            yield CollectedRecord(
+                source.id,
+                payload,
+                url,
+                pages[-1],
+                ordinal,
+                external_id=external_id,
+                query_params={
+                    **source.audit_context,
+                    **source.params,
+                    "numeroControlePNCP": external_id,
+                    "discovery_pages": list(pages),
+                    "discovery_fragment_count": entry["fragment_count"],
+                    "representation": "complete_pca_plan",
+                },
+            )
+        self.logger.event(
+            "pncp_pca_update_discovery",
+            source_id=source.id,
+            fragments_count=sum(
+                entry["fragment_count"] for entry in discovered.values()
+            ),
+            plans_count=len(plans),
+        )
 
 
 class PCAFullCollector:
     """Descobre PCAs por órgão e preserva cada plano completo com seus itens."""
 
     required_target_fields = ("cnpj",)
-    control_number_pattern = re.compile(
-        r"^(?P<cnpj>\d{14})-0-(?P<sequencial>\d+)/(?P<ano>\d{4})$"
-    )
 
     def __init__(
         self, client: PNCPClient, logger: JsonlLogger | None = None
@@ -327,7 +389,7 @@ class PCAFullCollector:
                 seen.add(numero_controle)
                 endpoint = source.endpoint.format(**context)
                 payload, url = request(endpoint)
-                self._validate_payload(payload, context, url)
+                validate_complete_pca_plan(payload, context, url)
                 plans.append((context, url, payload))
             return target_index, cnpj, plans
 
@@ -379,39 +441,12 @@ class PCAFullCollector:
     def _plan_context(self, cnpj, ano, sequencial, numero_controle):
         if sequencial is None or not numero_controle:
             raise ValueError("Resumo de PCA sem identificador obrigatório")
-        match = self.control_number_pattern.fullmatch(str(numero_controle))
-        if not match:
-            raise ValueError("Resumo de PCA com numeroControlePNCP inválido")
-        if (
-            match.group("cnpj") != cnpj
-            or int(match.group("ano")) != ano
-            or int(match.group("sequencial")) != int(sequencial)
-        ):
-            raise ValueError("Resumo de PCA inconsistente com o órgão/ano alvo")
-        return {
-            "cnpj": cnpj,
-            "ano": ano,
-            "sequencial": int(sequencial),
-            "numero_controle": str(numero_controle),
-        }
-
-    @staticmethod
-    def _validate_payload(payload, context, source_url):
-        if not isinstance(payload, Mapping):
-            raise ValueError(f"PCA completo não retornou objeto em {source_url}")
-        items = payload.get("itens")
-        if not isinstance(items, list):
-            raise ValueError(f"PCA completo sem lista de itens em {source_url}")
-        for item in items:
-            if not isinstance(item, Mapping):
-                raise ValueError(f"PCA completo possui item inválido em {source_url}")
-            if (
-                str(item.get("cnpj")) != context["cnpj"]
-                or int(item.get("anoPca", -1)) != context["ano"]
-                or int(item.get("sequencialPca", -1))
-                != context["sequencial"]
-            ):
-                raise ValueError(f"Item fora do PCA esperado em {source_url}")
+        return pca_plan_context(
+            numero_controle,
+            expected_cnpj=cnpj,
+            expected_year=ano,
+            expected_sequence=sequencial,
+        )
 
 
 class PriceRegistryCollector:

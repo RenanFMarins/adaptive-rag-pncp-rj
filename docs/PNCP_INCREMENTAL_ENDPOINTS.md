@@ -55,18 +55,21 @@ endpoints operacionais documentados continuam sob `/v1`.
 
 ## Auditoria da implementação atual
 
-### Coletor incremental offline
+### Coletor incremental e piloto online
 
-`src/fetch_incremental.py` exige `--offline`, fixture local e banco dentro de
-`/tmp`. `src/ingestion/incremental_runner.py` classifica os recursos assim:
+`src/fetch_incremental.py` exige a escolha explícita entre `--offline` e
+`--online-pilot`; ambos exigem banco dentro de `/tmp`. O piloto online aceita
+somente contratações do RJ, uma modalidade e um dia.
+`src/ingestion/incremental_runner.py` classifica os recursos assim:
 
 | Estratégia atual | Recursos |
 |---|---|
 | Endpoint | `pca`, `contratacao`, `contrato`, `ata_registro_preco` |
 | Relacionamento | `contratacao_item`, `resultado_item`, `empenho` |
 
-Essa divisão foi confirmada pela documentação oficial. A implementação
-continua offline e ainda não possui adaptadores HTTP incrementais. [CÓDIGO]
+Essa divisão foi confirmada pela documentação oficial. Somente o adaptador de
+contratações está exposto no piloto online; os demais continuam bloqueados no
+CLI, embora possuam testes simulados e evidências reais controladas. [CÓDIGO]
 
 Os coletores históricos são uma base de reaproveitamento, não adaptadores
 incrementais prontos:
@@ -75,9 +78,10 @@ incrementais prontos:
   nos erros e tenta novamente 429/5xx com backoff;
 - `PNCPCollector` encerra pelo `totalPaginas` do envelope e registra o cursor
   de página;
-- `PCACollector` emitiria cada fragmento paginado com o mesmo `idPcaPncp`.
-  Ele não pode ser reutilizado sem resolver o achado de paginação descrito
-  adiante;
+- `PCACollector` usa o feed paginado somente para descobrir
+  `idPcaPncp`, deduplica os identificadores e busca cada JSON integral no
+  endpoint direto `/itens/plano` antes de emitir um registro RAW. Nenhum
+  fragmento do feed é promovido a versão de negócio;
 - `PurchaseItemCollector` atual faz uma chamada sem parâmetros de paginação
   por contratação. Como o endpoint oficial aceita paginação e uma consulta
   controlada comprovou que `tamanhoPagina=1` limita a resposta, o adaptador da
@@ -213,6 +217,11 @@ derivados de um inventário de unidades do RJ e validar o escopo localmente.
 Cobertura completa exige um shard/job por modalidade. O conjunto de
 modalidades deve ser congelado no início de cada janela; adicionar uma nova
 modalidade depois não pode fazer uma janela antiga parecer completa.
+
+O runner offline materializa essa regra por meio de `sync_coverage_plan`,
+`sync_coverage_window`, `sync_coverage_member` e
+`sync_coverage_watermark`. O watermark individual continua limitado ao shard;
+somente o watermark composto representa a cobertura integral declarada.
 
 ### Contratos por atualização
 
@@ -377,16 +386,19 @@ crescente. Uma amostra não prova que a paginação sempre se comportará assim,
 mas prova que o adaptador não pode assumir páginas disjuntas, ordenar pelo
 número do item nem persistir cada fragmento como estado completo do PCA.
 
-Antes de implementar PCA online, escolher e testar uma das alternativas:
+A estratégia escolhida não concatena esses fragmentos. O feed de atualização
+serve apenas para descobrir os identificadores alterados; depois que todas as
+páginas foram lidas, cada plano é consultado no endpoint direto
+`/api/pncp/v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/plano`. O payload
+integral retornado por esse endpoint é validado e preservado como RAW. Se um
+plano estiver ausente ou inconsistente, a tentativa falha antes de emitir o
+primeiro registro. [CÓDIGO, TESTE OFFLINE]
 
-1. preservar envelopes/páginas como recurso de auditoria separado e modelar
-   os itens por identidade própria; ou
-2. coletar toda a janela, deduplicar itens por identidade e gerar um snapshot
-   agregado explicitamente identificado como derivado, mantendo os fragmentos
-   originais auditáveis.
-
-A segunda opção não pode ser apresentada como JSON bruto original. Esta
-decisão é um bloqueador da Etapa 5 para PCA.
+O runner incremental offline exige `payload_kind=complete_pca_plan`, valida a
+identidade dos itens e recusa o mesmo PCA repetido em páginas diferentes. O
+adaptador HTTP incremental mantém esse contrato: deduplica a descoberta, busca
+e valida todos os detalhes antes de emitir o primeiro plano. A coleta HTTP
+incremental continua desabilitada no CLI.
 
 ## Estratégia de watermark
 
@@ -463,6 +475,19 @@ a faixa morna. O controle deve usar `sync_target_progress`, com fingerprint do
 pai e identificador da campanha de reconciliação; não usar apenas a posição
 numérica do alvo.
 
+### Estado implementado offline
+
+O runner offline mantém agora uma fila durável em
+`sync_reconciliation_target`, separada do progresso de cada janela. Pais
+descobertos alimentam a fila; alvos devidos são materializados em uma nova
+janela sem reabrir a anterior. A confirmação do alvo e sua próxima data de
+consulta são atômicas.
+
+As fixtures distinguem `FOUND`, `EMPTY` e `NOT_FOUND`. A integração HTTP ainda
+depende do contrato comum de adaptador para preservar essa distinção a partir
+do status real. Em particular, `temResultado=false` não deve retirar o item da
+fila: ele é somente uma observação momentânea do payload.
+
 ## Compatibilidade com a RAW existente
 
 O snapshot T1 foi aberto em `mode=ro`, passou em `PRAGMA quick_check` e possui:
@@ -526,26 +551,75 @@ inclusão e evento exigiria proposta de migração própria, fora desta etapa.
 5. Implementar empenhos dependentes e medir se alterações propagam para o
    timestamp global do contrato; manter reconciliação independentemente disso.
 6. Implementar atas por CNPJ/unidade e data global.
-7. Resolver o modelo de paginação/auditoria do PCA antes de criar seu adaptador.
-8. Executar testes HTTP com transporte simulado, testes offline e um piloto
+7. Integrar ao runner o adaptador de PCA já implementado e testado: descoberta
+   paginada, deduplicação e busca do plano completo pelo endpoint direto.
+8. Executar testes offline e um piloto
    real isolado em `/tmp`; somente depois propor ativação operacional.
 
-Pendências obrigatórias antes da ativação:
+### Contrato HTTP comum implementado
 
-- decisão de representação para as páginas do PCA;
-- validação de datas inválidas sem influenciar a ordem da versão atual;
+`PNCPClient.get_response()` preserva `status_code`, payload, URL, tipo de
+conteúdo, quantidade de tentativas e o resultado de transporte. O método
+legado `get()` continua devolvendo somente o JSON, mantendo os coletores
+históricos compatíveis.
+
+`PNCPIncrementalHTTPAdapter` converte a resposta em uma página tipada e
+distingue:
+
+- `FOUND`: HTTP 200 com registros;
+- `EMPTY`: HTTP 200 sem registros ou HTTP 204;
+- `NOT_FOUND`: HTTP 404 aceito apenas no contexto configurado.
+
+Metadados de página divergentes e registros com formato inválido falham antes
+da persistência. O contrato foi testado com transporte simulado e com respostas
+reais 200, 204 e 404 em uma cópia isolada.
+
+`PNCPEndpointIncrementalAdapter` implementa sobre esse contrato os feeds de
+atualização de contratações, contratos e atas. Ele monta janelas fechadas em
+`yyyyMMdd`, exige modalidade+UF para contratações, exige CNPJ do inventário
+para contratos/atas, valida a identidade e recusa payload fora do escopo
+solicitado. Mudança no total de páginas, página intermediária vazia, página
+integral repetida e 404 em feed global interrompem a janela.
+
+`PNCPPCAIncrementalAdapter` usa o feed fragmentado apenas para descoberta e
+só emite planos integrais obtidos no endpoint direto, depois de buscar e
+validar todos os detalhes. `PNCPRelationshipIncrementalAdapter` consulta itens,
+resultados e empenhos por alvo, valida a identidade do pai e devolve
+explicitamente `FOUND`, `EMPTY` ou `NOT_FOUND` para a fila de reconciliação.
+Ambos permanecem desacoplados do CLI e são testados sem rede.
+
+`run_adapter_incremental()` conecta os adaptadores injetados à RAW e aos
+checkpoints v2. O caminho é restrito a SQLite dentro de `/tmp`, repete a janela
+de endpoint desde a primeira página numa retomada e exige a confirmação de
+todos os alvos dependentes antes do watermark. Uma falha intermediária deixa a
+janela recuperável e não cria watermark. O CLI expõe somente a rota protegida
+de contratações.
+
+`plan_closed_windows()` materializa a sobreposição como política testável. O
+padrão atual revisita dois dias confirmados e cria janelas diárias, sem tratar
+o timestamp de um registro como cursor. Esses valores foram aprovados como
+baseline de piloto e devem ser revistos após 30 dias; não são SLA do PNCP.
+
+`build_scope_inventory()` transforma payloads de contratação do recorte em
+um conjunto congelado de CNPJ/unidade. O resultado é deduplicado, possui hash
+estável e fornece diretamente os membros do manifesto de cobertura. A função
+recusa campos ausentes e UF divergente; ela não pode, sozinha, provar que a RAW
+histórica de origem cobriu todos os órgãos do RJ.
+
+Pendências obrigatórias antes da ativação operacional:
+
 - separação semântica de publicação/inclusão/evento nos metadados;
-- inventário confiável de CNPJ/unidade do RJ para PCA, contrato e ata;
-- política configurável de sobreposição e reconciliação;
-- teste de mutação entre páginas e de retomada sem avanço indevido;
-- confirmação empírica de como empenhos dependentes afetam o contrato-pai.
+- comprovação da completude da RAW usada para congelar o inventário do RJ;
+- validação empírica de mutação de conteúdo entre páginas;
+- confirmação empírica de como empenhos dependentes afetam o contrato-pai;
+- autorização específica para migrar o banco oficial.
 
-## Validação offline desta etapa
+## Validação desta etapa
 
-- `python3 -m pytest -q`: **117 testes aprovados**.
+- `python3 -m pytest -q`: conferir a contagem atual no relatório de entrega.
 - `python3 -m compileall -q src app tests`: concluído sem erro.
 - `git diff --check`: concluído sem erro.
-- Nenhum teste HTTP foi incorporado à suíte e nenhum adaptador online foi
-  implementado.
-- Os tamanhos e `mtime` de todos os bancos em `data/debug` e `data/exports`
-  permaneceram iguais antes e depois da auditoria.
+- A suíte automatizada não acessa a rede. O piloto real foi executado
+  separadamente em banco migrado dentro de `/tmp`.
+- O banco oficial permaneceu sem as tabelas v2; migração e piloto foram feitos
+  em cópias independentes.

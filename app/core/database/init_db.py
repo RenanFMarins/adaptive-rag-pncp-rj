@@ -83,7 +83,7 @@ CREATE INDEX IF NOT EXISTS idx_raw_asset_canonical_identity
 RAW_OBSERVATION_SCHEMA = """
 CREATE TABLE IF NOT EXISTS raw_observation (
     observation_key TEXT PRIMARY KEY,
-    raw_asset_id TEXT NOT NULL UNIQUE,
+    raw_asset_id TEXT NOT NULL,
     base_id TEXT NOT NULL,
     resource_type TEXT NOT NULL,
     external_id TEXT NOT NULL,
@@ -107,6 +107,8 @@ CREATE INDEX IF NOT EXISTS idx_raw_observation_identity
     ON raw_observation(base_id, resource_type, external_id);
 CREATE INDEX IF NOT EXISTS idx_raw_observation_run
     ON raw_observation(ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_raw_observation_asset
+    ON raw_observation(raw_asset_id);
 """
 
 SYNC_V2_SCHEMA = """
@@ -182,6 +184,84 @@ CREATE INDEX IF NOT EXISTS idx_sync_window_lease
     ON sync_window(status, lease_expires_at);
 CREATE INDEX IF NOT EXISTS idx_sync_target_status
     ON sync_target_progress(window_id, status, target_key);
+
+CREATE TABLE IF NOT EXISTS sync_reconciliation_target (
+    job_id TEXT NOT NULL,
+    target_key TEXT NOT NULL,
+    target_json TEXT NOT NULL,
+    target_fingerprint TEXT NOT NULL,
+    cadence_days INTEGER NOT NULL CHECK (cadence_days > 0),
+    eligible_until TEXT NOT NULL,
+    next_due_at TEXT NOT NULL,
+    last_outcome TEXT
+        CHECK (last_outcome IN ('FOUND', 'EMPTY', 'NOT_FOUND')),
+    last_checked_at TEXT,
+    last_found_at TEXT,
+    consecutive_empty INTEGER NOT NULL DEFAULT 0,
+    last_window_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (job_id, target_key),
+    FOREIGN KEY (job_id) REFERENCES sync_job(id),
+    FOREIGN KEY (last_window_id) REFERENCES sync_window(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_reconciliation_due
+    ON sync_reconciliation_target(job_id, next_due_at, eligible_until, target_key);
+
+CREATE TABLE IF NOT EXISTS sync_coverage_plan (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    base_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    uf TEXT NOT NULL,
+    members_json TEXT NOT NULL,
+    config_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (name, base_id, resource_type, uf)
+);
+
+CREATE TABLE IF NOT EXISTS sync_coverage_window (
+    id TEXT PRIMARY KEY,
+    plan_id TEXT NOT NULL,
+    window_start TEXT NOT NULL,
+    window_end TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PENDING', 'COMPLETED')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT,
+    UNIQUE (plan_id, window_start, window_end),
+    CHECK (window_start <= window_end),
+    FOREIGN KEY (plan_id) REFERENCES sync_coverage_plan(id)
+);
+
+CREATE TABLE IF NOT EXISTS sync_coverage_member (
+    coverage_window_id TEXT NOT NULL,
+    member_key TEXT NOT NULL,
+    job_id TEXT,
+    sync_window_id TEXT,
+    status TEXT NOT NULL CHECK (status IN ('PENDING', 'COMPLETED')),
+    completed_at TEXT,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (coverage_window_id, member_key),
+    FOREIGN KEY (coverage_window_id) REFERENCES sync_coverage_window(id),
+    FOREIGN KEY (job_id) REFERENCES sync_job(id),
+    FOREIGN KEY (sync_window_id) REFERENCES sync_window(id)
+);
+
+CREATE TABLE IF NOT EXISTS sync_coverage_watermark (
+    plan_id TEXT PRIMARY KEY,
+    watermark_value TEXT NOT NULL,
+    last_window_id TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (plan_id) REFERENCES sync_coverage_plan(id),
+    FOREIGN KEY (last_window_id) REFERENCES sync_coverage_window(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_coverage_window_status
+    ON sync_coverage_window(plan_id, status, window_start, window_end);
+CREATE INDEX IF NOT EXISTS idx_sync_coverage_member_status
+    ON sync_coverage_member(coverage_window_id, status, member_key);
 """
 
 

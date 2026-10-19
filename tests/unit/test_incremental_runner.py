@@ -14,6 +14,8 @@ from src.fetch_incremental import build_parser, main
 from src.ingest import RawRepository, ingest_records
 from src.ingestion.incremental_runner import (
     IncrementalRunConfig,
+    IncrementalRunReport,
+    OfflineFixtureError,
     run_offline_incremental,
 )
 from src.schema import CollectedRecord
@@ -47,6 +49,27 @@ class IncrementalRunnerTests(unittest.TestCase):
                 "estado": state,
                 "dataAtualizacaoGlobal": timestamp
                 or "2023-04-10T10:00:00Z",
+            },
+        }
+
+    @staticmethod
+    def pca_record(items=(1, 2)):
+        external_id = "12345678000199-0-000007/2023"
+        return {
+            "external_id": external_id,
+            "payload_kind": "complete_pca_plan",
+            "source_url": "offline://pca/7/itens/plano",
+            "payload": {
+                "idPcaPncp": external_id,
+                "itens": [
+                    {
+                        "cnpj": "12345678000199",
+                        "anoPca": 2023,
+                        "sequencialPca": 7,
+                        "numeroItem": number,
+                    }
+                    for number in items
+                ],
             },
         }
 
@@ -125,8 +148,54 @@ class IncrementalRunnerTests(unittest.TestCase):
             )
 
         self.assertEqual(status, 2)
-        self.assertIn("online ainda não foi habilitada", stderr.getvalue())
+        self.assertIn("--offline ou --online-pilot", stderr.getvalue())
         self.assertFalse(self.database.exists())
+
+    def test_cli_routes_explicit_online_pilot_without_fixture(self):
+        report = IncrementalRunReport(
+            job_id="job-1",
+            window_id="window-1",
+            run_id="run-1",
+            resource="contratacao",
+            strategy="endpoint",
+            status="SUCCEEDED",
+            records_seen=0,
+            new=0,
+            updated=0,
+            unchanged=0,
+            lease_renewals=0,
+            watermark_value="2023-04-01T23:59:59.999999",
+            resumed=False,
+            reprocessed=False,
+        )
+        stdout = io.StringIO()
+        with patch(
+            "src.fetch_incremental.run_online_pilot", return_value=report
+        ) as online, redirect_stdout(stdout):
+            status = main(
+                [
+                    "--resource",
+                    "contratacao",
+                    "--start-date",
+                    "2023-04-01",
+                    "--end-date",
+                    "2023-04-01",
+                    "--uf",
+                    "RJ",
+                    "--modality",
+                    "6",
+                    "--db-path",
+                    str(self.database),
+                    "--online-pilot",
+                ]
+            )
+
+        self.assertEqual(status, 0)
+        online.assert_called_once()
+        config = online.call_args.args[0]
+        self.assertIsNone(config.fixture_path)
+        self.assertEqual((config.resource, config.modality), ("contratacao", 6))
+        self.assertEqual(json.loads(stdout.getvalue())["status"], "SUCCEEDED")
 
     def test_cli_rejects_operational_database_path(self):
         fixture = self.endpoint_fixture([])
@@ -150,6 +219,89 @@ class IncrementalRunnerTests(unittest.TestCase):
                     "--offline",
                 ]
             )
+
+    def test_pca_fixture_persists_one_complete_plan(self):
+        fixture = self.endpoint_fixture([self.pca_record()])
+
+        report = run_offline_incremental(
+            self.config(fixture, resource="pca")
+        )
+
+        self.assertEqual((report.records_seen, report.new), (1, 1))
+        connection = sqlite3.connect(self.database)
+        payload = json.loads(
+            connection.execute(
+                "SELECT payload FROM raw_asset WHERE resource_type = 'pca'"
+            ).fetchone()[0]
+        )
+        connection.close()
+        self.assertEqual(
+            [item["numeroItem"] for item in payload["itens"]],
+            [1, 2],
+        )
+
+    def test_pca_fixture_rejects_fragment_before_creating_database(self):
+        fragment = self.pca_record(items=(1,))
+        fragment.pop("payload_kind")
+        fixture = self.endpoint_fixture([fragment])
+
+        with self.assertRaisesRegex(
+            OfflineFixtureError, "complete_pca_plan"
+        ):
+            run_offline_incremental(
+                self.config(fixture, resource="pca")
+            )
+
+        self.assertFalse(self.database.exists())
+
+    def test_pca_fixture_rejects_repeated_plan_across_pages(self):
+        fixture = self.write_fixture(
+            {
+                "strategy": "endpoint",
+                "pages": [
+                    {"cursor": "1", "records": [self.pca_record((1,))]},
+                    {"cursor": "2", "records": [self.pca_record((2,))]},
+                ],
+            },
+            "fragmented-pca.json",
+        )
+
+        with self.assertRaisesRegex(
+            OfflineFixtureError, "repetiu o mesmo plano"
+        ):
+            run_offline_incremental(
+                self.config(fixture, resource="pca")
+            )
+
+        self.assertFalse(self.database.exists())
+
+    def test_changed_complete_pca_plan_creates_one_new_version(self):
+        initial_fixture = self.endpoint_fixture(
+            [self.pca_record((1, 2))], name="pca-initial.json"
+        )
+        changed_fixture = self.endpoint_fixture(
+            [self.pca_record((1, 2, 3))], name="pca-changed.json"
+        )
+
+        initial = run_offline_incremental(
+            self.config(initial_fixture, resource="pca")
+        )
+        changed = run_offline_incremental(
+            self.config(
+                changed_fixture,
+                resource="pca",
+                start_date="2023-05-01",
+                end_date="2023-05-31",
+            )
+        )
+
+        self.assertEqual((initial.new, changed.updated), (1, 1))
+        connection = sqlite3.connect(self.database)
+        versions = connection.execute(
+            "SELECT COUNT(*) FROM raw_asset WHERE resource_type = 'pca'"
+        ).fetchone()[0]
+        connection.close()
+        self.assertEqual(versions, 2)
 
     def test_configuration_changes_produce_independent_jobs(self):
         fixture = self.endpoint_fixture([])
@@ -596,6 +748,369 @@ class IncrementalRunnerTests(unittest.TestCase):
         connection.close()
         self.assertEqual(keys, {"A", "B"})
         self.assertEqual(first.status, "SUCCEEDED")
+
+    def test_reconciliation_captures_late_result_without_parent_change(self):
+        target = {"numero_controle": "compra-1", "numero_item": 1}
+        first = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [target],
+                "responses": [
+                    {
+                        "target": target,
+                        "outcome": "NOT_FOUND",
+                        "pages": [{"records": []}],
+                    }
+                ],
+            },
+            "late-result-404.json",
+        )
+        late = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [],
+                "responses": [
+                    {
+                        "target": target,
+                        "outcome": "FOUND",
+                        "pages": [
+                            {
+                                "records": [
+                                    {
+                                        "external_id": "compra-1|1|1",
+                                        "payload": {"sequencialResultado": 1},
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ],
+            },
+            "late-result-200.json",
+        )
+
+        empty_report = run_offline_incremental(
+            self.config(
+                first,
+                resource="resultado_item",
+                start_date="2023-04-01",
+                end_date="2023-04-01",
+            )
+        )
+        late_report = run_offline_incremental(
+            self.config(
+                late,
+                resource="resultado_item",
+                start_date="2023-04-02",
+                end_date="2023-04-02",
+            )
+        )
+
+        self.assertEqual((empty_report.records_seen, late_report.new), (0, 1))
+        connection = sqlite3.connect(self.database)
+        queue = connection.execute(
+            "SELECT last_outcome, last_checked_at, last_found_at, "
+            "consecutive_empty, next_due_at FROM sync_reconciliation_target"
+        ).fetchone()
+        raw_count = connection.execute(
+            "SELECT COUNT(*) FROM raw_asset WHERE resource_type='resultado_item'"
+        ).fetchone()[0]
+        connection.close()
+        self.assertEqual(
+            queue,
+            ("FOUND", "2023-04-02", "2023-04-02", 0, "2023-04-03"),
+        )
+        self.assertEqual(raw_count, 1)
+
+    def test_legitimate_empty_is_reconciled_and_remains_auditable(self):
+        target = {"numero_controle": "compra-1"}
+        first = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [target],
+                "responses": [
+                    {"target": target, "outcome": "EMPTY", "pages": []}
+                ],
+            },
+            "empty-first.json",
+        )
+        repeated = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [],
+                "responses": [
+                    {"target": target, "outcome": "EMPTY", "pages": []}
+                ],
+            },
+            "empty-repeated.json",
+        )
+
+        run_offline_incremental(
+            self.config(
+                first,
+                resource="contratacao_item",
+                start_date="2023-04-01",
+                end_date="2023-04-01",
+            )
+        )
+        report = run_offline_incremental(
+            self.config(
+                repeated,
+                resource="contratacao_item",
+                start_date="2023-04-02",
+                end_date="2023-04-02",
+            )
+        )
+
+        connection = sqlite3.connect(self.database)
+        queue = connection.execute(
+            "SELECT last_outcome, consecutive_empty, next_due_at "
+            "FROM sync_reconciliation_target"
+        ).fetchone()
+        raw_count = connection.execute("SELECT COUNT(*) FROM raw_asset").fetchone()[0]
+        connection.close()
+        self.assertEqual(report.records_seen, 0)
+        self.assertEqual(queue, ("EMPTY", 2, "2023-04-03"))
+        self.assertEqual(raw_count, 0)
+
+    def test_relationship_failure_does_not_advance_reconciliation(self):
+        target = {"numero_controle": "contrato-1"}
+        failing = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [target],
+                "responses": [
+                    {
+                        "target": target,
+                        "outcome": "FOUND",
+                        "pages": [
+                            {
+                                "records": [
+                                    {
+                                        "external_id": "contrato-1|1",
+                                        "payload": {"sequencialEmpenho": 1},
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ],
+                "fail_after_records": 1,
+            },
+            "commitment-failure.json",
+        )
+        recovered = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [],
+                "responses": [
+                    {
+                        "target": target,
+                        "outcome": "FOUND",
+                        "pages": [
+                            {
+                                "records": [
+                                    {
+                                        "external_id": "contrato-1|1",
+                                        "payload": {"sequencialEmpenho": 1},
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ],
+            },
+            "commitment-recovery.json",
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Falha offline simulada"):
+            run_offline_incremental(
+                self.config(
+                    failing,
+                    resource="empenho",
+                    start_date="2023-04-01",
+                    end_date="2023-04-01",
+                )
+            )
+        connection = sqlite3.connect(self.database)
+        before = connection.execute(
+            "SELECT last_checked_at, last_outcome FROM sync_reconciliation_target"
+        ).fetchone()
+        connection.close()
+        self.assertEqual(before, (None, None))
+
+        report = run_offline_incremental(
+            self.config(
+                recovered,
+                resource="empenho",
+                start_date="2023-04-01",
+                end_date="2023-04-01",
+                resume=True,
+                worker_id="recovery-worker",
+            )
+        )
+        connection = sqlite3.connect(self.database)
+        after = connection.execute(
+            "SELECT last_checked_at, last_outcome, next_due_at "
+            "FROM sync_reconciliation_target"
+        ).fetchone()
+        raw_count = connection.execute("SELECT COUNT(*) FROM raw_asset").fetchone()[0]
+        connection.close()
+        self.assertEqual(report.unchanged, 1)
+        self.assertEqual(after, ("2023-04-01", "FOUND", "2023-04-08"))
+        self.assertEqual(raw_count, 1)
+
+    def test_reconciliation_respects_cadence_before_reopening_target(self):
+        target = {"numero_controle": "contrato-1"}
+        first = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [target],
+                "responses": [
+                    {"target": target, "outcome": "EMPTY", "pages": []}
+                ],
+            },
+            "commitment-empty.json",
+        )
+        not_due = self.write_fixture(
+            {
+                "strategy": "relationship",
+                "discoveries": [],
+                "responses": [],
+            },
+            "commitment-not-due.json",
+        )
+        run_offline_incremental(
+            self.config(
+                first,
+                resource="empenho",
+                start_date="2023-04-01",
+                end_date="2023-04-01",
+            )
+        )
+
+        report = run_offline_incremental(
+            self.config(
+                not_due,
+                resource="empenho",
+                start_date="2023-04-02",
+                end_date="2023-04-02",
+            )
+        )
+
+        connection = sqlite3.connect(self.database)
+        target_rows = connection.execute(
+            "SELECT COUNT(*) FROM sync_target_progress"
+        ).fetchone()[0]
+        queue = connection.execute(
+            "SELECT next_due_at, consecutive_empty "
+            "FROM sync_reconciliation_target"
+        ).fetchone()
+        connection.close()
+        self.assertEqual(report.records_seen, 0)
+        self.assertEqual(target_rows, 1)
+        self.assertEqual(queue, ("2023-04-08", 1))
+
+    def test_composite_coverage_waits_for_every_expected_shard(self):
+        fixture = self.endpoint_fixture([], name="empty-coverage.json")
+        common = {
+            "coverage_name": "contratacoes-rj-modalidades",
+            "coverage_members": ("modalidade:6", "modalidade:8"),
+            "start_date": "2023-04-01",
+            "end_date": "2023-04-01",
+        }
+
+        first = run_offline_incremental(
+            self.config(
+                fixture,
+                modality=6,
+                coverage_member="modalidade:6",
+                **common,
+            )
+        )
+        connection = sqlite3.connect(self.database)
+        composite_before = connection.execute(
+            "SELECT status FROM sync_coverage_window"
+        ).fetchone()[0]
+        watermark_before = connection.execute(
+            "SELECT COUNT(*) FROM sync_coverage_watermark"
+        ).fetchone()[0]
+        individual_before = connection.execute(
+            "SELECT COUNT(*) FROM sync_watermark"
+        ).fetchone()[0]
+        connection.close()
+
+        second = run_offline_incremental(
+            self.config(
+                fixture,
+                modality=8,
+                coverage_member="modalidade:8",
+                **common,
+            )
+        )
+        connection = sqlite3.connect(self.database)
+        composite_after = connection.execute(
+            "SELECT status FROM sync_coverage_window"
+        ).fetchone()[0]
+        coverage_watermark = connection.execute(
+            "SELECT watermark_value FROM sync_coverage_watermark"
+        ).fetchone()[0]
+        member_statuses = connection.execute(
+            "SELECT member_key, status FROM sync_coverage_member "
+            "ORDER BY member_key"
+        ).fetchall()
+        individual_after = connection.execute(
+            "SELECT COUNT(*) FROM sync_watermark"
+        ).fetchone()[0]
+        connection.close()
+
+        self.assertEqual(first.coverage_status, "PENDING")
+        self.assertEqual((composite_before, watermark_before), ("PENDING", 0))
+        self.assertEqual(individual_before, 1)
+        self.assertEqual(second.coverage_status, "COMPLETED")
+        self.assertEqual(composite_after, "COMPLETED")
+        self.assertEqual(
+            coverage_watermark, "2023-04-01T23:59:59.999999"
+        )
+        self.assertEqual(
+            member_statuses,
+            [
+                ("modalidade:6", "COMPLETED"),
+                ("modalidade:8", "COMPLETED"),
+            ],
+        )
+        self.assertEqual(individual_after, 2)
+
+    def test_coverage_manifest_cannot_change_after_it_is_frozen(self):
+        fixture = self.endpoint_fixture([], name="frozen-coverage.json")
+        run_offline_incremental(
+            self.config(
+                fixture,
+                modality=6,
+                start_date="2023-04-01",
+                end_date="2023-04-01",
+                coverage_name="contratacoes-rj-modalidades",
+                coverage_member="modalidade:6",
+                coverage_members=("modalidade:6", "modalidade:8"),
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "congelado"):
+            run_offline_incremental(
+                self.config(
+                    fixture,
+                    modality=9,
+                    start_date="2023-04-02",
+                    end_date="2023-04-02",
+                    coverage_name="contratacoes-rj-modalidades",
+                    coverage_member="modalidade:9",
+                    coverage_members=(
+                        "modalidade:6",
+                        "modalidade:8",
+                        "modalidade:9",
+                    ),
+                )
+            )
 
     def test_historical_fetch_entrypoint_remains_legacy(self):
         import inspect

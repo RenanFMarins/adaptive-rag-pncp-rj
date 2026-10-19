@@ -284,42 +284,75 @@ class RawRepository:
                 observed_at,
             ),
         )
-        if observation_key and self._table_exists("raw_observation"):
-            source_timestamp = source_timestamp or parse_timestamp(
-                source_updated_at
-            )
-            self.connection.execute(
-                "INSERT INTO raw_observation "
-                "(observation_key, raw_asset_id, base_id, resource_type, "
-                "external_id, payload_hash, source, window_start, window_end, "
-                "cursor, ordinal, source_timestamp_status, "
-                "source_timestamp_kind, source_updated_at_normalized, "
-                "ingestion_run_id, observed_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    observation_key,
-                    asset_id,
-                    *identity.values,
-                    digest,
-                    record.source_id,
-                    window_start,
-                    window_end,
-                    str(record.cursor),
-                    int(record.ordinal),
-                    source_timestamp.status.value,
-                    (
-                        source_timestamp.kind.value
-                        if source_timestamp.kind is not None
-                        else None
-                    ),
-                    source_timestamp.normalized,
-                    run_id,
-                    observed_at,
-                ),
+        if observation_key:
+            self.insert_observation(
+                observation_key,
+                asset_id,
+                run_id,
+                record,
+                identity,
+                digest,
+                source_timestamp
+                or parse_timestamp(source_updated_at),
+                window_start,
+                window_end,
+                observed_at=observed_at,
+                commit=False,
             )
         if commit:
             self.connection.commit()
         return asset_id
+
+    def insert_observation(
+        self,
+        observation_key: str,
+        raw_asset_id: str,
+        run_id: str,
+        record: CollectedRecord,
+        identity: CanonicalIdentity,
+        digest: str,
+        source_timestamp: ParsedTimestamp,
+        window_start: str | None,
+        window_end: str | None,
+        *,
+        observed_at: str | None = None,
+        commit: bool = True,
+    ) -> None:
+        """Registra a observação sem criar outra versão RAW."""
+
+        if not self._table_exists("raw_observation"):
+            return
+        self.connection.execute(
+            "INSERT INTO raw_observation "
+            "(observation_key, raw_asset_id, base_id, resource_type, "
+            "external_id, payload_hash, source, window_start, window_end, "
+            "cursor, ordinal, source_timestamp_status, "
+            "source_timestamp_kind, source_updated_at_normalized, "
+            "ingestion_run_id, observed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                observation_key,
+                raw_asset_id,
+                *identity.values,
+                digest,
+                record.source_id,
+                window_start,
+                window_end,
+                str(record.cursor),
+                int(record.ordinal),
+                source_timestamp.status.value,
+                (
+                    source_timestamp.kind.value
+                    if source_timestamp.kind is not None
+                    else None
+                ),
+                source_timestamp.normalized,
+                run_id,
+                observed_at or utc_now(),
+            ),
+        )
+        if commit:
+            self.connection.commit()
 
     def save_asset(
         self,

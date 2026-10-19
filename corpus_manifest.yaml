@@ -6,6 +6,9 @@ sources:
     natureza: agregada
     resource_type: pca
     endpoint: /api/consulta/v1/pca/atualizacao
+    # O feed de atualização fragmenta os itens entre páginas. Ele serve
+    # somente para descobrir o plano; a RAW recebe o JSON do endpoint direto.
+    detail_endpoint_template: /api/pncp/v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/plano
     params:
       # A API de consulta do PCA exige os nomes abaixo e datas yyyyMMdd.
       # O CNPJ limita a primeira carga a um recorte pequeno e reproduzível.

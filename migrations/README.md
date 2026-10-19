@@ -1,4 +1,4 @@
-# Migrações controladas da camada RAW
+# Migrações controladas das camadas RAW e normalizada
 
 Os arquivos deste diretório não são executados automaticamente em bancos
 existentes. Essa decisão evita que a abertura de um banco histórico altere uma
@@ -97,7 +97,8 @@ separa a observação feita por uma execução da versão RAW observada:
 
 - `observation_key` identifica de forma determinística a mesma observação
   quando uma janela é reexecutada;
-- `raw_asset_id` aponta para a versão append-only que foi persistida;
+- `raw_asset_id` aponta para a versão append-only observada; várias janelas
+  podem apontar para a mesma versão sem duplicar o payload;
 - a janela distingue uma reversão posterior de um replay;
 - cursor e ordinal ficam registrados para auditoria, mas não integram a chave,
   pois a paginação da API pode mudar entre execuções;
@@ -105,5 +106,43 @@ separa a observação feita por uma execução da versão RAW observada:
   temporal é confiável.
 
 Registros históricos permanecem válidos mesmo sem uma linha correspondente
-em `raw_observation`. Depois da migração, novas versões persistidas recebem o
-metadado sem atualizar ou remover qualquer payload anterior.
+em `raw_observation`. Depois da migração, cada coleta registra sua observação,
+inclusive quando o conteúdo é `UNCHANGED`, sem atualizar ou remover qualquer
+payload anterior.
+
+## 004_sync_reconciliation_target.sql
+
+Adiciona uma fila durável para recursos dependentes que não possuem watermark
+temporal global: itens, resultados homologados e empenhos. A fila registra o
+alvo canônico, sua configuração, cadência, horizonte e o último resultado da
+consulta (`FOUND`, `EMPTY` ou `NOT_FOUND`).
+
+A tabela não altera `raw_asset`, não reabre janelas concluídas e não substitui
+`sync_target_progress`. Cada reconciliação devida é materializada como alvo de
+uma nova janela; a conclusão do alvo e o reagendamento da fila devem ocorrer na
+mesma transação.
+
+## 005_sync_coverage_manifest.sql
+
+Adiciona o manifesto imutável de cobertura composta. Um plano congela o
+conjunto de membros esperado para um recurso e recorte, por exemplo todas as
+modalidades de contratação ou todos os pares CNPJ/unidade de um inventário.
+
+Cada janela composta acompanha seus membros separadamente. Os watermarks dos
+jobs continuam representando somente seus shards; `sync_coverage_watermark`
+só avança quando todos os membros esperados da janela terminam e a continuidade
+temporal do plano foi comprovada. A migração não altera dados RAW nem
+checkpoints existentes.
+
+## 100_normalized_schema.sql
+
+Cria uma base normalizada independente da RAW. As chaves e hashes RAW são
+preservados como linhagem textual, sem chave estrangeira entre arquivos
+SQLite. Este DDL nunca deve ser executado sobre o banco RAW.
+
+## 101_normalization_reconciliation.sql
+
+Adiciona ao banco normalizado a auditoria de cada reconciliação incremental,
+com contagens de linhas de estágio, inseridas, atualizadas, inalteradas e
+presentes no destino. Também cria o índice usado para trocar de forma eficiente
+a versão de linhagem marcada como corrente. Esta migração não modifica a RAW.

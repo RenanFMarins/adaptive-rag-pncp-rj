@@ -17,6 +17,7 @@ from src.ingestion.incremental_runner import (  # noqa: E402
     OfflineFixtureError,
     run_offline_incremental,
 )
+from src.ingestion.online_pilot import run_online_pilot  # noqa: E402
 
 
 def safe_offline_database_path(value: str) -> Path:
@@ -45,7 +46,7 @@ def safe_offline_database_path(value: str) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Simulação offline da ingestão incremental PNCP com checkpoint v2"
+            "Ingestão incremental PNCP protegida por checkpoint v2"
         )
     )
     resources = sorted((*INCREMENTAL_RESOURCES.keys(), "ata"))
@@ -62,9 +63,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--fixture",
-        required=True,
         type=Path,
-        help="Arquivo JSON contendo páginas ou alvos simulados",
+        help="Arquivo JSON contendo páginas ou alvos simulados (offline)",
     )
     parser.add_argument(
         "--job-name",
@@ -80,9 +80,45 @@ def build_parser() -> argparse.ArgumentParser:
         "--lease-renewal-seconds", type=float, default=120.0
     )
     parser.add_argument(
+        "--reconciliation-cadence-days",
+        type=int,
+        default=None,
+        help="Sobrescreve a cadência padrão do recurso dependente",
+    )
+    parser.add_argument(
+        "--reconciliation-horizon-days",
+        type=int,
+        default=None,
+        help="Sobrescreve o horizonte padrão do recurso dependente",
+    )
+    parser.add_argument(
+        "--coverage-name",
+        default=None,
+        help="Nome estável do manifesto de cobertura composta",
+    )
+    parser.add_argument(
+        "--coverage-member",
+        default=None,
+        help="Membro/shard processado por esta execução",
+    )
+    parser.add_argument(
+        "--coverage-members",
+        nargs="+",
+        default=(),
+        help="Conjunto completo e congelado de membros esperados",
+    )
+    parser.add_argument(
         "--offline",
         action="store_true",
-        help="Obrigatório: a integração online ainda não está habilitada",
+        help="Executa somente a fixture local, sem acesso à rede",
+    )
+    parser.add_argument(
+        "--online-pilot",
+        action="store_true",
+        help=(
+            "Habilita explicitamente o piloto real de contratações: RJ, "
+            "uma modalidade, um dia e banco em /tmp"
+        ),
     )
     return parser
 
@@ -90,37 +126,60 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if not args.offline:
+    if args.offline and args.online_pilot:
         print(
-            "ERRO: a coleta incremental online ainda não foi habilitada; "
-            "execute somente com --offline e uma fixture local.",
+            "ERRO: --offline e --online-pilot são mutuamente exclusivos.",
             file=sys.stderr,
         )
         return 2
-    if not args.fixture.is_file():
+    if not args.offline and not args.online_pilot:
+        print(
+            "ERRO: escolha explicitamente --offline ou --online-pilot.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.offline and (args.fixture is None or not args.fixture.is_file()):
         print(
             f"ERRO: fixture offline não encontrada: {args.fixture}",
             file=sys.stderr,
         )
         return 2
+    if args.online_pilot and args.fixture is not None:
+        print(
+            "ERRO: --online-pilot não aceita --fixture.",
+            file=sys.stderr,
+        )
+        return 2
     database_url = f"sqlite:///{args.db_path}"
     try:
-        report = run_offline_incremental(
-            IncrementalRunConfig(
-                resource=args.resource,
-                start_date=args.start_date,
-                end_date=args.end_date,
-                uf=args.uf,
-                modality=args.modality,
-                database_url=database_url,
-                fixture_path=args.fixture,
-                job_name=args.job_name,
-                worker_id=args.worker_id,
-                resume=args.resume,
-                reprocess=args.reprocess,
-                lease_seconds=args.lease_seconds,
-                lease_renewal_seconds=args.lease_renewal_seconds,
-            )
+        config = IncrementalRunConfig(
+            resource=args.resource,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            uf=args.uf,
+            modality=args.modality,
+            database_url=database_url,
+            fixture_path=args.fixture,
+            job_name=args.job_name,
+            worker_id=args.worker_id,
+            resume=args.resume,
+            reprocess=args.reprocess,
+            lease_seconds=args.lease_seconds,
+            lease_renewal_seconds=args.lease_renewal_seconds,
+            reconciliation_cadence_days=(
+                args.reconciliation_cadence_days
+            ),
+            reconciliation_horizon_days=(
+                args.reconciliation_horizon_days
+            ),
+            coverage_name=args.coverage_name,
+            coverage_member=args.coverage_member,
+            coverage_members=tuple(args.coverage_members),
+        )
+        report = (
+            run_offline_incremental(config)
+            if args.offline
+            else run_online_pilot(config)
         )
     except (
         IncrementalConfigurationError,

@@ -131,6 +131,83 @@ class SyncWindowSpec:
         return f"window-{digest}"
 
 
+@dataclass(frozen=True)
+class CoveragePlanSpec:
+    name: str
+    base_id: str
+    resource_type: str
+    uf: str | None
+    members: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        name = self.name.strip()
+        base_id = self.base_id.strip()
+        resource_type = self.resource_type.strip()
+        if not name or not base_id:
+            raise ValueError("Plano de cobertura requer nome e base_id")
+        if not resource_type:
+            raise ValueError("Plano de cobertura requer resource_type")
+        normalized = tuple(str(member).strip() for member in self.members)
+        if not normalized or any(not member for member in normalized):
+            raise ValueError("Plano de cobertura requer membros não vazios")
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("Plano de cobertura possui membros duplicados")
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "base_id", base_id)
+        object.__setattr__(self, "resource_type", resource_type)
+        object.__setattr__(self, "members", tuple(sorted(normalized)))
+        object.__setattr__(
+            self,
+            "uf",
+            str(self.uf).strip().upper() if self.uf is not None else None,
+        )
+
+    @property
+    def configuration(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "base_id": self.base_id,
+            "resource_type": self.resource_type,
+            "uf": self.uf,
+            "members": sorted(self.members),
+        }
+
+    @property
+    def configuration_json(self) -> str:
+        return canonical_json(self.configuration)
+
+    @property
+    def plan_id(self) -> str:
+        return f"coverage-{stable_hash(self.configuration)}"
+
+
+@dataclass(frozen=True)
+class CoverageWindowSpec:
+    plan_id: str
+    window_start: date | str
+    window_end: date | str
+
+    def __post_init__(self) -> None:
+        if not self.plan_id.strip():
+            raise ValueError("Janela de cobertura requer plan_id")
+        if self.end < self.start:
+            raise ValueError("Janela de cobertura possui limites invertidos")
+
+    @property
+    def start(self) -> str:
+        return normalized_date(self.window_start)
+
+    @property
+    def end(self) -> str:
+        return normalized_date(self.window_end)
+
+    @property
+    def window_id(self) -> str:
+        return "coverage-window-" + stable_hash(
+            {"plan_id": self.plan_id, "start": self.start, "end": self.end}
+        )
+
+
 def stable_target_metadata(
     target: Mapping[str, Any], qualifier: str | None = None
 ) -> tuple[str, str]:

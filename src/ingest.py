@@ -161,12 +161,13 @@ class RawRepository:
             current = self.assets.find_current(identity)
             latest_digest = current["payload_hash"] if current else None
             status = detect_change(latest_digest, digest)
-            if status == "UPDATED" and self.assets.contains_observation(
+            observation_exists = self.assets.contains_observation(
                 identity,
                 digest,
                 timestamps.updated.raw,
                 observation_key,
-            ):
+            )
+            if status == "UPDATED" and observation_exists:
                 status = "UNCHANGED"
             if status != "UNCHANGED":
                 self.assets.insert_raw(
@@ -188,6 +189,23 @@ class RawRepository:
                     observation_key=observation_key,
                     window_start=window_start,
                     window_end=window_end,
+                    commit=False,
+                )
+            elif not observation_exists:
+                if current is None:
+                    raise RuntimeError(
+                        "Registro UNCHANGED sem versão RAW correspondente"
+                    )
+                self.assets.insert_observation(
+                    observation_key,
+                    current["id"],
+                    run_id,
+                    record,
+                    identity,
+                    digest,
+                    timestamps.updated,
+                    window_start,
+                    window_end,
                     commit=False,
                 )
             if lease_guard is not None:
@@ -379,6 +397,8 @@ def ingest_window_records(
     query_params: dict | None = None,
     corpus_version: str = "v1",
     sensitivity: str = "public",
+    coverage_window_id: str | None = None,
+    coverage_member_key: str | None = None,
 ) -> IngestionResult:
     """Persiste uma janela v2 sem reinterpretar o checkpoint legado.
 
@@ -421,13 +441,23 @@ def ingest_window_records(
                         raise ValueError(
                             "Checkpoint de alvo sem fingerprint estável"
                         )
-                    sync_repository.confirm_target(
-                        window_id,
-                        event.target_key,
-                        event.target_fingerprint,
-                        lease_token,
-                        cursor=cursor,
-                    )
+                    if event.reconciliation_outcome is None:
+                        sync_repository.confirm_target(
+                            window_id,
+                            event.target_key,
+                            event.target_fingerprint,
+                            lease_token,
+                            cursor=cursor,
+                        )
+                    else:
+                        sync_repository.confirm_reconciled_target(
+                            window_id,
+                            event.target_key,
+                            event.target_fingerprint,
+                            event.reconciliation_outcome,
+                            lease_token,
+                            cursor=cursor,
+                        )
                 continue
 
             status = repository.persist_record(
@@ -474,6 +504,8 @@ def ingest_window_records(
             lease_token,
             watermark_value,
             tie_breaker=tie_breaker,
+            coverage_window_id=coverage_window_id,
+            coverage_member_key=coverage_member_key,
         )
         return IngestionResult(
             run_id,
