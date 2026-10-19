@@ -54,6 +54,7 @@ htmlcov/
 # ==============================
 data/raw/
 data/exports/
+data/debug/backups/
 index/
 indexes/
 logs/
