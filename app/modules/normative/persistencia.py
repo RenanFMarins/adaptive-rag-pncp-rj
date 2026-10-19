@@ -22,6 +22,24 @@ coluna própria — repetir uma na outra inventaria um dado que não existe.
 Idempotente pelo chunk_id: rodar de novo ignora o que já está gravado e
 continua de onde parou.
 
+Compatível com o carregador do Luciano (persistir_chunks_jsonl_normativos, em
+app/modules/documents/services.py). Os dois gravam os mesmos trechos, então
+quem roda um depois do outro não duplica trecho; para não duplicar também o
+documento, os dois seguem a mesma convenção:
+
+- chave do documento (documents.source_file): "<base_id>|<arquivo>", por
+  exemplo "editais_normativo|planalto_l14133.html". O prefixo evita colisão
+  entre bases que tenham arquivos com o mesmo nome;
+- documents.source_url: vem do inventário da coleta (data/inventory), campo
+  "origem" de cada arquivo;
+- as duas rodadas precisam cair na mesma versão de corpus. Por padrão este
+  módulo cria a sua ("normativo-v1"); para gravar na versão que o carregador
+  do Luciano usa, passe --corpus-version-id.
+
+Bancos carregados antes dessa convenção têm a chave sem prefixo; a primeira
+execução renomeia essas chaves (migrar_chaves_antigas) em vez de criar
+documentos novos.
+
 Uso:
     python -m app.modules.normative.persistencia --versao v1
 """
@@ -40,6 +58,7 @@ from app.modules.documents.model import Document, DocumentChunk
 
 BASE_ID = "editais_normativo"
 PASTA_PROCESSADOS = Path("data/processed")
+PASTA_INVENTARIO = Path("data/inventory")
 TAMANHO_COMMIT = 500      # a cada N trechos novos o banco é gravado
 STATUS_VERSAO = "ready"
 
@@ -59,6 +78,47 @@ def nome_da_versao(versao: str) -> str:
     de formas diferentes.
     """
     return f"normativo-{versao}"
+
+
+def inventario_da_versao(versao: str, pasta: Path = PASTA_INVENTARIO) -> Path:
+    """data/inventory/v1_editais_normativo.json"""
+    return Path(pasta) / f"{versao}_{BASE_ID}.json"
+
+
+def urls_do_inventario(caminho: Path | None) -> dict[str, str]:
+    """
+    Lê o inventário da coleta e devolve {nome do arquivo: URL de origem}.
+
+    É por essa URL que o documento fica ligado à fonte oficial (Planalto,
+    PNCP). Se o inventário não existir ou vier fora do formato, devolve vazio
+    e o carregamento segue sem URL, em vez de falhar: a URL é metadado, o
+    texto dos trechos não depende dela.
+    """
+    if caminho is None or not Path(caminho).is_file():
+        return {}
+    try:
+        registros = json.loads(Path(caminho).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(registros, list):
+        return {}
+    return {
+        Path(str(item["path"])).name: str(item["origem"])
+        for item in registros
+        if isinstance(item, dict) and item.get("path") and item.get("origem")
+    }
+
+
+def chave_do_documento(metadata: dict) -> str:
+    """
+    Chave que identifica o documento em documents.source_file:
+    "<base_id>|<arquivo>".
+
+    É a mesma chave do carregador do Luciano (_document_source_file). Se as
+    duas fossem diferentes, rodar um carregador depois do outro criaria um
+    segundo documento para cada arquivo, sem nenhum trecho ligado a ele.
+    """
+    return f"{metadata['base_id']}|{metadata['source_file'].strip()}"
 
 
 # ---------------------------------------------------------------------------
@@ -139,14 +199,18 @@ def obter_ou_criar_versao(db: Session, versao: str) -> CorpusVersion:
     return nova
 
 
-def _criar_documento(corpus_version_id: int, metadata: dict) -> Document:
+def _criar_documento(
+    corpus_version_id: int,
+    metadata: dict,
+    url: str | None = None,
+) -> Document:
     return Document(
         corpus_version_id=corpus_version_id,
-        source_file=metadata["source_file"],
+        source_file=chave_do_documento(metadata),
         title=_titulo(metadata),
         base_id=metadata["base_id"],
         doc_type=metadata["doc_type"],
-        source_url=None,
+        source_url=url,
         sensitivity=metadata["sensitivity"],
     )
 
@@ -170,40 +234,92 @@ def _criar_chunk(documento: Document, texto: str, metadata: dict) -> DocumentChu
 # 5. Persistência
 # ---------------------------------------------------------------------------
 
-def _preencher_titulo(
+def migrar_chaves_antigas(db: Session, corpus_version_id: int) -> dict:
+    """
+    Renomeia as chaves antigas ("planalto_l14133.html") para a convenção
+    atual ("editais_normativo|planalto_l14133.html").
+
+    Antes do alinhamento com o carregador do Luciano, a chave era só o nome do
+    arquivo. Sem esta migração, um banco já carregado ficaria com os trechos
+    presos ao documento de chave antiga, e a primeira execução nova criaria
+    um segundo documento, vazio, para cada arquivo.
+
+    Só renomeia dentro da versão de corpus informada e só quando a chave nova
+    ainda não existe. Se já existir, o documento é deixado como está e contado
+    em "em_conflito": apagar ou juntar documentos é decisão de uma pessoa, não
+    de uma rotina de carga.
+    """
+    resultado = {"migradas": 0, "em_conflito": 0}
+    prefixo = f"{BASE_ID}|"
+
+    antigos = db.scalars(
+        select(Document).where(
+            Document.corpus_version_id == corpus_version_id,
+            Document.base_id == BASE_ID,
+            ~Document.source_file.startswith(prefixo, autoescape=True),
+        )
+    ).all()
+
+    for documento in antigos:
+        nova = f"{prefixo}{documento.source_file}"
+        ja_existe = db.scalar(
+            select(Document.id).where(
+                Document.corpus_version_id == corpus_version_id,
+                Document.source_file == nova,
+            )
+        )
+        if ja_existe is not None:
+            resultado["em_conflito"] += 1
+            continue
+        documento.source_file = nova
+        resultado["migradas"] += 1
+
+    if resultado["migradas"]:
+        db.flush()
+    return resultado
+
+
+def _sincronizar_documento(
     db: Session,
     documentos: dict[str, Document],
     corpus_version_id: int,
     metadata: dict,
-) -> bool:
+    url: str | None,
+) -> dict:
     """
-    Preenche o title do documento quando ele está vazio e o JSONL já traz o
-    número. Devolve True quando preencheu.
+    Completa o título e a URL do documento quando estão vazios e o JSONL ou o
+    inventário já trazem o valor. Devolve {"titulo": bool, "url": bool}.
 
-    Só preenche o que está vazio: um título já gravado não é sobrescrito, para
-    o carregamento não desfazer correção feita à mão no banco.
+    Só preenche o que está vazio: um valor já gravado não é sobrescrito, para
+    o carregamento não desfazer correção feita à mão no banco. É a diferença
+    de política em relação ao carregador do Luciano, que sempre sobrescreve;
+    o que os dois gravam por cima de um banco vazio é igual.
     """
+    feito = {"titulo": False, "url": False}
     titulo = _titulo(metadata)
-    if not titulo:
-        return False
+    if not titulo and not url:
+        return feito
 
-    source_file = metadata["source_file"]
-    documento = documentos.get(source_file)
+    chave = chave_do_documento(metadata)
+    documento = documentos.get(chave)
     if documento is None:
         documento = db.scalar(
             select(Document).where(
                 Document.corpus_version_id == corpus_version_id,
-                Document.source_file == source_file,
+                Document.source_file == chave,
             )
         )
         if documento is None:
-            return False
-        documentos[source_file] = documento
+            return feito
+        documentos[chave] = documento
 
-    if documento.title:
-        return False
-    documento.title = titulo
-    return True
+    if titulo and not documento.title:
+        documento.title = titulo
+        feito["titulo"] = True
+    if url and not documento.source_url:
+        documento.source_url = url
+        feito["url"] = True
+    return feito
 
 
 def persistir_jsonl(
@@ -211,25 +327,34 @@ def persistir_jsonl(
     corpus_version_id: int,
     arquivo: Path,
     tamanho_commit: int = TAMANHO_COMMIT,
+    urls_por_arquivo: dict[str, str] | None = None,
 ) -> dict:
     """
     Percorre o JSONL e grava o que ainda não está no banco.
 
     A idempotência é pelo chunk_id: uma segunda execução lê o arquivo inteiro
     de novo, pula o que já existe e grava só o que falta.
+
+    urls_por_arquivo liga cada arquivo à sua URL de origem (veja
+    urls_do_inventario). Sem ela, o documento é gravado sem URL.
     """
     arquivo = Path(arquivo)
     if not arquivo.is_file():
         raise FileNotFoundError(f"JSONL da base normativa não encontrado: {arquivo}")
     if tamanho_commit <= 0:
         raise ValueError("tamanho_commit deve ser maior que zero.")
+    urls_por_arquivo = urls_por_arquivo or {}
 
+    migracao = migrar_chaves_antigas(db, corpus_version_id)
     resumo = {
         "linhas": 0,
         "invalidas": 0,
+        "chaves_migradas": migracao["migradas"],
+        "chaves_em_conflito": migracao["em_conflito"],
         "documentos_criados": 0,
         "documentos_reaproveitados": 0,
         "titulos_preenchidos": 0,
+        "urls_preenchidas": 0,
         "chunks_criados": 0,
         "chunks_ja_existentes": 0,
     }
@@ -255,34 +380,39 @@ def persistir_jsonl(
             metadata = item["metadata"]
             chunk_id = metadata["chunk_id"]
 
-            # O título é conferido em toda passada, inclusive nos trechos que já
-            # estão gravados: quando a extração melhora e passa a achar o número
-            # do documento, o campo que ficou vazio é preenchido sem precisar
-            # apagar nada.
-            if _preencher_titulo(db, documentos, corpus_version_id, metadata):
-                resumo["titulos_preenchidos"] += 1
+            url = urls_por_arquivo.get(metadata["source_file"])
+
+            # Título e URL são conferidos em toda passada, inclusive nos
+            # trechos que já estão gravados: quando a extração melhora e passa
+            # a achar o número do documento, ou quando o inventário passa a
+            # existir, o campo que ficou vazio é preenchido sem apagar nada.
+            feito = _sincronizar_documento(
+                db, documentos, corpus_version_id, metadata, url
+            )
+            resumo["titulos_preenchidos"] += feito["titulo"]
+            resumo["urls_preenchidas"] += feito["url"]
 
             if chunk_id in ja_no_banco:
                 resumo["chunks_ja_existentes"] += 1
                 continue
 
-            source_file = metadata["source_file"]
-            documento = documentos.get(source_file)
+            chave = chave_do_documento(metadata)
+            documento = documentos.get(chave)
             if documento is None:
                 documento = db.scalar(
                     select(Document).where(
                         Document.corpus_version_id == corpus_version_id,
-                        Document.source_file == source_file,
+                        Document.source_file == chave,
                     )
                 )
                 if documento is None:
-                    documento = _criar_documento(corpus_version_id, metadata)
+                    documento = _criar_documento(corpus_version_id, metadata, url)
                     db.add(documento)
                     db.flush()
                     resumo["documentos_criados"] += 1
                 else:
                     resumo["documentos_reaproveitados"] += 1
-                documentos[source_file] = documento
+                documentos[chave] = documento
 
             db.add(_criar_chunk(documento, item["texto"], metadata))
             ja_no_banco.add(chunk_id)
@@ -296,13 +426,34 @@ def persistir_jsonl(
     return resumo
 
 
-def persistir(versao: str = "v1", arquivo: Path | None = None) -> dict:
-    """Abre o banco, garante a versão do corpus e grava o JSONL da versão."""
+def persistir(
+    versao: str = "v1",
+    arquivo: Path | None = None,
+    inventario: Path | None = None,
+    corpus_version_id: int | None = None,
+) -> dict:
+    """
+    Abre o banco, garante a versão do corpus e grava o JSONL da versão.
+
+    Sem corpus_version_id, usa (ou cria) a versão "normativo-<versao>". Com
+    ele, grava numa versão que já existe — por exemplo, a que o carregador do
+    Luciano usa — e falha se ela não existir, em vez de criar outra em silêncio.
+    """
     caminho = Path(arquivo) if arquivo else arquivo_da_versao(versao)
+    urls = urls_do_inventario(inventario or inventario_da_versao(versao))
     init_db()
     with SessionLocal() as db:
-        corpus = obter_ou_criar_versao(db, versao)
-        resumo = persistir_jsonl(db, corpus.id, caminho)
+        if corpus_version_id is None:
+            corpus_id = obter_ou_criar_versao(db, versao).id
+        else:
+            if db.get(CorpusVersion, corpus_version_id) is None:
+                raise ValueError(
+                    f"Versão de corpus {corpus_version_id} não existe no banco."
+                )
+            corpus_id = corpus_version_id
+        resumo = persistir_jsonl(db, corpus_id, caminho, urls_por_arquivo=urls)
+    resumo["corpus_version_id"] = corpus_id
+    resumo["urls_no_inventario"] = len(urls)
     return resumo
 
 
@@ -310,14 +461,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Persistência da base normativa no banco")
     parser.add_argument("--versao", default="v1")
     parser.add_argument("--arquivo", default=None)
+    parser.add_argument("--inventario", default=None,
+                        help="padrão: data/inventory/<versao>_editais_normativo.json")
+    parser.add_argument("--corpus-version-id", type=int, default=None,
+                        help="grava numa versão de corpus existente (padrão: normativo-<versao>)")
     args = parser.parse_args()
-    relatorio = persistir(args.versao, args.arquivo)
+    relatorio = persistir(args.versao, args.arquivo, args.inventario, args.corpus_version_id)
     print(
-        f"  [versao]    {nome_da_versao(args.versao)}\n"
+        f"  [versao]    corpus {relatorio['corpus_version_id']}"
+        f" ({nome_da_versao(args.versao) if args.corpus_version_id is None else 'informada'})\n"
         f"  [linhas]    {relatorio['linhas']} lidas · {relatorio['invalidas']} inválidas\n"
+        f"  [chave]     {relatorio['chaves_migradas']} migrada(s) para o prefixo · "
+        f"{relatorio['chaves_em_conflito']} em conflito\n"
         f"  [documento] {relatorio['documentos_criados']} criados · "
         f"{relatorio['documentos_reaproveitados']} reaproveitados · "
-        f"{relatorio['titulos_preenchidos']} título(s) preenchido(s)\n"
+        f"{relatorio['titulos_preenchidos']} título(s) e "
+        f"{relatorio['urls_preenchidas']} URL(s) preenchido(s)\n"
         f"  [trecho]    {relatorio['chunks_criados']} gravados · "
         f"{relatorio['chunks_ja_existentes']} já estavam no banco"
     )
