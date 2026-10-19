@@ -4,6 +4,7 @@ import argparse
 from dataclasses import asdict
 import json
 
+from src.normalization.incremental import normalize_incremental
 from src.normalization.runner import normalize_core
 
 
@@ -22,14 +23,26 @@ def main() -> None:
         default="config/pncp_rj_scope_inventory.json",
     )
     parser.add_argument(
+        "--mode",
+        choices=("build", "update"),
+        default="build",
+        help=(
+            "build cria um banco novo; update reconcilia uma RAW cumulativa "
+            "com um banco normalizado existente"
+        ),
+    )
+    parser.add_argument(
         "--known-empenho-gaps",
         type=int,
         default=0,
         help="Quantidade auditada de alvos de empenho com lacuna conhecida",
     )
     args = parser.parse_args()
-    transform_version = args.transform_version or "normalized-v1"
-    result = normalize_core(
+    operation = normalize_core if args.mode == "build" else normalize_incremental
+    transform_version = args.transform_version or (
+        "normalized-v1" if args.mode == "build" else "normalized-v2-incremental"
+    )
+    result = operation(
         args.raw_database,
         args.output_database,
         transform_version=transform_version,
