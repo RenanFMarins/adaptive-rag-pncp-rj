@@ -17,23 +17,19 @@ from src.ingestion.incremental_runner import (  # noqa: E402
     OfflineFixtureError,
     run_offline_incremental,
 )
-from src.ingestion.online_pilot import run_online_pilot  # noqa: E402
+from src.ingestion.online_pilot import (  # noqa: E402
+    run_online_operational,
+    run_online_pilot,
+)
 
 
-def safe_offline_database_path(value: str) -> Path:
+def safe_sqlite_database_path(value: str) -> Path:
     candidate = Path(value).expanduser()
     if not candidate.is_absolute():
         raise argparse.ArgumentTypeError(
-            "--db-path deve ser absoluto e apontar para uma cópia em /tmp"
+            "--db-path deve usar um caminho absoluto"
         )
     resolved = candidate.resolve()
-    temporary_root = Path(tempfile.gettempdir()).resolve()
-    try:
-        resolved.relative_to(temporary_root)
-    except ValueError as error:
-        raise argparse.ArgumentTypeError(
-            "Nesta etapa, --db-path deve permanecer dentro de /tmp"
-        ) from error
     if resolved.is_dir():
         raise argparse.ArgumentTypeError("--db-path não pode ser diretório")
     if resolved.suffix.lower() not in {".db", ".sqlite"}:
@@ -41,6 +37,14 @@ def safe_offline_database_path(value: str) -> Path:
             "Use um arquivo SQLite com extensão .db ou .sqlite"
         )
     return resolved
+
+
+def _is_temporary_path(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(Path(tempfile.gettempdir()).resolve())
+    except ValueError:
+        return False
+    return True
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,8 +62,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--db-path",
         required=True,
-        type=safe_offline_database_path,
-        help="Banco temporário/cópia isolada; obrigatoriamente dentro de /tmp",
+        type=safe_sqlite_database_path,
+        help="Caminho absoluto do banco SQLite",
     )
     parser.add_argument(
         "--fixture",
@@ -120,21 +124,45 @@ def build_parser() -> argparse.ArgumentParser:
             "uma modalidade, um dia e banco em /tmp"
         ),
     )
+    parser.add_argument(
+        "--online-operational",
+        action="store_true",
+        help=(
+            "Habilita uma janela real controlada no banco operacional; "
+            "exige confirmação redundante do caminho e log explícito"
+        ),
+    )
+    parser.add_argument(
+        "--confirm-operational-database",
+        type=safe_sqlite_database_path,
+        default=None,
+        help="Repita exatamente o caminho absoluto de --db-path",
+    )
+    parser.add_argument(
+        "--log-path",
+        type=Path,
+        default=None,
+        help="Log JSONL absoluto e obrigatório no modo operacional",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.offline and args.online_pilot:
+    selected_modes = sum(
+        (args.offline, args.online_pilot, args.online_operational)
+    )
+    if selected_modes != 1:
         print(
-            "ERRO: --offline e --online-pilot são mutuamente exclusivos.",
+            "ERRO: escolha exatamente um modo: --offline, --online-pilot "
+            "ou --online-operational.",
             file=sys.stderr,
         )
         return 2
-    if not args.offline and not args.online_pilot:
+    if not args.online_operational and not _is_temporary_path(args.db_path):
         print(
-            "ERRO: escolha explicitamente --offline ou --online-pilot.",
+            "ERRO: --offline e --online-pilot exigem banco dentro de /tmp.",
             file=sys.stderr,
         )
         return 2
@@ -144,12 +172,36 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
-    if args.online_pilot and args.fixture is not None:
+    if (
+        args.online_pilot or args.online_operational
+    ) and args.fixture is not None:
         print(
-            "ERRO: --online-pilot não aceita --fixture.",
+            "ERRO: modos online não aceitam --fixture.",
             file=sys.stderr,
         )
         return 2
+    if args.online_operational:
+        if args.confirm_operational_database != args.db_path:
+            print(
+                "ERRO: --confirm-operational-database deve repetir "
+                "exatamente --db-path.",
+                file=sys.stderr,
+            )
+            return 2
+        if not args.db_path.is_file():
+            print("ERRO: banco operacional não existe.", file=sys.stderr)
+            return 2
+        if (
+            args.log_path is None
+            or not args.log_path.is_absolute()
+            or args.log_path.suffix.lower() != ".jsonl"
+        ):
+            print(
+                "ERRO: --log-path operacional deve ser absoluto e terminar "
+                "em .jsonl.",
+                file=sys.stderr,
+            )
+            return 2
     database_url = f"sqlite:///{args.db_path}"
     try:
         config = IncrementalRunConfig(
@@ -175,12 +227,16 @@ def main(argv: list[str] | None = None) -> int:
             coverage_name=args.coverage_name,
             coverage_member=args.coverage_member,
             coverage_members=tuple(args.coverage_members),
+            log_path=args.log_path,
         )
-        report = (
-            run_offline_incremental(config)
-            if args.offline
-            else run_online_pilot(config)
-        )
+        if args.offline:
+            report = run_offline_incremental(config)
+        elif args.online_pilot:
+            report = run_online_pilot(config)
+        else:
+            report = run_online_operational(
+                config, args.confirm_operational_database
+            )
     except (
         IncrementalConfigurationError,
         OfflineFixtureError,

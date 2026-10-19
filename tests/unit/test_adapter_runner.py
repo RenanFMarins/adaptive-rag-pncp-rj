@@ -342,6 +342,31 @@ class AdapterRunnerTests(unittest.TestCase):
         ):
             run_adapter_incremental(config, plan)
 
+    def test_operational_database_requires_matching_confirmation(self):
+        database = Path.cwd() / "data" / "operational.db"
+        config = self.config("contratacao", "2023-04-01", "2023-04-01")
+        config = IncrementalRunConfig(
+            **{
+                **config.__dict__,
+                "database_url": f"sqlite:///{database}",
+            }
+        )
+        plan = IncrementalAdapterPlan(
+            endpoint="/api",
+            filters={},
+            event_provider=lambda _: (),
+        )
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError, "Confirmação operacional"
+        ):
+            run_adapter_incremental(
+                config,
+                plan,
+                confirmed_operational_database=database.with_name(
+                    "outro.db"
+                ),
+            )
+
     def test_rejects_existing_database_with_partial_migrations(self):
         with sqlite3.connect(self.database) as connection:
             connection.executescript(SCHEMA)

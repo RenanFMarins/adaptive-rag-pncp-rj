@@ -88,6 +88,35 @@ def _require_temporary_database(database_url: str) -> Path:
     return path
 
 
+def _require_operational_database(
+    database_url: str, confirmed_database: Path
+) -> Path:
+    path = Path(database_path(database_url)).resolve()
+    confirmed = confirmed_database.expanduser().resolve()
+    if path != confirmed:
+        raise IncrementalConfigurationError(
+            "Confirmação operacional diverge do banco solicitado"
+        )
+    temporary_root = Path(tempfile.gettempdir()).resolve()
+    try:
+        path.relative_to(temporary_root)
+    except ValueError:
+        pass
+    else:
+        raise IncrementalConfigurationError(
+            "Use o modo piloto para bancos localizados em /tmp"
+        )
+    if not path.is_file():
+        raise IncrementalConfigurationError(
+            "Banco operacional confirmado não existe"
+        )
+    if path.suffix.lower() not in {".db", ".sqlite"}:
+        raise IncrementalConfigurationError(
+            "Banco operacional deve usar extensão .db ou .sqlite"
+        )
+    return path
+
+
 def _require_temporary_path(path: Path) -> Path:
     resolved = path.expanduser().resolve()
     temporary_root = Path(tempfile.gettempdir()).resolve()
@@ -97,6 +126,19 @@ def _require_temporary_path(path: Path) -> Path:
         raise IncrementalConfigurationError(
             "Artefatos do runner de adaptador devem permanecer em /tmp"
         ) from error
+    return resolved
+
+
+def _require_operational_log(path: Path) -> Path:
+    if not path.is_absolute():
+        raise IncrementalConfigurationError(
+            "Log operacional deve usar caminho absoluto"
+        )
+    resolved = path.expanduser().resolve()
+    if resolved.suffix.lower() != ".jsonl":
+        raise IncrementalConfigurationError(
+            "Log operacional deve usar extensão .jsonl"
+        )
     return resolved
 
 
@@ -168,15 +210,21 @@ def _require_incremental_schema(connection: sqlite3.Connection) -> None:
 def run_adapter_incremental(
     config: IncrementalRunConfig,
     plan: IncrementalAdapterPlan,
+    *,
+    confirmed_operational_database: Path | None = None,
 ) -> IncrementalRunReport:
-    """Executa adaptadores injetados contra checkpoint v2 em banco temporário.
+    """Executa adaptadores injetados contra checkpoint v2.
 
-    A função deliberadamente não instancia transporte e não está ligada ao
-    CLI. Testes podem injetar respostas simuladas; um futuro piloto controlado
-    poderá injetar um transporte real sem alterar a orquestração.
+    Por padrão, banco e logs permanecem restritos a ``/tmp``. A escrita fora
+    dele exige repetir explicitamente o caminho operacional confirmado.
     """
 
-    _require_temporary_database(config.database_url)
+    if confirmed_operational_database is None:
+        sqlite_path = _require_temporary_database(config.database_url)
+    else:
+        sqlite_path = _require_operational_database(
+            config.database_url, confirmed_operational_database
+        )
     definition = resource_definition(config.resource)
     if definition.strategy == ENDPOINT_STRATEGY and plan.discoveries:
         raise IncrementalConfigurationError(
@@ -337,11 +385,13 @@ def run_adapter_incremental(
             base_id="pncp",
             natureza=definition.natureza,
             logger=JsonlLogger(
-                _require_temporary_path(config.log_path)
+                (
+                    _require_temporary_path(config.log_path)
+                    if confirmed_operational_database is None
+                    else _require_operational_log(config.log_path)
+                )
                 if config.log_path is not None
-                else _require_temporary_database(
-                    config.database_url
-                ).with_suffix(".incremental.jsonl")
+                else sqlite_path.with_suffix(".incremental.jsonl")
             ),
             query_params={
                 **dict(plan.filters),

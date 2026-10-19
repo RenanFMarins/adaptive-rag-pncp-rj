@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from app.core.database.repositories import SyncRepository
-from src.fetch_incremental import build_parser, main
+from src.fetch_incremental import main
 from src.ingest import RawRepository, ingest_records
 from src.ingestion.incremental_runner import (
     IncrementalRunConfig,
@@ -148,7 +148,7 @@ class IncrementalRunnerTests(unittest.TestCase):
             )
 
         self.assertEqual(status, 2)
-        self.assertIn("--offline ou --online-pilot", stderr.getvalue())
+        self.assertIn("--online-operational", stderr.getvalue())
         self.assertFalse(self.database.exists())
 
     def test_cli_routes_explicit_online_pilot_without_fixture(self):
@@ -199,10 +199,10 @@ class IncrementalRunnerTests(unittest.TestCase):
 
     def test_cli_rejects_operational_database_path(self):
         fixture = self.endpoint_fixture([])
-        parser = build_parser()
         operational = Path(__file__).parents[2] / "data" / "operational.db"
-        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
-            parser.parse_args(
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            status = main(
                 [
                     "--resource",
                     "contratacao",
@@ -219,6 +219,93 @@ class IncrementalRunnerTests(unittest.TestCase):
                     "--offline",
                 ]
             )
+
+        self.assertEqual(status, 2)
+        self.assertIn("dentro de /tmp", stderr.getvalue())
+
+    def test_cli_routes_explicit_operational_mode_with_double_confirmation(self):
+        report = IncrementalRunReport(
+            job_id="job-1",
+            window_id="window-1",
+            run_id="run-1",
+            resource="contratacao",
+            strategy="endpoint",
+            status="SUCCEEDED",
+            records_seen=0,
+            new=0,
+            updated=0,
+            unchanged=0,
+            lease_renewals=0,
+            watermark_value="2023-04-01T23:59:59.999999",
+            resumed=False,
+            reprocessed=False,
+        )
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            database = Path(directory) / "operational.db"
+            database.touch()
+            log_path = Path(directory) / "operational.jsonl"
+            stdout = io.StringIO()
+            with patch(
+                "src.fetch_incremental.run_online_operational",
+                return_value=report,
+            ) as operational, redirect_stdout(stdout):
+                status = main(
+                    [
+                        "--resource",
+                        "contratacao",
+                        "--start-date",
+                        "2023-04-01",
+                        "--end-date",
+                        "2023-04-01",
+                        "--uf",
+                        "RJ",
+                        "--modality",
+                        "6",
+                        "--db-path",
+                        str(database),
+                        "--confirm-operational-database",
+                        str(database),
+                        "--log-path",
+                        str(log_path),
+                        "--online-operational",
+                    ]
+                )
+
+        self.assertEqual(status, 0)
+        operational.assert_called_once()
+        config, confirmation = operational.call_args.args
+        self.assertEqual(confirmation, database.resolve())
+        self.assertEqual(config.log_path, log_path)
+        self.assertEqual(json.loads(stdout.getvalue())["status"], "SUCCEEDED")
+
+    def test_cli_rejects_operational_path_without_matching_confirmation(self):
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            database = Path(directory) / "operational.db"
+            database.touch()
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                status = main(
+                    [
+                        "--resource",
+                        "contratacao",
+                        "--start-date",
+                        "2023-04-01",
+                        "--end-date",
+                        "2023-04-01",
+                        "--uf",
+                        "RJ",
+                        "--modality",
+                        "6",
+                        "--db-path",
+                        str(database),
+                        "--log-path",
+                        str(Path(directory) / "operational.jsonl"),
+                        "--online-operational",
+                    ]
+                )
+
+        self.assertEqual(status, 2)
+        self.assertIn("deve repetir exatamente", stderr.getvalue())
 
     def test_pca_fixture_persists_one_complete_plan(self):
         fixture = self.endpoint_fixture([self.pca_record()])

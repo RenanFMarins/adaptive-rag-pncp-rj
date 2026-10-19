@@ -57,9 +57,12 @@ endpoints operacionais documentados continuam sob `/v1`.
 
 ### Coletor incremental e piloto online
 
-`src/fetch_incremental.py` exige a escolha explícita entre `--offline` e
-`--online-pilot`; ambos exigem banco dentro de `/tmp`. O piloto online aceita
-somente contratações do RJ, uma modalidade e um dia.
+`src/fetch_incremental.py` exige a escolha explícita entre `--offline`,
+`--online-pilot` e `--online-operational`. Os dois primeiros exigem banco
+dentro de `/tmp`. O modo operacional exige que o caminho absoluto de um banco
+existente seja repetido em `--confirm-operational-database` e que um log JSONL
+absoluto seja informado. Os dois modos online aceitam somente contratações do
+RJ, uma modalidade e um dia.
 `src/ingestion/incremental_runner.py` classifica os recursos assim:
 
 | Estratégia atual | Recursos |
@@ -68,8 +71,9 @@ somente contratações do RJ, uma modalidade e um dia.
 | Relacionamento | `contratacao_item`, `resultado_item`, `empenho` |
 
 Essa divisão foi confirmada pela documentação oficial. Somente o adaptador de
-contratações está exposto no piloto online; os demais continuam bloqueados no
-CLI, embora possuam testes simulados e evidências reais controladas. [CÓDIGO]
+contratações está exposto nos modos online; os demais continuam bloqueados
+no CLI, embora possuam testes simulados e evidências reais controladas.
+[CÓDIGO]
 
 Os coletores históricos são uma base de reaproveitamento, não adaptadores
 incrementais prontos:

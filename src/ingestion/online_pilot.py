@@ -25,25 +25,31 @@ CONTRATACAO_UPDATE_ENDPOINT = (
 )
 
 
-def run_online_pilot(config: IncrementalRunConfig):
-    """Executa somente o piloto de contratação, protegido pelo runner /tmp."""
-
+def _validate_online_scope(config: IncrementalRunConfig) -> None:
     if config.resource != "contratacao":
         raise IncrementalConfigurationError(
-            "Piloto online habilitado somente para contratacao"
+            "Execução online habilitada somente para contratacao"
         )
     if config.normalized_start != config.normalized_end:
         raise IncrementalConfigurationError(
-            "Piloto online aceita exatamente uma janela de um dia"
+            "Execução online aceita exatamente uma janela de um dia"
         )
     if config.uf != "RJ":
         raise IncrementalConfigurationError(
-            "Piloto online permanece restrito à UF RJ"
+            "Execução online permanece restrita à UF RJ"
         )
     if config.modality not in range(1, 15):
         raise IncrementalConfigurationError(
-            "Piloto online requer modalidade entre 1 e 14"
+            "Execução online requer modalidade entre 1 e 14"
         )
+
+
+def _run_online_contracting(
+    config: IncrementalRunConfig,
+    *,
+    confirmed_operational_database: Path | None = None,
+):
+    _validate_online_scope(config)
     source_id = config.job_name or (
         f"pncp_incremental_pilot_contratacao_rj_m{config.modality:02d}"
     )
@@ -51,8 +57,14 @@ def run_online_pilot(config: IncrementalRunConfig):
         config = IncrementalRunConfig(
             **{**config.__dict__, "job_name": source_id}
         )
-    sqlite_path = Path(database_path(config.database_url))
-    http_log = sqlite_path.with_suffix(".http.jsonl")
+    sqlite_path = Path(database_path(config.database_url)).resolve()
+    http_log = (
+        config.log_path.with_name(
+            f"{config.log_path.stem}.http{config.log_path.suffix}"
+        )
+        if config.log_path is not None
+        else sqlite_path.with_suffix(".http.jsonl")
+    )
     filters = {
         "codigoModalidadeContratacao": config.modality,
         "uf": config.uf,
@@ -82,7 +94,32 @@ def run_online_pilot(config: IncrementalRunConfig):
             retry_backoff_seconds=0.5,
         ),
     )
-    return run_adapter_incremental(config, plan)
+    return run_adapter_incremental(
+        config,
+        plan,
+        confirmed_operational_database=confirmed_operational_database,
+    )
 
 
-__all__ = ["run_online_pilot"]
+def run_online_pilot(config: IncrementalRunConfig):
+    """Executa o piloto de contratação, protegido pelo runner /tmp."""
+
+    return _run_online_contracting(config)
+
+
+def run_online_operational(
+    config: IncrementalRunConfig, confirmed_database: Path
+):
+    """Executa uma janela real com confirmação explícita do banco."""
+
+    if config.log_path is None:
+        raise IncrementalConfigurationError(
+            "Execução operacional requer --log-path explícito"
+        )
+    return _run_online_contracting(
+        config,
+        confirmed_operational_database=confirmed_database,
+    )
+
+
+__all__ = ["run_online_operational", "run_online_pilot"]

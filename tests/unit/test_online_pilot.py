@@ -7,7 +7,10 @@ from src.ingestion.incremental_runner import (
     IncrementalConfigurationError,
     IncrementalRunConfig,
 )
-from src.ingestion.online_pilot import run_online_pilot
+from src.ingestion.online_pilot import (
+    run_online_operational,
+    run_online_pilot,
+)
 
 
 class OnlinePilotTests(unittest.TestCase):
@@ -65,6 +68,28 @@ class OnlinePilotTests(unittest.TestCase):
         self.assertEqual(
             plan.filters,
             {"codigoModalidadeContratacao": 6, "uf": "RJ"},
+        )
+
+    def test_operational_requires_explicit_log(self):
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError, "--log-path"
+        ):
+            run_online_operational(self.config(), self.database)
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    def test_operational_delegates_database_confirmation(self, run_adapter):
+        sentinel = object()
+        run_adapter.return_value = sentinel
+        log_path = self.database.with_suffix(".jsonl")
+
+        result = run_online_operational(
+            self.config(log_path=log_path), self.database
+        )
+
+        self.assertIs(result, sentinel)
+        self.assertEqual(
+            run_adapter.call_args.kwargs["confirmed_operational_database"],
+            self.database,
         )
 
 
