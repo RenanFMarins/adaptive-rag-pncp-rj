@@ -169,11 +169,12 @@ A cópia pós-merge apresentou `quick_check = ok`, zero violações de FK,
 1.664.401 linhagens correntes e nenhuma duplicidade. O arquivo temporário foi
 removido depois da validação; banco e backup oficiais permaneceram intactos.
 
-A suíte completa do projeto permaneceu aprovada: `263 passed`.
+A suíte completa do projeto permaneceu aprovada: `263 passed` nessa fase.
 
 ## 11. Decisão
 
 **BASE NORMALIZADA OFICIAL LOCAL APROVADA.**
 
-Antes de qualquer release, ainda é obrigatório implementar e validar a
-estratégia de sanitização/controle de acesso para identificadores pessoais.
+A estratégia de sanitização foi implementada e validada depois desta
+promoção. A política, as evidências e os limites de publicação estão em
+`docs/FASE_4_EXPORTACAO_NORMALIZADA_SANITIZADA.md`.
