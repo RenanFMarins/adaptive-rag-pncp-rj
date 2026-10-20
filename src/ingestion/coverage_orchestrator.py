@@ -54,7 +54,8 @@ class ContractingCoveragePlan:
     @property
     def pending_count(self) -> int:
         return sum(
-            member.action in {"RUN", "RESUME"} for member in self.members
+            member.action in {"RUN", "RESUME", "REPROCESS"}
+            for member in self.members
         )
 
 
@@ -135,6 +136,7 @@ def plan_contracting_coverage(
     *,
     coverage_name: str = DEFAULT_COVERAGE_NAME,
     modalities: Iterable[int] = CONTRACTING_MODALITIES,
+    reprocess_completed: bool = False,
 ) -> ContractingCoveragePlan:
     day = normalized_date(run_date)
     selected = tuple(sorted(set(int(value) for value in modalities)))
@@ -200,8 +202,12 @@ def plan_contracting_coverage(
                     action = "BLOCK"
                     reason = "membro concluído aponta para outro job ou janela"
                 else:
-                    action = "SKIP"
-                    reason = "membro já concluído"
+                    action = "REPROCESS" if reprocess_completed else "SKIP"
+                    reason = (
+                        "membro concluído dentro da sobreposição"
+                        if reprocess_completed
+                        else "membro já concluído"
+                    )
             elif member is not None and member["sync_window_id"] is not None:
                 sync_window = connection.execute(
                     "SELECT * FROM sync_window WHERE id=?",
@@ -241,7 +247,7 @@ def plan_contracting_coverage(
                     reason = "janela pendente possui tentativa anterior"
                 else:
                     reason = "janela criada sem tentativa nem vínculo"
-            if running and action in {"RUN", "RESUME"}:
+            if running and action in {"RUN", "RESUME", "REPROCESS"}:
                 action = "BLOCK"
                 reason = "existe ingestion_run RUNNING no banco"
             actions.append(
@@ -299,7 +305,10 @@ def execute_contracting_coverage(
         )
 
     selected = tuple(item for item in plan.members if item.action != "SKIP")
-    if any(item.action not in {"RUN", "RESUME"} for item in selected):
+    if any(
+        item.action not in {"RUN", "RESUME", "REPROCESS"}
+        for item in selected
+    ):
         raise IncrementalConfigurationError(
             "Plano possui ação operacional desconhecida"
         )
@@ -320,6 +329,7 @@ def execute_contracting_coverage(
             job_name=f"pncp_incremental_contratacao_rj_m{item.modality:02d}",
             worker_id=f"coverage-operational-m{item.modality:02d}",
             resume=item.action == "RESUME",
+            reprocess=item.action == "REPROCESS",
             coverage_name=plan.coverage_name,
             coverage_member=item.member_key,
             coverage_members=all_members,

@@ -39,6 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument(
+        "--reprocess-completed",
+        action="store_true",
+        help="Reprocessa membros concluídos de uma janela sobreposta",
+    )
+    parser.add_argument(
         "--confirm-operational-database",
         type=safe_sqlite_database_path,
         default=None,
@@ -54,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
             args.db_path,
             args.date,
             coverage_name=args.coverage_name,
+            reprocess_completed=args.reprocess_completed,
         )
         output = {"plan": asdict(plan), "reports": []}
         if args.execute:

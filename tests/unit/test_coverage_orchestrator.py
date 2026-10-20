@@ -109,6 +109,21 @@ class CoverageOrchestratorTests(unittest.TestCase):
         self.assertEqual(actions[8], "BLOCK")
         self.assertEqual(actions[14], "RUN")
 
+    def test_overlap_marks_completed_members_for_reprocessing(self):
+        connection, sync, window = self.create_coverage()
+        self.attach_member(sync, window, 6, "COMPLETED")
+        connection.close()
+
+        plan = plan_contracting_coverage(
+            self.database, self.DAY, reprocess_completed=True
+        )
+        modality_six = next(
+            item for item in plan.members if item.modality == 6
+        )
+
+        self.assertEqual(modality_six.action, "REPROCESS")
+        self.assertTrue(plan.ready)
+
     def test_frozen_manifest_with_other_members_is_rejected(self):
         connection = initialize_database(f"sqlite:///{self.database}")
         sync = SyncRepository(connection)
@@ -172,6 +187,14 @@ class CoverageOrchestratorTests(unittest.TestCase):
                 "job-8",
                 "window-8",
             ),
+            CoverageMemberAction(
+                9,
+                "modalidade:9",
+                "REPROCESS",
+                "sobreposição",
+                "job-9",
+                "window-9",
+            ),
         )
         plan = ContractingCoveragePlan(
             str(database),
@@ -208,14 +231,18 @@ class CoverageOrchestratorTests(unittest.TestCase):
             sleeper=sleeper,
         )
 
-        self.assertEqual(len(reports), 2)
-        self.assertEqual(runner.call_count, 2)
+        self.assertEqual(len(reports), 3)
+        self.assertEqual(runner.call_count, 3)
         first = runner.call_args_list[0].args[0]
         second = runner.call_args_list[1].args[0]
+        third = runner.call_args_list[2].args[0]
         self.assertFalse(first.resume)
         self.assertTrue(second.resume)
-        self.assertEqual(first.coverage_members, coverage_members((1, 6, 8)))
-        sleeper.assert_called_once_with(30.0)
+        self.assertTrue(third.reprocess)
+        self.assertEqual(
+            first.coverage_members, coverage_members((1, 6, 8, 9))
+        )
+        self.assertEqual(sleeper.call_count, 2)
 
     def test_executor_rejects_short_delay_and_blocked_plan(self):
         plan = ContractingCoveragePlan(
