@@ -1,4 +1,118 @@
-version: 1
+scenario_id: contratacoes-rj
+version: "2026-09-16"              # data do congelamento do corpus
+description: "Contratações públicas do Estado do RJ, ano-base 2025"
+
+bases:
+
+  - base_id: contratos_estruturado
+    natureza: estruturada            # normativa | estruturada | conversacional | agregada
+    fonte: "PNCP - API de consulta v3"
+    acesso:
+      tipo: rest_api                 # rest_api | http_pdf | arquivo_local | sintetico
+      endpoint: "https://pncp.gov.br/api/consulta/v1/contratos"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+      consulta: "https://pncp.gov.br/app/contratos"
+      params:
+        dataInicial: "2025-01-01"
+        dataFinal: "2025-12-31"
+        uf: "RJ"
+      paginacao: { campo: "pagina", tamanho: 50 }
+      rate_limit_seg: 1.0
+    selecao_deterministica: true     # mesmo manifesto ⇒ mesmo corpus
+    criterio_selecao: "Contratos e contratações registrados no PNCP, com UF=RJ e período fechado de 01/01/2025 a 31/12/2025."
+    volume_alvo: 1200                # registros esperados; divergência grande = investigar
+    formato: json
+    licenca: "Dados abertos gov.br - atribuição"
+    sensitivity_default: publico     # publico | interno | restrito
+    campo_vigencia: "dataVigenciaFim"
+    chunking_sugerido: "1 contrato = 1 chunk, serializado em linguagem natural"
+    metadados_extras: [orgao, modalidade, valor, municipio, ano, numeroControlePNCP]
+
+
+  - base_id: editais_normativo
+    natureza: normativa
+    fonte: "Planalto (Lei 14.133/2021) + decretos estaduais RJ + editais de órgãos do RJ no PNCP"
+    acesso:
+      tipo: http_pdf                  # download por URL; a Lei 14.133 (Planalto) vem em HTML, os editais em PDF
+      urls:
+        - "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm" #lei 14.133/2021, ler o arquivo como cp1252 para os acentos saírem certos
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/926/arquivos/1" #equipamentos
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/11867889000125/compras/2025/48/arquivos/1" #materiais de saúde
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/4831/arquivos/9" #material de escritório
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/6553/arquivos/1" #licenciamento de software
+        - "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/921/arquivos/1" #medicamentos
+      rate_limit_seg: 2.0
+      # Decretos estaduais RJ: o site de origem bloqueia download automático (HTTP 403).
+      # Baixados manualmente no navegador (Ctrl+P > Salvar como PDF), com autorização do professor.
+      # Lista oficial: https://redelog.rj.gov.br/redelog/legislacao-licitacoes/
+      arquivos_locais:
+        pasta: "data/manual/editais_normativo/"
+        baixado_em: "2026-09-18"
+        arquivos:
+          - { arquivo: "decreto-48760-2023-pca.pdf", norma: "Decreto RJ 48.760/2023 - PCA", sha256: "66802a832cac73037c3859a9976ea738a36e88d67c7afae6d94511f9bdddd99d", origem: "https://leisestaduais.com.br/rj/decreto-n-48760-2023-rio-de-janeiro-implementa-o-plano-de-contratacoes-anual-pca-e-institui-o-sistema-pca-rj-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional" }
+          - { arquivo: "decreto-49129-2024-altera-pca.pdf", norma: "Decreto RJ 49.129/2024 - altera o 48.760", sha256: "4f40867f0c0333496b5cd9288c7ba61603c08174654853ecafc82057f26a26fe", origem: "https://leisestaduais.com.br/rj/decreto-n-49129-2024-rio-de-janeiro-altera-o-decreto-no-48-760-de-23-de-outubro-de-2023-e-revoga-os-dispositivos-que-menciona" }
+          - { arquivo: "decreto-48778-2023-menor-preco.pdf", norma: "Decreto RJ 48.778/2023 - menor preço/maior desconto", sha256: "1dd02eac1ed65f243c7551bd501b955b541dfc8aca474fca07dfc96e7257f332", origem: "https://leisestaduais.com.br/rj/decreto-n-48778-2023-rio-de-janeiro-regulamenta-as-licitacoes-pelos-criterios-de-julgamento-por-menor-preco-ou-por-maior-desconto-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional" }
+          - { arquivo: "decreto-48816-2023-fase-preparatoria.pdf", norma: "Decreto RJ 48.816/2023 - fase preparatória", sha256: "0aafdd4c0f0de58cdc0ac234336caf7331c053c09a242b31ceb86aab359bc02c", origem: "https://leisestaduais.com.br/rj/decreto-n-48816-2023-rio-de-janeiro-regulamenta-a-fase-preparatoria-das-contratacoes-de-que-trata-a-lei-no-14-133-de-1o-de-abril-de-2021-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional" }
+          - { arquivo: "decreto-48817-2023-gestao-fiscalizacao.pdf", norma: "Decreto RJ 48.817/2023 - gestão e fiscalização", sha256: "afceff2fac64fa9a419faf5ace87580470203621b5ecf766618112143b38854f", origem: "https://leisestaduais.com.br/rj/decreto-n-48817-2023-rio-de-janeiro-regulamenta-a-gestao-e-a-fiscalizacao-das-contratacoes-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional-e-da-outras-providencias" }
+          - { arquivo: "decreto-48820-2023-contratacao-direta.pdf", norma: "Decreto RJ 48.820/2023 - contratação direta", sha256: "b8fe3f78d3490bacc5b2ce273a44a1da0da784a3b93e8b3a726f86d8febc40d4", origem: "https://leisestaduais.com.br/rj/decreto-n-48820-2023-rio-de-janeiro-regulamenta-a-contratacao-direta-de-que-trata-a-lei-no-14-133-de-1o-de-abril-de-2021-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional" }
+          - { arquivo: "decreto-48843-2023-registro-de-precos.pdf", norma: "Decreto RJ 48.843/2023 - registro de preços", sha256: "668ba5f4f42dc12fb2fca0959156b73fef495728e814456c56b451e34aaf0a44", origem: "https://leisestaduais.com.br/rj/decreto-n-48843-2023-rio-de-janeiro-regulamenta-o-sistema-de-registro-de-precos-srp-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional-e-da-outras-providencias" }
+    selecao_deterministica: true      # lista fixa de URLs + sha256 no inventário
+    criterio_selecao: "Lei 14.133/2021, decretos estaduais e editais de licitação relacionados às contratações públicas do Estado do Rio de Janeiro, considerando o ano-base 2025."
+    volume_alvo: 13
+    formato: [pdf, html]
+    licenca: "Domínio público"
+    sensitivity_default: publico
+    campo_vigencia: "data_publicacao"
+    chunking_sugerido: "Split por artigo (lei/decretos) ou cláusula (editais); artigo longo é dividido em partes com overlap de 200 caracteres; preserva a hierarquia (Art., §, inciso). Sem overlap entre artigos: cada artigo é uma unidade fechada."
+    metadados_extras: [numero_edital, numero_norma, orgao, data_publicacao, artigo, objeto, ano]
+
+
+  - base_id: atas_conversacional
+    natureza: conversacional
+    fonte: "PNCP + base sintética fornecida"
+    acesso:
+      tipo: sintetico
+      fontes:
+        - "https://pncp.gov.br/app/atas"
+        - "Base sintética fornecida no desafio"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+    selecao_deterministica: true
+    criterio_selecao: "Atas de registro de preços relacionadas às contratações públicas do Estado do Rio de Janeiro e trilhas de e-mails de compras presentes na base sintética fornecida no desafio."
+    volume_alvo: 20
+    formato: txt
+    licenca: "Dados públicos oficiais e base sintética fornecida no desafio"
+    sensitivity_default: publico
+    campo_vigencia: "data"
+    chunking_sugerido: "Split por mensagem ou evento, preservando a ordem temporal e o contexto"
+    metadados_extras: [tipo_documento, data, remetente, destinatario, assunto, processo, orgao, objeto]
+
+
+  - base_id: pca_agregada
+    natureza: agregada
+    fonte: "PNCP"
+    acesso:
+      tipo: rest_api
+      endpoint: "https://pncp.gov.br/api/consulta"
+      documentacao: "https://pncp.gov.br/api/consulta/swagger-ui/index.html"
+      portal: "https://www.gov.br/pncp/pt-br"
+      consulta_pca: "https://pncp.gov.br/app/pca"
+      params:
+        uf: "RJ"
+        ano: "2025"
+      paginacao: { campo: "pagina", tamanho: 50 }
+      rate_limit_seg: 1.0
+    selecao_deterministica: true
+    criterio_selecao: "Plano de Contratações Anual e valores homologados por item relacionados às contratações públicas do Estado do Rio de Janeiro, considerando o ano-base 2025."
+    volume_alvo: "A definir após a primeira coleta"
+    formato: json
+    licenca: "Dados abertos gov.br - atribuição"
+    sensitivity_default: publico
+    campo_vigencia: "ano"
+    chunking_sugerido: "1 item de planejamento ou item homologado = 1 unidade de recuperação"
+    metadados_extras: [orgao, cnpj_orgao, objeto, item, descricao_item, valor_estimado, valor_homologado, ano, ano_exercicio, numero_pca, numeroControlePNCP]
+
 sources:
   - id: pncp_pca_rj
     base: https://pncp.gov.br
@@ -18,8 +132,8 @@ sources:
     pagination:
       page_param: pagina
       page_size_param: tamanhoPagina
-      page_size: 10
-      max_pages: 2
+      page_size: 500
+      max_pages: 1
     request:
       timeout_seconds: 30
       rate_limit_seconds: 0.2

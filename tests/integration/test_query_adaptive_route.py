@@ -1,0 +1,195 @@
+"""Contrato HTTP do endpoint adaptativo sem depender de LLM, FAISS ou FTS5."""
+
+from __future__ import annotations
+
+import unittest
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+
+from app.core.database import get_db
+from app.core.security import get_current_user
+from app.main import app
+from src.query.adaptive_executor import AdaptiveExecutionResult
+from src.query.analyzer import QueryAnalysisError
+from src.query.planner import planejar_execucao
+from src.query.schemas import (
+    AdaptiveQueryResult,
+    KnowledgeBase,
+    QueryAnalysis,
+    QueryEntity,
+    QueryIntent,
+    QueryRoute,
+    StructuredQueryResult,
+)
+from src.retrieve import RankedChunk
+
+
+class AdaptiveQueryRouteTests(unittest.TestCase):
+    def setUp(self) -> None:
+        def test_db():
+            yield object()
+
+        app.dependency_overrides[get_db] = test_db
+        app.dependency_overrides[get_current_user] = lambda: object()
+        self.addCleanup(app.dependency_overrides.clear)
+        self.client = self.enterContext(TestClient(app))
+
+    def test_retorna_saida_estruturada_quando_plano_e_structured(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+        )
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=AdaptiveQueryResult(
+                analysis=analysis,
+                plan=planejar_execucao(analysis),
+                structured_result=StructuredQueryResult(
+                    entity=QueryEntity.CONTRATO,
+                    columns=["ano"],
+                    rows=[{"ano": 2026}],
+                    row_count=1,
+                    limit_applied=20,
+                ),
+            ),
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Quais contratos existem em 2026?"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["route"], "structured")
+        self.assertEqual(response.json()["structured_result"]["rows"], [{"ano": 2026}])
+        self.assertIsNone(response.json()["answer"])
+        self.assertEqual(response.json()["external_documents"], [])
+
+    def test_retorna_saida_rag_quando_plano_e_rag(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.RAG,
+            intent=QueryIntent.DOCUMENTAL,
+            entity=QueryEntity.DOCUMENTO,
+            bases=[KnowledgeBase.NORMATIVA],
+            semantic_query="Quais documentos são exigidos?",
+            needs_document_retrieval=True,
+        )
+        rag_result = type(
+            "RagResult",
+            (),
+            {
+                "answer": "Os documentos exigidos constam na evidência [1].",
+                "sources": [
+                    RankedChunk(
+                        chunk_id="chunk-1",
+                        content="Conteúdo",
+                        rrf_score=0.03,
+                        bm25_rank=1,
+                        bm25_score=1.0,
+                        dense_rank=1,
+                        dense_score=0.9,
+                        metadata={},
+                    )
+                ],
+            },
+        )()
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            rag_result=rag_result,
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Quais documentos são exigidos?", "top_k": 3},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["route"], "rag")
+        self.assertEqual(response.json()["answer"], rag_result.answer)
+        self.assertEqual(response.json()["sources"][0]["chunk_id"], "chunk-1")
+
+    def test_retorna_dados_sql_e_fontes_documentais_na_rota_hybrid(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.HYBRID,
+            intent=QueryIntent.COMPARISON,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA, KnowledgeBase.NORMATIVA],
+            semantic_query="Compare valores e cláusulas.",
+            needs_document_retrieval=True,
+        )
+        rag_result = type(
+            "RagResult",
+            (),
+            {"answer": "O valor está nos dados SQL e a cláusula consta em [1].", "sources": []},
+        )()
+        structured = AdaptiveQueryResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=StructuredQueryResult(
+                entity=QueryEntity.CONTRATO,
+                columns=["valor_global"],
+                rows=[{"valor_global": 100.0}],
+                row_count=1,
+                limit_applied=20,
+            ),
+        )
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=structured,
+            rag_result=rag_result,
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Compare valores e cláusulas."},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["route"], "hybrid")
+        self.assertEqual(response.json()["structured_result"]["rows"], [{"valor_global": 100.0}])
+        self.assertEqual(response.json()["answer"], rag_result.answer)
+
+    def test_retorna_campos_invalidos_quando_analyzer_rejeita_plano(self) -> None:
+        erro = QueryAnalysisError(
+            "A LLM retornou um plano inválido.",
+            erros_validacao=[
+                {
+                    "campo": "needs_document_retrieval",
+                    "mensagem": "A rota hybrid exige needs_document_retrieval igual a true.",
+                    "tipo": "value_error",
+                }
+            ],
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            side_effect=erro,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Compare dados e documento."},
+            )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.json()["detail"]["errosValidacao"][0]["campo"],
+            "needs_document_retrieval",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
