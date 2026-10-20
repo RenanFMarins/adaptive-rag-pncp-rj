@@ -162,3 +162,6 @@ BLOCK: 0
 ```
 
 Nenhuma chamada à API ou escrita no banco ocorreu nessa simulação.
+
+A janela de 19/10 foi executada e aprovada posteriormente. As evidências
+estão em `FASE_10_JANELA_19_OUTUBRO.md`.
