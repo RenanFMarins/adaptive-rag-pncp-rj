@@ -167,7 +167,5 @@ Banco, backup e logs permanecem ignorados pelo Git.
 
 **PRIMEIRA COBERTURA OFICIAL DE CONTRATAÇÕES APROVADA.**
 
-O próximo passo é planejar a janela seguinte com a política de sobreposição
-de dois dias, sem criar lacunas entre os watermarks individuais ou compostos.
-Depois de validar esse planejamento em modo somente leitura, o serviço poderá
-ser preparado para uma segunda execução supervisionada.
+O planejamento seguinte foi concluído em modo somente leitura e está descrito
+em `FASE_8_PLANEJAMENTO_JANELAS_SEGUINTES.md`.
