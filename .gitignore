@@ -55,6 +55,7 @@ htmlcov/
 data/raw/
 data/exports/
 data/debug/backups/
+data/normalized/
 index/
 indexes/
 logs/

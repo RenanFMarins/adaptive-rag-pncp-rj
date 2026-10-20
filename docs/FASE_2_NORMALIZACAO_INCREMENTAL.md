@@ -229,10 +229,16 @@ do repositório.
 
 ## 10. Pendências antes da base normalizada oficial
 
-1. criar backup do banco RAW encerrado e validar novamente seu hash;
-2. definir o caminho e a política de backup do banco normalizado oficial;
-3. gerar um artefato compactado e seu SHA-256;
-4. revisar privacidade dos quatro contratos sem NI e fornecedores PF;
-5. somente depois publicar uma release da normalizada.
+1. [x] criar backup do banco RAW encerrado e validar novamente seu hash;
+2. [x] definir o caminho e a política de backup do banco normalizado oficial;
+3. [x] gerar um artefato compactado e seu SHA-256;
+4. [x] revisar privacidade dos quatro contratos sem NI e fornecedores PF;
+5. [ ] implementar mascaramento ou controle de acesso;
+6. [ ] somente depois publicar uma release sanitizada da normalizada.
+
+A promoção local e suas evidências estão documentadas em
+`FASE_3_BASE_NORMALIZADA_OFICIAL.md`. A revisão de privacidade identificou
+4.877 fornecedores pessoa física; por isso o artefato integral não está
+autorizado para release pública.
 
 Nenhum desses passos autoriza aplicar migrações `001` a `005` na RAW oficial.
