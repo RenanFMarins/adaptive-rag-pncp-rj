@@ -116,8 +116,8 @@ systemd-analyze verify: sem erro da unidade do projeto
 
 ## 9. Decisão
 
-**PLANEJADOR APROVADO; EXECUÇÃO OFICIAL AINDA NÃO INICIADA.**
+**PLANEJADOR APROVADO.**
 
-O próximo passo é executar a cobertura de `2026-10-16` de forma
-supervisionada. Essa operação escreverá no banco oficial e, por isso, deve ser
-iniciada somente com autorização explícita.
+A cobertura de `2026-10-16` foi posteriormente autorizada e concluída. Os
+resultados estão registrados em
+`FASE_7_COBERTURA_OFICIAL_CONTRATACOES.md`.
