@@ -127,6 +127,8 @@ normalizador. Cada release deve ser recriada a partir da base normalizada
 oficial, usando a mesma chave enquanto a continuidade dos pseudônimos for
 necessária.
 
-A publicação externa ainda exige duas ações deliberadas: guardar a chave em
-local seguro fora do repositório e enviar somente o arquivo `.sqlite.gz` e o
-arquivo de checksums. Nenhum upload foi realizado nesta fase.
+A chave recebeu uma cópia secundária local em diretório privado fora do
+repositório, com permissões `700` no diretório e `600` no arquivo. O pacote,
+o manifesto e os checksums foram publicados posteriormente. As evidências da
+publicação estão em
+`docs/FASE_5_PUBLICACAO_RELEASE_NORMALIZADA.md`.
