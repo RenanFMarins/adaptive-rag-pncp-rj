@@ -94,11 +94,10 @@ plano de 16/10: 14 REPROCESS
 
 **PLANO DAS JANELAS 16–18/10 APROVADO EM MODO SOMENTE LEITURA.**
 
-As três janelas ainda não foram executadas. Antes de iniciá-las é necessário:
+O plano foi executado em 20/10/2026, na ordem definida, depois da criação e
+validação de um novo backup. As três coberturas terminaram com 14/14 membros
+concluídos, zero falhas e watermark composto em
+`2026-10-18T23:59:59.999999`.
 
-1. criar um novo backup do banco apó a Fase 7;
-2. reconfirmar que não existem coletores ativos;
-3. executar 16/10 com `--reprocess-completed`;
-4. auditar a idempotência;
-5. executar 17/10 e, depois, 18/10;
-6. validar o novo watermark composto e a integridade final.
+As evidências da execução, do versionamento real, do transporte HTTP e da
+integridade final estão em `FASE_9_EXECUCAO_JANELAS_16_18_OUTUBRO.md`.
