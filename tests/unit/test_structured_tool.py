@@ -263,5 +263,39 @@ class StructuredToolTests(unittest.TestCase):
             executar_consulta_estruturada(self.connection, analysis)
 
 
+
+    def test_restaurar_query_only_apos_consulta(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+        )
+
+        for initial_state in (0, 1):
+            with self.subTest(query_only=initial_state):
+                self.connection.execute(
+                    f"PRAGMA query_only = {initial_state}"
+                )
+                executar_consulta_estruturada(self.connection, analysis)
+                actual_state = self.connection.execute(
+                    "PRAGMA query_only"
+                ).fetchone()[0]
+                self.assertEqual(actual_state, initial_state)
+
+    def test_limite_aplicado_nao_ultrapassa_100(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            limit=100,
+        )
+
+        result = executar_consulta_estruturada(self.connection, analysis)
+
+        self.assertLessEqual(result.row_count, 100)
+        self.assertEqual(result.limit_applied, 100)
+
 if __name__ == "__main__":
     unittest.main()
