@@ -65,7 +65,7 @@ bases:
     sensitivity_default: publico
     campo_vigencia: "data_publicacao"
     chunking_sugerido: "Split por artigo (lei/decretos) ou cláusula (editais); artigo longo é dividido em partes com overlap de 200 caracteres; preserva a hierarquia (Art., §, inciso). Sem overlap entre artigos: cada artigo é uma unidade fechada."
-    metadados_extras: [numero_edital, numero_norma, orgao, data_publicacao, artigo, objeto, ano]
+    metadados_extras: [numero_norma, numero_edital, orgao, data_publicacao, fonte_data, ano, artigo, clausula, parte, tem_overlap, altera, dados_pessoais]
 
 
   - base_id: atas_conversacional
