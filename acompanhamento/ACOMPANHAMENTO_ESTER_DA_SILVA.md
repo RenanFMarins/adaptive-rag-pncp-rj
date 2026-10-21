@@ -941,7 +941,49 @@ Trabalhei junto com a Ana na comparação entre dois carregadores de dados do pr
 
 ---
 
-## Encontro 14 · DD/MM/AAAA
+## Encontro 14 · 19/10/2026
+
+### O que eu fiz hoje
+
+Trabalhei com a Ana para fechar de vez o carregamento da base normativa e fazer a indexação vetorial.
+
+O Luciano respondeu e escolheu a versão `normativo-v1` para a base normativa. Com isso unificamos os dois carregadores em um só. Antes de mexer, conferi se dava para fazer sem atrapalhar ninguém: o `pipeline_persistencia_normativa.py` dele só é chamado por ele mesmo, e nenhum outro arquivo importa a função auxiliar que ele continha. Mudamos só esse arquivo, que passou a chamar o `persistir()` do nosso carregador. Ele mantém os mesmos argumentos, mas o padrão deixou de ser o corpus de id 1 e passou a ser a versão `normativo-v1` resolvida pelo nome, porque o número do id é diferente em cada banco. Fizemos dois commits separados e abrimos o PR #53, que foi mesclado.
+
+Para ter certeza de que o problema era real, rodei os dois carregadores em bancos temporários com os 794 trechos. Os trechos saem idênticos, mas a chave do documento era diferente: rodar um depois do outro dava 26 documentos, 13 deles sem nenhum trecho. Depois do ajuste, 13 documentos e nenhum órfão. Também descobri que a minha leitura da semana passada estava desatualizada: o carregador do Luciano já preenchia o título.
+
+Rodei a migração no meu banco real. O resultado foi 13 chaves migradas para o prefixo, 13 URLs preenchidas, 794 trechos intactos, e conferi em seguida que nenhum documento ficou sem trecho.
+
+Depois fizemos a indexação FAISS. Instalei o `faiss-cpu` e o `numpy`, testei com 10 trechos e rodei os 794. A estimativa que eu tinha dado, de 10 a 20 minutos, estava errada: levou cerca de 4 minutos, a 3 vetores por segundo. A auditoria deu 794 vetores para 794 trechos, cobertura de 100% nos 13 documentos, nenhum duplicado e nenhuma inconsistência.
+
+Testei a busca com perguntas escritas com palavras diferentes das da lei. A busca por significado achou o Art. 86 (adesão à ata), o Art. 75 (dispensa por valor) e o Art. 84 (vigência da ata) onde a busca por palavra-chave errou. Mas nenhuma das buscas achou o Art. 4º da Lei 14.133, que é a resposta para "pequena empresa tem vantagem?", porque o texto dele fala em "Lei Complementar 123" e não em pequena empresa. E em duas perguntas a busca combinada piorou o resultado em relação à de significado.
+
+Escrevemos o `eval/questions.json`, que estava vazio, com as dez perguntas de referência da base normativa, cada uma com a fonte conferida no banco. Medi um baseline nas sete que têm fonte: a busca combinada acertou 6 de 7 nos 3 primeiros e 7 de 7 nos 10 primeiros.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** comparar os dois carregadores, escrever a unificação e os testes, rodar a indexação e medir a busca.
+- **O que eu conferi / mudei:** não aceitei que manter os dois carregadores era seguro sem testar, e a medição mostrou que dependia de passar o argumento certo em cada banco. Perguntei se podíamos mexer no pipeline do Luciano e só mexi depois de confirmar que ninguém mais o usava. A primeira busca com 10 trechos não provou nada sobre qualidade e só validou a indexação completa. Também percebi que a minha estimativa de tempo estava errada e passei a medir antes de estimar.
+
+### O que travou
+
+- O índice FAISS foi criado do zero, só com a base normativa. A aplicação lê `data/index/faiss/v1`, e o procedimento do time é preparar o staging a partir do `v1` e indexar em cima, então o nosso não pode substituí-lo. 
+- O Art. 4º da Lei 14.133 não aparece em nenhuma busca para a pergunta de pequena empresa.
+
+### Próximo passo
+
+- Receber a resposta do grupo sobre o índice e, se for o caso, refazer o staging a partir do `v1` deles.
+- Subir o `eval/questions.json` e transformar o script de medição no `eval/benchmark.py`.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** um carregador único na versão `normativo-v1` (PR #53), os 794 trechos migrados e indexados no FAISS com 100% de cobertura, e as perguntas de referência no `eval/questions.json`.
+- **Travou:** a promoção do índice depende do grupo.
+- **Próximo passo:** alinhar o índice com o grupo e medir a recuperação com o benchmark.
+
+---
+
+## Encontro 15 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 

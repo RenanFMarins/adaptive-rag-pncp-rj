@@ -7,9 +7,11 @@ guardado em tests/fixtures/lei_trecho.html, e não dependem de data/raw/.
     pytest tests/test_ingest_normativa.py -v
 """
 
+import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from app.modules.ingest import services
 
@@ -296,3 +298,38 @@ def test_a_reserva_nao_atropela_quem_ja_saia_certo():
 
 def test_documento_sem_numero_devolve_none():
     assert services.numero_do_edital("EDITAL DE LICITAÇÃO\nOBJETO\n") is None
+
+
+# --- contrato entre o manifesto e o corpus processado ----------------------
+# Estes dois testes leem os arquivos versionados no repositório: o manifesto e
+# o JSONL com os 794 trechos. Rodam sem rede e sem banco.
+
+RAIZ = Path(__file__).resolve().parents[1]
+JSONL_NORMATIVO = RAIZ / "data" / "processed" / "v1_editais_normativo.jsonl"
+OBRIGATORIOS = {"source_file", "doc_type", "chunk_id", "sensitivity", "base_id"}
+
+
+def _trechos_processados():
+    if not JSONL_NORMATIVO.is_file():
+        pytest.skip("JSONL processado não está no repositório")
+    with JSONL_NORMATIVO.open(encoding="utf-8") as arquivo:
+        return [json.loads(linha) for linha in arquivo if linha.strip()]
+
+
+def test_todo_trecho_tem_os_metadados_obrigatorios():
+    for trecho in _trechos_processados():
+        faltando = OBRIGATORIOS - set(trecho["metadata"])
+        assert not faltando, f"{trecho['metadata'].get('chunk_id')} sem: {faltando}"
+
+
+def test_todo_metadado_declarado_no_manifesto_existe_nos_trechos():
+    # O manifesto promete certos metadados para a base; se um deles não existir
+    # em nenhum trecho, a promessa é falsa (foi o caso de "objeto").
+    manifesto = yaml.safe_load((RAIZ / "corpus_manifest.yaml").read_text(encoding="utf-8"))
+    base = next(b for b in manifesto["bases"] if b["base_id"] == services.BASE_ID)
+    declarados = set(base["metadados_extras"])
+    existentes = {chave for t in _trechos_processados() for chave in t["metadata"]}
+
+    assert declarados - existentes == set(), (
+        f"declarados no manifesto e ausentes em todos os trechos: {declarados - existentes}"
+    )

@@ -723,3 +723,39 @@ Trabalhei junto com a Ester na comparação entre dois carregadores de dados do 
 - Comparar os dois carregadores em ambiente de teste, antes de rodar qualquer um na base principal.
 - Executar a consulta de documentos órfãos após cada carga.;
 - Confirmar o acesso ao servidor e, se estiver liberado, testar a conexão antes de indexar.
+
+## Encontro 14 · 19/10/2026
+
+### O que eu fiz hoje
+
+Eu e Ester trabalhamos juntas para fechar o carregamento da base normativa e fazer a indexação vetorial.
+
+O Luciano respondeu e escolheu a versão normativo-v1. Com isso passamos a ter um carregador só: o pipeline dele, que só ele chamava, agora usa o persistir() do nosso carregador, com os mesmos argumentos. A mudança principal é que o padrão deixou de ser "o corpus de id 1", porque esse número muda de banco para banco, e passou a ser a versão pelo nome. Rodamos os dois carregadores em bancos temporários para ter evidência: antes, um depois do outro davam 26 documentos, 13 sem nenhum trecho; depois do ajuste, 13 e nenhum órfão. O PR #53 foi mesclado.
+
+Aprendi uma coisa sobre como o sistema guarda os documentos: o trecho tem um identificador único, então o segundo carregador pulava os trechos e só criava documentos vazios ao lado. Era um erro silencioso, que não dava mensagem nenhuma.
+
+Depois indexamos a base normativa no FAISS. Pensamos que ia levar mais de dez minutos e levou cerca de quatro. A auditoria mostrou 794 vetores, cobertura de 100% e nenhuma inconsistência. Testamos a busca com perguntas escritas com palavras diferentes da lei, e a busca por significado achou artigos que a de palavra-chave não achou, como o Art. 84 sobre a vigência da ata. Mas nenhuma achou o Art. 4º da Lei 14.133, a resposta para "pequena empresa tem vantagem?", porque ele fala em "Lei Complementar 123".
+
+Escrevemos também o eval/questions.json, que estava vazio, com as dez perguntas de referência, cada uma com a fonte conferida no banco, e medimos um baseline da recuperação.
+
+### Onde usei IA e o que mudei no resultado
+
+- Ferramenta: Claude.
+- Para quê: comparar os carregadores, entender o que significava cada campo da indexação e ler o resultado da busca.
+- O que eu conferi / mudei: pedi para explicar cada passo da indexação em vez de só rodar o comando. Conferimos o que era do grupo e o que era nosso antes de alterar o pipeline do Luciano. E a primeira busca de teste não provou nada, porque só havia 10 trechos indexados.
+
+### O que travou
+
+- Nada travou no nosso trabalho.
+- O índice foi feito do zero, e a aplicação lê um v1 que pode ter os vetores do PNCP. Precisamos que o Luciano e o Alisson digam como promover sem substituir o v1.
+
+### Próximo passo
+
+- Rodar a migração do carregador no meu banco: python -m app.modules.normative.persistencia --versao v1.
+- Alinhar a promoção do índice com o Luciano e o Alisson.
+
+### Resumo do time no dia
+
+- Entregamos (base normativa): carregador único na versão normativo-v1 (PR #53), 794 trechos indexados no FAISS com 100% de cobertura e as perguntas de referência no eval/questions.json.
+- Travou: a promoção do índice depende do Luciano e do Alisson.
+- Próximo passo: alinhar o índice e medir a recuperação com o benchmark.

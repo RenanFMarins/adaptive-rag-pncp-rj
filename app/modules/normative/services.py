@@ -566,8 +566,14 @@ def hash_do_manifesto(caminho_manifesto="corpus_manifest.yaml") -> str:
     sha256 do manifesto. É o que amarra o corpus coletado à versão exata do
     manifesto que o gerou: se alguém trocar uma URL ou um volume_alvo, o hash
     muda e fica evidente que o inventário é de outro corpus.
+
+    O fim de linha é normalizado para LF antes de calcular: no Windows o Git
+    converte o arquivo para CRLF ao baixar, e sem isso a mesma versão do
+    manifesto teria um hash diferente em cada máquina. Com a normalização, o
+    hash é o do arquivo como está no repositório.
     """
-    return "sha256:" + sha256_de(Path(caminho_manifesto).read_bytes())
+    conteudo = Path(caminho_manifesto).read_bytes().replace(b"\r\n", b"\n")
+    return "sha256:" + sha256_de(conteudo)
 
 
 def inventario_json(versao, caminho_manifesto="corpus_manifest.yaml"):

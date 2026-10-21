@@ -1210,6 +1210,46 @@ Exemplo:
 python -m app.modules.normative.services fetch --manifest corpus_manifest.yaml --versao v1
 ```
 
+### Fluxo completo da base normativa
+
+Do manifesto até a busca, em ordem. Cada passo usa o resultado do anterior.
+
+1. **Nova versão e diff** (opcional): cria `v(n+1)` sem sobrescrever a anterior e gera `data/inventory/DIFF_v1_v2.md`.
+
+```bash
+python -m app.modules.normative.services update --manifest corpus_manifest.yaml
+```
+
+2. **Inventário**: gera `data/inventory/v1.json`, com o hash do manifesto, e o inventário legível.
+
+```bash
+python -m app.modules.normative.services inventory --versao v1 --manifest corpus_manifest.yaml
+```
+
+3. **Processamento em trechos**: lê `data/raw/v1/editais_normativo/` e grava `data/processed/v1_editais_normativo.jsonl` (794 trechos). Se algum trecho ficar sem data de vigência, o comando avisa no final.
+
+```bash
+python -m app.modules.ingest.services --versao v1
+```
+
+4. **Carregamento no banco**: grava os trechos em `documents` e `document_chunks`, na versão de corpus `normativo-v1`. É idempotente: rodar de novo não duplica nada. O FTS5, que faz a busca por palavra-chave (BM25), indexa os trechos sozinho, por gatilho.
+
+```bash
+python -m app.modules.normative.persistencia --versao v1
+```
+
+5. **Índice vetorial (FAISS)**: gera os vetores dos trechos no servidor de embeddings e grava em um staging. Para juntar com o índice do PNCP, use `--preparar-staging` a partir do índice atual e confira com `--auditar` antes de publicar.
+
+```bash
+python -m src.base_estruturada.pipelines.pipeline_indexacao_faiss --base-id editais_normativo --ate-concluir --indice-dir data/index/faiss/staging/<nome>
+```
+
+6. **Perguntas de referência**: `eval/questions.json` traz as perguntas da base normativa, cada uma com a fonte esperada.
+
+Antes de rodar, crie o arquivo de configuração local a partir do exemplo (`.env.example` → `.env`). Ele não vai para o Git.
+
+**O que não vai para o Git:** `data/raw/` (coletado), `data/index/` (índice FAISS), `logs/` e `.env`. O banco (`app.db`), que contém também o índice BM25 do FTS5, e o índice FAISS são compartilhados pelo Drive do grupo, e não por commit; nomeie sempre os arquivos no `git add` para o banco não entrar por engano. O corpus é reconstruído por qualquer pessoa com `fetch`, e o banco, com os passos 3 e 4.
+
 A coleta é planejada para ser:
 
 * idempotente;

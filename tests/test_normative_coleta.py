@@ -187,6 +187,26 @@ def test_inventario_json_tem_o_envelope_do_enunciado(tmp_path, monkeypatch):
     assert dados["falhas"][0]["erro"] == "HTTP 404"
 
 
+def test_hash_do_manifesto_nao_depende_do_fim_de_linha(tmp_path):
+    # No Windows o Git entrega o manifesto com CRLF; o hash tem que ser o mesmo.
+    texto = "scenario_id: x\nbases: []\n"
+    com_lf = tmp_path / "lf.yaml"
+    com_lf.write_bytes(texto.encode())
+    com_crlf = tmp_path / "crlf.yaml"
+    com_crlf.write_bytes(texto.replace("\n", "\r\n").encode())
+
+    assert services.hash_do_manifesto(com_lf) == services.hash_do_manifesto(com_crlf)
+
+
+def test_hash_do_manifesto_muda_quando_o_conteudo_muda(tmp_path):
+    a = tmp_path / "a.yaml"
+    a.write_text("volume_alvo: 13\n", encoding="utf-8")
+    b = tmp_path / "b.yaml"
+    b.write_text("volume_alvo: 14\n", encoding="utf-8")
+
+    assert services.hash_do_manifesto(a) != services.hash_do_manifesto(b)
+
+
 def test_base_ainda_nao_coletada_nao_aparece_no_inventario(tmp_path, monkeypatch):
     # Cada base entra sozinha quando a coleta dela rodar: ninguém espera ninguém.
     _inventario(tmp_path, "v1", [], monkeypatch)
