@@ -4,6 +4,7 @@ import asyncio
 import logging
 from pathlib import Path
 import re
+import sqlite3
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -51,6 +52,13 @@ class RagPerfHttpTests(unittest.TestCase):
                                   content="alpha sensitive-document", orgao="sensitive-person"))
         self.db.commit()
         temporary = self.enterContext(TemporaryDirectory())
+        normalized_database = Path(temporary) / "normalized.db"
+        sqlite3.connect(normalized_database).close()
+        self.enterContext(patch.object(
+            settings,
+            "normalized_database_url",
+            f"sqlite:///{normalized_database}",
+        ))
         cache_dir = Path(temporary) / "index"
         indexar_chunks_incrementalmente(
             [("sensitive-id", "alpha sensitive-document")],
@@ -113,7 +121,7 @@ class RagPerfHttpTests(unittest.TestCase):
         self.assertEqual(len({re.search(r"run_id=(\w+)", message)[1] for message in messages}), 1)
         completed = {re.search(r"etapa=(\w+)", message)[1] for message in messages if "status=ok" in message}
         self.assertTrue({
-            "recebimento", "analyzer", "analyzer_llm", "planner", "database_connection",
+            "recebimento", "analyzer", "analyzer_llm", "planner",
             "base_filters", "chunk_ids", "fts5", "faiss", "embedding", "faiss_load",
             "faiss_search", "faiss_filter", "rrf", "context", "llm_generation",
             "persistence", "audit", "total", "retrieval", "source_load",
@@ -192,7 +200,7 @@ class RagPerfHttpTests(unittest.TestCase):
         )
         with patch.object(settings, "rag_perf_log_enabled", True), patch(
             "app.modules.query.services.analisar_pergunta", return_value=analysis
-        ), patch("src.query.adaptive_executor.executar_analise_estruturada", return_value=result), self.assertLogs(
+        ), patch("app.modules.query.services._executar_analise_normalizada", return_value=result), self.assertLogs(
             "uvicorn.error", level=logging.INFO
         ) as captured:
             response = self.ask()

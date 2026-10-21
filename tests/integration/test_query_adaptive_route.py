@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.main import app
+from app.modules.query.services import NormalizedDatabaseUnavailable
 from src.query.adaptive_executor import AdaptiveExecutionResult
 from src.query.analyzer import QueryAnalysisError
 from src.query.planner import planejar_execucao
@@ -188,6 +189,24 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(
             response.json()["detail"]["errosValidacao"][0]["campo"],
             "needs_document_retrieval",
+        )
+
+    def test_base_normalizada_indisponivel_retorna_503(self) -> None:
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            side_effect=NormalizedDatabaseUnavailable(
+                "Base normalizada indisponível."
+            ),
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Quais contratos existem?"},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Base normalizada indisponível.",
         )
 
 

@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str
+    normalized_database_url: str | None = None
     rag_perf_log_enabled: bool = False
     rag_llm_http_log_enabled: bool = False
     generation_disable_thinking: bool = False

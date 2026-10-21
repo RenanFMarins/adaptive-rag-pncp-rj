@@ -1,22 +1,28 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, nullcontext
 from dataclasses import replace
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
-from app.core.logging import perf_stage
-from app.core.config import resolver_caminho_indice_faiss
 
-from app.modules.query.model import Query, Response, ResponseSource
+from app.core.config import resolver_caminho_indice_faiss, settings
+from app.core.database.readonly import readonly_sqlite_connection
+from app.core.logging import perf_stage
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
+from app.modules.query.model import Query, Response, ResponseSource
 from src.query.adaptive_executor import (
     AdaptiveExecutionResult,
     executar_plano_adaptativo,
 )
 from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
-from src.query.executor import executar_consulta_adaptativa
+from src.query.executor import (
+    executar_analise_estruturada,
+    executar_consulta_adaptativa,
+)
+from src.query.normalized_structured_tool import executar_consulta_normalizada
 from src.query.schemas import AdaptiveQueryResult, QueryAnalysis, QueryRoute
 from src.retrieve import RankedChunk
 
@@ -24,29 +30,55 @@ from src.retrieve import RankedChunk
 AnalyzerFn = Callable[[str], QueryAnalysis]
 
 
-def _sqlite_connection_from_session(db: Session) -> sqlite3.Connection:
-    """Obtém a conexão SQLite atual sem abrir outro banco para a consulta."""
+class NormalizedDatabaseUnavailable(RuntimeError):
+    """Indica que a camada normalizada não pode atender a consulta."""
 
-    sqlalchemy_connection = db.connection()
-    connection_proxy = sqlalchemy_connection.connection
-    raw_connection = getattr(connection_proxy, "driver_connection", connection_proxy)
-    if not isinstance(raw_connection, sqlite3.Connection):
-        raise RuntimeError("A consulta estruturada requer uma conexão SQLite.")
-    return raw_connection
+
+@contextmanager
+def _normalized_connection(
+    database_url: str | None = None,
+) -> Iterator[sqlite3.Connection]:
+    selected_url = database_url or settings.normalized_database_url
+    if not selected_url:
+        raise NormalizedDatabaseUnavailable(
+            "Base normalizada não configurada."
+        )
+    try:
+        with readonly_sqlite_connection(selected_url) as connection:
+            yield connection
+    except (ValueError, FileNotFoundError, sqlite3.Error) as exc:
+        raise NormalizedDatabaseUnavailable(
+            "Base normalizada indisponível."
+        ) from exc
+
+
+def _executar_analise_normalizada(
+    connection: sqlite3.Connection,
+    analysis: QueryAnalysis,
+) -> AdaptiveQueryResult:
+    return executar_analise_estruturada(
+        connection,
+        analysis,
+        structured_tool_fn=executar_consulta_normalizada,
+    )
 
 
 def executar_consulta_estruturada(
     db: Session,
     pergunta: str,
     analyzer_fn: AnalyzerFn | None = None,
+    normalized_database_url: str | None = None,
 ) -> AdaptiveQueryResult:
-    """Executa Analyzer, Planner e Structured Tool na conexão da API."""
+    """Executa a consulta SQL somente na camada normalizada configurada."""
 
-    return executar_consulta_adaptativa(
-        _sqlite_connection_from_session(db),
-        pergunta,
-        analyzer_fn=analyzer_fn or analisar_pergunta_estruturada,
-    )
+    del db  # A sessão operacional não pode servir como fallback para a RAW.
+    with _normalized_connection(normalized_database_url) as connection:
+        return executar_consulta_adaptativa(
+            connection,
+            pergunta,
+            analyzer_fn=analyzer_fn or analisar_pergunta_estruturada,
+            structured_tool_fn=executar_consulta_normalizada,
+        )
 
 
 def executar_consulta_adaptativa_api(
@@ -57,6 +89,7 @@ def executar_consulta_adaptativa_api(
     rag_executor: Callable[[], object] | None = None,
     hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
     catalog_executor: Callable[[], list[dict[str, object]]] | None = None,
+    normalized_database_url: str | None = None,
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
@@ -109,17 +142,22 @@ def executar_consulta_adaptativa_api(
                 limite=20,
             )
 
-    structured_connection = None
-    if analysis.route is not QueryRoute.CATALOG:
-        with perf_stage("database_connection"):
-            structured_connection = _sqlite_connection_from_session(db)
-    resultado = executar_plano_adaptativo(
-        analysis,
-        structured_connection=structured_connection,
-        rag_executor=rag_executor,
-        hybrid_executor=hybrid_executor,
-        catalog_executor=catalog_executor,
+    needs_normalized = analysis.route in {QueryRoute.STRUCTURED, QueryRoute.HYBRID}
+    connection_context = (
+        _normalized_connection(normalized_database_url)
+        if needs_normalized
+        else nullcontext(None)
     )
+    with perf_stage("database_connection") if needs_normalized else nullcontext():
+        with connection_context as structured_connection:
+            resultado = executar_plano_adaptativo(
+                analysis,
+                structured_connection=structured_connection,
+                rag_executor=rag_executor,
+                hybrid_executor=hybrid_executor,
+                catalog_executor=catalog_executor,
+                structured_executor=_executar_analise_normalizada,
+            )
 
     # Fallback informativo: se uma pergunta documental por número de controle
     # não encontrou chunks, mostramos os arquivos previamente listados no

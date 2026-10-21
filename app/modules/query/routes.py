@@ -21,6 +21,7 @@ from app.modules.query.schemas import (
 )
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
 from app.modules.query.services import (
+    NormalizedDatabaseUnavailable,
     executar_consulta_adaptativa_api,
     executar_consulta_estruturada,
 )
@@ -60,6 +61,11 @@ def ask(
             request.top_k,
         )
     except LlmProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except NormalizedDatabaseUnavailable as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
@@ -158,6 +164,11 @@ def structured(
     try:
         result = executar_consulta_estruturada(db, request.pergunta)
     except LlmProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except NormalizedDatabaseUnavailable as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),

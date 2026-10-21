@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -141,13 +142,20 @@ class FaissConfigurationTests(unittest.TestCase):
             )
 
         engine = create_engine("sqlite:///:memory:")
-        with Session(engine) as db, TemporaryDirectory() as directory, \
+        with Session(engine) as db, TemporaryDirectory() as directory:
+            normalized = Path(directory) / "normalized.db"
+            sqlite3.connect(normalized).close()
+            with \
                 patch.object(settings, "rag_faiss_index_dir", Path(directory)), \
                 patch.object(query_services, "executar_plano_adaptativo", side_effect=execute), \
                 patch("src.generate.gerar_resposta_rag", return_value=object()) as generate:
-            query_services.executar_consulta_adaptativa_api(
-                db, "pergunta", 5, analyzer_fn=lambda _: analysis
-            )
+                query_services.executar_consulta_adaptativa_api(
+                    db,
+                    "pergunta",
+                    5,
+                    analyzer_fn=lambda _: analysis,
+                    normalized_database_url=f"sqlite:///{normalized}",
+                )
         self.assertEqual(generate.call_args.kwargs["cache_dir"], Path(directory).resolve())
         self.assertIs(generate.call_args.kwargs["structured_result"], expected)
 
@@ -158,12 +166,19 @@ class FaissConfigurationTests(unittest.TestCase):
             plan=planejar_execucao(analysis),
         )
         engine = create_engine("sqlite:///:memory:")
-        with Session(engine) as db, \
+        with Session(engine) as db, TemporaryDirectory() as directory:
+            normalized = Path(directory) / "normalized.db"
+            sqlite3.connect(normalized).close()
+            with \
                 patch.object(query_services, "resolver_caminho_indice_faiss") as resolver, \
                 patch.object(query_services, "executar_plano_adaptativo", return_value=result):
-            actual = query_services.executar_consulta_adaptativa_api(
-                db, "pergunta", 5, analyzer_fn=lambda _: analysis
-            )
+                actual = query_services.executar_consulta_adaptativa_api(
+                    db,
+                    "pergunta",
+                    5,
+                    analyzer_fn=lambda _: analysis,
+                    normalized_database_url=f"sqlite:///{normalized}",
+                )
         self.assertIs(actual, result)
         resolver.assert_not_called()
 

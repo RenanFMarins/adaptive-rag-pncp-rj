@@ -16,6 +16,10 @@ from .schemas import AdaptiveQueryResult, ExecutionPlan, QueryAnalysis, QueryRou
 RagExecutorFn = Callable[[], Any]
 HybridExecutorFn = Callable[[AdaptiveQueryResult], Any]
 CatalogExecutorFn = Callable[[], list[dict[str, Any]]]
+StructuredExecutorFn = Callable[
+    [sqlite3.Connection, QueryAnalysis],
+    AdaptiveQueryResult,
+]
 
 
 @dataclass(frozen=True)
@@ -38,6 +42,7 @@ def executar_plano_adaptativo(
     rag_executor: RagExecutorFn | None = None,
     hybrid_executor: HybridExecutorFn | None = None,
     catalog_executor: CatalogExecutorFn | None = None,
+    structured_executor: StructuredExecutorFn | None = None,
 ) -> AdaptiveExecutionResult:
     """Executa exclusivamente a ferramenta indicada pela rota planejada.
 
@@ -47,11 +52,12 @@ def executar_plano_adaptativo(
 
     with perf_stage("planner"):
         plan = planejar_execucao(analysis)
+    execute_structured = structured_executor or executar_analise_estruturada
     if plan.route is QueryRoute.STRUCTURED:
         if structured_connection is None:
             raise QueryExecutionError("A rota structured requer conexão SQLite.")
         with perf_stage("structured_query"):
-            structured = executar_analise_estruturada(structured_connection, analysis)
+            structured = execute_structured(structured_connection, analysis)
         return AdaptiveExecutionResult(
             analysis=analysis,
             plan=plan,
@@ -81,7 +87,7 @@ def executar_plano_adaptativo(
     if hybrid_executor is None:
         raise QueryExecutionError("A rota hybrid requer um executor híbrido.")
     with perf_stage("structured_query"):
-        structured = executar_analise_estruturada(structured_connection, analysis)
+        structured = execute_structured(structured_connection, analysis)
     return AdaptiveExecutionResult(
         analysis=analysis,
         plan=plan,
