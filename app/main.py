@@ -6,6 +6,7 @@ from app.core.database import init_db, initialize_database
 from app.core.security import dummy_password_hash, validate_security_settings
 from app.core.logging import RagPerfMiddleware
 from app.core.faiss_startup import validar_faiss_no_startup
+from app.core.normalized_startup import validar_normalizada_no_startup
 from app.modules.admin.routes import router as admin_router
 from app.modules.auth.routes import router as auth_router
 from app.modules.documents.routes import router as documents_router
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     raw_connection = initialize_database()
     raw_connection.close()
     init_db()
+    validar_normalizada_no_startup(app)
     validar_faiss_no_startup(app)
     yield
 
