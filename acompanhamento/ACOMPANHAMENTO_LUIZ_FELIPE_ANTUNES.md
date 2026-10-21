@@ -442,3 +442,114 @@ Com isso, contribuí para a organização do fluxo de consultas, o alinhamento t
 ### Uso de assistentes de IA
 
 Utilizei assistentes de IA como apoio à análise da arquitetura, à compreensão das possibilidades de integração entre os componentes, à organização da documentação e ao planejamento das próximas etapas. As sugestões foram avaliadas em conjunto com o contexto real do projeto e adaptadas conforme as decisões técnicas e o que já havia sido desenvolvido pelo grupo.
+
+# Encontro 12 — 14/10/2026
+
+### Atividades realizadas
+
+Dei continuidade ao trabalho de integração da arquitetura de consultas, com foco na parte de consultas estruturadas e na comunicação entre os componentes do sistema. Revisei e ajustei arquivos relacionados à estrutura das requisições e ao acesso aos dados, buscando manter o fluxo alinhado ao planejamento definido para o Query Analyzer, o Router e a execução das consultas.
+
+Trabalhei em melhorias no src/query/structured_tool.py e nos schemas de consulta, além de ajustes na camada de banco de dados e nos testes associados. O objetivo foi tornar o caminho de consulta estruturada mais consistente e facilitar a validação do comportamento esperado pelo sistema.
+
+Também acompanhei a integração das alterações no repositório e a organização dos materiais técnicos, considerando as dependências entre a interpretação da pergunta, a execução da consulta e a geração da resposta.
+
+### Resultado
+
+Avancei nos ajustes da ferramenta de consulta estruturada, dos schemas e da camada de banco de dados, junto com a atualização dos testes relacionados ao fluxo de consultas.
+
+Essas alterações contribuíram para alinhar melhor os componentes e preparar a validação integrada do caminho de consulta.
+
+### Pendências e bloqueios
+
+- Validar o comportamento da consulta estruturada em diferentes cenários de entrada.
+- Conferir a integração entre schemas, ferramenta de consulta e fluxo principal.
+- Continuar a validação dos critérios de segurança antes da execução das consultas.
+- Acompanhar a integração das alterações com os demais componentes do projeto.
+
+### Próximo passo
+
+- Executar e revisar os testes da ferramenta de consulta estruturada.
+- Continuar os ajustes de validação e segurança do fluxo.
+- Verificar o comportamento da consulta integrada à arquitetura principal.
+- Manter a documentação e o acompanhamento atualizados conforme as alterações forem consolidadas.
+
+### Uso de assistentes de IA
+
+Utilizei assistentes de IA como apoio à análise dos componentes, à revisão de implementações e testes e ao esclarecimento de dúvidas durante os ajustes. As sugestões foram avaliadas e adaptadas ao código e à arquitetura existentes no projeto.
+
+# Encontro 13 — 16/10/2026
+
+### Atividades realizadas
+
+Concentrei os ajustes em melhorias no fluxo de consultas e nos mecanismos de validação e segurança. Continuei trabalhando no src/query/structured_tool.py, revisando o tratamento das consultas estruturadas e os cuidados necessários antes da execução. Também realizei alterações no src/generate.py, relacionadas ao comportamento da geração de respostas e à aplicação dos controles previstos no fluxo.
+
+Atualizei os testes unitários e de integração relacionados à ferramenta de consulta e às rotas, buscando cobrir os comportamentos esperados e reduzir o risco de regressões. Também fiz ajustes complementares na camada de banco de dados, nos schemas e nas dependências do projeto, conforme as necessidades identificadas durante a implementação.
+
+Além do desenvolvimento, mantive a organização do acompanhamento individual e preparei as alterações para integração com a branch de trabalho, preservando os arquivos de segurança locais enquanto conferia as mudanças do repositório.
+
+### Resultado
+
+As alterações reuniram melhorias na ferramenta de consulta estruturada, na validação do fluxo e na cobertura dos testes. Também organizei as alterações em um commit e enviei para a branch feat/luiz-desenvolvimento, após integrar as atualizações disponíveis na branch principal do grupo.
+
+Na validação posterior à integração, a suíte de testes foi executada com 382 testes aprovados, 76 subtestes aprovados e 2 avisos de depreciação, sem falhas reportadas.
+
+### Pendências e bloqueios
+
+- Continuar avaliando os casos de borda e os critérios de segurança das consultas estruturadas.
+- Acompanhar a integração entre o fluxo de consulta, a geração de respostas e os demais componentes.
+- Avaliar o aviso do GitHub referente ao tamanho do arquivo app.db, que ultrapassa o limite recomendado de 50 MB.
+- Prosseguir com a validação do fluxo completo após novas integrações do grupo.
+
+### Próximo passo
+
+- Acompanhar os resultados da integração com a branch principal do grupo.
+- Continuar validando as consultas estruturadas e os controles de segurança.
+- Revisar o tratamento do banco de dados versionado no repositório.
+- Apoiar a integração das contribuições dos demais integrantes e manter a documentação atualizada.
+
+### Uso de assistentes de IA
+
+Utilizei assistentes de IA como apoio à análise do código, à revisão das validações, à organização dos testes e à interpretação de mensagens do Git e do pytest. As sugestões foram conferidas no contexto do repositório, e as alterações foram testadas antes do envio para a branch remota.
+
+Observação: o roxo depende da formatação aplicada no seu editor. Se estiver usando Markdown, os títulos em ### normalmente recebem a cor definida pelo tema; para ficarem roxos especificamente, será necessário aplicar essa cor no editor.
+
+# Encontro 14 — 19/10/2026
+
+### Atividades realizadas
+
+Dei continuidade aos ajustes realizados no encontro anterior, mantendo o foco na ferramenta de consultas estruturadas, nos mecanismos de validação e segurança e na integração entre os componentes do sistema RAG de Contratações Públicas. Considerei a necessidade de preparar o fluxo para responder a diferentes tipos de perguntas, envolvendo tanto informações armazenadas no banco de dados quanto conteúdos recuperados dos documentos.
+
+Mantive como referência as melhorias realizadas em `src/query/structured_tool.py`, com atenção ao tratamento das consultas estruturadas, à validação dos parâmetros e aos controles necessários antes da execução. Também considerei os ajustes feitos em `src/generate.py`, relacionados à geração das respostas e ao comportamento esperado do fluxo.
+
+A partir do planejamento de validação discutido para o sistema, acompanhei a importância de verificar o funcionamento das consultas estruturadas, da recuperação documental por RAG e da integração híbrida entre dados e documentos. Esses cenários reforçam a necessidade de conferir se o sistema interpreta corretamente as perguntas, recupera informações relevantes e produz respostas coerentes com as fontes disponíveis.
+
+Dei continuidade também à atenção aos testes unitários e de integração, à organização das alterações na branch `feat/luiz-desenvolvimento` e à manutenção da documentação do projeto, considerando os pontos técnicos que ainda precisam ser verificados durante a integração dos componentes.
+
+### Resultado
+
+A continuidade do trabalho manteve organizadas as melhorias técnicas realizadas no fluxo de consultas, na validação dos parâmetros e nos controles de segurança, contribuindo para a preparação do sistema para a etapa de validação funcional.
+
+Os testes executados após a integração anterior registraram 382 testes aprovados, 76 subtestes aprovados e dois avisos de depreciação, sem falhas reportadas. Esses resultados correspondem à validação realizada anteriormente e servem como referência para acompanhar a estabilidade do projeto, não como uma nova execução de testes neste encontro.
+
+A organização dos cenários de validação do sistema também evidenciou a importância de verificar não apenas a execução das consultas, mas a correção dos dados retornados, a relevância dos trechos recuperados e a fundamentação das respostas geradas.
+
+### Pendências e bloqueios
+
+- Continuar avaliando os casos de borda e os critérios de segurança das consultas estruturadas.
+- Acompanhar a integração entre a ferramenta de consulta, a recuperação documental e a geração de respostas.
+- Verificar o comportamento do sistema diante de perguntas estruturadas, documentais e híbridas.
+- Conferir se as respostas geradas correspondem aos dados e documentos de origem e se apresentam fundamentação adequada.
+- Acompanhar o aviso do GitHub referente ao tamanho do arquivo `app.db`, que ultrapassa o limite recomendado de 50 MB.
+- Prosseguir com os testes de integração e regressão após novas alterações no repositório.
+
+### Próximo passo
+
+- Continuar validando a ferramenta de consultas estruturadas e os controles de segurança.
+- Acompanhar a integração entre Query Analyzer, Router, consultas estruturadas, recuperação RAG e geração de respostas.
+- Verificar os resultados dos cenários de validação, considerando a correção, a relevância e a rastreabilidade das informações.
+- Revisar o tratamento do banco de dados versionado no repositório.
+- Apoiar a integração das contribuições dos demais integrantes e manter a documentação técnica atualizada.
+
+### Uso de assistentes de IA
+
+Utilizei assistentes de IA como apoio à análise do código, à revisão das validações, à organização dos testes e à interpretação de mensagens do Git e do pytest. Esse apoio também contribuiu para analisar a integração entre os componentes e organizar os pontos técnicos que precisam ser considerados na validação do sistema. As sugestões foram avaliadas conforme o contexto do repositório, mantendo a necessidade de conferir as alterações e os resultados efetivamente obtidos.

@@ -517,3 +517,195 @@
 * Utilizamos assistentes de IA como apoio na análise e evolução da arquitetura, desenvolvimento e validação do Query Analyzer, implementação e testes da recuperação híbrida, análise dos Guardrails, estruturação da auditabilidade, revisão de prompts e organização das próximas etapas do projeto.
 
 * As sugestões foram analisadas e adaptadas pela equipe de acordo com o código existente, os requisitos do projeto e as decisões tomadas durante o desenvolvimento, sendo validadas por meio de testes, execuções reais e auditorias dos resultados.
+
+
+**# Resumo do dia — Encontro 11 — 2026-10-09**
+
+**## Resumo do time no dia**
+
+**\*\*\*Entregamos hoje:\*\*\***
+
+* Avançamos na definição e integração da arquitetura de consultas, organizando o fluxo entre interpretação da pergunta, roteamento, consulta estruturada, recuperação documental e geração da resposta.
+* Foram realizados testes manuais do Query Analyzer com sete perguntas. Seis classificações foram consideradas coerentes, enquanto uma pergunta ambígua — “Qual é o valor do contrato?” — foi classificada incorretamente como uma operação de soma, evidenciando a necessidade de aprimorar a interpretação da intenção do usuário.
+* Foram testadas consultas estruturadas envolvendo quantidade de contratos, objeto, data, município, número de contrato e órgão responsável.
+* Nas verificações realizadas no banco, foram identificados 6.021 contratos distintos publicados em agosto de 2026 e 3.855 registros referentes ao município do Rio de Janeiro no mesmo período.
+* Foi testada uma consulta híbrida que combinava contratos publicados em agosto de 2026 no município do Rio de Janeiro com a busca por cláusulas de penalidade por atraso. A estratégia foi classificada como híbrida, com necessidade de SQL e RAG, mas foram identificadas falhas na extração dos termos documentais e inconsistências nos filtros temporais.
+* Avançamos na análise da integração entre Query Analyzer, Router, execução SQL e recuperação RAG, identificando ajustes necessários para que cada pergunta seja encaminhada à estratégia adequada.
+* Ana Karina e Ester atuaram conjuntamente na persistência da base normativa. Os 794 chunks, distribuídos em 13 documentos, foram carregados na tabela `document_chunks`, tornando-os disponíveis para recuperação pela aplicação.
+* O carregador da base normativa foi estruturado para evitar duplicações. Em uma segunda execução, os 794 chunks já existentes foram reconhecidos, sem novas inserções.
+* Foram corrigidos problemas relacionados a títulos extensos de editais e à identificação de datas de vigência ausentes, com a inclusão de avisos para facilitar a identificação de registros incompletos.
+* Após o reprocessamento, os textos e identificadores dos 794 chunks foram preservados. Em 27 chunks de um edital, foi corrigida a numeração que estava ausente.
+* Foram realizados testes de recuperação documental, incluindo uma consulta sobre o prazo de vigência da ata de registro de preços, que recuperou corretamente o Art. 84 da Lei nº 14.133/2021.
+* A suíte de testes da frente normativa passou de 50 para 81 testes, conforme os relatos de Ana Karina e Ester.
+* Avançamos na integração das estratégias `structured`, `rag` e `hybrid`, com continuidade do desenvolvimento e dos testes dos endpoints de consulta.
+* Luiz Felipe contribuiu para a organização da arquitetura, da documentação e do planejamento técnico, apoiando o alinhamento das etapas do pipeline e a discussão sobre consultas estruturadas, recuperação documental e integração dos componentes.
+* A equipe identificou que a recuperação da base normativa dependia da persistência dos chunks na tabela utilizada pela aplicação, problema tratado durante o encontro com o carregamento dos registros.
+
+**\*\*\*Ficou pendente:\*\*\***
+
+* Corrigir a classificação de perguntas ambíguas no Query Analyzer, diferenciando consultas sobre o valor de um contrato específico de solicitações de soma ou agregação.
+* Aprimorar a extração de termos documentais nas consultas híbridas, incluindo expressões como penalidade e atraso.
+* Padronizar os filtros temporais, evitando inconsistências entre campos como `ano`, `mes`, `periodo_inicio` e `periodo_fim`.
+* Concluir a integração do Query Analyzer e do Router com as ferramentas de consulta estruturada e recuperação RAG.
+* Finalizar a indexação FAISS da base normativa e validar sua integração com o FTS5 e a busca híbrida.
+* Preparar e executar as nove perguntas de referência previstas em `eval/questions.json`.
+* Ampliar os testes de regressão para as rotas estruturadas, documentais e híbridas.
+* Continuar a documentação da arquitetura e organizar os critérios de seleção da fonte de informação para cada tipo de pergunta.
+
+**\*\*\*Bloqueios em aberto:\*\*\***
+
+* O Query Analyzer ainda apresenta falhas na interpretação de algumas perguntas ambíguas.
+* A extração incompleta de termos e a falta de padronização dos filtros podem comprometer os resultados das consultas híbridas.
+* Embora os 794 chunks tenham sido persistidos, a indexação FAISS ainda precisa ser concluída e validada para assegurar a recuperação semântica.
+* A integração entre Analyzer, Router, SQL Executor e RAG ainda requer testes de ponta a ponta.
+
+**\*\*\*Próximo passo (início do Encontro 12):\*\*\***
+
+* Ajustar a classificação de perguntas ambíguas e a extração de termos e filtros temporais.
+* Continuar a integração do Query Analyzer, do Router e das ferramentas de consulta estruturada.
+* Finalizar a indexação FAISS e validar a recuperação combinada com FTS5 e RRF.
+* Executar as perguntas de referência da base normativa e documentar a qualidade das fontes recuperadas.
+* Comparar os carregadores normativos e verificar a consistência dos metadados e a prevenção de duplicações.
+* Ampliar os testes de regressão e documentar os problemas identificados durante as consultas.
+* Manter a documentação técnica atualizada e alinhar as próximas etapas entre as frentes de desenvolvimento.
+
+**\*\*\*Uso de assistentes de IA:\*\*\***
+
+* Foram utilizados assistentes de IA para apoiar a análise da arquitetura, o desenvolvimento do Query Analyzer e do roteamento, a revisão dos filtros e a organização do fluxo de consultas.
+* Na base normativa, os assistentes apoiaram a análise da persistência dos chunks, a identificação de inconsistências nos metadados e a revisão dos procedimentos de carregamento e recuperação.
+* A equipe utilizou IA como apoio à revisão de código, à elaboração de testes e à organização da documentação e das próximas etapas.
+* As sugestões foram analisadas pela equipe e confrontadas com o código, as consultas ao banco e os resultados dos testes, sem considerar concluídas as funcionalidades que ainda dependiam de validação.
+
+
+**# Resumo do dia — Encontro 12 — 2026-10-14**
+
+**## Resumo do time no dia**
+
+**\*\*\*Entregamos hoje:\*\*\***
+
+* Demos continuidade à integração e à validação das rotas de consulta, com ajustes no Query Analyzer, nos filtros e nos componentes responsáveis pela execução das perguntas.
+* Foram investigados problemas de desempenho nas chamadas ao serviço de LLM. Em uma execução, a análise da pergunta levou aproximadamente 213 segundos e a geração final, 242 segundos, totalizando cerca de 456 segundos.
+* Foram adicionados registros de observabilidade para acompanhar os tempos de execução do Query Analyzer, da recuperação híbrida, da geração de embeddings e da resposta final.
+* Foi implementada uma primeira tentativa de fallback do ECOA para OpenAI no Query Analyzer. Entretanto, os resultados disponíveis ainda não comprovam que o fallback automático tenha sido acionado durante os testes.
+* Foram realizados outros testes de consulta, incluindo execuções com duração aproximada de 61 e 80 segundos. Em uma delas, o Query Analyzer levou 15,63 segundos e a geração final, 63,39 segundos; como o ECOA concluiu a execução, não foi possível atribuir a melhoria ao fallback.
+* Ana Karina e Ester compararam os carregadores da base normativa após a integração das alterações, identificando diferenças na identificação dos documentos, na preservação de títulos e URLs e nos critérios utilizados para evitar duplicações.
+* A análise identificou que um carregador utiliza `source_file` como referência, enquanto o outro considera uma chave composta baseada em `base_id` e `source_file`, por meio de `_document_source_file`. Essas diferenças precisam ser conciliadas para evitar inconsistências e documentos órfãos.
+* Também foi identificada uma diferença no tratamento dos metadados: um carregador preserva títulos existentes, enquanto o outro pode sobrescrever campos como `title` e `source_url`. Foi relatada uma correção anterior para evitar títulos nulos, mas a comparação completa entre os carregadores permaneceu pendente.
+* A equipe investigou problemas de instalação das dependências para a indexação FAISS. O ambiente com Python 3.10.4 apresentou incompatibilidade com `networkx==3.7`, que exige uma versão mais recente do Python, além da indisponibilidade da versão especificada de `numpy` para aquele ambiente.
+* Renan restaurou e versionou as migrações incrementais `001_raw_canonical_identity_index.sql` e `002_sync_window_checkpoint.sql`, além da documentação `PNCP_INCREMENTAL_ENDPOINTS.md`, que estavam ausentes da branch e comprometiam a reprodutibilidade do ambiente.
+* Foram validadas as migrações da ingestão incremental, incluindo a preservação dos dados RAW e dos checkpoints, a criação do índice de identidade canônica e do checkpoint v2 e a execução idempotente.
+* As verificações da base SQLite apresentaram integridade `ok`, sem violações de chaves estrangeiras. Na validação relatada por Renan, foram aprovados 117 testes, além das verificações de compilação e de diferenças do Git.
+* Luiz Felipe avançou nos ajustes de `src/query/structured_tool.py`, nos schemas de consulta, na camada ORM e nos testes, buscando alinhar a consulta estruturada à arquitetura definida para o projeto.
+* Luciano continuou os testes das rotas e dos filtros, realizou ajustes no fluxo de validação e relatou a coleta e ingestão de novos documentos na base.
+* A equipe avançou na organização do backlog técnico, na identificação de problemas de reprodutibilidade e na documentação das condições necessárias para estabilizar as consultas e a ingestão de dados.
+
+**\*\*\*Ficou pendente:\*\*\***
+
+* Continuar a investigação da latência das chamadas ao ECOA e avaliar alternativas para reduzir o tempo de resposta.
+* Validar o funcionamento real do fallback automático para OpenAI no Query Analyzer e, posteriormente, no fluxo completo de recuperação e geração.
+* Registrar o provedor e o modelo utilizados em cada etapa para facilitar a análise de desempenho e de falhas.
+* Definir um padrão único para os carregadores da base normativa, alinhando a identificação dos documentos, a preservação de metadados e o tratamento de registros existentes.
+* Executar testes para identificar possíveis documentos órfãos, duplicações e inconsistências entre `source_file`, `base_id` e os demais metadados.
+* Criar um ambiente compatível com as dependências de indexação FAISS e concluir os testes de instalação e execução.
+* Concluir a indexação FAISS e validar a recuperação documental com as perguntas de referência.
+* Continuar os testes das consultas estruturadas, dos schemas, da camada ORM e da integração com o fluxo principal.
+* Prosseguir com a coleta e ingestão de documentos e com a validação dos filtros e das rotas de consulta.
+* Continuar as correções da ingestão incremental do PNCP, incluindo atomicidade, controle de lease, avanço seguro de watermark e recuperação de paginação.
+* Atualizar a documentação técnica das migrações, dos checkpoints e das condições de sincronização.
+
+**\*\*\*Bloqueios em aberto:\*\*\***
+
+* A latência das chamadas ao ECOA pode tornar as consultas excessivamente demoradas e dificultar a execução dos testes de integração.
+* O fallback para OpenAI ainda não teve seu acionamento automático comprovado, embora a chamada direta à OpenAI tenha sido validada posteriormente.
+* A existência de dois carregadores com critérios diferentes de identificação e atualização dos documentos impede a definição segura de um padrão de persistência sem testes adicionais.
+* As incompatibilidades entre versões do Python e dependências impediram o avanço da configuração inicial do ambiente para indexação FAISS.
+* A indexação FAISS e a validação da recuperação semântica permanecem pendentes.
+* A estabilização da ingestão incremental depende da implementação e validação dos controles de concorrência, checkpoints e recuperação de falhas.
+
+**\*\*\*Próximo passo (início do Encontro 13):\*\*\***
+
+* Continuar a análise de latência e validar o fallback automático entre ECOA e OpenAI, incluindo o registro do provedor e do modelo utilizado.
+* Criar e validar um ambiente com versão de Python compatível com as dependências do projeto.
+* Comparar os carregadores normativos em ambiente de teste, definir o comportamento esperado dos metadados e verificar a existência de documentos órfãos ou duplicados.
+* Finalizar a indexação FAISS e executar testes de recuperação documental e busca híbrida.
+* Continuar a integração das consultas estruturadas com o Query Analyzer, o Router e o fluxo de geração.
+* Prosseguir com os testes de filtros, schemas, camada ORM e execução segura das consultas.
+* Validar as migrações incrementais e avançar nas correções de atomicidade, lease, watermark e recuperação de paginação.
+* Atualizar a documentação técnica e registrar os resultados dos testes para orientar as próximas decisões do grupo.
+
+**\*\*\*Uso de assistentes de IA:\*\*\***
+
+* Foram utilizados assistentes de IA para apoiar a análise dos registros de desempenho, a investigação da latência das chamadas à LLM e a revisão da estratégia de fallback entre provedores.
+* Os assistentes apoiaram a comparação dos carregadores normativos, a análise de metadados, a investigação de dependências e a preparação do ambiente de desenvolvimento.
+* Na frente de ingestão incremental, a IA auxiliou na análise das migrações, dos checkpoints, dos riscos de concorrência e da documentação técnica.
+* Também foi utilizada como apoio à revisão de código, à interpretação de resultados de testes e à organização das correções prioritárias.
+* As sugestões foram verificadas pela equipe por meio de testes automatizados, análise dos logs e verificações de integridade, mantendo como pendentes os comportamentos que ainda não foram comprovados.
+
+
+**# Resumo do dia — Encontro 13 — 2026-10-16**
+
+**## Resumo do time no dia**
+
+**\*\*\*Entregamos hoje:\*\*\***
+
+* Avançamos na integração e validação do fluxo de consultas, incluindo o Query Analyzer, as estratégias de recuperação, a execução estruturada e a geração das respostas.
+* A API foi executada por meio do Uvicorn e testada no endpoint `/query/ask`, com resposta HTTP 200.
+* Os registros de execução confirmaram o uso do ECOA tanto na análise da pergunta quanto na geração final da resposta.
+* A recuperação híbrida utilizou FTS5, FAISS e RRF e retornou cinco fontes documentais em um dos testes. A indexação da base normativa ainda não foi concluída, portanto esse resultado não representa a validação definitiva de toda a base.
+* Uma chamada direta ao modelo `gpt-4.1-mini` por meio da OpenAI foi realizada com sucesso. Entretanto, o acionamento automático do fallback no fluxo RAG ainda não foi comprovado.
+* Foi identificada a localização de `app/streamlit_console.py` e o comando necessário para executar o console, facilitando a preparação da integração com a interface.
+* Alisson continuou a análise de desempenho e a validação dos componentes de consulta. Em uma execução relatada, o fluxo foi concluído em aproximadamente 38 segundos com uso do ECOA.
+* Ana Karina e Ester prepararam um ambiente virtual com Python 3.12.10, instalaram as dependências e verificaram a versão do SQLAlchemy. Também ajustaram o `.gitignore` para excluir o diretório `.venv312/`.
+* A preparação do ambiente representou um avanço para investigar a indexação FAISS, embora a execução da indexação ainda não tenha sido concluída.
+* A comparação entre os carregadores normativos permaneceu em análise. Foram identificadas diferenças na identificação dos documentos e na atualização dos metadados, mas ainda não houve uma decisão final sobre qual implementação será adotada como padrão.
+* Luiz Felipe integrou alterações relacionadas às consultas e à validação de segurança na branch `feat/luiz-desenvolvimento`, realizando o commit `598ae0c feat: integra melhorias de consulta e validacao de seguranca` e enviando as alterações ao repositório remoto.
+* Após a integração, foram executados testes que resultaram em **382 testes aprovados e 76 subtestes aprovados**, sem falhas e com dois avisos de depreciação.
+* Os ajustes de Luiz abrangeram `src/query/structured_tool.py`, `src/generate.py`, schemas, camada ORM, dependências e testes unitários e de integração.
+* Renan continuou a validação da ingestão incremental do PNCP, verificando as migrações, os checkpoints e a integridade da base SQLite. Os resultados reportados incluíram integridade `ok`, ausência de violações de chaves estrangeiras e aprovação dos testes previstos para essa etapa.
+* Foram mantidas as validações de reprodutibilidade e idempotência das migrações, com preservação dos dados RAW e dos checkpoints.
+* A equipe identificou um alerta de versionamento relacionado ao arquivo `app.db`, que possui 81,24 MB e ultrapassa a recomendação de 50 MB do GitHub. Apesar do alerta, o envio das alterações de Luiz foi concluído.
+* Foram organizadas as pendências de integração, indexação, desempenho, segurança e gerenciamento do banco de dados, orientando a continuidade do desenvolvimento.
+
+**\*\*\*Ficou pendente:\*\*\***
+
+* Concluir a indexação FAISS da base normativa e validar a recuperação com as perguntas de referência.
+* Finalizar a comparação dos carregadores normativos e definir um padrão único, incluindo regras para identificação de documentos, preservação de títulos e URLs e prevenção de duplicações.
+* Validar o fallback automático para OpenAI no fluxo de análise, recuperação e geração, registrando o provedor e o modelo usados em cada etapa.
+* Continuar a avaliação da latência e da qualidade das respostas geradas pelo ECOA.
+* Integrar e validar a interface Streamlit com a API e o fluxo principal de consultas.
+* Ampliar os testes das rotas `structured`, `rag` e `hybrid`, verificando filtros, fontes recuperadas, execução segura e fundamentação das respostas.
+* Corrigir eventuais inconsistências nos schemas, na camada ORM e nos componentes de consulta identificadas após a integração.
+* Revisar o tratamento do arquivo `app.db` no repositório e definir uma estratégia adequada para o banco de dados, evitando problemas de versionamento e distribuição.
+* Continuar as validações da ingestão incremental, incluindo atomicidade das gravações, controle de lease, avanço do watermark, recuperação de paginação e tratamento de registros do PCA.
+* Consolidar a documentação das migrações, dos checkpoints e das limitações identificadas durante as validações.
+
+**\*\*\*Bloqueios em aberto:\*\*\***
+
+* A indexação FAISS da base normativa continua pendente, limitando a validação completa da recuperação semântica e híbrida.
+* A decisão sobre o carregador normativo padrão ainda depende de comparação e testes adicionais.
+* O fallback automático para OpenAI não foi comprovado no fluxo completo, embora a chamada direta ao modelo tenha funcionado.
+* A instabilidade e a latência dos serviços de LLM podem interferir na execução dos testes e na experiência de consulta.
+* A integração da interface Streamlit com a API e o fluxo principal ainda precisa ser validada.
+* O tamanho do arquivo `app.db` ultrapassa a recomendação do GitHub, exigindo uma definição sobre como manter e distribuir o banco.
+* A ingestão incremental ainda depende da conclusão das validações de consistência, concorrência e recuperação de falhas.
+
+**\*\*\*Próximo passo (início do próximo encontro):\*\*\***
+
+* Finalizar a indexação FAISS e executar testes de recuperação com FTS5, FAISS e RRF.
+* Definir o carregador normativo padrão após comparar o comportamento das implementações e verificar os metadados e a integridade dos documentos.
+* Validar o fallback automático entre ECOA e OpenAI no fluxo completo de consulta.
+* Continuar a análise de latência e a avaliação da qualidade, da fundamentação e da rastreabilidade das respostas.
+* Integrar a interface Streamlit à API e validar o percurso completo da pergunta até a resposta.
+* Executar testes de regressão das rotas estruturadas, documentais e híbridas após as novas integrações.
+* Revisar o tratamento do arquivo `app.db` e definir uma estratégia de versionamento e distribuição do banco.
+* Prosseguir com a validação da ingestão incremental, priorizando integridade dos dados, checkpoints, controle de concorrência e recuperação de falhas.
+* Consolidar os resultados dos testes e atualizar a documentação técnica com as entregas, as limitações e as pendências ainda abertas.
+
+**\*\*\*Uso de assistentes de IA:\*\*\***
+
+* Foram utilizados assistentes de IA para apoiar a revisão e a integração do código, a análise dos componentes de consulta, a validação dos schemas e da camada ORM e a interpretação dos resultados dos testes.
+* Os assistentes apoiaram a investigação dos registros de execução, da latência das chamadas à LLM e da configuração dos provedores ECOA e OpenAI.
+* Também foram utilizados para analisar a persistência dos documentos normativos, comparar os carregadores e investigar a preparação do ambiente para a indexação FAISS.
+* Na frente de ingestão incremental, a IA apoiou a análise das migrações, dos checkpoints, da integridade da base e das correções necessárias para garantir a reprodutibilidade.
+* As sugestões foram revisadas pela equipe e verificadas por meio de testes automatizados, chamadas à API, consultas ao banco e verificações de integridade. Os resultados foram registrados conforme as evidências disponíveis, mantendo como pendentes as funcionalidades que ainda não tiveram sua integração ou execução completa comprovada.
+
