@@ -689,3 +689,37 @@ Trabalhei junto com a Ester na comparação entre dois carregadores de dados do 
 - **Entregamos (base normativa):** Diagnóstico comparativo entre os dois carregadores de dados (persistencia.py vs. carregador do Luciano) com os dois pontos de conflito identificados e comunicados ao responsável; diagnóstico da incompatibilidade de versão do Python no ambiente do projeto.
 - **Travou:** Decisão final sobre qual carregador/padrão de chave usar (depende de alinhamento com o Luciano); configuração de ambiente (Python 3.10.4 incompatível com dependências do `requirements.txt`), impedindo a execução da indexação FAISS.
 - **Próximo passo:** Fechar com o Luciano o padrão de chave e de sobrescrita de campos entre os carregadores; migrar o ambiente para Python 3.12+ e recriar o `.venv` para rodar a indexação FAISS.
+
+## Encontro 13 · 16/10/2026
+
+### O que eu fiz hoje
+
+- Criei o ambiente virtual `.venv312` com Python 3.12.10.
+- Instalei as dependências do `requirements.txt`.
+- Verifiquei a versão do SQLAlchemy (2.1.1).
+- Adicionei `.venv312/` ao `.gitignore`.
+- Fiz o commit `1f82b7b` na branch `base-normativa` e enviei ao GitHub. Conferi o escopo com `git show --stat HEAD`, que mostrou apenas o `.gitignore` alterado.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude Haiku 5.5 (chat do MyHUB.IA).
+- **Para quê:** orientação de comandos do PowerShell e do Git, organização do plano de trabalho e rascunho do relatório.
+- **O que conferi / mudei:**
+  - Corrigi o comando de busca, porque `Select-String` não aceita `-Recurse`. A recursão fica no `Get-ChildItem`.
+  - Conferi o escopo do commit antes de considerá-lo concluído.
+  - Retirei do rascunho afirmações não confirmadas, como o papel do ECOA e os motivos dos atrasos.
+
+### O que travou
+
+- A indexação ainda não foi iniciada.
+- O comando para localizar a configuração do projeto ainda não foi executado com sucesso.
+- Não está claro se o acesso ao servidor do ECOA está liberado. Na conversa, isso apareceu de duas formas diferentes, então vale confirmar antes de registrar.
+- Falta confirmar o papel da Groq no projeto e se o `.venv312` vai virar padrão do grupo.
+- Comparação dos carregadores de chunks (`persistencia.py` do grupo e `persistir_chunks_jsonl_normativos`, do Luciano, PR #46) ainda não executada. A decisão sobre qual fica depende de conversa com o Luciano.
+
+### Próximo passo
+
+- Rodar o comando corrigido de busca e confirmar a configuração do projeto, sem expor chaves.
+- Comparar os dois carregadores em ambiente de teste, antes de rodar qualquer um na base principal.
+- Executar a consulta de documentos órfãos após cada carga.;
+- Confirmar o acesso ao servidor e, se estiver liberado, testar a conexão antes de indexar.

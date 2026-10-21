@@ -10,11 +10,7 @@
 
 ## Encontro 1 - 2026-09-16
 
-
-
 ### Relato individual - José Renan freitas Marins (4h)
-
-## Relato individual — José Renan Freitas Marins (4h)
 
 Hoje concentrei meu trabalho na análise e estruturação da arquitetura do novo projeto de Inteligência Artificial Generativa com RAG, referente ao **Cenário 1 — Contratações Públicas do Estado do Rio de Janeiro**.
 
@@ -934,6 +930,8 @@ PCA
 
 A relação entre PCA e contratação não deverá ser assumida como direta, pois os itens planejados e os itens efetivamente contratados são entidades diferentes. A futura associação poderá utilizar critérios como CNPJ, período, unidade administrativa, classificação, descrição dos itens, similaridade textual ou semântica e nível de confiança.
 
+
+
 Utilizei o ChatGPT como apoio para revisar a estratégia de expansão do corpus, analisar a ordem correta entre coleta RAW e normalização, discutir a utilização de contratações para identificar órgãos do RJ, analisar as diferenças entre os filtros disponíveis nos endpoints de PCA e contratação, estruturar a coleta dos três anos por trimestre, definir a estratégia de checkpoint por período, modalidade e página e revisar a relação entre PCA, contratação, item e resultado homologado.
 
 Ao final do encontro, foi definida a estratégia de expansão do corpus para o período de três anos, priorizando primeiro a coleta de contratações do Estado do Rio de Janeiro na camada RAW.
@@ -1313,7 +1311,7 @@ Os próximos passos serão:
 - manter a preservação e a rastreabilidade dos dados RAW antes do início da normalização.
 
 
-## Encontro 10 - 2026-10-14
+## Encontro 11 - 2026-10-14
 
 ### Relato individual — José Renan Freitas Marins (4h)
 
@@ -1403,3 +1401,218 @@ Os próximos passos definidos foram:
 - corrigir os mecanismos de paginação e retomada;
 - revisar a consolidação dos registros PCA;
 - implementar e testar os adaptadores HTTP incrementais em ambiente isolado, após a estabilização da arquitetura.
+
+## Encontro 12 - 2026-10-16
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Continuidade às atividades de desenvolvimento e estabilização da arquitetura de ingestão incremental dos dados do Portal Nacional de Contratações Públicas (PNCP). O objetivo foi iniciar a execução das tarefas definidas no backlog técnico, corrigir problemas de reprodutibilidade identificados na auditoria anterior e organizar o versionamento das alterações realizadas na branch `feature/ingestao-incremental-pncp`.
+
+### Implementação da tarefa INC-001 — Migrações e documentação
+
+A primeira atividade foi a execução da tarefa INC-001, relacionada à ausência de arquivos essenciais de migração e documentação no repositório.
+
+Durante a investigação, foi identificado que determinados arquivos haviam sido desenvolvidos localmente e preservados no Git stash, mas não estavam incluídos no histórico da branch. Essa situação provocava falhas em testes automatizados e impedia que um clone limpo do repositório reproduzisse corretamente o ambiente de ingestão incremental.
+
+Foram recuperados e incorporados ao versionamento os seguintes arquivos:
+
+- `migrations/001_raw_canonical_identity_index.sql`, responsável pela criação do índice de identidade canônica dos registros RAW;
+- `migrations/002_sync_window_checkpoint.sql`, responsável pelas estruturas de controle de sincronização incremental;
+- `docs/PNCP_INCREMENTAL_ENDPOINTS.md`, contendo a documentação dos endpoints e das regras de processamento incremental.
+
+A recuperação foi realizada seletivamente, sem aplicar integralmente os stashes e sem alterar os bancos operacionais existentes.
+
+### Validação das migrações e integridade dos dados
+
+Após a recuperação dos arquivos, foram executados testes específicos para verificar a compatibilidade das migrações com a estrutura atual do SQLite.
+- preservação dos registros existentes na camada RAW;
+- preservação dos checkpoints legados;
+- criação correta do índice de identidade canônica;
+- criação das tabelas de checkpoint v2;
+- execução idempotente das migrações;
+- resultado `ok` na verificação de integridade do SQLite;
+- ausência de violações de chaves estrangeiras.
+
+Também foram executados os testes automatizados do projeto, com os seguintes resultados:
+
+- 2 testes específicos de migração aprovados;
+- 117 testes da suíte completa aprovados;
+- validação de sintaxe Python aprovada;
+- verificação `git diff --check` aprovada;
+- nenhuma modificação nos bancos operacionais;
+- nenhuma chamada HTTP real durante a validação.
+
+Com esses resultados, a INC-001 foi considerada implementada e validada.
+
+### Organização e versionamento das alterações no Git
+
+Em seguida, concentrei as atividades na organização do histórico de desenvolvimento da branch incremental.
+Entre os componentes identificados estavam:
+- identidade canônica e versionamento dos registros RAW;
+- persistência e controle de atomicidade;
+- checkpoints e execução incremental;
+- proteção de leases e concorrência;
+- continuidade do watermark;
+- paginação e recuperação de falhas nos coletores;
+- testes automatizados de integridade e sincronização.
+
+### Revisão da documentação incremental
+
+Durante a organização das alterações, também foi revisada a documentação técnica dos endpoints incrementais.
+
+Foram identificadas atualizações relacionadas às condições necessárias para confirmar uma janela de sincronização e avançar o watermark, considerando a existência de janelas anteriores pendentes e a continuidade da cobertura temporal.
+
+A documentação também passou a descrever estratégias de recuperação de paginação, incluindo a repetição de janelas desde a primeira página quando não houver garantia de estabilidade na ordenação dos registros, além do tratamento de páginas intermediárias vazias e inconsistências nas respostas da API.
+
+Essas definições contribuem para estabelecer critérios mais rigorosos de recuperação e confirmação das coletas incrementais.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+
+- investigar a ausência dos arquivos necessários à reprodução do ambiente incremental;
+- analisar a estrutura das migrações SQL e seus impactos;
+- validar os resultados dos testes e verificações de integridade;
+- analisar as alterações pendentes na branch;
+- revisar as regras de sincronização, paginação e continuidade do watermark.
+
+### Resultado do encontro
+
+Ao final do encontro, a tarefa INC-001 estava implementada, validada e registrada no histórico local da branch incremental.
+Foram recuperados os arquivos essenciais de migração e documentação, eliminando as falhas de reprodutibilidade identificadas nos testes específicos. A suíte completa de 117 testes foi executada com sucesso durante a validação dessa tarefa.
+Também foi realizada a organização dos commits referentes às alterações da ingestão incremental, preparando o projeto para dar continuidade às correções de integridade, concorrência e recuperação de falhas.
+As atividades de validação da INC-001 ocorreram sem alterações nos bancos operacionais e sem execução de requisições HTTP reais.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- verificar e validar individualmente as correções já desenvolvidas na branch incremental;
+- concluir o tratamento de timestamps inválidos, ausentes e fora de ordem;
+- garantir atomicidade nas operações de persistência e versionamento RAW;
+- validar a proteção contra gravações após a perda ou expiração do lease;
+- assegurar o avanço contíguo do watermark;
+- revisar os mecanismos de paginação, retomada e reconciliação de alvos;
+- ampliar os testes de regressão para cenários de concorrência e falhas;
+- preparar a integração com os endpoints HTTP reais do PNCP em ambiente isolado;
+- após a estabilização da ingestão incremental, avançar na integração com a camada de normalização dos dados.
+
+- ## Encontro 13 - 2026-10-19
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, com foco na conclusão da auditoria da camada RAW e na implementação da camada normalizada. O objetivo foi garantir a integridade dos dados coletados, estabelecer uma estrutura relacional independente e preparar o projeto para as futuras etapas de consultas estruturadas, indicadores e integração com Inteligência Artificial Generativa.
+
+### Camada RAW
+
+responsável pela auditoria e preparação da base RAW para a normalização.
+
+Foram verificadas as condições de execução dos coletores, a integridade do banco SQLite, o histórico das ingestões e a cobertura dos recursos coletados.
+
+As principais atividades realizadas foram:
+- verificação da ausência de coletores Python e bloqueios SQLite ativos;
+- criação de backup consistente antes das alterações administrativas;
+- regularização de quatro execuções antigas que permaneciam com status `RUNNING`, classificadas como `FAILED`;
+- preservação integral dos registros RAW;
+- atualização do inventário de órgãos e unidades;
+- verificação da integridade do SQLite e das chaves estrangeiras.
+
+Ao final dessa etapa, a RAW permaneceu com **1.391.174 registros**, nenhuma execução em andamento e nenhuma violação de integridade referencial.
+Também foram documentadas ressalvas relacionadas à cobertura parcial de empenhos, contratos sem contratação-pai no recorte, datas suspeitas em resultados homologados e limitações na cobertura das atas de registro de preços.
+
+A Fase 0 foi concluída e aprovada com ressalvas documentadas, após a execução bem-sucedida de 225 testes automatizados.
+
+### Modelagem da camada normalizada
+
+Na sequência, foi desenvolvida a modelagem relacional da camada normalizada, mantendo sua independência em relação ao banco RAW original. A proposta foi organizar os dados provenientes das APIs do PNCP em entidades estruturadas, preservando a rastreabilidade até os registros originais.
+
+Foi elaborado um modelo contendo **16 tabelas normalizadas**, incluindo entidades relacionadas a:
+- órgãos e unidades administrativas;
+- fornecedores;
+- contratações e itens;
+- resultados homologados;
+- contratos e empenhos;
+- atas de registro de preços;
+- Planos de Contratações Anuais (PCA) e seus respectivos itens;
+- controle e auditoria da normalização.
+
+Também foram definidos os relacionamentos, chaves primárias e estrangeiras, regras de integridade e mecanismos de rastreabilidade por identificador RAW, hash e execução.
+A modelagem considerou situações específicas encontradas nos dados reais, como contratos sem contratação-pai no recorte temporal, cobertura parcial de empenhos e diferenças entre formatos de payload das APIs.
+
+A associação entre itens do PCA e itens de contratação foi mantida como uma relação que exige evidências e validação, evitando estabelecer vínculos não garantidos pelo PNCP.
+
+O DDL foi validado em um banco SQLite temporário, com 16 tabelas criadas, integridade confirmada e **232 testes automatizados aprovados**.
+
+### Implementação e validação da normalização
+
+Após a definição do modelo relacional, foi realizada a implementação e execução do processamento de normalização dos dados RAW.
+O processamento contemplou a seleção das versões vigentes dos registros, a transformação dos payloads JSON em entidades relacionais, a preservação da proveniência e o tratamento de inconsistências conhecidas.
+
+A execução utilizou a base RAW completa, com os seguintes resultados:
+- 1.391.174 registros RAW processados;
+- 1.664.131 entidades normalizadas;
+- 180.151 contratações;
+- 557.211 itens de contratação;
+- 417.675 resultados homologados;
+- 151.898 contratos;
+- 1.900 empenhos;
+- 80.761 atas de registro de preços;
+- 567 PCAs pertencentes ao escopo RJ;
+- 228.469 itens de PCA.
+
+Foram tratados casos específicos, incluindo 3.672 contratos cuja contratação-pai não estava presente no recorte, quatro contratos sem identificação de fornecedor, 72 resultados com datas suspeitas e quatro lacunas conhecidas na cobertura de empenhos.
+Também foram identificados 1.011 PCAs fora do inventário do Rio de Janeiro, que não foram incluídos no conjunto normalizado do escopo RJ.
+A implementação contemplou o tratamento de versões RAW recebidas fora de ordem e a reexecução idempotente, evitando a duplicação de entidades normalizadas.
+
+### Validação da integridade e reconciliação financeira
+Após o processamento, foram executadas verificações de integridade estrutural, consistência dos relacionamentos e reconciliação dos valores financeiros entre a RAW e a camada normalizada.
+
+Os resultados apresentados foram:
+- zero registros rejeitados;
+- zero violações de chaves estrangeiras;
+- `PRAGMA integrity_check` com resultado `ok`;
+- 247 testes automatizados aprovados;
+- reexecução idempotente validada;
+- reconciliação financeira exata entre os valores de origem e os valores normalizados.
+
+Os valores reconciliados foram:
+
+- resultados homologados: R$ 533.771.492.800,03;
+- contratos: R$ 787.533.670.110,70;
+- empenhos: R$ 131.953.649,08;
+- PCA no escopo RJ: R$ 191.389.328.133,31.
+
+Esses valores representam diferentes estágios das contratações públicas e foram mantidos separados para evitar interpretações incorretas entre planejamento, homologação, contratação e execução orçamentária.
+
+O banco normalizado gerado possui aproximadamente 2,18 GB e foi validado sem modificar a RAW oficial.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+- estruturar o planejamento e os critérios de validação das fases de normalização;
+- analisar a integridade da RAW e os riscos associados à preparação dos dados;
+- apoiar a definição das entidades, chaves e relacionamentos;
+- revisar a modelagem relacional e as regras de rastreabilidade;
+- orientar o tratamento de inconsistências e versões recebidas fora de ordem;
+- analisar os resultados dos testes automatizados;
+- avaliar a reconciliação financeira entre RAW e normalizada;
+- planejar a futura integração da camada normalizada com consultas SQL, agentes de IA e RAG.
+
+### Resultado do encontro
+A camada normalizada passou a disponibilizar **1.664.131 entidades estruturadas**, com relacionamentos definidos, rastreabilidade até a RAW, integridade referencial e reconciliação financeira validada.
+O processamento foi realizado em um banco independente, preservando integralmente a base RAW operacional e sem executar novas coletas ou chamadas HTTP ao PNCP.
+A implementação representa um avanço na preparação dos dados para a construção de indicadores, consultas SQL e mecanismos de recuperação de informações com Inteligência Artificial Generativa.
+
+### Próximos passos
+Os próximos passos definidos foram:
+
+- revisar a privacidade e a proteção dos dados de fornecedores pessoa física;
+- preparar o banco normalizado para distribuição em uma release independente;
+- compactar o artefato e gerar checksum SHA-256;
+- documentar a proveniência, cobertura e limitações da base normalizada;
+- organizar os commits e o versionamento das implementações;
+- desenvolver indicadores e consultas SQL canônicas;
+- investigar e implementar associações auditáveis entre PCA e contratações;
+- estruturar a camada semântica para interpretação de perguntas;
+- implementar agentes de IA para consultas estruturadas;
+- integrar a recuperação documental com RAG, preservando as evidências utilizadas nas respostas.
