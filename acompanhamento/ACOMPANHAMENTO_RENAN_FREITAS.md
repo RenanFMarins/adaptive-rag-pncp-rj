@@ -10,11 +10,7 @@
 
 ## Encontro 1 - 2026-09-16
 
-
-
 ### Relato individual - José Renan freitas Marins (4h)
-
-## Relato individual — José Renan Freitas Marins (4h)
 
 Hoje concentrei meu trabalho na análise e estruturação da arquitetura do novo projeto de Inteligência Artificial Generativa com RAG, referente ao **Cenário 1 — Contratações Públicas do Estado do Rio de Janeiro**.
 
@@ -1500,3 +1496,315 @@ Os próximos passos definidos foram:
 - ampliar os testes de regressão para cenários de concorrência e falhas;
 - preparar a integração com os endpoints HTTP reais do PNCP em ambiente isolado;
 - após a estabilização da ingestão incremental, avançar na integração com a camada de normalização dos dados.
+
+- ## Encontro 13 - 2026-10-19
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, com foco na conclusão da auditoria da camada RAW e na implementação da camada normalizada. O objetivo foi garantir a integridade dos dados coletados, estabelecer uma estrutura relacional independente e preparar o projeto para as futuras etapas de consultas estruturadas, indicadores e integração com Inteligência Artificial Generativa.
+
+### Camada RAW
+
+responsável pela auditoria e preparação da base RAW para a normalização.
+
+Foram verificadas as condições de execução dos coletores, a integridade do banco SQLite, o histórico das ingestões e a cobertura dos recursos coletados.
+
+As principais atividades realizadas foram:
+- verificação da ausência de coletores Python e bloqueios SQLite ativos;
+- criação de backup consistente antes das alterações administrativas;
+- regularização de quatro execuções antigas que permaneciam com status `RUNNING`, classificadas como `FAILED`;
+- preservação integral dos registros RAW;
+- atualização do inventário de órgãos e unidades;
+- verificação da integridade do SQLite e das chaves estrangeiras.
+
+Ao final dessa etapa, a RAW permaneceu com **1.391.174 registros**, nenhuma execução em andamento e nenhuma violação de integridade referencial.
+Também foram documentadas ressalvas relacionadas à cobertura parcial de empenhos, contratos sem contratação-pai no recorte, datas suspeitas em resultados homologados e limitações na cobertura das atas de registro de preços.
+
+A Fase 0 foi concluída e aprovada com ressalvas documentadas, após a execução bem-sucedida de 225 testes automatizados.
+
+### Modelagem da camada normalizada
+
+Na sequência, foi desenvolvida a modelagem relacional da camada normalizada, mantendo sua independência em relação ao banco RAW original. A proposta foi organizar os dados provenientes das APIs do PNCP em entidades estruturadas, preservando a rastreabilidade até os registros originais.
+
+Foi elaborado um modelo contendo **16 tabelas normalizadas**, incluindo entidades relacionadas a:
+- órgãos e unidades administrativas;
+- fornecedores;
+- contratações e itens;
+- resultados homologados;
+- contratos e empenhos;
+- atas de registro de preços;
+- Planos de Contratações Anuais (PCA) e seus respectivos itens;
+- controle e auditoria da normalização.
+
+Também foram definidos os relacionamentos, chaves primárias e estrangeiras, regras de integridade e mecanismos de rastreabilidade por identificador RAW, hash e execução.
+A modelagem considerou situações específicas encontradas nos dados reais, como contratos sem contratação-pai no recorte temporal, cobertura parcial de empenhos e diferenças entre formatos de payload das APIs.
+
+A associação entre itens do PCA e itens de contratação foi mantida como uma relação que exige evidências e validação, evitando estabelecer vínculos não garantidos pelo PNCP.
+
+O DDL foi validado em um banco SQLite temporário, com 16 tabelas criadas, integridade confirmada e **232 testes automatizados aprovados**.
+
+### Implementação e validação da normalização
+
+Após a definição do modelo relacional, foi realizada a implementação e execução do processamento de normalização dos dados RAW.
+O processamento contemplou a seleção das versões vigentes dos registros, a transformação dos payloads JSON em entidades relacionais, a preservação da proveniência e o tratamento de inconsistências conhecidas.
+
+A execução utilizou a base RAW completa, com os seguintes resultados:
+- 1.391.174 registros RAW processados;
+- 1.664.131 entidades normalizadas;
+- 180.151 contratações;
+- 557.211 itens de contratação;
+- 417.675 resultados homologados;
+- 151.898 contratos;
+- 1.900 empenhos;
+- 80.761 atas de registro de preços;
+- 567 PCAs pertencentes ao escopo RJ;
+- 228.469 itens de PCA.
+
+Foram tratados casos específicos, incluindo 3.672 contratos cuja contratação-pai não estava presente no recorte, quatro contratos sem identificação de fornecedor, 72 resultados com datas suspeitas e quatro lacunas conhecidas na cobertura de empenhos.
+Também foram identificados 1.011 PCAs fora do inventário do Rio de Janeiro, que não foram incluídos no conjunto normalizado do escopo RJ.
+A implementação contemplou o tratamento de versões RAW recebidas fora de ordem e a reexecução idempotente, evitando a duplicação de entidades normalizadas.
+
+### Validação da integridade e reconciliação financeira
+Após o processamento, foram executadas verificações de integridade estrutural, consistência dos relacionamentos e reconciliação dos valores financeiros entre a RAW e a camada normalizada.
+
+Os resultados apresentados foram:
+- zero registros rejeitados;
+- zero violações de chaves estrangeiras;
+- `PRAGMA integrity_check` com resultado `ok`;
+- 247 testes automatizados aprovados;
+- reexecução idempotente validada;
+- reconciliação financeira exata entre os valores de origem e os valores normalizados.
+
+Os valores reconciliados foram:
+
+- resultados homologados: R$ 533.771.492.800,03;
+- contratos: R$ 787.533.670.110,70;
+- empenhos: R$ 131.953.649,08;
+- PCA no escopo RJ: R$ 191.389.328.133,31.
+
+Esses valores representam diferentes estágios das contratações públicas e foram mantidos separados para evitar interpretações incorretas entre planejamento, homologação, contratação e execução orçamentária.
+
+O banco normalizado gerado possui aproximadamente 2,18 GB e foi validado sem modificar a RAW oficial.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+- estruturar o planejamento e os critérios de validação das fases de normalização;
+- analisar a integridade da RAW e os riscos associados à preparação dos dados;
+- apoiar a definição das entidades, chaves e relacionamentos;
+- revisar a modelagem relacional e as regras de rastreabilidade;
+- orientar o tratamento de inconsistências e versões recebidas fora de ordem;
+- analisar os resultados dos testes automatizados;
+- avaliar a reconciliação financeira entre RAW e normalizada;
+- planejar a futura integração da camada normalizada com consultas SQL, agentes de IA e RAG.
+
+### Resultado do encontro
+A camada normalizada passou a disponibilizar **1.664.131 entidades estruturadas**, com relacionamentos definidos, rastreabilidade até a RAW, integridade referencial e reconciliação financeira validada.
+O processamento foi realizado em um banco independente, preservando integralmente a base RAW operacional e sem executar novas coletas ou chamadas HTTP ao PNCP.
+A implementação representa um avanço na preparação dos dados para a construção de indicadores, consultas SQL e mecanismos de recuperação de informações com Inteligência Artificial Generativa.
+
+### Próximos passos
+Os próximos passos definidos foram:
+
+- revisar a privacidade e a proteção dos dados de fornecedores pessoa física;
+- preparar o banco normalizado para distribuição em uma release independente;
+- compactar o artefato e gerar checksum SHA-256;
+- documentar a proveniência, cobertura e limitações da base normalizada;
+- organizar os commits e o versionamento das implementações;
+- desenvolver indicadores e consultas SQL canônicas;
+- investigar e implementar associações auditáveis entre PCA e contratações;
+- estruturar a camada semântica para interpretação de perguntas;
+- implementar agentes de IA para consultas estruturadas;
+- integrar a recuperação documental com RAG, preservando as evidências utilizadas nas respostas.
+
+## Encontro 14 - 2026-10-21
+
+### Relato individual — José Renan Freitas Marins (4h)
+om foco na homologação operacional da API integrada à camada normalizada, na identificação e correção de problemas relacionados à segurança e à recuperação documental e no planejamento da arquitetura de processamento de PDFs sob demanda.
+
+O objetivo foi validar a utilização da base normalizada em consultas reais, verificar o funcionamento dos fluxos Structured, RAG e Hybrid e preparar o sistema para responder perguntas em linguagem natural com informações confiáveis, rastreáveis e fundamentadas em evidências.
+
+### Integração operacional da API com a base normalizada
+
+Inicialmente, foram consolidadas as implementações relacionadas à integração da API com a base normalizada SQLite, disponibilizadas nos PRs #60 e #61.
+A homologação confirmou que a conexão utiliza `mode=ro` e `PRAGMA query_only=1`, impedindo alterações no banco normalizado.
+Também foram verificadas as seguintes quantidades de registros:
+- 180.419 contratações;
+- 151.898 contratos;
+- 567 Planos de Contratações Anuais (PCA);
+- 228.469 itens de PCA;
+- 44.689 contratações referentes a 2026.
+
+A integridade do banco foi confirmada por meio de `PRAGMA integrity_check`, com resultado `ok`.
+
+### Homologação das rotas e consultas da API
+
+Na sequência, foi realizada a homologação operacional da API utilizando a base normalizada real em modo somente leitura e uma cópia temporária do banco operacional da aplicação.
+
+Foram avaliadas as rotas:
+
+- `/docs`, para acesso à documentação Swagger;
+- `/openapi.json`, para validação dos contratos da API;
+- `/auth/register`, `/auth/login` e `/auth/me`, para autenticação;
+- `/query/structured`, para consultas estruturadas;
+- `/query/ask`, para roteamento das perguntas;
+- `/query/generate`, para geração de respostas com recuperação documental;
+- `/query/catalog/documents`, para consulta ao catálogo de documentos.
+
+Os testes confirmaram o funcionamento do startup, da autenticação, da validação das entradas e da execução direta da SQL Tool sobre dados reais.
+
+Uma consulta relacionada a contratos de licenciamento de software em 2025, com valor superior a R$ 500 mil, retornou cinco registros compatíveis com os filtros disponíveis, incluindo informações dos fornecedores.
+
+Entretanto, foram identificadas limitações na execução completa das perguntas em linguagem natural, principalmente devido à instabilidade do provedor ECOA e à ausência de funcionalidades analíticas necessárias para responder integralmente às perguntas das personas.
+
+### Avaliação do Adaptive RAG e identificação de limitações
+
+Durante os testes, foram analisados os mecanismos de interpretação de perguntas, consultas SQL e recuperação documental.
+
+As principais limitações identificadas foram:
+
+- ausência do índice FAISS operacional;
+- instabilidade do provedor ECOA, com ocorrência de timeouts;
+- corpus operacional contendo apenas dois documentos e 55 chunks;
+- ausência de suporte a determinados filtros e relacionamentos necessários às perguntas oficiais;
+- necessidade de ampliar a proveniência estruturada das respostas;
+- impossibilidade de executar integralmente o fluxo Hybrid;
+- possibilidade de uma consulta retornar HTTP 200 sem responder corretamente à pergunta original.
+
+Também foram avaliadas as três personas do desafio.
+
+Na pergunta de Marina, relacionada ao preço médio por quilograma de arroz, foi identificada a necessidade de integrar itens de contratação, resultados homologados, quantidades e unidades de medida.
+
+Na pergunta de Rodrigo, relacionada a contratos estaduais de licenciamento de software, foi identificada a ausência de um filtro específico para esfera governamental.
+
+Na pergunta de Cláudia, relacionada à participação de MEI em pregões eletrônicos, foram identificadas necessidades de integração entre informações normativas, situação das oportunidades e recuperação documental.
+
+Essas verificações demonstraram que a camada SQL normalizada está operacional, mas que o Adaptive RAG ainda necessita de melhorias para responder integralmente às perguntas do desafio.
+
+### Implementação de segurança e minimização dos logs
+
+Após a homologação, foi realizada uma análise dos mecanismos de observabilidade e armazenamento de logs.
+
+Foi identificado que determinados eventos persistiam perguntas completas, prompts, respostas geradas e saídas brutas do Query Analyzer, representando um risco de exposição de informações sensíveis.
+
+Para corrigir esse comportamento, foi implementada uma política de minimização baseada em uma lista explícita de campos permitidos.
+
+As principais melhorias foram:
+
+- remoção de perguntas e respostas completas dos logs operacionais;
+- impedimento do armazenamento de prompts e saídas brutas dos modelos;
+- descarte de campos adicionais não autorizados;
+- preservação de métricas de latência, tokens, status e modelo utilizado;
+- manutenção da correlação entre requisições por `run_id`;
+- registro de quantidades e identificadores técnicos sem armazenar linhas completas das consultas SQL;
+- tratamento de exceções sem persistir mensagens que possam conter dados sensíveis.
+
+O histórico funcional das conversas, armazenado nas tabelas `queries` e `responses`, foi preservado, por possuir finalidade distinta dos logs operacionais.
+
+A implementação foi validada com dados sintéticos, incluindo CPF, e-mail, tokens e informações bancárias fictícias.
+
+Após essa etapa, foram registrados **612 testes e 107 subtestes aprovados**.
+
+### Tratamento seguro de indisponibilidade do FAISS
+
+Em seguida, foi realizada a correção do tratamento de erros relacionados ao carregamento do índice FAISS.
+
+Durante a homologação, foi identificado que a ausência do índice provocava erros HTTP 500 nas rotas de recuperação documental.
+
+Foi implementado um contrato específico para classificar três situações:
+
+- `faiss_index_missing`: índice inexistente;
+- `faiss_index_corrupt`: arquivos corrompidos ou inconsistentes;
+- `faiss_index_incompatible`: incompatibilidade de modelo ou dimensão dos embeddings.
+
+A API passou a retornar HTTP 503 quando a recuperação documental necessária estiver indisponível, utilizando mensagens controladas e sem exposição de caminhos locais, credenciais ou informações internas.
+
+Também foi preservada a independência das rotas Structured e Catalog, permitindo que continuem funcionando mesmo quando o índice FAISS não estiver disponível.
+
+O fluxo Hybrid passou a tratar a indisponibilidade de evidências obrigatórias sem apresentar respostas parciais como se fossem completas.
+
+Erros inesperados de programação continuam sendo tratados separadamente, evitando que falhas não relacionadas à infraestrutura sejam mascaradas.
+
+Após a implementação da H2, os resultados foram:
+
+- **624 testes automatizados aprovados;**
+- **110 subtestes aprovados;**
+- compilação dos módulos alterados aprovada;
+- `git diff --check` aprovado;
+- preservação das alterações anteriores da H1;
+- nenhuma alteração nos bancos operacionais.
+
+As implementações H1 e H2 permaneceram sem commit, aguardando revisão técnica.
+
+### Planejamento da arquitetura de processamento documental sob demanda
+
+Também foi retomada a discussão sobre o processamento dos documentos PDF associados às contratações públicas do PNCP.
+
+Considerando o grande volume potencial de editais, contratos, atas e anexos, foi definida como proposta a utilização de uma arquitetura híbrida, combinando **pré-processamento seletivo, processamento sob demanda e cache persistente**.
+
+A proposta busca evitar o download, a extração de texto, o OCR e a geração antecipada de embeddings para todo o acervo documental.
+
+O fluxo planejado contempla:
+
+- identificação dos documentos disponíveis por meio de um catálogo documental;
+- associação dos documentos às respectivas contratações e entidades do PNCP;
+- verificação da existência de conteúdo previamente processado;
+- recuperação direta de documentos já indexados;
+- download sob demanda de documentos ainda não processados;
+- extração de texto nativo dos PDFs;
+- utilização seletiva de OCR em páginas digitalizadas, imagens e tabelas;
+- divisão do conteúdo em chunks com preservação de página e proveniência;
+- geração de embeddings e indexação no FAISS;
+- integração com busca lexical FTS5/BM25 e fusão RRF;
+- armazenamento em cache para evitar processamento repetido;
+- controle de versões e integridade por hash SHA-256.
+
+Foi preparado um roteiro de auditoria técnica para verificar quais desses componentes já existem no repositório, identificar lacunas e definir um plano de implementação incremental.
+
+Essa arquitetura ainda está em fase de análise e planejamento, não tendo sido implementada neste encontro.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+
+- estruturar o planejamento da homologação operacional da API;
+- definir critérios de validação para consultas utilizando a base normalizada;
+- analisar os resultados dos testes Structured, RAG e Hybrid;
+- identificar limitações do Query Analyzer e da recuperação documental;
+- orientar a implementação da política de minimização de dados nos logs;
+- apoiar a definição do contrato de erros do FAISS;
+- estruturar testes automatizados de segurança e tratamento de falhas;
+- discutir a arquitetura de processamento de PDFs sob demanda;
+- planejar a integração entre catálogo documental, OCR, FAISS, FTS5 e Adaptive RAG;
+
+### Resultado do encontro
+
+A homologação confirmou que a API consegue acessar a base normalizada real em modo somente leitura, executar consultas estruturadas e preservar a integridade dos bancos operacionais.
+
+Foram implementadas melhorias de segurança e observabilidade, além de mecanismos de tratamento controlado para indisponibilidade do índice FAISS.
+
+A suíte automatizada alcançou **624 testes e 110 subtestes aprovados**, sem execução de novas coletas, migrations ou alterações nos bancos RAW e normalizado.
+
+Também foram identificadas as limitações que impedem a homologação completa do Adaptive RAG e estruturada uma proposta de processamento documental seletivo e sob demanda.
+
+As alterações H1 e H2 permaneceram locais, sem commit, push ou merge, aguardando revisão. Os PRs existentes também permaneceram sem integração à branch principal.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- realizar a revisão técnica conjunta das implementações H1 e H2;
+- organizar as alterações em commits independentes após aprovação;
+- manter os PRs existentes sem merge até a validação da equipe;
+- avaliar a configuração de um provedor OpenAI como alternativa ao ECOA;
+- estabilizar a interpretação de perguntas em linguagem natural;
+- implementar validações para impedir respostas semanticamente incompletas;
+- ampliar os filtros e relacionamentos da SQL Tool para atender às três personas;
+- aprimorar a proveniência das respostas estruturadas;
+- auditar a arquitetura existente de catálogo e processamento documental;
+- definir o pipeline de extração de PDFs e OCR seletivo;
+- construir e validar o primeiro índice FAISS operacional;
+- integrar a recuperação híbrida com FTS5, FAISS e RRF;
+- implementar cache e processamento documental sob demanda;
+- realizar novos testes ponta a ponta nas rotas Structured, RAG e Hybrid;
+- avançar na homologação do Adaptive RAG com respostas fundamentadas e auditáveis.

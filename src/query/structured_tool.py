@@ -296,7 +296,7 @@ def executar_consulta_estruturada(
             _field_expression(config, field) for field in analysis.group_by
         )
 
-    limit = analysis.limit or 20
+    limit = min(max(analysis.limit or 20, 1), 100)
     query = (
         _latest_assets_cte()
         + " SELECT "
@@ -307,9 +307,40 @@ def executar_consulta_estruturada(
         + _order_clause(analysis, config)
         + " LIMIT ?"
     )
-    cursor = connection.execute(query, [config.resource_type, *params, limit])
-    columns = [description[0] for description in cursor.description or []]
-    rows = [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
+
+    import time
+
+    previous_query_only = int(
+        connection.execute("PRAGMA query_only").fetchone()[0]
+    )
+    deadline = time.monotonic() + 5.0
+
+    def query_deadline_exceeded() -> int:
+        return int(time.monotonic() >= deadline)
+
+    query_only_enabled = False
+    progress_handler_enabled = False
+    try:
+        connection.execute("PRAGMA query_only = ON")
+        query_only_enabled = True
+        connection.set_progress_handler(query_deadline_exceeded, 1000)
+        progress_handler_enabled = True
+        cursor = connection.execute(query, [config.resource_type, *params, limit])
+        columns = [description[0] for description in cursor.description or []]
+        rows = [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
+    except sqlite3.OperationalError as exc:
+        if "interrupted" in str(exc).lower():
+            raise StructuredQueryError(
+                "A consulta estruturada excedeu o tempo limite de 5 segundos."
+            ) from exc
+        raise
+    finally:
+        if progress_handler_enabled:
+            connection.set_progress_handler(None, 0)
+        if query_only_enabled:
+            connection.execute(
+                f"PRAGMA query_only = {previous_query_only}"
+            )
 
     return StructuredQueryResult(
         entity=analysis.entity,
