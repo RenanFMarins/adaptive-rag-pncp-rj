@@ -53,6 +53,9 @@ _CACHE_PARTS = {
     ".ruff_cache",
     ".cache",
 }
+_GENERATED_PATH_PREFIXES = (
+    "data/chunks/",
+)
 
 
 def policy_violations(path: str, size: int) -> list[str]:
@@ -74,6 +77,10 @@ def policy_violations(path: str, size: int) -> list[str]:
 
     if name.endswith(_GENERATED_INDEX_SUFFIXES):
         violations.append("índice ou embedding gerado")
+
+    lowered_path = normalized.lower().lstrip("./")
+    if lowered_path.startswith(_GENERATED_PATH_PREFIXES):
+        violations.append("artefato de chunks gerado")
 
     if name.endswith(".log") or ".log." in name:
         violations.append("log operacional")

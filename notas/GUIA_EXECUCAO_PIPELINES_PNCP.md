@@ -342,6 +342,10 @@ Saída esperada:
 data/chunks/
 ```
 
+Esse diretório contém artefatos gerados e não deve ser versionado no Git.
+Para compartilhar um lote, publique um pacote verificável em uma Release ou
+no armazenamento externo da equipe, acompanhado de SHA-256 e inventário.
+
 Exemplo por lote:
 
 ```powershell

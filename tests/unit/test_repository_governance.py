@@ -57,6 +57,13 @@ class RepositoryGovernanceTests(unittest.TestCase):
         )
         self.assertIn("arquivo maior que 50 MiB", violations)
 
+    def test_blocks_generated_chunks_even_below_size_limit(self):
+        violations = policy_violations(
+            "data/chunks/v2/2026/chunks_2026_10_lote_001.jsonl",
+            1024,
+        )
+        self.assertIn("artefato de chunks gerado", violations)
+
     def test_accepts_file_at_size_limit(self):
         self.assertEqual(
             policy_violations("tests/fixtures/authorized.json", MAX_TRACKED_FILE_BYTES),

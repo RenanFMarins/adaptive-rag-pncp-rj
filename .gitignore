@@ -74,6 +74,7 @@ data/exports/
 data/debug/backups/
 data/normalized/
 data/cache/
+data/chunks/
 data/embeddings/
 data/indexes/
 index/
