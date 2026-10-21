@@ -27,6 +27,9 @@ __pycache__/
 # Test / coverage cache
 # ==============================
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 .coverage
 htmlcov/
 
@@ -51,12 +54,28 @@ htmlcov/
 
 
 # ==============================
+# Generated indexes / embeddings
+# ==============================
+*.faiss
+*.ann
+*.hnsw
+*.npy
+*.npz
+*.safetensors
+*.pt
+*.pth
+
+
+# ==============================
 # Project generated data
 # ==============================
 data/raw/
 data/exports/
 data/debug/backups/
 data/normalized/
+data/cache/
+data/embeddings/
+data/indexes/
 index/
 indexes/
 logs/
@@ -68,6 +87,20 @@ data/lotes_documentos/
 data/index/
 data/adaptive_jobs/
 data/adaptive_tasks/
+
+
+# ==============================
+# Operational logs / temporary files
+# ==============================
+*.log
+*.log.*
+*.pid
+*.tmp
+*.temp
+*.swp
+*~
+tmp/
+temp/
 
 
 
