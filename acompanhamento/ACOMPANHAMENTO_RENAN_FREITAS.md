@@ -10,11 +10,7 @@
 
 ## Encontro 1 - 2026-09-16
 
-
-
 ### Relato individual - José Renan freitas Marins (4h)
-
-## Relato individual — José Renan Freitas Marins (4h)
 
 Hoje concentrei meu trabalho na análise e estruturação da arquitetura do novo projeto de Inteligência Artificial Generativa com RAG, referente ao **Cenário 1 — Contratações Públicas do Estado do Rio de Janeiro**.
 
@@ -1500,3 +1496,123 @@ Os próximos passos definidos foram:
 - ampliar os testes de regressão para cenários de concorrência e falhas;
 - preparar a integração com os endpoints HTTP reais do PNCP em ambiente isolado;
 - após a estabilização da ingestão incremental, avançar na integração com a camada de normalização dos dados.
+
+- ## Encontro 13 - 2026-10-19
+
+### Relato individual — José Renan Freitas Marins (4h)
+
+Neste encontro, com foco na conclusão da auditoria da camada RAW e na implementação da camada normalizada. O objetivo foi garantir a integridade dos dados coletados, estabelecer uma estrutura relacional independente e preparar o projeto para as futuras etapas de consultas estruturadas, indicadores e integração com Inteligência Artificial Generativa.
+
+### Camada RAW
+
+responsável pela auditoria e preparação da base RAW para a normalização.
+
+Foram verificadas as condições de execução dos coletores, a integridade do banco SQLite, o histórico das ingestões e a cobertura dos recursos coletados.
+
+As principais atividades realizadas foram:
+- verificação da ausência de coletores Python e bloqueios SQLite ativos;
+- criação de backup consistente antes das alterações administrativas;
+- regularização de quatro execuções antigas que permaneciam com status `RUNNING`, classificadas como `FAILED`;
+- preservação integral dos registros RAW;
+- atualização do inventário de órgãos e unidades;
+- verificação da integridade do SQLite e das chaves estrangeiras.
+
+Ao final dessa etapa, a RAW permaneceu com **1.391.174 registros**, nenhuma execução em andamento e nenhuma violação de integridade referencial.
+Também foram documentadas ressalvas relacionadas à cobertura parcial de empenhos, contratos sem contratação-pai no recorte, datas suspeitas em resultados homologados e limitações na cobertura das atas de registro de preços.
+
+A Fase 0 foi concluída e aprovada com ressalvas documentadas, após a execução bem-sucedida de 225 testes automatizados.
+
+### Modelagem da camada normalizada
+
+Na sequência, foi desenvolvida a modelagem relacional da camada normalizada, mantendo sua independência em relação ao banco RAW original. A proposta foi organizar os dados provenientes das APIs do PNCP em entidades estruturadas, preservando a rastreabilidade até os registros originais.
+
+Foi elaborado um modelo contendo **16 tabelas normalizadas**, incluindo entidades relacionadas a:
+- órgãos e unidades administrativas;
+- fornecedores;
+- contratações e itens;
+- resultados homologados;
+- contratos e empenhos;
+- atas de registro de preços;
+- Planos de Contratações Anuais (PCA) e seus respectivos itens;
+- controle e auditoria da normalização.
+
+Também foram definidos os relacionamentos, chaves primárias e estrangeiras, regras de integridade e mecanismos de rastreabilidade por identificador RAW, hash e execução.
+A modelagem considerou situações específicas encontradas nos dados reais, como contratos sem contratação-pai no recorte temporal, cobertura parcial de empenhos e diferenças entre formatos de payload das APIs.
+
+A associação entre itens do PCA e itens de contratação foi mantida como uma relação que exige evidências e validação, evitando estabelecer vínculos não garantidos pelo PNCP.
+
+O DDL foi validado em um banco SQLite temporário, com 16 tabelas criadas, integridade confirmada e **232 testes automatizados aprovados**.
+
+### Implementação e validação da normalização
+
+Após a definição do modelo relacional, foi realizada a implementação e execução do processamento de normalização dos dados RAW.
+O processamento contemplou a seleção das versões vigentes dos registros, a transformação dos payloads JSON em entidades relacionais, a preservação da proveniência e o tratamento de inconsistências conhecidas.
+
+A execução utilizou a base RAW completa, com os seguintes resultados:
+- 1.391.174 registros RAW processados;
+- 1.664.131 entidades normalizadas;
+- 180.151 contratações;
+- 557.211 itens de contratação;
+- 417.675 resultados homologados;
+- 151.898 contratos;
+- 1.900 empenhos;
+- 80.761 atas de registro de preços;
+- 567 PCAs pertencentes ao escopo RJ;
+- 228.469 itens de PCA.
+
+Foram tratados casos específicos, incluindo 3.672 contratos cuja contratação-pai não estava presente no recorte, quatro contratos sem identificação de fornecedor, 72 resultados com datas suspeitas e quatro lacunas conhecidas na cobertura de empenhos.
+Também foram identificados 1.011 PCAs fora do inventário do Rio de Janeiro, que não foram incluídos no conjunto normalizado do escopo RJ.
+A implementação contemplou o tratamento de versões RAW recebidas fora de ordem e a reexecução idempotente, evitando a duplicação de entidades normalizadas.
+
+### Validação da integridade e reconciliação financeira
+Após o processamento, foram executadas verificações de integridade estrutural, consistência dos relacionamentos e reconciliação dos valores financeiros entre a RAW e a camada normalizada.
+
+Os resultados apresentados foram:
+- zero registros rejeitados;
+- zero violações de chaves estrangeiras;
+- `PRAGMA integrity_check` com resultado `ok`;
+- 247 testes automatizados aprovados;
+- reexecução idempotente validada;
+- reconciliação financeira exata entre os valores de origem e os valores normalizados.
+
+Os valores reconciliados foram:
+
+- resultados homologados: R$ 533.771.492.800,03;
+- contratos: R$ 787.533.670.110,70;
+- empenhos: R$ 131.953.649,08;
+- PCA no escopo RJ: R$ 191.389.328.133,31.
+
+Esses valores representam diferentes estágios das contratações públicas e foram mantidos separados para evitar interpretações incorretas entre planejamento, homologação, contratação e execução orçamentária.
+
+O banco normalizado gerado possui aproximadamente 2,18 GB e foi validado sem modificar a RAW oficial.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+- estruturar o planejamento e os critérios de validação das fases de normalização;
+- analisar a integridade da RAW e os riscos associados à preparação dos dados;
+- apoiar a definição das entidades, chaves e relacionamentos;
+- revisar a modelagem relacional e as regras de rastreabilidade;
+- orientar o tratamento de inconsistências e versões recebidas fora de ordem;
+- analisar os resultados dos testes automatizados;
+- avaliar a reconciliação financeira entre RAW e normalizada;
+- planejar a futura integração da camada normalizada com consultas SQL, agentes de IA e RAG.
+
+### Resultado do encontro
+A camada normalizada passou a disponibilizar **1.664.131 entidades estruturadas**, com relacionamentos definidos, rastreabilidade até a RAW, integridade referencial e reconciliação financeira validada.
+O processamento foi realizado em um banco independente, preservando integralmente a base RAW operacional e sem executar novas coletas ou chamadas HTTP ao PNCP.
+A implementação representa um avanço na preparação dos dados para a construção de indicadores, consultas SQL e mecanismos de recuperação de informações com Inteligência Artificial Generativa.
+
+### Próximos passos
+Os próximos passos definidos foram:
+
+- revisar a privacidade e a proteção dos dados de fornecedores pessoa física;
+- preparar o banco normalizado para distribuição em uma release independente;
+- compactar o artefato e gerar checksum SHA-256;
+- documentar a proveniência, cobertura e limitações da base normalizada;
+- organizar os commits e o versionamento das implementações;
+- desenvolver indicadores e consultas SQL canônicas;
+- investigar e implementar associações auditáveis entre PCA e contratações;
+- estruturar a camada semântica para interpretação de perguntas;
+- implementar agentes de IA para consultas estruturadas;
+- integrar a recuperação documental com RAG, preservando as evidências utilizadas nas respostas.

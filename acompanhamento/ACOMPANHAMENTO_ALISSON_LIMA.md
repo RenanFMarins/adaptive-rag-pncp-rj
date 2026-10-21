@@ -2079,3 +2079,96 @@ Validar o fallback automático para OpenAI, avaliar a qualidade das respostas ge
 
 ### Conclusão
 O Encontro 13 foi dedicado à correção de configurações e à validação operacional do sistema RAG. Os testes demonstraram o funcionamento dos principais componentes, permanecendo como próxima etapa a avaliação da precisão e da fundamentação das respostas.
+# Encontro 14 — Validação do Sistema RAG de Contratações Públicas
+
+**Data:** 19/10/2026  
+**Projeto:** RAG — Grande Desafio Grupo 03 — Contratações Públicas
+
+## 1. Objetivo do encontro
+
+O Encontro 14 foi dedicado à elaboração e à organização de perguntas para validar o funcionamento do sistema RAG de Contratações Públicas.
+
+O objetivo foi estabelecer cenários de testes capazes de verificar a recuperação de informações estruturadas do banco de dados, a interpretação de documentos e a combinação dessas duas fontes de informação.
+
+## 2. Atividades realizadas
+
+### 2.1. Elaboração de perguntas estruturadas
+
+Foram definidas duas perguntas para avaliar a capacidade do sistema de consultar informações armazenadas diretamente no banco de dados:
+
+1. Quantas contratações por dispensa existem em 2026?
+2. Liste as 10 contratações de 2026 com maior valor estimado.
+
+Esses testes têm como finalidade verificar a execução de consultas estruturadas, incluindo contagem de registros, filtragem por modalidade e ano, ordenação e recuperação de valores.
+
+### 2.2. Elaboração de perguntas documentais — RAG
+
+Foram organizadas oito perguntas que exigem recuperação e interpretação de conteúdos documentais.
+
+Segundo Luciano Oliveira, essas perguntas possuem evidências reais nos documentos armazenados no banco de dados.
+
+1. Quais práticas de sustentabilidade são previstas para a contratação de manutenção de elevadores?
+2. Quais obrigações de LGPD são previstas nos documentos de contratação?
+3. Como ocorre a fiscalização administrativa do contrato?
+4. Quais documentos são necessários para verificar a habilitação da contratada?
+5. Quais são as condições previstas para reajuste contratual?
+6. Quais obrigações da contratada estão relacionadas à execução do contrato?
+7. Como funciona a subcontratação nos documentos recuperados?
+8. Quais exigências existem para manutenção das condições de habilitação?
+
+Essas perguntas foram selecionadas para avaliar a capacidade do RAG de localizar trechos relevantes, interpretar cláusulas contratuais e produzir respostas fundamentadas nas evidências documentais.
+
+### 2.3. Elaboração de pergunta híbrida
+
+Foi definida uma pergunta que combina dados estruturados e recuperação documental:
+
+**Pergunta:**
+
+> Para a contratação `00394502000144-1-009055/2026`, informe o valor estimado e as práticas de sustentabilidade previstas.
+
+Esse cenário busca verificar se o sistema consegue identificar uma contratação específica, consultar seu valor estimado no banco de dados e recuperar as práticas de sustentabilidade presentes nos documentos relacionados.
+
+## 3. Estratégia de validação
+
+As perguntas foram organizadas em três categorias:
+
+| Categoria | Quantidade | Finalidade |
+|---|---:|---|
+| Estruturadas | 2 | Validar consultas e operações sobre dados do banco |
+| Documentais (RAG) | 8 | Validar recuperação semântica e fundamentação documental |
+| Híbridas | 1 | Validar a integração entre dados estruturados e documentos |
+| **Total** | **11** | **Cenários de validação definidos** |
+
+## 4. Critérios de avaliação
+
+Foram estabelecidos os seguintes critérios para avaliar as respostas do sistema:
+
+- **Correção:** as informações apresentadas devem corresponder aos dados existentes.
+- **Relevância:** os documentos recuperados devem estar relacionados à pergunta.
+- **Fundamentação:** as afirmações devem ser sustentadas por evidências documentais.
+- **Rastreabilidade:** quando aplicável, a resposta deve permitir identificar os documentos utilizados.
+- **Integração:** nas perguntas híbridas, os dados estruturados e documentais devem corresponder à mesma contratação.
+
+## 5. Resultados do encontro
+
+Foram definidos **11 cenários de testes**, distribuídos entre consultas estruturadas, documentais e híbridas.
+
+A elaboração dessas perguntas estabeleceu uma base para avaliar o comportamento do sistema em diferentes situações, especialmente quanto à recuperação de evidências, à precisão das respostas e à integração entre as fontes de informação.
+
+**Nesta etapa, o resultado documentado foi a preparação dos cenários de validação.** Não foram apresentados resultados de execução das 11 perguntas nem métricas de desempenho ou precisão.
+
+## 6. Próximos passos
+
+1. Executar as 11 perguntas no sistema.
+2. Registrar as respostas produzidas e as fontes recuperadas.
+3. Comparar os resultados com os registros e documentos originais.
+4. Identificar respostas incorretas, incompletas ou sem fundamentação.
+5. Avaliar possíveis melhorias na recuperação documental e na geração de respostas.
+
+## 7. Conclusão
+
+O Encontro 14 teve como foco a preparação da validação funcional do sistema RAG de Contratações Públicas.
+
+A definição de perguntas estruturadas, documentais e híbridas permitirá avaliar não apenas se o sistema consegue gerar respostas, mas principalmente se essas respostas são corretas, relevantes e fundamentadas nos dados disponíveis.
+
+Essa atividade representa uma etapa importante para verificar a confiabilidade do sistema e orientar os próximos ajustes de desenvolvimento.

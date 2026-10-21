@@ -79,12 +79,14 @@ class AdaptiveAskRequest(BaseModel):
 
 
 class AdaptiveAskResponse(BaseModel):
-    """Resposta de uma rota estruturada ou documental já executada."""
+    """Resposta de consulta adaptativa ou recusa preventiva."""
 
-    route: QueryRoute
-    analysis: QueryAnalysis
-    plan: ExecutionPlan
+    route: QueryRoute | None = None
+    analysis: QueryAnalysis | None = None
+    plan: ExecutionPlan | None = None
     structured_result: StructuredQueryResult | None = None
     answer: str | None = None
+    refused: bool = False
+    trace_id: str | None = None
     sources: list[SourceResponse] = Field(default_factory=list)
     external_documents: list[ExternalDocumentResponse] = Field(default_factory=list)
