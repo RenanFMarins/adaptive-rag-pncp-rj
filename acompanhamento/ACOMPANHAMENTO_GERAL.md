@@ -519,7 +519,7 @@
 * As sugestões foram analisadas e adaptadas pela equipe de acordo com o código existente, os requisitos do projeto e as decisões tomadas durante o desenvolvimento, sendo validadas por meio de testes, execuções reais e auditorias dos resultados.
 
 
-**# Resumo do dia — Encontro 11 — 2026-10-09**
+# Resumo do dia — Encontro 11 — 2026-10-09
 
 **## Resumo do time no dia**
 
@@ -577,7 +577,7 @@
 * As sugestões foram analisadas pela equipe e confrontadas com o código, as consultas ao banco e os resultados dos testes, sem considerar concluídas as funcionalidades que ainda dependiam de validação.
 
 
-**# Resumo do dia — Encontro 12 — 2026-10-14**
+# Resumo do dia — Encontro 12 — 2026-10-14
 
 **## Resumo do time no dia**
 
@@ -642,7 +642,7 @@
 * As sugestões foram verificadas pela equipe por meio de testes automatizados, análise dos logs e verificações de integridade, mantendo como pendentes os comportamentos que ainda não foram comprovados.
 
 
-**# Resumo do dia — Encontro 13 — 2026-10-16**
+# Resumo do dia — Encontro 13 — 2026-10-16
 
 **## Resumo do time no dia**
 
