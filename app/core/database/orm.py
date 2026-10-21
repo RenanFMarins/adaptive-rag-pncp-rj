@@ -1,9 +1,11 @@
+
 from collections.abc import Generator
 from importlib import import_module
 import sqlite3
 
 from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 from app.core.text_normalization import normalizar_para_busca
@@ -11,10 +13,19 @@ from app.core.text_normalization import normalizar_para_busca
 
 def create_sqlite_engine(database_url: str) -> Engine:
     """Create a SQLite engine with foreign-key enforcement enabled."""
-    db_engine = create_engine(
-        database_url,
-        connect_args={"check_same_thread": False},
+    is_memory = database_url in (
+        "sqlite://",
+        "sqlite:///:memory:",
     )
+
+    engine_options = {
+        "connect_args": {"check_same_thread": False},
+    }
+
+    if is_memory:
+        engine_options["poolclass"] = StaticPool
+
+    db_engine = create_engine(database_url, **engine_options)
 
     @event.listens_for(db_engine, "connect")
     def enable_foreign_keys(

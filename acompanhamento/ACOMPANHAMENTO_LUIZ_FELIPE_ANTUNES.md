@@ -388,15 +388,57 @@ Também ficaram definidas as principais próximas etapas para integrar o Query A
 ### Próximo passo
 
 * Avançar na implementação do Router.
-
 * Integrar o Query Analyzer ao fluxo principal.
-
 * Continuar a evolução das consultas estruturadas e híbridas.
-
 * Acompanhar a integração das diferentes contribuições do grupo.
-
 * Manter a documentação e o planejamento atualizados conforme o projeto evolui.
 
 ### Uso de assistentes de IA
 
 Utilizei IA como apoio para analisar a arquitetura, esclarecer dúvidas técnicas, revisar as possibilidades de integração entre os componentes e organizar as próximas etapas do projeto. As sugestões foram avaliadas e adaptadas de acordo com o que já havia sido desenvolvido pelo grupo.
+
+
+# Encontro 11 — 09/10/2026
+
+### Atividades realizadas
+
+Continuei trabalhando na **organização da arquitetura, documentação e planejamento das próximas etapas do projeto**, acompanhando a evolução dos componentes desenvolvidos pelo grupo e contribuindo para a definição do fluxo de consultas do sistema RAG de Contratações Públicas.
+
+Dei continuidade ao trabalho relacionado ao **Query Analyzer**, responsável por interpretar as perguntas dos usuários e identificar a estratégia mais adequada para cada consulta. Avancei na organização dessa etapa, considerando as possibilidades de consultas estruturadas (*structured*), recuperação documental (*RAG*) e consultas híbridas (*hybrid*), que combinam informações estruturadas com conteúdo documental.
+
+Também acompanhei a evolução da arquitetura com a integração do planejador, do executor e da rota híbrida, buscando manter uma separação clara entre interpretação da pergunta, definição da estratégia de busca, execução e geração da resposta. Continuei contribuindo com a organização técnica e a documentação para facilitar a compreensão do fluxo e a integração das diferentes partes desenvolvidas pelo grupo.
+
+Outro ponto importante foi a participação nas discussões com o time sobre o **conjunto de buscas que o sistema deverá oferecer**. Debatemos que não seria necessariamente preciso manter toda a base de dados previamente armazenada e processada no projeto para responder às perguntas dos usuários. Também podemos considerar consultas sob demanda a APIs e arquivos externos que ainda não estejam incorporados ao sistema, conforme a necessidade de cada pergunta e a disponibilidade das fontes.
+
+Essa discussão contribuiu para ampliar as possibilidades da arquitetura, considerando diferentes fontes de informação e estratégias de recuperação, sem limitar o funcionamento do sistema exclusivamente aos dados já ingeridos. A proposta é avaliar como essas consultas podem ser direcionadas de acordo com a pergunta, mantendo a organização do fluxo e a confiabilidade das informações utilizadas nas respostas.
+
+Além disso, continuei auxiliando o time na organização das atividades, no debate sobre as decisões técnicas e no planejamento dos próximos passos, acompanhando as dependências entre os componentes e as necessidades de integração.
+
+### Resultado
+
+A arquitetura do sistema avançou com a evolução do Query Analyzer e a integração dos componentes de planejamento, execução e consulta híbrida.
+
+As discussões sobre o conjunto de buscas também ampliaram a visão do grupo sobre as possibilidades de recuperação de informações, considerando não apenas as bases já integradas, mas também consultas sob demanda a APIs e arquivos externos.
+
+Com isso, contribuí para a organização do fluxo de consultas, o alinhamento técnico entre as frentes de desenvolvimento e o planejamento das próximas etapas do projeto.
+
+### Pendências e bloqueios
+
+* Continuidade da evolução e validação do fluxo de consultas.
+* Aprimoramento da interpretação das perguntas e da identificação dos filtros necessários.
+* Evolução das consultas estruturadas e híbridas.
+* Avaliação das possibilidades de consulta sob demanda a APIs e arquivos externos.
+* Definição de critérios para selecionar as fontes de informação adequadas a cada pergunta.
+* Continuidade da documentação e do alinhamento entre os componentes desenvolvidos pelo grupo.
+
+### Próximo passo
+
+* Acompanhar a evolução e a validação do fluxo completo de consultas.
+* Contribuir para o planejamento das estratégias de busca e recuperação de informações.
+* Aprofundar a discussão sobre consultas sob demanda a APIs e arquivos externos.
+* Continuar apoiando a integração das diferentes contribuições do grupo.
+* Manter a documentação e o planejamento atualizados conforme a arquitetura evoluir.
+
+### Uso de assistentes de IA
+
+Utilizei assistentes de IA como apoio à análise da arquitetura, à compreensão das possibilidades de integração entre os componentes, à organização da documentação e ao planejamento das próximas etapas. As sugestões foram avaliadas em conjunto com o contexto real do projeto e adaptadas conforme as decisões técnicas e o que já havia sido desenvolvido pelo grupo.

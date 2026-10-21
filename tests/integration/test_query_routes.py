@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import json
@@ -86,7 +87,10 @@ class QueryRoutesTests(unittest.TestCase):
             },
         )
         gerar.assert_called_once()
-        self.assertEqual(gerar.call_args.kwargs["pergunta"], "qual e o objeto do contrato 09/2026?")
+        self.assertEqual(
+            gerar.call_args.kwargs["pergunta"],
+            "qual e o objeto do contrato 09/2026?",
+        )
         self.assertEqual(gerar.call_args.kwargs["top_k"], 3)
         self.assertIs(gerar.call_args.kwargs["persistir"], True)
 
@@ -109,7 +113,10 @@ class QueryRoutesTests(unittest.TestCase):
     def test_generate_sem_evidencias(self):
         with patch(
             "app.modules.query.routes.gerar_resposta_rag",
-            return_value=RagAnswer(answer=MENSAGEM_SEM_EVIDENCIA, sources=[]),
+            return_value=RagAnswer(
+                answer=MENSAGEM_SEM_EVIDENCIA,
+                sources=[],
+            ),
         ):
             response = self.client.post(
                 "/query/generate",
@@ -120,7 +127,7 @@ class QueryRoutesTests(unittest.TestCase):
         self.assertEqual(response.json()["answer"], MENSAGEM_SEM_EVIDENCIA)
         self.assertEqual(response.json()["sources"], [])
 
-    def test_generate_guardrail_bloqueia_sem_retrieval_llm_ou_persistencia(self):
+    def test_generate_guardrail_bloqueia_sem_retrieval_ou_llm(self):
         engine = create_sqlite_engine("sqlite:///:memory:")
         init_db(engine)
         session = Session(engine)
@@ -156,7 +163,9 @@ class QueryRoutesTests(unittest.TestCase):
         response = self.client.post(
             "/query/generate",
             json={
-                "pergunta": "Qual empresa devo contratar para fornecer merenda escolar?"
+                "pergunta": (
+                    "Qual empresa devo contratar para fornecer merenda escolar?"
+                )
             },
         )
 
@@ -168,9 +177,25 @@ class QueryRoutesTests(unittest.TestCase):
                 "sources": [],
             },
         )
-        self.assertEqual(session.scalar(select(func.count(Query.id))), 0)
-        self.assertEqual(session.scalar(select(func.count(Response.id))), 0)
-        self.assertEqual(session.scalar(select(func.count(ResponseSource.id))), 0)
+
+        self.assertEqual(session.scalar(select(func.count(Query.id))), 1)
+        self.assertEqual(session.scalar(select(func.count(Response.id))), 1)
+        self.assertEqual(
+            session.scalar(select(func.count(ResponseSource.id))),
+            0,
+        )
+
+        resposta_salva = session.scalar(select(Response))
+        self.assertIsNotNone(resposta_salva)
+        self.assertIs(resposta_salva.is_refusal, True)
+        self.assertEqual(resposta_salva.answer, MENSAGEM_RECUSA_PADRAO)
+
+        query_salva = session.scalar(select(Query))
+        self.assertIsNotNone(query_salva)
+        self.assertEqual(
+            query_salva.text,
+            "Qual empresa devo contratar para fornecer merenda escolar?",
+        )
 
         traces = sorted(audit_dir.glob("*/*.json"))
         self.assertEqual(len(traces), 1)
