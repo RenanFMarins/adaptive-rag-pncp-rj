@@ -146,3 +146,20 @@ Adiciona ao banco normalizado a auditoria de cada reconciliação incremental,
 com contagens de linhas de estágio, inseridas, atualizadas, inalteradas e
 presentes no destino. Também cria o índice usado para trocar de forma eficiente
 a versão de linhagem marcada como corrente. Esta migração não modifica a RAW.
+
+## 102_document_catalog_v2.sql
+
+Adiciona estruturas complementares ao catálogo existente, sem remover nem
+reescrever `document_catalog_entries`:
+
+- `document_catalog_inventories`: congela a identidade e o escopo de cada
+  conjunto de manifestos;
+- `document_catalog_inventory_members`: preserva a observação e o fingerprint
+  dos metadados de cada documento no inventário;
+- `document_catalog_states`: registra primeira/ultima observação,
+  disponibilidade atual e eventual desaparecimento da fonte.
+
+Um snapshot somente deve ser declarado autoritativo quando contiver todos os
+manifestos locais esperados. Importações parciais nunca marcam documentos como
+removidos. A migração não baixa arquivos, não executa OCR e não altera a RAW
+ou a base normalizada.

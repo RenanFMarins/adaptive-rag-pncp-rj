@@ -43,6 +43,11 @@ class ExternalDocumentResponse(BaseModel):
     dataPublicacaoPncp: str | None = None
     statusAtivo: bool | None = None
     periodoColeta: str
+    availabilityStatus: str = "UNKNOWN"
+    firstSeenAt: str | None = None
+    lastSeenAt: str | None = None
+    missingSince: str | None = None
+    inventoryId: str | None = None
     statusProcessamento: str
     documentoPersistido: bool
     chunksPersistidos: int = Field(ge=0)
