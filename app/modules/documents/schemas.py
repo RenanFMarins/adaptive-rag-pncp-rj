@@ -23,8 +23,12 @@ class ProcessingTaskResponse(BaseModel):
     status: DocumentProcessingTaskStatus
     tentativas: int
     erro: str | None = None
+    error_code: str | None = None
+    lease_expires_at: datetime | None = None
     motivo: str | None = None
     criado_em: datetime | None = None
     atualizado_em: datetime | None = None
+    iniciado_em: datetime | None = None
+    concluido_em: datetime | None = None
     created: bool = False
     retried: bool = False

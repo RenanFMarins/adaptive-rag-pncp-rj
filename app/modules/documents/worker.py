@@ -13,6 +13,10 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import os
+import re
+import socket
+import threading
 import time
 import zipfile
 from collections.abc import Callable
@@ -31,6 +35,7 @@ from app.modules.documents.services import (
     falhar_tarefa_processamento,
     persistir_chunks_jsonl_pncp,
     reservar_proxima_tarefa_processamento,
+    renovar_lease_tarefa_processamento,
 )
 from src.base_estruturada.chunking import (
     caminho_relativo_portavel,
@@ -52,6 +57,10 @@ TAMANHO_LOTE_EMBEDDING = 25
 FORMATOS_DOCLING_DIRETOS = {".pdf", ".docx"}
 
 ProcessorFn = Callable[[int, Session], dict[str, int]]
+
+
+class LeasePerdidoError(RuntimeError):
+    """O worker não possui mais autorização para finalizar a tarefa."""
 
 
 def normalizar_url_download_pncp(url: str | None) -> str:
@@ -287,23 +296,66 @@ def processar_tarefa_local(tarefa_id: int, db: Session, *, corpus_version_id: in
 def executar_uma_tarefa(
     fabrica_sessao: sessionmaker[Session],
     processador: ProcessorFn,
+    *,
+    worker_id: str | None = None,
+    lease_seconds: int = 900,
 ) -> bool:
     """Reserva e executa uma tarefa; retorna falso quando não há pendências."""
 
     with fabrica_sessao() as db:
-        tarefa = reservar_proxima_tarefa_processamento(db)
+        tarefa = reservar_proxima_tarefa_processamento(
+            db,
+            worker_id=worker_id or f"{socket.gethostname()}:{os.getpid()}",
+            lease_seconds=lease_seconds,
+        )
         if tarefa is None:
             return False
         tarefa_id = tarefa.id
+        lease_token = tarefa.lease_token
+        if not lease_token:
+            raise RuntimeError("A reserva da tarefa não gerou lease token.")
+    parar_heartbeat = threading.Event()
+    lease_perdido = threading.Event()
+
+    def heartbeat() -> None:
+        intervalo = max(1.0, lease_seconds / 3)
+        while not parar_heartbeat.wait(intervalo):
+            try:
+                with fabrica_sessao() as db:
+                    renovar_lease_tarefa_processamento(
+                        db,
+                        tarefa_id,
+                        lease_token,
+                        lease_seconds=lease_seconds,
+                    )
+            except Exception:
+                lease_perdido.set()
+                return
+
+    thread_heartbeat = threading.Thread(
+        target=heartbeat,
+        name=f"document-task-{tarefa_id}-heartbeat",
+        daemon=True,
+    )
+    thread_heartbeat.start()
     try:
         with fabrica_sessao() as db:
             processador(tarefa_id, db)
-            concluir_tarefa_processamento(db, tarefa_id)
+            if lease_perdido.is_set():
+                raise LeasePerdidoError("Lease perdido durante o processamento.")
+            concluir_tarefa_processamento(db, tarefa_id, lease_token)
     except Exception as exc:
+        error_code = re.sub(r"(?<!^)(?=[A-Z])", "_", type(exc).__name__).casefold()
         with fabrica_sessao() as db:
-            falhar_tarefa_processamento(db, tarefa_id, f"{type(exc).__name__}: {exc}")
-        print(f"Tarefa {tarefa_id} ERRO | {type(exc).__name__}: {exc}")
+            try:
+                falhar_tarefa_processamento(db, tarefa_id, error_code, lease_token)
+            except ValueError:
+                db.rollback()
+        print(f"Tarefa {tarefa_id} ERRO | codigo={error_code}")
         return True
+    finally:
+        parar_heartbeat.set()
+        thread_heartbeat.join(timeout=2)
     print(f"Tarefa {tarefa_id} CONCLUIDA")
     return True
 

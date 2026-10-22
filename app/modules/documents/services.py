@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import json
 import hashlib
-from datetime import date, datetime, timezone
+import uuid
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Iterable
 
-from sqlalchemy import func, or_, select, tuple_, update
+from sqlalchemy import and_, func, or_, select, tuple_, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.text_normalization import normalizar_para_busca
@@ -752,7 +754,23 @@ def solicitar_processamento_catalogo(
         motivo=motivo.strip()[:200] if motivo.strip() else None,
     )
     db.add(tarefa)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # A restrição parcial resolve a corrida entre duas requisições que
+        # tentem criar simultaneamente a tarefa do mesmo documento.
+        db.rollback()
+        concorrente = db.scalar(
+            select(DocumentProcessingTask)
+            .where(
+                DocumentProcessingTask.catalog_entry_id == catalog_entry_id,
+                DocumentProcessingTask.status.in_(_STATUS_TAREFA_ATIVA),
+            )
+            .order_by(DocumentProcessingTask.id.desc())
+        )
+        if concorrente is None:
+            raise
+        return concorrente, False
     db.refresh(tarefa)
     return tarefa, True
 
@@ -787,6 +805,12 @@ def retentar_tarefa_processamento(
         raise ValueError("Somente tarefas com erro podem ser retentadas.")
     tarefa.status = DocumentProcessingTaskStatus.PENDENTE.value
     tarefa.erro = None
+    tarefa.error_code = None
+    tarefa.lease_owner = None
+    tarefa.lease_token = None
+    tarefa.lease_expires_at = None
+    tarefa.iniciado_em = None
+    tarefa.concluido_em = None
     db.commit()
     db.refresh(tarefa)
     return tarefa
@@ -794,6 +818,10 @@ def retentar_tarefa_processamento(
 
 def reservar_proxima_tarefa_processamento(
     db: Session,
+    *,
+    worker_id: str = "document-worker",
+    lease_seconds: int = 900,
+    now: datetime | None = None,
 ) -> DocumentProcessingTask | None:
     """Reserva uma tarefa pendente de modo seguro para um worker local.
 
@@ -802,25 +830,45 @@ def reservar_proxima_tarefa_processamento(
     regra continua válida se o processo for iniciado duas vezes por engano.
     """
 
+    if lease_seconds <= 0:
+        raise ValueError("lease_seconds deve ser maior que zero.")
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    expiracao = instante + timedelta(seconds=lease_seconds)
+    recuperavel = or_(
+        DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value,
+        and_(
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_expires_at.is_not(None),
+            DocumentProcessingTask.lease_expires_at <= instante,
+        ),
+    )
     candidata = db.scalar(
         select(DocumentProcessingTask)
-        .where(DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value)
+        .where(recuperavel)
         .order_by(DocumentProcessingTask.id.asc())
         .limit(1)
     )
     if candidata is None:
         return None
 
+    token = str(uuid.uuid4())
     reservado = db.execute(
         update(DocumentProcessingTask)
         .where(
             DocumentProcessingTask.id == candidata.id,
-            DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value,
+            recuperavel,
         )
         .values(
             status=DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
             tentativas=DocumentProcessingTask.tentativas + 1,
             erro=None,
+            error_code=None,
+            lease_owner=worker_id.strip()[:200] or "document-worker",
+            lease_token=token,
+            lease_expires_at=expiracao,
+            iniciado_em=instante,
+            concluido_em=None,
         )
     )
     if reservado.rowcount != 1:
@@ -830,39 +878,115 @@ def reservar_proxima_tarefa_processamento(
     return db.get(DocumentProcessingTask, candidata.id)
 
 
+def renovar_lease_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+    lease_token: str,
+    *,
+    lease_seconds: int = 900,
+    now: datetime | None = None,
+) -> DocumentProcessingTask:
+    """Renova somente o lease que ainda pertence ao worker solicitante."""
+
+    if lease_seconds <= 0:
+        raise ValueError("lease_seconds deve ser maior que zero.")
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    renovado = db.execute(
+        update(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.id == tarefa_id,
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_token == lease_token,
+            DocumentProcessingTask.lease_expires_at > instante,
+        )
+        .values(lease_expires_at=instante + timedelta(seconds=lease_seconds))
+    )
+    if renovado.rowcount != 1:
+        db.rollback()
+        raise ValueError("Lease ausente, expirado ou pertencente a outro worker.")
+    db.commit()
+    return db.get(DocumentProcessingTask, tarefa_id)
+
+
 def concluir_tarefa_processamento(
     db: Session,
     tarefa_id: int,
+    lease_token: str,
+    *,
+    now: datetime | None = None,
 ) -> DocumentProcessingTask:
     """Marca como concluída somente uma tarefa que estava em execução."""
 
-    tarefa = db.get(DocumentProcessingTask, tarefa_id)
-    if tarefa is None:
-        raise ValueError("Tarefa de processamento não encontrada.")
-    if tarefa.status != DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value:
-        raise ValueError("A tarefa não está em processamento.")
-    tarefa.status = DocumentProcessingTaskStatus.CONCLUIDO.value
-    tarefa.erro = None
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    concluida = db.execute(
+        update(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.id == tarefa_id,
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_token == lease_token,
+            DocumentProcessingTask.lease_expires_at > instante,
+        )
+        .values(
+            status=DocumentProcessingTaskStatus.CONCLUIDO.value,
+            erro=None,
+            error_code=None,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            concluido_em=instante,
+        )
+    )
+    if concluida.rowcount != 1:
+        db.rollback()
+        raise ValueError("A tarefa perdeu o lease e não pode ser concluída.")
     db.commit()
-    db.refresh(tarefa)
-    return tarefa
+    return db.get(DocumentProcessingTask, tarefa_id)
 
 
 def falhar_tarefa_processamento(
     db: Session,
     tarefa_id: int,
-    erro: str,
+    error_code: str,
+    lease_token: str | None = None,
 ) -> DocumentProcessingTask:
-    """Registra falha explicável sem deixar uma tarefa presa em execução."""
+    """Registra somente um código seguro, nunca a mensagem bruta da exceção."""
 
-    tarefa = db.get(DocumentProcessingTask, tarefa_id)
-    if tarefa is None:
-        raise ValueError("Tarefa de processamento não encontrada.")
-    tarefa.status = DocumentProcessingTaskStatus.ERRO.value
-    tarefa.erro = erro.strip()[:2_000] or "falha_desconhecida"
+    codigo = error_code.strip().casefold()
+    if not codigo or len(codigo) > 100 or any(
+        caractere not in "abcdefghijklmnopqrstuvwxyz0123456789_" for caractere in codigo
+    ):
+        codigo = "processing_failed"
+    instante = datetime.now(timezone.utc).replace(tzinfo=None)
+    criterios = [DocumentProcessingTask.id == tarefa_id]
+    if lease_token is not None:
+        criterios.extend(
+            [
+                DocumentProcessingTask.status
+                == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+                DocumentProcessingTask.lease_token == lease_token,
+                DocumentProcessingTask.lease_expires_at > instante,
+            ]
+        )
+    falhou = db.execute(
+        update(DocumentProcessingTask)
+        .where(*criterios)
+        .values(
+            status=DocumentProcessingTaskStatus.ERRO.value,
+            erro=None,
+            error_code=codigo,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            concluido_em=instante,
+        )
+    )
+    if falhou.rowcount != 1:
+        db.rollback()
+        raise ValueError("A tarefa perdeu o lease e não pode ser alterada.")
     db.commit()
-    db.refresh(tarefa)
-    return tarefa
+    return db.get(DocumentProcessingTask, tarefa_id)
 
 
 def persistir_chunks_jsonl_normativos(

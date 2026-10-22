@@ -11,12 +11,14 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -187,6 +189,14 @@ class DocumentProcessingTask(Base):
 
     # Mantém o nome físico legado para não exigir migração nem perder tarefas já gravadas.
     __tablename__ = "document_processing_jobs"
+    __table_args__ = (
+        Index(
+            "uq_document_processing_active_catalog",
+            "catalog_entry_id",
+            unique=True,
+            sqlite_where=text("status IN ('PENDENTE', 'EM_PROCESSAMENTO')"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     catalog_entry_id: Mapped[int] = mapped_column(
@@ -195,7 +205,13 @@ class DocumentProcessingTask(Base):
     status: Mapped[str] = mapped_column(String, index=True)
     tentativas: Mapped[int] = mapped_column(Integer, default=0)
     erro: Mapped[str | None] = mapped_column(Text)
+    error_code: Mapped[str | None] = mapped_column(String(100))
     motivo: Mapped[str | None] = mapped_column(String)
+    lease_owner: Mapped[str | None] = mapped_column(String(200))
+    lease_token: Mapped[str | None] = mapped_column(String(36), index=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    iniciado_em: Mapped[datetime | None] = mapped_column(DateTime)
+    concluido_em: Mapped[datetime | None] = mapped_column(DateTime)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.current_timestamp()
     )

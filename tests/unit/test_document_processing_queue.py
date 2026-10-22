@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -22,7 +23,10 @@ from app.modules.documents.model import (
 )
 from app.modules.documents.services import (
     consultar_tarefa_processamento,
+    concluir_tarefa_processamento,
     falhar_tarefa_processamento,
+    reservar_proxima_tarefa_processamento,
+    renovar_lease_tarefa_processamento,
     retentar_tarefa_processamento,
     solicitar_processamento_catalogo,
 )
@@ -143,7 +147,75 @@ class DocumentProcessingQueueTests(unittest.TestCase):
         self.db.expire_all()
         atualizada = consultar_tarefa_processamento(self.db, tarefa.id)
         self.assertEqual(atualizada.status, DocumentProcessingTaskStatus.ERRO.value)
-        self.assertIn("falha simulada", atualizada.erro or "")
+        self.assertEqual(atualizada.error_code, "runtime_error")
+        self.assertIsNone(atualizada.erro)
+
+    def test_lease_expirado_e_recuperado_com_fencing(self) -> None:
+        tarefa, _ = solicitar_processamento_catalogo(self.db, self.item.id)
+        base = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        primeira = reservar_proxima_tarefa_processamento(
+            self.db, worker_id="worker-a", lease_seconds=10, now=base
+        )
+        self.assertEqual(primeira.id, tarefa.id)
+        token_antigo = primeira.lease_token
+
+        self.assertIsNone(
+            reservar_proxima_tarefa_processamento(
+                self.db,
+                worker_id="worker-b",
+                lease_seconds=10,
+                now=base + timedelta(seconds=9),
+            )
+        )
+        recuperada = reservar_proxima_tarefa_processamento(
+            self.db,
+            worker_id="worker-b",
+            lease_seconds=10,
+            now=base + timedelta(seconds=11),
+        )
+        self.assertNotEqual(recuperada.lease_token, token_antigo)
+        with self.assertRaisesRegex(ValueError, "perdeu o lease"):
+            concluir_tarefa_processamento(
+                self.db,
+                tarefa.id,
+                token_antigo or "",
+                now=base + timedelta(seconds=12),
+            )
+        concluida = concluir_tarefa_processamento(
+            self.db,
+            tarefa.id,
+            recuperada.lease_token or "",
+            now=base + timedelta(seconds=12),
+        )
+        self.assertEqual(concluida.status, DocumentProcessingTaskStatus.CONCLUIDO.value)
+
+    def test_renova_lease_valido(self) -> None:
+        solicitar_processamento_catalogo(self.db, self.item.id)
+        base = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        reservada = reservar_proxima_tarefa_processamento(
+            self.db, worker_id="worker-a", lease_seconds=10, now=base
+        )
+        renovada = renovar_lease_tarefa_processamento(
+            self.db,
+            reservada.id,
+            reservada.lease_token or "",
+            lease_seconds=20,
+            now=base + timedelta(seconds=5),
+        )
+        self.assertEqual(
+            renovada.lease_expires_at,
+            base.replace(tzinfo=None) + timedelta(seconds=25),
+        )
+
+    def test_mensagem_bruta_nao_e_persistida(self) -> None:
+        tarefa, _ = solicitar_processamento_catalogo(self.db, self.item.id)
+        falha = falhar_tarefa_processamento(
+            self.db,
+            tarefa.id,
+            "RuntimeError: cpf 123.456.789-00 token secreto",
+        )
+        self.assertEqual(falha.error_code, "processing_failed")
+        self.assertIsNone(falha.erro)
 
     def test_normaliza_url_pncp_removendo_porta_do_catalogo(self) -> None:
         url = (

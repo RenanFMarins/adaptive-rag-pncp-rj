@@ -163,3 +163,10 @@ Um snapshot somente deve ser declarado autoritativo quando contiver todos os
 manifestos locais esperados. Importações parciais nunca marcam documentos como
 removidos. A migração não baixa arquivos, não executa OCR e não altera a RAW
 ou a base normalizada.
+
+## 103_document_processing_lease.sql
+
+Adiciona controle recuperável à fila documental: lease com expiração,
+token de fencing, timestamps operacionais, código de erro seguro e unicidade
+parcial de tarefa ativa por documento. Deve ser aplicada somente depois de
+backup e validação em cópia isolada.
