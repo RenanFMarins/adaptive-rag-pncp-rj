@@ -759,3 +759,38 @@ Escrevemos também o eval/questions.json, que estava vazio, com as dez perguntas
 - Entregamos (base normativa): carregador único na versão normativo-v1 (PR #53), 794 trechos indexados no FAISS com 100% de cobertura e as perguntas de referência no eval/questions.json.
 - Travou: a promoção do índice depende do Luciano e do Alisson.
 - Próximo passo: alinhar o índice e medir a recuperação com o benchmark.
+
+## Encontro 15 · 21/10/2026
+
+### O que eu fiz hoje
+
+Trabalhamos juntas para fechar a base normativa e preparar a apresentação.
+
+Atualizei a minha máquina com o que os colegas fizeram: guardei uma cópia do meu banco, soltei o app.db do Git, trouxe a principal com um merge e devolvi o banco. Entendi por que o banco atrapalha: o Luiz Felipe comitou uma versão dele, e a minha tinha alterações locais, então o Git se recusa a juntar. Depois tentei rodar a preparação do índice e deu erro de database_url, porque eu não tinha o arquivo .env, que cada pessoa cria e não vai para o Git. Aprendi que aqueles comandos eram para a máquina da Ester, que já tem tudo pronto, e que o meu Python 3.10 não serve para o numpy do projeto. Nada foi alterado por causa do erro.
+
+Conferimos o PR #54, que eu tinha aberto. A Ester achou cinco inconsistências nos nossos arquivos e corrigiu: o hash do manifesto mudava conforme o fim de linha do Windows, o manifesto declarava um metadado que nenhum trecho tem, o inventário estava com hash velho, as datas do CORPUS_INVENTORY estavam erradas e o README não ensinava a rodar a base. O PR levou dez arquivos, sem banco, sem FAISS e sem BM25, e foi mesclado com os commits de cada uma separados.
+
+O Alisson respondeu que o índice do grupo tem 65.362 vetores do PNCP e concordou com o plano de acrescentar os nossos 794 sem alterar o dele. Os testes do sistema mostraram que o analisador roteou errado quatro das nossas perguntas, e que a resposta da pergunta da data do edital veio errada mesmo com a data certa no metadado. A hipótese que tínhamos de qual pergunta ia errar não se confirmou.
+
+### Onde usei IA e o que mudei no resultado
+
+- Ferramenta: Claude.
+- Para quê: entender os erros de Git e de ambiente, revisar a base normativa e testar o sistema.
+- O que eu conferi / mudei: pedi para explicar por que o app.db bloqueia o merge e por que o comando falhou sem o .env, em vez de só repetir os passos. Conferimos o que o PR levava antes de mesclar, para o banco não ir junto.
+
+### O que travou
+
+- Nada travou no nosso trabalho.
+- O meu ambiente tem Python 3.10 e não tem .env; para rodar o projeto preciso do .venv312.
+- O índice consolidado depende de o Alisson confirmar a base mais atual.
+
+### Próximo passo
+
+- Criar o .env e usar o ambiente com Python 3.12.
+- Ajudar a preparar os slides e o ensaio da demonstração de 22/10.
+
+### Resumo do time no dia
+
+- Entregamos (base normativa): cinco correções de consistência e quatro testes novos (PR #54 mesclado), e um kit com banco limpo e índice para o gerente.
+- Travou: o índice consolidado depende do Alisson, e o limite de 30 s do ECOA ameaça a demonstração.
+- Próximo passo: índice consolidado, slides e ensaio da demonstração.

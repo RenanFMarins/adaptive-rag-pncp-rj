@@ -983,7 +983,47 @@ Escrevemos o `eval/questions.json`, que estava vazio, com as dez perguntas de re
 
 ---
 
-## Encontro 15 · DD/MM/AAAA
+## Encontro 15 · 21/10/2026
+
+### O que eu fiz hoje
+
+Dia de fechar a base normativa e de preparar a apresentação de 23/10.
+
+Li com a Ana as orientações da apresentação: 14h, de 15 a 20 minutos, todos apresentam, e a demonstração precisa mostrar também onde o sistema falha. A partir disso fizemos uma revisão completa da base normativa, olhando os testes, o banco, o índice, a privacidade e o que a principal já tem.
+
+A revisão achou cinco inconsistências nos nossos arquivos, e corrigi todas. O hash do manifesto dependia do fim de linha: no meu Windows o arquivo vem com CRLF e no repositório está com LF, então o mesmo conteúdo tinha hashes diferentes. O manifesto prometia o metadado "objeto", que nenhum dos 794 trechos tem, e não declarava seis que existem. O hash gravado no inventário estava velho, porque o manifesto mudou depois dele. O CORPUS_INVENTORY dizia 25/09 e o JSON dizia 28/09, e a v2 aparecia mais antiga que a v1, efeito do fetch sobrescrevendo a data a cada execução. E o README só ensinava o fetch. Escrevemos testes novos, entre eles um que teria falhado com o manifesto antigo, e os testes da base normativa foram de 98 para 102. Fiz quatro commits separados e conferi o PR #54, aberto pela Ana: dez arquivos, sem banco, sem FAISS e sem BM25. Mesclei com merge commit, para manter os commits de cada uma.
+
+O v1 do grupo tem 65.362 vetores do PNCP e já existe um staging/v2 com 66.482. Ele concorda com o nosso plano de copiar, acrescentar os 794 e auditar, com a publicação condicionada à validação. Por isso o nosso índice, que foi criado do zero, não pode substituir o do grupo.
+
+Testei o sistema para a demonstração. Rodei o analisador nas dez perguntas de referência: acertou N1, N2, N5, N6, N7 e N10. Errou a base da N3 e da N9 (escolheu "agregada"), a rota da N4 (estruturada) e falhou na N8. A hipótese de que a N10 era a que o sistema ia errar não se confirmou. Na N8 conferi o que o modelo recebeu: a data certa do PNCP, 12/02/2026, chegava três vezes, e ele respondeu 09/02/2026. O erro é do modelo, não do nosso dado. E o limite de 30 segundos do ECOA derruba a geração.
+
+Montei o kit para o gerente do grupo. Antes de subir o meu banco, conferi o conteúdo e vi que ele tinha duas contas de usuário e 12.070 registros brutos do PNCP. Em vez dele, gerei um banco limpo só com a normativa, 3 MB, e o índice de 794 vetores. Extraí o pacote numa pasta nova para provar que funciona sozinho.
+
+### Onde usei IA e o que mudei no resultado
+
+- **Ferramenta:** Claude.
+- **Para quê:** revisar a base, corrigir as inconsistências, testar o sistema e montar o pacote para o Drive.
+- **O que eu conferi / mudei:** pedi para corrigir os erros antes do merge e conferi o diff do PR em vez de aceitar. Antes de enviar o banco, conferi o conteúdo e decidimos não subir o app.db. Não aceitei que a data errada da N8 fosse culpa do nosso dado: verifiquei o que o modelo recebia. Uma instrução que recebi estava errada, a de colocar o hash dentro do próprio zip, porque isso muda o hash; o hash ficou em arquivo separado.
+
+### O que travou
+
+- O índice consolidado depende de confirmar qual é a base mais atual, v1 ou v2, e se o banco compartilhado já tem os 794 trechos.
+- O limite de 30 segundos do ECOA derruba a geração das respostas; falta decidir o valor ou configurar um provedor reserva.
+- O analisador roteou errado as perguntas N3, N4, N8 e N9. 
+
+### Próximo passo
+
+- Preparar os slides do nosso bloco e ensaiar a demonstração em 22/10.
+
+### Resumo do time no dia
+
+- **Entregamos (base normativa):** cinco correções de consistência e quatro testes novos (PR #54 mesclado), revisão completa do estado da base, e um kit com banco limpo e índice para o gerente.
+- **Travou:** o índice consolidado, e o limite de 30 s do ECOA ameaça a demonstração.
+- **Próximo passo:** índice consolidado, slides e ensaio da demonstração.
+
+---
+
+## Encontro 16 · DD/MM/AAAA
 
 ### O que eu fiz hoje
 
