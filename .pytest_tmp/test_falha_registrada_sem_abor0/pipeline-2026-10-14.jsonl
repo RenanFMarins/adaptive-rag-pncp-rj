@@ -1,0 +1,1 @@
+{"ts": "2026-10-14T18:46:53-03:00", "run_id": "6705ecb3", "query_id": null, "stage": "coleta", "status": "falhou", "latencia_ms": null, "input": "https://exemplo.gov.br/morto.pdf", "output": null, "tokens": {"prompt": 0, "completion": 0, "total": 0}, "modelo": null, "extra": {"erro": "HTTP 404"}}

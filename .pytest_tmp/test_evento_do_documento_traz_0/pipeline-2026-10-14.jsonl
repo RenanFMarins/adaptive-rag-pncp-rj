@@ -1,0 +1,1 @@
+{"ts": "2026-10-14T18:46:53-03:00", "run_id": "abc12345", "query_id": null, "stage": "coleta", "status": "ok", "latencia_ms": 1234, "input": "https://pncp.gov.br/a", "output": "data/raw/v1/a.pdf", "tokens": {"prompt": 0, "completion": 0, "total": 0}, "modelo": null, "extra": {"base_id": "editais_normativo", "bytes": 560992, "erro": null, "baixado": true}}

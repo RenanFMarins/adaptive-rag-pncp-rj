@@ -1,0 +1,1 @@
+{"ts": "2026-10-14T18:46:53-03:00", "run_id": "b911042f", "query_id": null, "stage": "coleta", "status": "ok", "latencia_ms": 0, "input": "https://exemplo.gov.br/a.pdf", "output": "842103 bytes", "tokens": {"prompt": 0, "completion": 0, "total": 0}, "modelo": null, "extra": {}}

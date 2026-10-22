@@ -1,0 +1,2 @@
+{"ts": "2026-10-14T18:46:53-03:00", "run_id": "6d7e14d7", "query_id": null, "stage": "coleta", "status": "ok", "latencia_ms": null, "input": "a.pdf", "output": null, "tokens": {"prompt": 0, "completion": 0, "total": 0}, "modelo": null, "extra": {}}
+{"ts": "2026-10-14T18:46:53-03:00", "run_id": "6d7e14d7", "query_id": null, "stage": "ingestao", "status": "ok", "latencia_ms": null, "input": "a.pdf", "output": null, "tokens": {"prompt": 0, "completion": 0, "total": 0}, "modelo": null, "extra": {}}

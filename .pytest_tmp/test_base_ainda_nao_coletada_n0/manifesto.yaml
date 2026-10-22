@@ -1,0 +1,8 @@
+scenario_id: contratacoes-rj
+bases:
+  - base_id: editais_normativo
+    natureza: normativa
+    volume_alvo: 13
+  - base_id: contratos_estruturado
+    natureza: estruturada
+    volume_alvo: 1200

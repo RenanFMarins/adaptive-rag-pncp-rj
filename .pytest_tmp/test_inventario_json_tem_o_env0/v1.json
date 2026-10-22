@@ -1,0 +1,42 @@
+{
+  "scenario_id": "contratacoes-rj",
+  "version": "v1",
+  "coletado_em": "2026-09-28T10:00:00-03:00",
+  "manifest_hash": "sha256:4bb94d71463b0a5fce67e2730d6de45d0a31ccf1054aedc9a52ad98824318efc",
+  "totais": {
+    "arquivos": 1,
+    "bytes": 1000,
+    "falhas": 1
+  },
+  "por_base": [
+    {
+      "base_id": "editais_normativo",
+      "natureza": "normativa",
+      "arquivos": 1,
+      "formatos": {
+        "pdf": 1
+      },
+      "bytes": 1000,
+      "volume_alvo": 2,
+      "divergencia_alvo": 1
+    }
+  ],
+  "arquivos": [
+    {
+      "path": "data/raw/v1/a.pdf",
+      "origem": "u/a",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256_conteudo": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "ok",
+      "bytes": 1000,
+      "tipo": "pdf",
+      "coletado_em": "2026-09-28T10:00:00-03:00"
+    }
+  ],
+  "falhas": [
+    {
+      "origem": "u/b",
+      "erro": "HTTP 404"
+    }
+  ]
+}
