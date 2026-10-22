@@ -32,7 +32,6 @@ from src.index import (
     ProgressoIndexacaoFaiss,
 )
 
-DIMENSAO_EMBEDDING = 1024
 logger = logging.getLogger(__name__)
 
 
@@ -574,7 +573,7 @@ def main() -> None:
                     tamanho_lote=args.tamanho_lote,
                     tamanho_checkpoint=args.tamanho_checkpoint,
                     modelo_embedding=EMBEDDING_MODEL,
-                    dimensao_embedding=DIMENSAO_EMBEDDING,
+                    dimensao_embedding=settings.embedding_dimensions,
                     origem=(
                         args.origem
                         or args.base_id

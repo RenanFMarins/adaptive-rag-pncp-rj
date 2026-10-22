@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr = SecretStr("")
     openai_api_key: SecretStr = SecretStr("")
     ecoa_timeout_seconds: float = Field(default=30.0, gt=0, le=600)
+    embedding_provider: Literal["ecoa", "openai"] = "ecoa"
+    embedding_model: str = ""
+    embedding_dimensions: int = Field(default=1024, gt=0, le=3072)
+    embedding_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
 
     # Compatibilidade temporária com a configuração que entrou na default.
     # Se o provedor canônico estiver "none", ela ainda vale só para Analyzer.
