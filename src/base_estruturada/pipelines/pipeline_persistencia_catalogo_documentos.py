@@ -110,6 +110,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Cria tabelas ausentes. Use somente em banco temporário ou cópia validada.",
     )
+    parser.add_argument(
+        "--tamanho-commit",
+        type=int,
+        default=2_000,
+        help="Documentos confirmados por lote SQLite (padrão: 2000).",
+    )
     args = parser.parse_args()
 
     if args.snapshot_completo and not (
@@ -148,6 +154,7 @@ if __name__ == "__main__":
         resumo = persistir_catalogo_documentos_pncp(
             db,
             manifestos,
+            tamanho_commit=args.tamanho_commit,
             authoritative_full_snapshot=args.snapshot_completo,
         )
     print(f"Catálogo PNCP persistido no SQLite | {resumo}")

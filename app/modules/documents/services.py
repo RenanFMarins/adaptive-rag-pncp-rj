@@ -287,7 +287,7 @@ def _fingerprint_catalogo(
 def persistir_catalogo_documentos_pncp(
     db: Session,
     manifestos: Iterable[tuple[str, str, Path]],
-    tamanho_commit: int = 250,
+    tamanho_commit: int = 2_000,
     *,
     authoritative_full_snapshot: bool = False,
 ) -> dict[str, int | str]:
@@ -299,8 +299,8 @@ def persistir_catalogo_documentos_pncp(
     nenhum arquivo é consultado na rede.
     """
 
-    if tamanho_commit <= 0 or tamanho_commit > 300:
-        raise ValueError("tamanho_commit deve estar entre 1 e 300.")
+    if tamanho_commit <= 0 or tamanho_commit > 10_000:
+        raise ValueError("tamanho_commit deve estar entre 1 e 10000.")
 
     manifestos = list(manifestos)
     inventory_id, scope = _identidade_inventario(manifestos)
@@ -326,6 +326,33 @@ def persistir_catalogo_documentos_pncp(
         inventario.error_code = None
         inventario.last_reconciled_at = agora
     db.commit()
+
+    # Uma interrupção nunca invalida os lotes já confirmados. Ao retomar o
+    # mesmo inventário, ignoramos suas chaves antes de carregar objetos ORM e
+    # seguimos exatamente do primeiro membro ainda ausente.
+    chaves_processadas = set(
+        db.execute(
+            select(
+                DocumentCatalogEntry.tipo_entidade,
+                DocumentCatalogEntry.numero_controle_pncp,
+                DocumentCatalogEntry.sequencial_documento,
+            )
+            .join(
+                DocumentCatalogInventoryMember,
+                DocumentCatalogInventoryMember.catalog_entry_id
+                == DocumentCatalogEntry.id,
+            )
+            .join(
+                DocumentCatalogState,
+                DocumentCatalogState.catalog_entry_id == DocumentCatalogEntry.id,
+            )
+            .where(
+                DocumentCatalogInventoryMember.inventory_id == inventory_id,
+                DocumentCatalogState.last_inventory_id == inventory_id,
+                DocumentCatalogState.availability_status == "AVAILABLE",
+            )
+        ).all()
+    )
 
     resumo = {
         "inventoryId": inventory_id,
@@ -431,6 +458,10 @@ def persistir_catalogo_documentos_pncp(
                     )
                 )
         db.commit()
+        chaves_processadas.update(
+            (item.tipo_entidade, item.numero_controle_pncp, item.sequencial_documento)
+            for item, _ in itens
+        )
         lote.clear()
 
     try:
@@ -462,6 +493,15 @@ def persistir_catalogo_documentos_pncp(
                     if not isinstance(sequencial_documento, int):
                         resumo["ignoradosInvalidos"] += 1
                         continue
+                    resumo["documentosLidos"] += 1
+                    chave = (
+                        tipo_entidade,
+                        controle,
+                        sequencial_documento,
+                    )
+                    if chave in chaves_processadas:
+                        resumo["inalterados"] += 1
+                        continue
                     valores = _valores_catalogo(
                         tipo_entidade, periodo_coleta, caminho, entidade, documento
                     )
@@ -477,7 +517,6 @@ def persistir_catalogo_documentos_pncp(
                             fingerprint,
                         )
                     )
-                    resumo["documentosLidos"] += 1
                     if len(lote) >= tamanho_commit:
                         persistir_lote()
         persistir_lote()
@@ -497,7 +536,7 @@ def persistir_catalogo_documentos_pncp(
         assert inventario is not None
         inventario.status = "COMPLETED"
         inventario.documents_seen = int(resumo["documentosLidos"])
-        inventario.documents_cataloged = int(resumo["catalogados"])
+        inventario.documents_cataloged = int(resumo["documentosLidos"])
         inventario.documents_updated = int(resumo["atualizados"])
         inventario.documents_missing = int(resumo["ausentes"])
         inventario.completed_at = _agora_utc_sem_fuso()

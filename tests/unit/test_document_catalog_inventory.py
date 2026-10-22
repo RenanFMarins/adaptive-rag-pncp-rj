@@ -97,6 +97,23 @@ class DocumentCatalogInventoryTests(unittest.TestCase):
         self.assertIsNotNone(estado)
         self.assertEqual(estado.availability_status, "AVAILABLE")
 
+    def test_retomada_ignora_membros_ja_confirmados(self) -> None:
+        self._escrever([
+            self._documento(1, "Edital A"),
+            self._documento(2, "Edital B"),
+        ])
+        primeira = self._reconciliar(completo=True)
+
+        segunda = self._reconciliar(completo=True)
+
+        self.assertEqual(primeira["inventoryId"], segunda["inventoryId"])
+        self.assertEqual(segunda["documentosLidos"], 2)
+        self.assertEqual(segunda["inalterados"], 2)
+        self.assertEqual(segunda["catalogados"], 0)
+        inventario = self.db.get(DocumentCatalogInventory, primeira["inventoryId"])
+        self.assertEqual(inventario.documents_seen, 2)
+        self.assertEqual(inventario.documents_cataloged, 2)
+
     def test_mudanca_de_metadata_preserva_as_duas_observacoes(self) -> None:
         self._escrever([self._documento(1, "Edital A")])
         primeira = self._reconciliar(completo=True)
