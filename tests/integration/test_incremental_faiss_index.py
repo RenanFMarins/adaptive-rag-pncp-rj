@@ -575,7 +575,7 @@ class IncrementalFaissIndexTests(unittest.TestCase):
             self.assertTrue(
                 any("Checksum inválido" in item for item in auditoria.inconsistencias)
             )
-            with self.assertRaisesRegex(RuntimeError, "Checksum inválido"):
+            with self.assertRaisesRegex(RuntimeError, "corrompido|inconsistente"):
                 carregar_indice_faiss(diretorio)
 
     def test_lock_impede_escritores_concorrentes(self):

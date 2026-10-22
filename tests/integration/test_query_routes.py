@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,10 +15,17 @@ with patch.dict(os.environ, {"DATABASE_URL": "sqlite:///:memory:"}):
     from fastapi.testclient import TestClient
 
     from app.core.database import create_sqlite_engine, get_db, init_db
+    from app.core.config import settings
+    from app.core.logging import perf_stage
     from app.core.security import get_current_user
     from app.main import app
     from app.modules.query.model import Query, Response, ResponseSource
     from src.generate import MENSAGEM_SEM_EVIDENCIA, RagAnswer
+    from src.faiss_errors import (
+        FaissIndexCorruptError,
+        FaissIndexIncompatibleError,
+        FaissIndexMissingError,
+    )
     from src.guardrails import MENSAGEM_RECUSA_PADRAO
     from src.retrieve import RankedChunk
     import src.generate as generate_module
@@ -119,6 +127,69 @@ class QueryRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["answer"], MENSAGEM_SEM_EVIDENCIA)
         self.assertEqual(response.json()["sources"], [])
+
+    def test_generate_faiss_indisponivel_retorna_503_seguro(self):
+        cases = (
+            (FaissIndexMissingError(), "faiss_index_missing"),
+            (FaissIndexCorruptError(), "faiss_index_corrupt"),
+            (FaissIndexIncompatibleError(), "faiss_index_incompatible"),
+        )
+        for error, expected_code in cases:
+            with self.subTest(expected_code), patch(
+                "app.modules.query.routes.gerar_resposta_rag",
+                side_effect=error,
+            ):
+                response = self.client.post(
+                    "/query/generate",
+                    json={"pergunta": "pergunta sintetica"},
+                )
+
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response.json()["detail"]["code"], expected_code)
+            self.assertEqual(
+                response.json()["detail"]["message"],
+                "Recuperação documental temporariamente indisponível.",
+            )
+            serialized = response.text
+            self.assertNotIn("/home/", serialized)
+            self.assertNotIn("Traceback", serialized)
+
+    def test_generate_erro_inesperado_permanece_500(self):
+        with TestClient(app, raise_server_exceptions=False) as client, patch(
+            "app.modules.query.routes.gerar_resposta_rag",
+            side_effect=AssertionError("segredo-nao-publicar"),
+        ):
+            response = client.post(
+                "/query/generate",
+                json={"pergunta": "pergunta sintetica"},
+            )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("segredo-nao-publicar", response.text)
+
+    def test_generate_503_preserva_observabilidade_minimizada(self):
+        def unavailable(**_kwargs):
+            with perf_stage("faiss_load"):
+                raise FaissIndexMissingError()
+
+        with patch.object(settings, "rag_perf_log_enabled", True), patch(
+            "app.modules.query.routes.gerar_resposta_rag",
+            side_effect=unavailable,
+        ), self.assertLogs("uvicorn.error", level=logging.INFO) as captured:
+            response = self.client.post(
+                "/query/generate",
+                json={"pergunta": "CPF sintetico 000.000.000-00"},
+                headers={"Authorization": "Bearer segredo-sintetico"},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        messages = "\n".join(record.getMessage() for record in captured.records)
+        self.assertIn("run_id=", messages)
+        self.assertIn("etapa=faiss_load", messages)
+        self.assertIn("status=erro", messages)
+        self.assertIn("excecao=FaissIndexMissingError", messages)
+        self.assertNotIn("000.000.000-00", messages)
+        self.assertNotIn("segredo-sintetico", messages)
 
     def test_generate_guardrail_bloqueia_sem_retrieval_llm_ou_persistencia(self):
         engine = create_sqlite_engine("sqlite:///:memory:")

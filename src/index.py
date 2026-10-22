@@ -17,6 +17,13 @@ from typing import Callable, Iterable, Iterator, Literal
 import faiss
 import numpy as np
 
+from src.faiss_errors import (
+    FAISS_UNAVAILABLE_ERRORS,
+    FaissIndexCorruptError,
+    FaissIndexIncompatibleError,
+    FaissIndexMissingError,
+)
+
 
 EmbeddingFn = Callable[[str], list[float]]
 ProgressFn = Callable[[int, int], None]
@@ -41,6 +48,21 @@ ARQUIVO_IDS = "chunk_ids.json"
 ARQUIVO_ESTADO = "estado_indexacao.json"
 ESQUEMA_INDICE = "faiss_document_chunks_v1"
 ESQUEMA_CHECKPOINTS = "faiss_document_chunks_checkpoints_v1"
+
+
+def _erro_ausente_ou_incompleto(cache_dir: Path) -> Exception:
+    """Distingue diretório ausente de um conjunto parcial/corrompido."""
+
+    artefatos = (
+        cache_dir / ARQUIVO_INDICE,
+        cache_dir / ARQUIVO_IDS,
+        cache_dir / ARQUIVO_ESTADO,
+        cache_dir / "base",
+        cache_dir / "checkpoints",
+    )
+    if any(artefato.exists() for artefato in artefatos):
+        return FaissIndexCorruptError()
+    return FaissIndexMissingError()
 
 
 def _agora_utc() -> str:
@@ -159,10 +181,7 @@ class FaissChunkIndex:
             return []
         consulta = _normalizar(np.asarray([query_embedding], dtype="float32"))
         if consulta.shape[1] != self.index.d:
-            raise ValueError(
-                f"Embedding de consulta tem dimensão {consulta.shape[1]}; "
-                f"o índice exige {self.index.d}."
-            )
+            raise FaissIndexIncompatibleError()
         scores, indices = self.index.search(consulta, min(top_k, len(self.chunk_ids)))
         return [
             (self.chunk_ids[int(posicao)], float(score))
@@ -206,10 +225,37 @@ def _ler_json(caminho: Path) -> object:
     return json.loads(caminho.read_text(encoding="utf-8"))
 
 
+def _ler_json_artefato(caminho: Path) -> object:
+    """Classifica somente falhas da fronteira de leitura do artefato."""
+
+    try:
+        return _ler_json(caminho)
+    except FileNotFoundError:
+        raise
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise FaissIndexCorruptError() from exc
+
+
+def _ler_faiss_artefato(caminho: Path) -> faiss.Index:
+    """Converte falhas do parser nativo do FAISS em erro de domínio."""
+
+    try:
+        return faiss.read_index(str(caminho))
+    except (OSError, RuntimeError) as exc:
+        raise FaissIndexCorruptError() from exc
+
+
+def _inteiro_artefato(value: object) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise FaissIndexCorruptError() from exc
+
+
 def _ler_indice_legado(cache_dir: Path, *, verificar: bool) -> AuditoriaIndiceFaiss:
     index_path, ids_path, state_path = _caminhos_legados(cache_dir)
     if not index_path.is_file() or not ids_path.is_file():
-        raise FileNotFoundError(f"Índice FAISS ausente em {cache_dir}.")
+        raise _erro_ausente_ou_incompleto(cache_dir)
     estado: dict[str, object] = {}
     problemas: list[str] = []
     try:
@@ -221,11 +267,14 @@ def _ler_indice_legado(cache_dir: Path, *, verificar: bool) -> AuditoriaIndiceFa
     except (json.JSONDecodeError, OSError) as exc:
         problemas.append(f"estado_indexacao.json ilegível: {exc}")
 
-    ids_valor = _ler_json(ids_path)
+    try:
+        ids_valor = _ler_json_artefato(ids_path)
+    except FileNotFoundError as exc:
+        raise _erro_ausente_ou_incompleto(cache_dir) from exc
     if not isinstance(ids_valor, list) or not all(isinstance(item, str) for item in ids_valor):
-        raise RuntimeError(f"Mapa de chunk_ids inválido: {ids_path}")
+        raise FaissIndexCorruptError()
     chunk_ids = ids_valor
-    index = faiss.read_index(str(index_path))
+    index = _ler_faiss_artefato(index_path)
     total_vetores = int(index.ntotal)
     if not _vetores_finitos(index):
         problemas.append("O FAISS contém vetores não finitos.")
@@ -259,15 +308,18 @@ def _ler_indice_legado(cache_dir: Path, *, verificar: bool) -> AuditoriaIndiceFa
 
 def _ler_indice_checkpoint(cache_dir: Path, *, verificar: bool) -> AuditoriaIndiceFaiss:
     estado_path = cache_dir / ARQUIVO_ESTADO
-    estado_valor = _ler_json(estado_path)
+    try:
+        estado_valor = _ler_json_artefato(estado_path)
+    except FileNotFoundError as exc:
+        raise _erro_ausente_ou_incompleto(cache_dir) from exc
     if not isinstance(estado_valor, dict) or estado_valor.get("formato") != ESQUEMA_CHECKPOINTS:
-        raise RuntimeError(f"Formato de checkpoint inválido: {estado_path}")
+        raise FaissIndexCorruptError()
     estado = estado_valor
     problemas: list[str] = []
     ids_completos: list[str] = []
     hashes: dict[str, str] = {}
     faiss_total = 0
-    dimensao = int(estado.get("dimensao", 0))
+    dimensao = _inteiro_artefato(estado.get("dimensao", 0))
 
     base_nome = estado.get("base")
     if base_nome:
@@ -279,19 +331,19 @@ def _ler_indice_checkpoint(cache_dir: Path, *, verificar: bool) -> AuditoriaIndi
                 problemas.append("O estado não referencia o manifesto da base.")
             elif _sha256(manifesto_path) != expected_manifest:
                 problemas.append("Checksum inválido no manifesto da base.")
-            manifesto = _ler_json(manifesto_path)
+            manifesto = _ler_json_artefato(manifesto_path)
             if not isinstance(manifesto, dict):
-                raise ValueError("manifesto da base não é objeto JSON")
+                raise FaissIndexCorruptError()
             for nome, digest in manifesto.get("arquivos", {}).items():
                 caminho = base_dir / str(nome)
                 if not caminho.is_file() or _sha256(caminho) != digest:
                     problemas.append(f"Checksum inválido no arquivo base {nome}.")
             base_index_path = base_dir / ARQUIVO_INDICE
             base_ids_path = base_dir / ARQUIVO_IDS
-            base_index = faiss.read_index(str(base_index_path))
-            base_ids = _ler_json(base_ids_path)
+            base_index = _ler_faiss_artefato(base_index_path)
+            base_ids = _ler_json_artefato(base_ids_path)
             if not isinstance(base_ids, list) or not all(isinstance(i, str) for i in base_ids):
-                raise ValueError("IDs da base inválidos")
+                raise FaissIndexCorruptError()
             if base_index.ntotal != len(base_ids):
                 problemas.append("Quantidade de vetores/IDs diverge na base do staging.")
             if not _vetores_finitos(base_index):
@@ -305,7 +357,9 @@ def _ler_indice_checkpoint(cache_dir: Path, *, verificar: bool) -> AuditoriaIndi
                 legacy_model = base_state.get("modeloEmbedding")
                 if legacy_model and legacy_model != estado.get("modeloEmbedding"):
                     problemas.append("Modelo da base diverge do modelo do staging.")
-        except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        except FAISS_UNAVAILABLE_ERRORS:
+            raise
+        except OSError as exc:
             problemas.append(f"Base de staging inválida: {exc}")
 
     checkpoints = estado.get("checkpoints", [])
@@ -354,13 +408,13 @@ def _ler_indice_checkpoint(cache_dir: Path, *, verificar: bool) -> AuditoriaIndi
                 caminho = cp_dir / str(filename)
                 if not caminho.is_file() or _sha256(caminho) != digest:
                     problemas.append(f"Checksum inválido em {nome}/{filename}.")
-            parte = faiss.read_index(str(cp_dir / "chunks.faiss"))
-            ids = _ler_json(cp_dir / "chunk_ids.json")
-            cp_hashes = _ler_json(cp_dir / "content_hashes.json")
+            parte = _ler_faiss_artefato(cp_dir / "chunks.faiss")
+            ids = _ler_json_artefato(cp_dir / "chunk_ids.json")
+            cp_hashes = _ler_json_artefato(cp_dir / "content_hashes.json")
             if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
-                raise ValueError("IDs do checkpoint inválidos")
+                raise FaissIndexCorruptError()
             if not isinstance(cp_hashes, dict):
-                raise ValueError("Hashes do checkpoint inválidos")
+                raise FaissIndexCorruptError()
             if set(cp_hashes) != set(ids):
                 problemas.append(f"Hashes de conteúdo e IDs divergem em {nome}.")
             if any(
@@ -379,7 +433,9 @@ def _ler_indice_checkpoint(cache_dir: Path, *, verificar: bool) -> AuditoriaIndi
             ids_completos.extend(ids)
             hashes.update({str(key): str(value) for key, value in cp_hashes.items()})
             faiss_total += int(parte.ntotal)
-        except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        except FAISS_UNAVAILABLE_ERRORS:
+            raise
+        except OSError as exc:
             problemas.append(f"Checkpoint {nome} inválido: {exc}")
 
     checkpoints_arquivados = estado.get("checkpointsArquivados", [])
@@ -454,18 +510,19 @@ def validar_indice_faiss(
         if "diretórios de checkpoint sem referência" not in item
     ]
     if bloqueantes:
-        raise RuntimeError("Índice FAISS inconsistente: " + " ".join(bloqueantes))
+        raise FaissIndexCorruptError()
     if auditoria.modelo_embedding != modelo_esperado:
-        raise RuntimeError(
-            "Modelo de embedding do índice é incompatível "
-            f"({auditoria.modelo_embedding!r} != {modelo_esperado!r})."
-        )
+        raise FaissIndexIncompatibleError()
     if auditoria.dimensao is None or auditoria.dimensao <= 0:
-        raise RuntimeError("Índice FAISS não registra uma dimensão válida.")
+        raise FaissIndexCorruptError()
     return auditoria
 
 
-def carregar_indice_faiss(cache_dir: Path) -> FaissChunkIndex:
+def carregar_indice_faiss(
+    cache_dir: Path,
+    *,
+    modelo_esperado: str | None = None,
+) -> FaissChunkIndex:
     """Carrega índice gerenciado ou legado; valida checksums e IDs."""
 
     auditoria = auditar_indice_faiss(cache_dir)
@@ -475,22 +532,26 @@ def carregar_indice_faiss(cache_dir: Path) -> FaissChunkIndex:
         if "diretórios de checkpoint sem referência" not in item
     ]
     if bloqueantes:
-        raise RuntimeError("Índice FAISS inconsistente: " + " ".join(bloqueantes))
+        raise FaissIndexCorruptError()
+    if modelo_esperado is not None and auditoria.modelo_embedding != modelo_esperado:
+        raise FaissIndexIncompatibleError()
+    if auditoria.dimensao is None or auditoria.dimensao <= 0:
+        raise FaissIndexCorruptError()
     state = auditoria.estado
     if state.get("formato") == ESQUEMA_CHECKPOINTS:
-        dimension = int(auditoria.dimensao or 0)
+        dimension = _inteiro_artefato(auditoria.dimensao or 0)
         index: faiss.Index = faiss.IndexFlatIP(dimension)
         base_name = state.get("base")
         if base_name:
-            base_index = faiss.read_index(str(cache_dir / "base" / ARQUIVO_INDICE))
+            base_index = _ler_faiss_artefato(cache_dir / "base" / ARQUIVO_INDICE)
             _adicionar_vetores(index, base_index)
         for entry in state.get("checkpoints", []):
-            cp_index = faiss.read_index(
-                str(cache_dir / "checkpoints" / str(entry["nome"]) / "chunks.faiss")
+            cp_index = _ler_faiss_artefato(
+                cache_dir / "checkpoints" / str(entry["nome"]) / "chunks.faiss"
             )
             _adicionar_vetores(index, cp_index)
     else:
-        index = faiss.read_index(str(cache_dir / ARQUIVO_INDICE))
+        index = _ler_faiss_artefato(cache_dir / ARQUIVO_INDICE)
     return FaissChunkIndex(
         index=index,
         chunk_ids=auditoria.chunk_ids,

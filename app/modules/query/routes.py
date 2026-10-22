@@ -26,6 +26,7 @@ from app.modules.query.services import (
     executar_consulta_estruturada,
 )
 from src.generate import gerar_resposta_rag
+from src.faiss_errors import FAISS_UNAVAILABLE_ERRORS, faiss_public_detail
 from src.query.analyzer import QueryAnalysisError
 from src.query.executor import QueryExecutionError
 from src.query.structured_tool import StructuredQueryError
@@ -69,6 +70,11 @@ def ask(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
+        ) from exc
+    except FAISS_UNAVAILABLE_ERRORS as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=faiss_public_detail(exc),
         ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
@@ -199,6 +205,11 @@ def generate(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
+        ) from exc
+    except FAISS_UNAVAILABLE_ERRORS as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=faiss_public_detail(exc),
         ) from exc
 
     return GenerateResponse(

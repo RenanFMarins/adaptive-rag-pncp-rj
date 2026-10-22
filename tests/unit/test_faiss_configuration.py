@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, resolver_caminho_indice_faiss, settings
 from app.core.faiss_startup import validar_faiss_no_startup
 from app.modules.query import services as query_services
+from src.faiss_errors import FaissIndexIncompatibleError
 from src.index import indexar_chunks_incrementalmente, validar_indice_faiss
 from src.query.adaptive_executor import AdaptiveExecutionResult
 from src.query.planner import planejar_execucao
@@ -67,7 +68,7 @@ class FaissConfigurationTests(unittest.TestCase):
             audit = validar_indice_faiss(path, modelo_esperado="modelo-teste")
             self.assertEqual(audit.total_vetores, 1)
             self.assertEqual(audit.dimensao, 2)
-            with self.assertRaisesRegex(RuntimeError, "Modelo de embedding"):
+            with self.assertRaises(FaissIndexIncompatibleError):
                 validar_indice_faiss(path, modelo_esperado="outro-modelo")
 
     def test_startup_invalido_nao_bloqueia_aplicacao_independente(self):
@@ -78,8 +79,9 @@ class FaissConfigurationTests(unittest.TestCase):
             ready = validar_faiss_no_startup(app)
         self.assertFalse(ready)
         self.assertFalse(app.state.faiss_index_ready)
-        self.assertEqual(app.state.faiss_index_error, "FileNotFoundError")
-        self.assertIn(str((Path(directory) / "ausente").resolve()), "\n".join(captured.output))
+        self.assertEqual(app.state.faiss_index_error, "faiss_index_missing")
+        self.assertNotIn(str((Path(directory) / "ausente").resolve()), "\n".join(captured.output))
+        self.assertIn("codigo=faiss_index_missing", "\n".join(captured.output))
         self.assertIn("structured permanecem disponíveis", "\n".join(captured.output))
 
     def test_startup_valido_registra_caminho_absoluto(self):
@@ -98,7 +100,8 @@ class FaissConfigurationTests(unittest.TestCase):
                 ready = validar_faiss_no_startup(app)
         self.assertTrue(ready)
         self.assertTrue(app.state.faiss_index_ready)
-        self.assertIn(str(path.resolve()), "\n".join(captured.output))
+        self.assertNotIn(str(path.resolve()), "\n".join(captured.output))
+        self.assertIn("FAISS validado", "\n".join(captured.output))
 
     def test_rollback_reseleciona_v1_sem_alterar_indices(self):
         with TemporaryDirectory() as directory:
