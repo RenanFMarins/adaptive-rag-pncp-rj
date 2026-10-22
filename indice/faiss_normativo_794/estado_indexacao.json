@@ -1,0 +1,25 @@
+{
+  "formato": "faiss_document_chunks_checkpoints_v1",
+  "modeloEmbedding": "xagi/qwen3-embedding:0.6b-q4_k_m",
+  "dimensao": 1024,
+  "totalVetores": 794,
+  "atualizadoEm": "2026-10-19T20:26:36.428538+00:00",
+  "origens": [
+    "editais_normativo"
+  ],
+  "base": null,
+  "checkpoints": [
+    {
+      "nome": "cp-00000001-669844c1",
+      "manifestSha256": "a92cc7ec85226f0cc6b70e492e1f039aba325946cc8f779d41149cfeafdb6f9b"
+    },
+    {
+      "nome": "cp-00000002-1541ee83",
+      "manifestSha256": "6b7181ce50fbf2eba30280726f200588c1496c402ef8840117e14aa2ec51c1cd"
+    },
+    {
+      "nome": "cp-00000003-ede2e0fc",
+      "manifestSha256": "af206163d2bf91bd669f8429911852234a550e38117816274e04ca301c1046fe"
+    }
+  ]
+}

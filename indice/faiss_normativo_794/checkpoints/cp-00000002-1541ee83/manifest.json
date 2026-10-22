@@ -1,0 +1,8 @@
+{
+  "arquivos": {
+    "chunks.faiss": "25d67013b5adb8e083cdbaab828a5b0bb95cf5604f8df733b0b1a35f94f537f7",
+    "chunk_ids.json": "8df50f70def63010212f986cf2e19777bcdd812896a096d23a4d7a16aa1f815f",
+    "content_hashes.json": "9bb48a938cbc11282f813f77fca400fff1c6734428d84481855cb6b0a8cd9b7a"
+  },
+  "total": 500
+}

@@ -84,3 +84,4 @@ app.db
 app.db
 
 .venv312/
+/app.db

@@ -51,6 +51,7 @@ class ExternalDocumentResponse(BaseModel):
 class GenerateResponse(BaseModel):
     answer: str
     sources: list[SourceResponse]
+    trace_id: str | None = None
 
 
 class StructuredQueryRequest(BaseModel):

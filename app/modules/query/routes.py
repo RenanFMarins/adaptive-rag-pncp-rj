@@ -84,6 +84,7 @@ def ask(
             plan=result.plan,
             structured_result=structured_result,
             external_documents=result.external_documents,
+            trace_id=getattr(result.rag_result, "trace_id", None),
         )
 
     rag_result = result.rag_result
@@ -108,6 +109,7 @@ def ask(
             for rank, source in enumerate(rag_result.sources, start=1)
         ],
         external_documents=result.external_documents,
+        trace_id=rag_result.trace_id,
     )
 
 
@@ -201,4 +203,5 @@ def generate(
             )
             for rank, source in enumerate(resultado.sources, start=1)
         ],
+        trace_id=resultado.trace_id,
     )

@@ -25,9 +25,14 @@ from src.fts import buscar_fts5, inicializar_fts5
 from src.query.base_catalog import resolver_base_ids
 from src.query.schemas import KnowledgeBase, QueryEntity, QueryFilters
 from src.retrieve import (
+    DEFAULT_BM25_CANDIDATES,
+    DEFAULT_FAISS_CANDIDATES,
+    MAX_BM25_CANDIDATES,
+    MAX_FAISS_CANDIDATES,
     buscar_dense,
     construir_consulta_chunks_elegiveis,
     contar_chunks_por_base,
+    reciprocal_rank_fusion,
     resolver_chunk_ids_filtrados,
     retrieve_hibrido,
 )
@@ -301,6 +306,57 @@ class RetrieveFiltersTests(unittest.TestCase):
         with patch("src.retrieve.buscar_dense") as dense:
             self.assertEqual(retrieve_hibrido(self.session, "alpha", bases=[]), [])
             dense.assert_not_called()
+
+    def test_hibrido_usa_limites_de_candidatos_configuraveis_e_preserva_top_k(self) -> None:
+        with (
+            patch("src.retrieve.buscar_fts5", return_value=[("chunk-a", -1.0)]) as lexical,
+            patch("src.retrieve.buscar_dense", return_value=[("chunk-b", 0.9)]) as dense,
+            patch("src.retrieve._identificar_norma", return_value=None),
+        ):
+            resultado = retrieve_hibrido(
+                self.session,
+                "alpha",
+                top_k=1,
+                bases=[KnowledgeBase.AGREGADA],
+            )
+
+        self.assertEqual(lexical.call_args.args[2], DEFAULT_BM25_CANDIDATES)
+        self.assertEqual(dense.call_args.args[1], DEFAULT_FAISS_CANDIDATES)
+        self.assertEqual(len(resultado), 1)
+
+    def test_hibrido_limita_candidatos_e_preserva_filtros_de_elegibilidade(self) -> None:
+        with (
+            patch("src.retrieve.buscar_fts5", return_value=[("chunk-a", -1.0)]) as lexical,
+            patch("src.retrieve.buscar_dense", return_value=[("chunk-a", 0.9)]) as dense,
+            patch("src.retrieve._identificar_norma", return_value=None),
+        ):
+            resultado = retrieve_hibrido(
+                self.session,
+                "alpha",
+                top_k=1,
+                bm25_k=MAX_BM25_CANDIDATES + 100,
+                dense_k=MAX_FAISS_CANDIDATES + 100,
+                filters=QueryFilters(numero_controle_pncp="111-2-000001/2026"),
+            )
+
+        self.assertEqual(lexical.call_args.args[2], MAX_BM25_CANDIDATES)
+        self.assertIsNotNone(lexical.call_args.kwargs["eligible_chunks"])
+        self.assertEqual(dense.call_args.args[1], MAX_FAISS_CANDIDATES)
+        self.assertEqual(dense.call_args.kwargs["allowed_chunk_ids"], {"chunk-a"})
+        self.assertEqual([chunk.chunk_id for chunk in resultado], ["chunk-a"])
+        self.assertEqual(len(resultado), 1)
+
+    def test_rrf_deduplica_ids_repetidos_por_ranking_sem_perder_fusao(self) -> None:
+        fused = reciprocal_rank_fusion(
+            [
+                [("chunk-a", 0.0), ("chunk-a", 0.0), ("chunk-b", 0.0)],
+                [("chunk-a", 0.0)],
+            ],
+            k=60,
+        )
+
+        self.assertAlmostEqual(fused["chunk-a"], 2 / 61)
+        self.assertAlmostEqual(fused["chunk-b"], 1 / 63)
 
     def test_hibrido_preserva_ranking_rrf_e_limite_lexical(self) -> None:
         self.chunk_a.content = "alpha alpha alpha"

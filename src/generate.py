@@ -4,7 +4,9 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from dataclasses import asdict, dataclass
+import re
+import unicodedata
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
 
@@ -35,6 +37,109 @@ class RagAnswer:
     answer: str
     sources: list[RankedChunk]
     prompt: str | None = None
+    trace_id: str | None = None
+
+
+@dataclass(frozen=True)
+class EvidenceSufficiency:
+    status: str
+    sufficient: bool
+    reason: str
+    covered_aspects: tuple[str, ...] = ()
+    missing_aspects: tuple[str, ...] = ()
+    evidence_by_aspect: dict[str, tuple[str, ...]] = field(default_factory=dict)
+
+
+def _termos(texto: str) -> set[str]:
+    normalizado = unicodedata.normalize("NFKD", texto or "")
+    normalizado = "".join(c for c in normalizado if not unicodedata.combining(c)).lower()
+    equivalencias = {
+        "responsabilidade": "dever", "responsabilidades": "dever",
+        "incumbe": "dever", "incumbem": "dever", "compete": "dever",
+        "atribuicao": "dever", "atribuicoes": "dever",
+        "competencia": "dever", "competencias": "dever",
+        "fiscalizacao": "fiscal", "fiscais": "fiscal",
+    }
+    stop = {"quais", "qual", "como", "para", "previstas", "previstos", "informe", "sobre"}
+    return {equivalencias.get(t, t) for t in re.findall(r"[a-z]{4,}", normalizado) if t not in stop}
+
+
+def _aspectos_pergunta(pergunta: str) -> list[str]:
+    papel = re.search(
+        r"\b(fiscais?|gestores?|responsáveis?)\s+([^\s,]+)\s+e\s+([^\s,]+)",
+        pergunta,
+        flags=re.I,
+    )
+    if papel:
+        comum = pergunta[: papel.start(2)].strip()
+        return [f"{comum} {papel.group(2)}", f"{comum} {papel.group(3)}"]
+    """Divide somente coordenações com conteúdo substantivo dos dois lados."""
+    partes = [pergunta.strip()]
+    for conector in (" e ", " ou "):
+        novas: list[str] = []
+        for parte in partes:
+            candidatas = re.split(re.escape(conector), parte, maxsplit=1, flags=re.I)
+            if len(candidatas) == 2 and all(len(_termos(item)) >= 1 for item in candidatas):
+                novas.extend(candidatas)
+            else:
+                novas.append(parte)
+        partes = novas
+    return partes
+
+
+def _chunk_cobre_aspecto(aspecto: str, chunk: RankedChunk) -> bool:
+    termos = _termos(aspecto)
+    texto = chunk.content or ""
+    termos_chunk = _termos(texto)
+    comuns = termos & termos_chunk
+    if not comuns:
+        return False
+    papeis = re.findall(r"\bfiscais?\s+([^\s,?]+)", aspecto, flags=re.I)
+    papel = papeis[-1] if papeis else None
+    if papel and papel.lower() not in {"de", "do", "da", "contrato"} and papel.lower() not in texto.lower():
+        return False
+    # Um único termo abstrato normalizado (“dever”) não pode fazer duas
+    # partes coordenadas parecerem cobertas pelo mesmo vocábulo substituto.
+    originais_aspecto = set(re.findall(r"[a-z]{4,}", unicodedata.normalize("NFKD", aspecto).lower()))
+    originais_texto = set(re.findall(r"[a-z]{4,}", unicodedata.normalize("NFKD", texto).lower()))
+    equivalentes_apenas = len(termos) == 1 and not (originais_aspecto & originais_texto)
+    if equivalentes_apenas:
+        return False
+    # Uma negação próxima impede que coincidência lexical seja tratada como
+    # suporte (por exemplo, “não atribui” ou “sem competência”).
+    normalizado = unicodedata.normalize("NFKD", texto or "")
+    normalizado = "".join(c for c in normalizado if not unicodedata.combining(c)).lower()
+    if re.search(r"\b(?:nao|sem|inexistente|inexistem)\b[^.]{0,80}\b(?:dever|fiscal|competencia)\b", normalizado):
+        return False
+    minimo = 1 if len(termos) <= 2 else 2
+    return len(comuns) >= minimo
+
+
+def verificar_suficiencia_evidencias(
+    pergunta: str,
+    chunks: list[RankedChunk],
+    structured_result: StructuredQueryResult | None = None,
+) -> EvidenceSufficiency:
+    """Classifica suporte recuperado antes de chamar a LLM."""
+    if structured_result is not None:
+        return EvidenceSufficiency("sufficient", True, "structured_result_present")
+    if not chunks:
+        return EvidenceSufficiency("absent", False, "no_documentary_evidence")
+
+    aspectos = [p.strip(" ,?:") for p in _aspectos_pergunta(pergunta) if p.strip()]
+    cobertos: list[str] = []
+    ausentes: list[str] = []
+    evidence_by_aspect: dict[str, tuple[str, ...]] = {}
+    for aspecto in aspectos:
+        evidencias = tuple(chunk.chunk_id for chunk in chunks if _chunk_cobre_aspecto(aspecto, chunk))
+        evidence_by_aspect[aspecto] = evidencias
+        if evidencias:
+            cobertos.append(aspecto)
+        else:
+            ausentes.append(aspecto)
+    if ausentes:
+        return EvidenceSufficiency("partial", False, "missing_aspects", tuple(cobertos), tuple(ausentes), evidence_by_aspect)
+    return EvidenceSufficiency("sufficient", True, "all_aspects_covered", tuple(cobertos), (), evidence_by_aspect)
 
 
 def _metadata_util(metadata: dict[str, object]) -> dict[str, object]:
@@ -197,6 +302,8 @@ def gerar_resposta_rag(
             ),
             "chunks_disponiveis_por_base": chunks_por_base,
             "chunks": [],
+            "ranking_stages": {},
+            "parameters": {"top_k": top_k},
         },
         "generation": {
             "model": GENERATION_MODEL,
@@ -238,6 +345,7 @@ def gerar_resposta_rag(
                 answer=mensagem_guardrail or "",
                 sources=[],
                 prompt=None if not incluir_prompt else "",
+                trace_id=trace["trace_id"],
             )
 
             trace["generation"]["answer"] = resposta_bloqueada.answer
@@ -279,7 +387,7 @@ def gerar_resposta_rag(
         trace["stage"] = "retrieval"
 
         with perf_stage("retrieval") as metrics:
-            chunks = retrieval_fn(
+            retrieval_kwargs = dict(
                 db=db,
                 pergunta=pergunta,
                 top_k=top_k,
@@ -287,6 +395,9 @@ def gerar_resposta_rag(
                 filters=filters,
                 bases=bases,
             )
+            if retrieval_fn is recuperar_chunks_ranqueados:
+                retrieval_kwargs["trace_collector"] = trace["retrieval"]
+            chunks = retrieval_fn(**retrieval_kwargs)
             metrics["fontes"] = len(chunks)
 
         trace["retrieval"]["chunks"] = [
@@ -304,6 +415,24 @@ def gerar_resposta_rag(
             for rank, chunk in enumerate(chunks, start=1)
         ]
 
+        suficiencia = verificar_suficiencia_evidencias(
+            pergunta, chunks, structured_result=structured_result
+        )
+        trace["retrieval"]["evidence_sufficiency"] = asdict(suficiencia)
+
+        if not suficiencia.sufficient:
+            informar("Evidências insuficientes; geração não será chamada.")
+            resposta_insuficiente = RagAnswer(
+                answer=MENSAGEM_SEM_EVIDENCIA,
+                sources=chunks,
+                prompt=None if not incluir_prompt else "",
+                trace_id=trace["trace_id"],
+            )
+            trace["generation"]["answer"] = resposta_insuficiente.answer
+            trace["status"] = "blocked"
+            trace["stage"] = "evidence_sufficiency"
+            return resposta_insuficiente
+
         if not chunks and structured_result is None:
             informar("Nenhuma evidência foi encontrada.")
 
@@ -311,6 +440,7 @@ def gerar_resposta_rag(
                 answer=MENSAGEM_SEM_EVIDENCIA,
                 sources=[],
                 prompt=None if not incluir_prompt else "",
+                trace_id=trace["trace_id"],
             )
 
             trace["generation"]["answer"] = resposta_sem_evidencia.answer
@@ -392,6 +522,7 @@ def gerar_resposta_rag(
             answer=resposta,
             sources=chunks,
             prompt=prompt if incluir_prompt else None,
+            trace_id=trace["trace_id"],
         )
 
     except Exception as error:

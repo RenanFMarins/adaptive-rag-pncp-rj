@@ -1,0 +1,200 @@
+﻿[1]
+chunk_id: editais_normativo:pncp_42498600000171_2025_921_arq1:20:p20
+metadados: {"ano": 2025, "base_id": "editais_normativo", "data_publicacao": "2025-02-24", "doc_type": "edital", "document_id": 1908, "orgao": "Governo do Estado do Rio de Janeiro\nFundação Saúde", "tituloDocumento": "PREGÃO ELETRÔNICO Nº 169/2024", "urlFontePncp": "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/921/arquivos/1"}
+conteudo:
+[Cláusula 20 (continuação)]
+Notificar os emitentes das garantias quanto ao início de processo administrativo para apuração de descumprimento de cláusulas
+contratuais, na forma do art. 137, § 4º, da Lei nº 14.133/2021.
+8.1.12 A Administração não responderá por quaisquer compromissos assumidos pelo CONTRATADO perante terceiros, ainda que
+vinculados à execução do Contrato, bem como por qualquer dano causado a terceiros em decorrência de ato do CONTRATADO, de
+seus empregados, prepostos ou subordinados.
+8.1.13 O presente Contrato não configura vínculo empregatício entre os trabalhadores ou sócios do CONTRATADO e o
+CONTRATANTE.
+CLÁUSULA NONA – OBRIGAÇÕES DO CONTRATADO
+9.1 O CONTRATADO deverá cumprir todas as obrigações constantes deste Contrato e em seus Anexos, assumindo como
+exclusivamente seus os riscos e as despesas decorrentes da boa e perfeita execução do objeto, observando, ainda, as obrigações a seguir
+dispostas:
+9.1.1 Entregar o objeto acompanhado, se for o caso, do manual do usuário, com uma versão em português, e da relação da rede de
+assistência técnica autorizada.
+9.1.2 Comunicar ao CONTRATANTE, no prazo máximo de 24 (vinte e quatro) horas que antecede a data da entrega, os motivos que
+impossibilitem o cumprimento do prazo previsto, com a devida comprovação.
+9.1.3 Atender às determinações regulares emitidas pelo fiscal ou gestor do Contrato ou autoridade superior (art. 137, II, da Lei nº
+14.133/2021) e prestar todo esclarecimento ou informação por eles solicitados.
+9.1.4 Alocar os empregados necessários, com habilitação e conhecimento adequados, ao perfeito cumprimento das cláusulas deste
+Contrato, fornecendo os materiais, equipamentos, ferramentas e utensílios demandados, cuja quantidade, qualidade e tecnologia
+deverão atender às recomendações de boa técnica e a legislação de regência.
+9.1.5 Reparar, corrigir, remover, reconstruir ou substituir, às suas expensas, no total ou em parte, no prazo fixado pelo fiscal do
+Contrato, os bens nos quais se verificarem vícios, defeitos ou incorreções resultantes da execução ou dos materiais empregados.
+9.1.6 Responsabilizar-se pelos vícios e danos decorrentes do objeto, de acordo com o Código de Defesa do Consumidor (Lei nº
+8.078/1990), bem como por todo e qualquer dano causado à Administração ou terceiros, não reduzindo essa responsabilidade a
+fiscalização ou o acompanhamento da execução contratual pelo CONTRATANTE, que ficará autorizado a descontar dos pagamentos
+devidos ou da garantia o valor correspondente aos danos sofridos.
+9.1.7 Não contratar, durante a vigência do Contrato, cônjuge, companheiro ou parente em linha reta, colateral ou por afinidade, até o
+terceiro grau, de dirigente do CONTRATANTE ou de agente público que atue na fiscalização ou na gestão do Contrato, nos termos do
+art. 48, parágrafo único, da Lei nº 14.133/2021.
+9.1.8 Manter a regularidade junto ao SICAF.
+9.1.8.1 Quando não for possível a verificação da regularidade no Sistema de Cadastro de Fornecedores – SICAF, o CONTRATADO
+deverá entregar ao setor responsável pela fiscalização do Contrato, junto com a Nota Fiscal para fins de pagamento, os seguintes
+documentos:
+a) prova de regularidade relativa à Seguridade Social;
+b) certidão conjunta relativa aos tributos federais e à Dívida Ativa da União;
+c) certidões que comprovem a regularidade perante a Fazenda Municipal, Estadual ou Distrital do domicílio ou sede do contratado;
+d) Certificado de Regularidade do FGTS; e
+e) Certidão Negativa de Débitos Trabalhistas – CNDT.
+9.1.9 Responsabilizar-se pelo cumprimento de todas as obrigações trabalhistas, previdenciárias, fiscais, comerciais e as demais
+previstas em legislação específica, cuja inadimplência não transfere a responsabilidade ao CONTRATANTE e não poderá onerar o
+objeto do Contrato.
+9.1.10 Comunicar ao Fiscal do Contrato, no prazo de 24 (vinte e quatro) horas, qualquer ocorrência anormal ou acidente que se
+verifique no local da execução do objeto contratual.
+
+[2]
+chunk_id: editais_normativo:decreto-48817-2023-gestao-fiscalizacao:25:p2
+metadados: {"ano": 2023, "base_id": "editais_normativo", "data_publicacao": "2023-11-24", "doc_type": "decreto", "document_id": 1900, "tituloDocumento": "Decreto RJ 48.817", "urlFontePncp": "https://leisestaduais.com.br/rj/decreto-n-48817-2023-rio-de-janeiro-regulamenta-a-gestao-e-a-fiscalizacao-das-contratacoes-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional-e-da-outras-providencias"}
+conteudo:
+[Art. 25 (continuação)]
+realizada,
+respeitando-se os limites de alteração dos valores contratuais previstos na Lei nº 14.133, de
+2021;
+XVII - no caso específico de obras e prestação de serviços de engenharia, cumpre ainda
+ao fiscal:
+a) fazer constar todas as ocorrências no Diário de Obra, com vistas a compor o processo
+documental, de modo a contribuir para dirimir dúvidas e embasar informações acerca de
+eventuais reivindicações futuras, tomando as providências que estejam sob sua alçada e dando
+ciência ao gestor quando excederem as suas competências;
+b) zelar pela fiel execução da obra, sobretudo no que concerne à qualidade dos materiais
+utilizados e dos serviços prestados;
+c) testar o funcionamento de equipamentos e registrar a conformidade em documento,
+requerendo, quando necessário, parecer técnico sob responsabilidade da área requisitante ou
+de setor técnico do órgão ou entidade;
+d) analisar os resultados dos testes, ensaios, exames e provas necessários ao controle de
+qualidade dos materiais, serviços e equipamentos a serem aplicados na execução do objeto
+contratado, acompanhando sua realização, quando necessário; e
+e) informar ao gestor ocorrências que possam gerar dificuldades à conclusão da obra ou
+em relação a terceiros.
+f) verificar se a contratada está cumprindo todas as normas técnicas previstas no Edital de
+licitação e no instrumento de contrato e seus Anexos.
+XVIII - apresentar sugestão fundamentada pela aplicação de glosas sobre parcelas não
+executadas do serviço que tenham sido indevidamente previstas na fatura ou nota fiscal pela
+empresa contratada.
+
+[3]
+chunk_id: editais_normativo:decreto-48816-2023-fase-preparatoria:17:p2
+metadados: {"ano": 2023, "base_id": "editais_normativo", "data_publicacao": "2023-11-24", "doc_type": "decreto", "document_id": 1899, "tituloDocumento": "Decreto RJ 48.816", "urlFontePncp": "https://leisestaduais.com.br/rj/decreto-n-48816-2023-rio-de-janeiro-regulamenta-a-fase-preparatoria-das-contratacoes-de-que-trata-a-lei-no-14-133-de-1o-de-abril-de-2021-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional"}
+conteudo:
+[Art. 17 (continuação)]
+ou egressos do
+sistema prisional, nos termos do regulamento específico, conforme dispõe o § 9º do Art. 25 da
+Lei nº 14.133, de 2021, quando cabível.
+VI - forma e critérios de seleção do fornecedor:
+a) modalidade de licitação, critério de julgamento e modo de disputa, apresentando
+motivação sobre a adequação e eficiência da combinação desses parâmetros;
+b) previsão da vedação ou da participação de empresas sob a forma de consórcio no
+processo de contratação e justificativa para o caso de vedação;
+c) previsão da vedação ou da possibilidade, do percentual e das condições de
+subcontratação;
+d) estabelecimento, nas hipóteses previstas pela Lei Complementar nº 123, de 14 de
+dezembro de 2006, de reserva de cota ou a exclusividade da licitação para os beneficiários da
+norma;
+VII - forma de seleção e critério de julgamento da proposta:
+a) prazo de validade, condições da proposta e, quando for o caso, a exigência de amostra,
+exame de conformidade ou prova de conceito, entre outros testes de interesse da
+Administração.
+b) parâmetros objetivos de avaliação de propostas quando se tratar de licitação de melhor
+técnica ou de técnica e preço.
+c) critérios de desempate com base no desenvolvimento pelo licitante de ações de
+equidade entre homens e mulheres no ambiente de trabalho, conforme regulamento.
+d) critérios de desempate, na forma no Art. 60 da Lei nº 14.133, de 2021.
+VIII - estimativa do valor da contratação, elaborada nos termos da Capítulo IV deste
+Decreto, acompanhadas dos preços unitários referenciais, das memórias de cálculo e dos
+documentos que lhe dão suporte, com os parâmetros utilizados para a obtenção dos preços e
+para os respectivos cálculos, que devem constar de documento anexo, separado e classificado;
+IX - justificativa para a adoção de orçamento sigiloso se for o caso;
+X - matriz de riscos:
+a) elemento que permite a identificação das situações futuras e prováveis que possam
+impactar o equilíbrio econômico-financeiro do contrato, bem como a definição das medidas
+necessárias para tratar os riscos e as responsabilidades entre as partes;
+b) promover a alocação eficiente dos riscos de cada contrato e estabelecer a
+responsabilidade que cabe a cada parte contratante, bem como os mecanismos que afastem a
+ocorrência do sinistro e mitiguem os seus efeitos, caso este ocorra durante a execução
+contratual;
+c) quando a contratação se referir a obras e serviços de grande vulto, na forma do inciso
+XXII do Art. 6º da Lei nº 14.133, de 2021, ou forem adotados os regimes de contratação
+integrada e semi-integrada, a matriz de riscos será obrigatória.
+XI - demais condições necessárias à execução dos serviços ou fornecimento.
+§ 1º Na hipótese de contratação direta com fundamento no inciso VIII do Art. 75 da Lei nº
+14.133, de 2021, deverá ser apresentada justificativa com os elementos que caracterizam a
+situação emergencial ou calamitosa e da justificativa da autoridade máxima do órgão ou
+entidade acerca das razões pelas quais não foi possível concluir o devido processo licitatório,
+quando aplicável.
+§ 2º Para os fins da alínea "d" do inciso V do caput deste artigo, poderá ser somente
+exigida das pessoas jurídicas a comprovação relativa à habilitação jurídica, regularidade fiscal
+estadual, à Seguridade Social e ao FGTS e a regularidade perante a Justiça do Trabalho e, das
+pessoas físicas, a quitação com a Fazenda Estadual, conforme dispõe o Art. 68 da Lei nº
+14.133, de 2021, nas contratações:
+I - para entrega imediata, considerada aquela com prazo de entrega de até 30 (trinta) dias
+corridos da ordem de fornecimento, desde que o valor da contratação não supere o limite do
+disposto na alínea "c" do inciso IV do Art. 75 da Lei nº 14.133, de 2021, atualizado anualmente,
+conforme o Art. 182 do mesmo diploma legal;
+II - com valor inferior a 1/4 (um quarto) do limite a que se refere o inciso II do Art. 75 da Lei
+nº 14.133, de 2021; e
+III - de produto para pesquisa e desenvolvimento, no limite do disposto na alínea "c" do
+
+[4]
+chunk_id: editais_normativo:decreto-48778-2023-menor-preco:47:p1
+metadados: {"ano": 2023, "base_id": "editais_normativo", "data_publicacao": "2023-10-30", "doc_type": "decreto", "document_id": 1898, "tituloDocumento": "Decreto RJ 48.778", "urlFontePncp": "https://leisestaduais.com.br/rj/decreto-n-48778-2023-rio-de-janeiro-regulamenta-as-licitacoes-pelos-criterios-de-julgamento-por-menor-preco-ou-por-maior-desconto-no-ambito-da-administracao-publica-estadual-direta-autarquica-e-fundacional"}
+conteudo:
+Art. 47. O fornecedor estará sujeito às sanções administrativas previstas na Lei nº 14.133, de
+2021, no contrato e em outras legislações aplicáveis, resguardado o direito à ampla defesa, na
+forma da lei.
+CAPÍTULO XII
+DA REVOGAÇÃO E DA ANULAÇÃO
+
+[5]
+chunk_id: editais_normativo:pncp_42498600000171_2025_926_arq1:17:p29
+metadados: {"ano": 2025, "base_id": "editais_normativo", "data_publicacao": "2025-02-24", "doc_type": "edital", "document_id": 1909, "orgao": "Governo do Estado do Rio de Janeiro\nFundação Saúde", "tituloDocumento": "PREGÃO ELETRÔNICO N° 210/2024", "urlFontePncp": "https://pncp.gov.br/pncp-api/v1/orgaos/42498600000171/compras/2025/926/arquivos/1"}
+conteudo:
+[Cláusula 17 (continuação)]
+fornecendo os materiais, equipamentos, ferramentas e utensílios demandados, cuja quantidade, qualidade e
+tecnologia deverão atender às recomendações de boa técnica e a legislação de regência.
+9.1.5 Reparar, corrigir, remover, reconstruir ou substituir, às suas expensas, no total ou em parte, no prazo fixado pelo fiscal
+do Contrato, os bens nos quais se verificarem vícios, defeitos ou incorreções resultantes da execução ou dos materiais
+empregados.
+9.1.6 Responsabilizar-se pelos vícios e danos decorrentes do objeto, de acordo com o Código de Defesa do Consumidor (Lei
+nº 8.078/1990), bem como por todo e qualquer dano causado à Administração ou terceiros, não reduzindo essa
+responsabilidade a fiscalização ou o acompanhamento da execução contratual pelo CONTRATANTE, que ficará autorizado a
+descontar dos pagamentos devidos ou da garantia o valor correspondente aos danos sofridos.
+9.1.7 Não contratar, durante a vigência do Contrato, cônjuge, companheiro ou parente em linha reta, colateral ou por
+afinidade, até o terceiro grau, de dirigente do CONTRATANTE ou de agente público que atue na fiscalização ou na gestão
+do Contrato, nos termos do art. 48, parágrafo único, da Lei nº 14.133/2021.
+9.1.8 Manter a regularidade junto ao SICAF.
+9.1.8.1 Quando não for possível a verificação da regularidade no Sistema de Cadastro de Fornecedores – SICAF,
+o CONTRATADO deverá entregar ao setor responsável pela fiscalização do Contrato, junto com a Nota Fiscal para fins de
+pagamento, os seguintes documentos:
+a) prova de regularidade relativa à Seguridade Social;
+b) certidão conjunta relativa aos tributos federais e à Dívida Ativa da União;
+c) certidões que comprovem a regularidade perante a Fazenda Municipal, Estadual ou Distrital do domicílio ou sede do
+contratado;
+d) Certificado de Regularidade do FGTS; e
+e) Certidão Negativa de Débitos Trabalhistas – CNDT.
+9.1.9 Responsabilizar-se pelo cumprimento de todas as obrigações trabalhistas, previdenciárias, fiscais, comerciais e as
+demais previstas em legislação específica, cuja inadimplência não transfere a responsabilidade ao CONTRATANTE e não
+poderá onerar o objeto do Contrato.
+9.1.10 Comunicar ao Fiscal do Contrato, no prazo de 24 (vinte e quatro) horas, qualquer ocorrência anormal ou acidente que
+se verifique no local da execução do objeto contratual.
+9.1.11 Paralisar, por determinação do CONTRATANTE, qualquer atividade que não esteja sendo executada de acordo com a
+boa técnica ou que ponha em risco a segurança de pessoas ou bens de terceiros.
+9.1.12 Conduzir os trabalhos com estrita observância às normas da legislação pertinente, cumprindo as determinações dos
+Poderes Públicos, mantendo sempre limpo o local de execução do objeto e nas melhores condições de segurança, higiene e
+disciplina.
+9.1.13 Submeter previamente, por escrito, ao CONTRATANTE, para análise e aprovação, quaisquer mudanças nos métodos
+executivos que fujam às especificações do memorial descritivo ou instrumento congênere.
+9.1.14 Não permitir a utilização de qualquer trabalho do menor de dezesseis anos, exceto na condição de aprendiz para os
+maiores de quatorze anos, nem permitir a utilização do trabalho do menor de dezoito anos em trabalho noturno, perigoso ou
+insalubre, na forma do art. 7º, XXXIII, da Constituição Federal.
+9.1.15 Manter durante toda a vigência do Contrato, em compatibilidade com as obrigações assumidas, todas as condições
+exigidas para habilitação na licitação.
+9.1.16 Cumprir, durante todo o período de execução do Contrato, a reserva de cargos prevista em lei para pessoa com
+deficiência, para reabilitado da Previdência Social ou para aprendiz, bem como as reservas de cargos previstas na legislação
+(art. 116 da Lei nº 14.133/2021).
+9.1.16.1 Comprovar a reserva de cargos a que se refere a cláusula acima, no prazo fixado pelo Fiscal do Contrato, com a
+indicação dos empregados que preencheram as referidas vagas (art. 116, parágrafo único, da Lei nº 14.133/2021).
