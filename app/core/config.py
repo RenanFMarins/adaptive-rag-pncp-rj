@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     rag_llm_http_log_enabled: bool = False
     generation_disable_thinking: bool = False
     rag_faiss_index_dir: Path = Path("data/index/faiss/v1")
+    # Provedor principal explícito. O padrão Ecoa preserva ambientes antigos;
+    # cada integrante pode selecionar OpenAI sem consultar o Ecoa primeiro.
+    llm_primary_provider: Literal["ecoa", "openai", "groq"] = "ecoa"
+    llm_primary_openai_model: str = "gpt-4.1-mini"
+    llm_primary_groq_model: str = "openai/gpt-oss-120b"
     # Configuração canônica do fallback, compartilhada por Analyzer e geração.
     # "none" desabilita a troca; OpenAI e Groq são selecionados apenas pelo .env.
     llm_fallback_provider: Literal["none", "openai", "groq"] = "none"

@@ -11,6 +11,12 @@ from app.core.llm_provider import LlmProviderError, gerar_com_fallback
 
 
 class LlmProviderTests(unittest.TestCase):
+    def setUp(self):
+        # Testes não podem depender do provedor escolhido no .env local.
+        primary = patch.object(settings, "llm_primary_provider", "ecoa")
+        primary.start()
+        self.addCleanup(primary.stop)
+
     def test_ecoa_responde_sem_chamar_fallback(self):
         fallback = unittest.mock.Mock(return_value="não deveria executar")
         with patch.object(settings, "llm_fallback_provider", "groq"):
@@ -25,6 +31,39 @@ class LlmProviderTests(unittest.TestCase):
         self.assertEqual(result.provider, "ecoa")
         self.assertFalse(result.fallback_used)
         fallback.assert_not_called()
+
+    def test_openai_principal_nao_chama_ecoa(self):
+        ecoa = unittest.mock.Mock(side_effect=AssertionError("Ecoa foi chamado"))
+        executor = unittest.mock.Mock(return_value="resposta OpenAI")
+        with patch.object(settings, "llm_primary_provider", "openai"), \
+                patch.object(settings, "llm_primary_openai_model", "modelo-openai"):
+            result = gerar_com_fallback(
+                "pergunta",
+                operation="generation",
+                ecoa_fn=ecoa,
+                ecoa_model="modelo-ecoa",
+                fallback_fn=executor,
+            )
+
+        ecoa.assert_not_called()
+        executor.assert_called_once_with("pergunta", "openai", "modelo-openai")
+        self.assertEqual(result.provider, "openai")
+        self.assertFalse(result.fallback_used)
+
+    def test_falha_do_provedor_principal_e_segura(self):
+        with patch.object(settings, "llm_primary_provider", "openai"):
+            with self.assertRaisesRegex(
+                LlmProviderError, "openai/RuntimeError"
+            ):
+                gerar_com_fallback(
+                    "conteúdo que não deve aparecer no erro",
+                    operation="generation",
+                    ecoa_fn=lambda _prompt: "não usado",
+                    ecoa_model="modelo-ecoa",
+                    fallback_fn=lambda *_args: (_ for _ in ()).throw(
+                        RuntimeError("segredo no erro original")
+                    ),
+                )
 
     def test_timeout_da_ecoa_usa_groq_configurada(self):
         with patch.object(settings, "llm_fallback_provider", "groq"), \
