@@ -17,7 +17,11 @@ from src.query.adaptive_executor import (
     AdaptiveExecutionResult,
     executar_plano_adaptativo,
 )
-from src.query.analyzer import analisar_pergunta, analisar_pergunta_estruturada
+from src.query.analyzer import (
+    analisar_pergunta,
+    analisar_pergunta_com_contexto,
+    analisar_pergunta_estruturada,
+)
 from src.query.executor import (
     executar_analise_estruturada,
     executar_consulta_adaptativa,
@@ -90,11 +94,17 @@ def executar_consulta_adaptativa_api(
     hybrid_executor: Callable[[AdaptiveQueryResult], object] | None = None,
     catalog_executor: Callable[[], list[dict[str, object]]] | None = None,
     normalized_database_url: str | None = None,
+    previous_analysis: QueryAnalysis | None = None,
 ) -> AdaptiveExecutionResult:
     """Analisa uma vez a pergunta e executa exclusivamente sua rota planejada."""
 
     with perf_stage("analyzer"):
-        analysis = (analyzer_fn or analisar_pergunta)(pergunta)
+        if analyzer_fn is not None:
+            analysis = analyzer_fn(pergunta)
+        elif previous_analysis is not None:
+            analysis = analisar_pergunta_com_contexto(pergunta, previous_analysis)
+        else:
+            analysis = analisar_pergunta(pergunta)
 
     if rag_executor is None:
         def rag_executor() -> object:

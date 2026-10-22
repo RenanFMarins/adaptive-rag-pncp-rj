@@ -29,6 +29,7 @@ from src.generate import gerar_resposta_rag
 from src.faiss_errors import FAISS_UNAVAILABLE_ERRORS, faiss_public_detail
 from src.query.analyzer import QueryAnalysisError
 from src.query.executor import QueryExecutionError
+from src.query.response_composer import compose_structured_answer
 from src.query.structured_tool import StructuredQueryError
 
 
@@ -60,6 +61,7 @@ def ask(
             db,
             request.pergunta,
             request.top_k,
+            previous_analysis=request.contexto,
         )
     except LlmProviderError as exc:
         raise HTTPException(
@@ -90,11 +92,17 @@ def ask(
     if result.rag_result is None and (
         structured_result is not None or result.plan.route.value == "catalog"
     ):
+        answer = (
+            compose_structured_answer(result.analysis, structured_result)
+            if structured_result is not None
+            else None
+        )
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,
             plan=result.plan,
             structured_result=structured_result,
+            answer=answer,
             external_documents=result.external_documents,
         )
 
@@ -185,7 +193,12 @@ def structured(
             detail=_detalhe_erro_consulta(exc),
         ) from exc
 
-    return StructuredQueryResponse(**result.model_dump())
+    payload = result.model_dump()
+    payload["answer"] = compose_structured_answer(
+        result.analysis,
+        result.structured_result,
+    )
+    return StructuredQueryResponse(**payload)
 
 
 @router.post("/generate", response_model=GenerateResponse)

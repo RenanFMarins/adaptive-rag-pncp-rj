@@ -112,10 +112,132 @@ class NormalizedStructuredToolTests(unittest.TestCase):
                 "Fornecedor Tecnologia",
                 "RESOLVED",
                 2025,
-                "Licenciamento de software corporativo",
+                "Fornecimento de licenças de uso de software corporativo",
                 700_000_00,
                 750_000_00,
                 "2025-04-01T12:00:00Z",
+                *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO contratacao_item (
+                numero_controle_pncp, numero_item, descricao, quantidade,
+                unidade_medida, valor_unitario_estimado_centavos,
+                valor_total_estimado_centavos, categoria_item_nome,
+                situacao_item_nome, tem_resultado,
+                current_source_raw_asset_id, current_source_payload_hash,
+                normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "12345678000199-1-000001/2025",
+                1,
+                "Arroz tipo 1",
+                100,
+                "Quilograma",
+                500,
+                50_000,
+                "Material",
+                "Homologado",
+                1,
+                *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO resultado_item (
+                numero_controle_pncp, numero_item, sequencial_resultado,
+                tipo_pessoa_fornecedor, ni_fornecedor,
+                quantidade_homologada, valor_unitario_homologado_centavos,
+                valor_total_homologado_centavos, situacao_resultado_nome,
+                aplicacao_beneficio_me_epp, data_resultado, data_quality_status,
+                current_source_raw_asset_id, current_source_payload_hash,
+                normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "12345678000199-1-000001/2025",
+                1,
+                1,
+                "PJ",
+                "99887766000155",
+                90,
+                480,
+                43_200,
+                "Informado",
+                1,
+                "2025-05-01",
+                "VALID",
+                *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO ata_registro_preco (
+                numero_controle_pncp_ata, numero_controle_compra_externo,
+                contratacao_id, parent_resolution_status, orgao_cnpj,
+                codigo_unidade, ano_ata, numero_ata, objeto_contratacao,
+                data_publicacao_pncp, data_assinatura, vigencia_inicio,
+                vigencia_fim, cancelado, possibilidade_adesao, coverage_status,
+                current_source_raw_asset_id, current_source_payload_hash,
+                normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "12345678000199-1-000001/2025-000001",
+                "12345678000199-1-000001/2025",
+                "12345678000199-1-000001/2025",
+                "RESOLVED",
+                "12345678000199",
+                "001",
+                2025,
+                "ARP 1/2025",
+                "Registro de preços de material de escritório",
+                "2025-06-01",
+                "2025-06-02",
+                "2025-06-02",
+                "2099-06-01",
+                0,
+                1,
+                "PARTIAL",
+                *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO pca (
+                id_pca_pncp, orgao_cnpj, codigo_unidade, ano_pca,
+                nome_unidade, data_publicacao_pncp, source_format,
+                scope_status, current_source_raw_asset_id,
+                current_source_payload_hash, normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "PCA-2025-001",
+                "12345678000199",
+                "001",
+                2025,
+                "Unidade Central",
+                "2025-01-10",
+                "TOP_LEVEL",
+                "IN_SCOPE",
+                *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO pca_item (
+                id_pca_pncp, numero_item, descricao, quantidade_estimada,
+                unidade_fornecimento, valor_unitario_planejado_centavos,
+                valor_total_planejado_centavos, data_desejada,
+                grupo_contratacao_codigo, grupo_contratacao_nome,
+                categoria_item_nome, current_source_raw_asset_id,
+                current_source_payload_hash, normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "PCA-2025-001",
+                1,
+                "Computadores para laboratório",
+                10,
+                "Unidade",
+                500_000,
+                5_000_000,
+                "2025-08-01",
+                "100",
+                "Tecnologia",
+                "Material",
                 *lineage,
             ),
         )
@@ -134,6 +256,11 @@ class NormalizedStructuredToolTests(unittest.TestCase):
         operations = operations or [StructuredOperation.LIST]
         if group_by:
             operations = [*operations, StructuredOperation.GROUP_BY]
+        base = {
+            QueryEntity.ATA_REGISTRO_PRECO: KnowledgeBase.CONVERSACIONAL,
+            QueryEntity.PCA: KnowledgeBase.AGREGADA,
+            QueryEntity.PCA_ITEM: KnowledgeBase.AGREGADA,
+        }.get(entity, KnowledgeBase.ESTRUTURADA)
         return QueryAnalysis(
             route=QueryRoute.STRUCTURED,
             intent=(
@@ -142,7 +269,7 @@ class NormalizedStructuredToolTests(unittest.TestCase):
                 else QueryIntent.LOOKUP
             ),
             entity=entity,
-            bases=[KnowledgeBase.ESTRUTURADA],
+            bases=[base],
             filters=filters or QueryFilters(),
             operations=operations,
             aggregation_field=aggregation_field,
@@ -171,6 +298,7 @@ class NormalizedStructuredToolTests(unittest.TestCase):
         self.assertEqual(row["municipio"], "Rio de Janeiro")
         self.assertEqual(row["fornecedor"], "Fornecedor Tecnologia")
         self.assertEqual(row["modalidade"], "Pregão Eletrônico")
+        self.assertEqual(row["valor_inicial"], 700_000.0)
         self.assertEqual(row["valor_global"], 750_000.0)
 
     def test_agrega_contratacoes_por_modalidade(self) -> None:
@@ -194,6 +322,18 @@ class NormalizedStructuredToolTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_objeto_aceita_variacao_licenca_sem_falso_filtro_de_frase(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.CONTRATO,
+                filters=QueryFilters(objeto="licenciamento de software"),
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertIn("licenças", result.rows[0]["objeto"].casefold())
 
     def test_rejeita_campo_inexistente_para_entidade(self) -> None:
         with self.assertRaisesRegex(StructuredQueryError, "fornecedor"):
@@ -226,3 +366,175 @@ class NormalizedStructuredToolTests(unittest.TestCase):
                 empty,
                 self.analysis(QueryEntity.CONTRATO),
             )
+
+    def test_lista_item_com_filtros_de_produto_unidade_quantidade_e_esfera(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.CONTRATACAO_ITEM,
+                filters=QueryFilters(
+                    ano=2025,
+                    objeto="arroz",
+                    unidade_medida="quilograma",
+                    quantidade_minima=50,
+                    esfera="E",
+                ),
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["numero_item"], 1)
+        self.assertEqual(result.rows[0]["quantidade"], 100)
+        self.assertEqual(result.rows[0]["valor_unitario"], 5.0)
+        self.assertEqual(result.rows[0]["valor_total"], 500.0)
+        self.assertEqual(result.rows[0]["esfera"], "E")
+
+    def test_lista_resultado_com_fornecedor_e_periodo_do_resultado(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.RESULTADO_ITEM,
+                filters=QueryFilters(
+                    fornecedor="tecnologia",
+                    campo_data="data_resultado",
+                    period_start="2025-05-01",
+                    period_end="2025-05-31",
+                    valor_minimo=400,
+                ),
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["sequencial_resultado"], 1)
+        self.assertEqual(result.rows[0]["quantidade"], 90)
+        self.assertEqual(result.rows[0]["valor_total"], 432.0)
+        self.assertEqual(result.rows[0]["fornecedor"], "Fornecedor Tecnologia")
+        self.assertEqual(result.rows[0]["qualidade_dado"], "VALID")
+
+    def test_rejeita_data_de_assinatura_em_item_sem_esse_campo(self) -> None:
+        with self.assertRaisesRegex(StructuredQueryError, "data_assinatura"):
+            executar_consulta_normalizada(
+                self.connection,
+                self.analysis(
+                    QueryEntity.CONTRATACAO_ITEM,
+                    filters=QueryFilters(
+                        campo_data="data_assinatura",
+                        period_start="2025-01-01",
+                    ),
+                ),
+            )
+
+    def test_media_ponderada_por_kg_exclui_unidade_sem_conversao(self) -> None:
+        lineage = ("raw-2", "hash-2", "2026-10-21T00:00:00Z")
+        self.connection.execute(
+            """INSERT INTO contratacao_item (
+                numero_controle_pncp, numero_item, descricao, quantidade,
+                unidade_medida, valor_unitario_estimado_centavos,
+                valor_total_estimado_centavos, tem_resultado,
+                current_source_raw_asset_id, current_source_payload_hash,
+                normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "12345678000199-1-000001/2025", 2, "Arroz em pacote",
+                10, "PACOTE", 1000, 10_000, 1, *lineage,
+            ),
+        )
+        self.connection.execute(
+            """INSERT INTO resultado_item (
+                numero_controle_pncp, numero_item, sequencial_resultado,
+                tipo_pessoa_fornecedor, ni_fornecedor,
+                quantidade_homologada, valor_unitario_homologado_centavos,
+                valor_total_homologado_centavos, data_quality_status,
+                current_source_raw_asset_id, current_source_payload_hash,
+                normalized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "12345678000199-1-000001/2025", 2, 1, "PJ",
+                "99887766000155", 10, 1000, 10_000, "VALID", *lineage,
+            ),
+        )
+        self.connection.commit()
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.RESULTADO_ITEM,
+                filters=QueryFilters(ano=2025, objeto="arroz", esfera="E"),
+                operations=[StructuredOperation.WEIGHTED_AVG_KG],
+                aggregation_field=StructuredField.VALOR_HOMOLOGADO,
+            ),
+        )
+
+        self.assertEqual(result.rows[0]["weighted_avg_valor_homologado_kg"], 4.8)
+        self.assertEqual(result.rows[0]["included_records"], 1)
+        self.assertEqual(result.rows[0]["excluded_records"], 1)
+        self.assertEqual(result.rows[0]["total_quantity_kg"], 90)
+        self.assertEqual(result.warnings[0].code, "unit_conversion_exclusions")
+
+    def test_lista_ata_vigente_com_adesao_e_proveniencia_de_cobertura(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.ATA_REGISTRO_PRECO,
+                filters=QueryFilters(
+                    ano=2025,
+                    situacao="vigente",
+                    possibilidade_adesao=True,
+                    objeto="material de escritório",
+                ),
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(
+            result.rows[0]["numero_controle_pncp_ata"],
+            "12345678000199-1-000001/2025-000001",
+        )
+        self.assertEqual(result.rows[0]["situacao"], "vigente")
+        self.assertEqual(result.rows[0]["possibilidade_adesao"], 1)
+        self.assertEqual(result.rows[0]["cobertura"], "PARTIAL")
+
+    def test_conta_pcas_por_ano(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.PCA,
+                filters=QueryFilters(ano=2025),
+                operations=[StructuredOperation.COUNT],
+            ),
+        )
+
+        self.assertEqual(result.rows, [{"count": 1}])
+
+    def test_soma_valor_planejado_dos_itens_do_pca_sem_duplicar(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.PCA_ITEM,
+                filters=QueryFilters(ano=2025),
+                operations=[StructuredOperation.COUNT, StructuredOperation.SUM],
+                aggregation_field=StructuredField.VALOR_PLANEJADO,
+                group_by=[StructuredField.CATEGORIA],
+            ),
+        )
+
+        self.assertEqual(
+            result.rows,
+            [{"categoria": "Material", "count": 1, "sum_valor_planejado": 50_000.0}],
+        )
+
+    def test_filtra_item_pca_por_data_desejada(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.PCA_ITEM,
+                filters=QueryFilters(
+                    campo_data="data_desejada",
+                    period_start="2025-08-01",
+                    period_end="2025-08-31",
+                ),
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["id_pca_pncp"], "PCA-2025-001")
+        self.assertEqual(result.rows[0]["valor_planejado"], 50_000.0)

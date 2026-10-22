@@ -72,8 +72,44 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["route"], "structured")
         self.assertEqual(response.json()["structured_result"]["rows"], [{"ano": 2026}])
-        self.assertIsNone(response.json()["answer"])
+        self.assertIn("A consulta retornou 1 contrato", response.json()["answer"])
         self.assertEqual(response.json()["external_documents"], [])
+
+    def test_encaminha_contexto_validado_sem_historico_textual(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.AGGREGATE,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            operations=["count"],
+        )
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            structured_result=AdaptiveQueryResult(
+                analysis=analysis,
+                plan=planejar_execucao(analysis),
+                structured_result=StructuredQueryResult(
+                    entity=QueryEntity.CONTRATO,
+                    columns=["count"], rows=[{"count": 1}], row_count=1,
+                    limit_applied=20,
+                ),
+            ),
+        )
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ) as execute:
+            response = self.client.post(
+                "/query/ask",
+                json={
+                    "pergunta": "E somente os estaduais?",
+                    "contexto": analysis.model_dump(mode="json"),
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(execute.call_args.kwargs["previous_analysis"], analysis)
 
     def test_retorna_saida_rag_quando_plano_e_rag(self) -> None:
         analysis = QueryAnalysis(

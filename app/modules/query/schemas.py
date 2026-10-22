@@ -72,6 +72,7 @@ class StructuredQueryResponse(BaseModel):
     analysis: QueryAnalysis
     plan: ExecutionPlan
     structured_result: StructuredQueryResult
+    answer: str
 
 
 class AdaptiveAskRequest(BaseModel):
@@ -81,6 +82,8 @@ class AdaptiveAskRequest(BaseModel):
 
     pergunta: str = Field(min_length=1)
     top_k: int = Field(default=5, ge=1, le=100)
+    # Somente o plano validado anterior, nunca o histórico textual completo.
+    contexto: QueryAnalysis | None = None
 
 
 class AdaptiveAskResponse(BaseModel):

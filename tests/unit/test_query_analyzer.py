@@ -5,17 +5,150 @@ from unittest.mock import patch
 from src.query.analyzer import (
     QueryAnalysisError,
     analisar_pergunta,
+    analisar_pergunta_com_contexto,
     analisar_pergunta_estruturada,
 )
 from src.query.prompts import montar_prompt_analise
 from src.query.schemas import (
     KnowledgeBase,
+    QueryEntity,
     QueryRoute,
+    StructuredField,
     StructuredOperation,
+    QueryAnalysis,
+    QueryFilters,
+    QueryIntent,
 )
 
 
 class QueryAnalyzerTests(unittest.TestCase):
+    def _contexto_contratos_2025(self) -> QueryAnalysis:
+        return QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.AGGREGATE,
+            entity=QueryEntity.CONTRATO,
+            bases=[KnowledgeBase.ESTRUTURADA],
+            filters=QueryFilters(ano=2025),
+            operations=[StructuredOperation.COUNT],
+        )
+
+    def test_acompanhamento_preserva_ano_e_adiciona_esfera(self):
+        analysis = analisar_pergunta_com_contexto(
+            "E somente os estaduais?", self._contexto_contratos_2025()
+        )
+
+        self.assertEqual(analysis.entity, QueryEntity.CONTRATO)
+        self.assertEqual(analysis.filters.ano, 2025)
+        self.assertEqual(analysis.filters.esfera, "E")
+
+    def test_acompanhamento_substitui_ano_explicito(self):
+        analysis = analisar_pergunta_com_contexto(
+            "E agora em 2024?", self._contexto_contratos_2025()
+        )
+        self.assertEqual(analysis.filters.ano, 2024)
+
+    def test_acompanhamento_ambiguo_pede_esclarecimento(self):
+        with self.assertRaisesRegex(QueryAnalysisError, "filtro alterado"):
+            analisar_pergunta_com_contexto(
+                "E os demais?", self._contexto_contratos_2025()
+            )
+
+    def test_mudanca_explicita_de_entidade_cria_nova_analise(self):
+        analysis = analisar_pergunta_com_contexto(
+            "E quantos PCAs existem em 2025?",
+            self._contexto_contratos_2025(),
+            llm_fn=lambda _prompt: """{
+              "route": "structured", "intent": "aggregate", "entity": "pca",
+              "bases": ["agregada"], "filters": {"ano": 2025},
+              "operations": ["count"], "aggregation_field": null,
+              "group_by": [], "order_by": [], "limit": null,
+              "semantic_query": null, "needs_document_retrieval": false
+            }""",
+        )
+        self.assertEqual(analysis.entity, QueryEntity.PCA)
+
+    def test_analisa_ata_vigente_com_adesao(self):
+        analysis = analisar_pergunta(
+            "Quais atas de registro de preços vigentes permitem adesão?",
+            llm_fn=lambda _prompt: """{
+              "route": "structured",
+              "intent": "lookup",
+              "entity": "ata_registro_preco",
+              "bases": ["conversacional"],
+              "filters": {"situacao": "vigente", "possibilidade_adesao": true},
+              "operations": ["list"],
+              "aggregation_field": null,
+              "group_by": [],
+              "order_by": [],
+              "limit": 20,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(analysis.entity, QueryEntity.ATA_REGISTRO_PRECO)
+        self.assertTrue(analysis.filters.possibilidade_adesao)
+
+    def test_analisa_total_planejado_em_itens_de_pca(self):
+        analysis = analisar_pergunta(
+            "Qual o valor total planejado nos itens do PCA de 2025?",
+            llm_fn=lambda _prompt: """{
+              "route": "structured",
+              "intent": "aggregate",
+              "entity": "pca_item",
+              "bases": ["agregada"],
+              "filters": {"ano": 2025, "campo_valor": "valor_planejado"},
+              "operations": ["sum"],
+              "aggregation_field": "valor_planejado",
+              "group_by": [],
+              "order_by": [],
+              "limit": 20,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(analysis.entity, QueryEntity.PCA_ITEM)
+        self.assertEqual(analysis.aggregation_field, StructuredField.VALOR_PLANEJADO)
+
+    def test_prompt_diferencia_item_estimado_de_resultado_homologado(self):
+        prompt = montar_prompt_analise(
+            "Quais resultados homologados de arroz existem em 2025?"
+        )
+
+        self.assertIn('entity "contratacao_item"', prompt)
+        self.assertIn('entity "resultado_item"', prompt)
+        self.assertIn("Nunca trate valor estimado como valor homologado", prompt)
+
+    def test_analisa_resultado_homologado_com_filtros_tipados(self):
+        analysis = analisar_pergunta(
+            "Resultados homologados de arroz por órgãos estaduais em maio de 2025",
+            llm_fn=lambda _prompt: """{
+              "route": "structured",
+              "intent": "lookup",
+              "entity": "resultado_item",
+              "bases": ["estruturada"],
+              "filters": {
+                "objeto": "arroz",
+                "esfera": "E",
+                "campo_data": "data_resultado",
+                "period_start": "2025-05-01",
+                "period_end": "2025-05-31"
+              },
+              "operations": ["list"],
+              "aggregation_field": null,
+              "group_by": [],
+              "order_by": [],
+              "limit": 20,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(analysis.entity.value, "resultado_item")
+        self.assertEqual(analysis.filters.esfera, "E")
+        self.assertEqual(analysis.filters.campo_data.value, "data_resultado")
+
     def test_prompt_diferencia_valor_individual_de_soma(self):
         prompt = montar_prompt_analise("Qual é o valor do contrato?")
 
