@@ -218,17 +218,20 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(resposta.answer, "Resposta com base em [1].")
         self.assertEqual(trace["status"], "success")
         self.assertEqual(trace["stage"], "completed")
-        self.assertEqual(trace["request"]["question"], "Qual o objeto?")
+        self.assertEqual(trace["request"]["question_length"], len("Qual o objeto?"))
         self.assertEqual(
             trace["guardrail"],
             {
                 "checked": True,
                 "triggered": False,
                 "reason": None,
-                "message": None,
+                "message_length": None,
             },
         )
-        self.assertEqual(trace["generation"]["answer"], "Resposta com base em [1].")
+        self.assertEqual(
+            trace["generation"]["answer_length"],
+            len("Resposta com base em [1]."),
+        )
 
     def test_guardrail_bloqueado_gera_trace_sem_retrieval_ou_llm(self):
         def retrieval_fn(**_kwargs):
@@ -255,12 +258,16 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(trace["guardrail"]["checked"], True)
         self.assertEqual(trace["guardrail"]["triggered"], True)
         self.assertEqual(trace["guardrail"]["reason"], "commercial_recommendation")
-        self.assertEqual(trace["guardrail"]["message"], MENSAGEM_RECUSA_PADRAO)
-        self.assertEqual(trace["retrieval"]["chunks"], [])
-        self.assertIsNone(trace["generation"]["contexto"])
-        self.assertIsNone(trace["generation"]["prompt"])
-        self.assertEqual(trace["generation"]["answer"], MENSAGEM_RECUSA_PADRAO)
-        self.assertEqual(trace["persistence"], {"enabled": True})
+        self.assertEqual(
+            trace["guardrail"]["message_length"], len(MENSAGEM_RECUSA_PADRAO)
+        )
+        self.assertEqual(trace["retrieval"]["evidence"], [])
+        self.assertIsNone(trace["generation"]["context_length"])
+        self.assertIsNone(trace["generation"]["prompt_length"])
+        self.assertEqual(
+            trace["generation"]["answer_length"], len(MENSAGEM_RECUSA_PADRAO)
+        )
+        self.assertTrue(trace["persistence"]["enabled"])
 
     def test_trace_id_uuid_unico(self):
         def retrieval_fn(**_kwargs):
@@ -285,7 +292,7 @@ class GenerateTests(unittest.TestCase):
         for trace_id in trace_ids:
             UUID(trace_id)
 
-    def test_prompt_auditado_mesmo_sem_incluir_prompt(self):
+    def test_prompt_nao_e_persistido_mesmo_sem_incluir_prompt(self):
         def retrieval_fn(**_kwargs):
             return [chunk("c1", "Objeto recuperado")]
 
@@ -300,8 +307,8 @@ class GenerateTests(unittest.TestCase):
 
         trace = self.read_only_trace()
         self.assertIsNone(resposta.prompt)
-        self.assertIsInstance(trace["generation"]["prompt"], str)
-        self.assertIn("Objeto recuperado", trace["generation"]["prompt"])
+        self.assertGreater(trace["generation"]["prompt_length"], 0)
+        self.assertNotIn("prompt", trace["generation"])
 
     def test_chunks_e_scores_registrados(self):
         def retrieval_fn(**_kwargs):
@@ -316,7 +323,7 @@ class GenerateTests(unittest.TestCase):
         )
 
         trace = self.read_only_trace()
-        [source] = trace["retrieval"]["chunks"]
+        [source] = trace["retrieval"]["evidence"]
         self.assertEqual(source["rank"], 1)
         self.assertEqual(source["chunk_id"], "c1")
         self.assertEqual(source["document_id"], 10)
@@ -349,9 +356,9 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(trace["status"], "error")
         self.assertEqual(trace["stage"], "generation")
         self.assertEqual(trace["error"]["type"], "LlmFailure")
-        self.assertEqual(trace["error"]["message"], "falha controlada")
+        self.assertNotIn("message", trace["error"])
 
-    def test_dados_sensiveis_sao_mascarados_no_trace(self):
+    def test_dados_sensiveis_sao_estruturalmente_omitidos_do_trace(self):
         sensitive_chunk = chunk("c1", "Authorization: Bearer abcdefghijklmnop")
         sensitive_chunk.metadata["authorization"] = "Bearer abcdefghijklmnop"
         sensitive_chunk.metadata["api_key"] = "sk-proj-abcdefghijklmnop"
@@ -371,7 +378,8 @@ class GenerateTests(unittest.TestCase):
         self.assertNotIn("Bearer abcdefghijklmnop", raw_trace)
         self.assertNotIn("sk-proj-abcdefghijklmnop", raw_trace)
         self.assertNotIn("token=abcdefghijklmnop", raw_trace)
-        self.assertIn("[REDACTED]", raw_trace)
+        self.assertNotIn("authorization", raw_trace.lower())
+        self.assertIn('"question_length": 22', raw_trace)
 
 
 if __name__ == "__main__":

@@ -243,9 +243,18 @@ def _registrar_documento(run_id, r, latencia_ms=None, **extra):
     """
     if run_id is None:
         return
-    obs.registrar(run_id, STAGE, r["status"], latencia_ms, entrada=r["origem"],
-                  saida=r["path"], base_id=BASE_ID, bytes=r["bytes"],
-                  erro=r.get("erro"), **extra)
+    obs.registrar(
+        run_id,
+        STAGE,
+        r["status"],
+        latencia_ms,
+        entrada=r["origem"],
+        saida=r["path"],
+        base_id=BASE_ID,
+        bytes=r["bytes"],
+        error_type="document_fetch_error" if r.get("erro") else None,
+        **extra,
+    )
 
 
 def coletar_urls(urls, pasta, rate_limit, run_id=None):

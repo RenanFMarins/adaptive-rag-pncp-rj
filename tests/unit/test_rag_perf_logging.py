@@ -25,6 +25,7 @@ import app.modules.rag.model  # noqa: F401
 from app.modules.query.routes import router
 from src.fts import inicializar_fts5
 from src.generate import gerar_resposta_rag
+from src.faiss_errors import FaissIndexMissingError
 from src.index import indexar_chunks_incrementalmente
 from src.query.analyzer import QueryAnalysisError, analisar_pergunta
 from src.query.schemas import (
@@ -187,6 +188,27 @@ class RagPerfHttpTests(unittest.TestCase):
         self.assertNotIn("etapa=context", messages)
         self.assertNotIn("sensitive-", messages)
 
+    def test_faiss_ausente_no_fluxo_rag_retorna_503_e_log_seguro(self):
+        with patch.object(settings, "rag_perf_log_enabled", True), patch(
+            "src.retrieve.carregar_indice_faiss",
+            side_effect=FaissIndexMissingError(),
+        ), self.assertLogs("uvicorn.error", level=logging.INFO) as captured:
+            response = self.ask()
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            {
+                "code": "faiss_index_missing",
+                "message": "Recuperação documental temporariamente indisponível.",
+            },
+        )
+        messages = "\n".join(record.getMessage() for record in captured.records)
+        self.assertIn("etapa=faiss_load", messages)
+        self.assertIn("excecao=FaissIndexMissingError", messages)
+        self.assertIn("etapa=total", messages)
+        self.assertNotIn("sensitive-", messages)
+
     def test_rota_estruturada_nao_registra_etapas_documentais(self):
         analysis = QueryAnalysis(
             route=QueryRoute.STRUCTURED, intent=QueryIntent.LOOKUP, entity=QueryEntity.CONTRATO,
@@ -231,7 +253,7 @@ class RagPerfMiddlewareTests(unittest.IsolatedAsyncioTestCase):
             with perf_stage("fts5"):
                 pass
         middleware = RagPerfMiddleware(app)
-        for enabled, path in ((False, "/query/ask"), (True, "/query/generate")):
+        for enabled, path in ((False, "/query/ask"), (True, "/query/structured")):
             with patch.object(settings, "rag_perf_log_enabled", enabled), patch(
                 "app.core.logging.time.perf_counter"
             ) as clock, self.assertNoLogs("uvicorn.error", level=logging.INFO):

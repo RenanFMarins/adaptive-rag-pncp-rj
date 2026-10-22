@@ -10,6 +10,7 @@ A pasta logs/ é ignorada pelo Git.
 
 import json
 import logging
+import re
 import time
 import uuid
 from contextlib import contextmanager
@@ -35,6 +36,131 @@ _PERF_METRICS = frozenset({
 })
 _PERF_TEXT_METRICS = frozenset({"provedor", "motivo"})
 
+# Campos adicionais aceitos no JSONL operacional. A lista positiva evita que
+# novos chamadores persistam acidentalmente perguntas, prompts, respostas,
+# cabeçalhos ou payloads completos. Textos livres não fazem parte deste
+# contrato: identificadores precisam usar somente o alfabeto técnico abaixo.
+_SAFE_EXTRA_NUMBERS = frozenset({
+    "bytes", "error_count", "llm_output_length", "question_length",
+    "result_count", "status_http", "validation_error_count",
+})
+_SAFE_EXTRA_BOOLEANS = frozenset({"baixado", "fallback", "retry"})
+_SAFE_EXTRA_IDENTIFIERS = frozenset({
+    "base_id", "error_code", "error_type", "provider", "resource_type",
+    "route", "versao",
+})
+_SAFE_EXTRA_IDENTIFIER_LISTS = frozenset({
+    "correcoes", "evidence_types", "validation_error_fields",
+})
+_TECHNICAL_IDENTIFIER_CHARS = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._:-/"
+)
+_SENSITIVE_IDENTIFIER_PATTERNS = (
+    re.compile(r"(?i)^sk-(?:proj-|or-v1-)?[a-z0-9_-]{12,}$"),
+    re.compile(r"(?i)^bearer[._:/-]?[a-z0-9._=-]{12,}$"),
+    re.compile(r"^[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}$"),
+    re.compile(r"^\d{3}\.\d{3}\.\d{3}-\d{2}$"),
+)
+_EXCEPTION_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]{0,127}$")
+_SAFE_PROVIDERS = frozenset({"custom", "ecoa", "groq", "openai"})
+_SAFE_ROUTES = frozenset({"catalog", "hybrid", "rag", "structured"})
+
+
+def _content_metadata(value):
+    """Descreve conteúdo sem persistir seu valor bruto."""
+
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return {"type": "text", "length": len(value)}
+    if isinstance(value, bytes):
+        return {"type": "bytes", "length": len(value)}
+    if isinstance(value, dict):
+        return {"type": "object", "field_count": len(value)}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return {"type": "collection", "item_count": len(value)}
+    return {"type": type(value).__name__}
+
+
+def _technical_identifier(value):
+    """Aceita apenas identificadores internos curtos, nunca texto livre."""
+
+    if not isinstance(value, str) or not value or len(value) > 128:
+        return None
+    if any(character not in _TECHNICAL_IDENTIFIER_CHARS for character in value):
+        return None
+    if value.startswith(("/", "./", "../")) or "/../" in value:
+        return None
+    if any(pattern.search(value) for pattern in _SENSITIVE_IDENTIFIER_PATTERNS):
+        return None
+    numeric_candidate = value.translate(str.maketrans("", "", ".-_:/"))
+    if len(numeric_candidate) >= 9 and numeric_candidate.isdigit():
+        return None
+    return value
+
+
+def _exception_name(value):
+    """Aceita somente o nome de uma classe de exceção, nunca sua mensagem."""
+
+    if not isinstance(value, str) or _EXCEPTION_NAME.fullmatch(value) is None:
+        return None
+    return value
+
+
+def _safe_enum_identifier(value, allowed):
+    return value if isinstance(value, str) and value in allowed else None
+
+
+def _safe_extra(extra):
+    """Aplica uma allowlist estrutural aos metadados adicionais."""
+
+    safe = {}
+    for key, value in extra.items():
+        if key in _SAFE_EXTRA_NUMBERS and isinstance(value, (int, float)) \
+                and not isinstance(value, bool):
+            safe[key] = value
+        elif key in _SAFE_EXTRA_BOOLEANS and isinstance(value, bool):
+            safe[key] = value
+        elif key in _SAFE_EXTRA_IDENTIFIERS:
+            if key == "provider":
+                identifier = _safe_enum_identifier(value, _SAFE_PROVIDERS)
+            elif key == "route":
+                identifier = _safe_enum_identifier(value, _SAFE_ROUTES)
+            elif key == "error_type":
+                identifier = _exception_name(value)
+            else:
+                identifier = _technical_identifier(value)
+            if identifier is not None:
+                safe[key] = identifier
+        elif key in _SAFE_EXTRA_IDENTIFIER_LISTS and isinstance(value, (list, tuple)):
+            identifiers = [
+                identifier
+                for item in value
+                if (identifier := _technical_identifier(item)) is not None
+            ]
+            safe[key] = identifiers
+    return safe
+
+
+def _safe_tokens(tokens):
+    """Mantém somente contadores numéricos do contrato de tokens."""
+
+    source = tokens if isinstance(tokens, dict) else {}
+    return {
+        key: value if isinstance(value, (int, float)) and not isinstance(value, bool) else 0
+        for key, value in (
+            ("prompt", source.get("prompt", 0)),
+            ("completion", source.get("completion", 0)),
+            ("total", source.get("total", 0)),
+        )
+    }
+
+
+def _safe_query_id(value):
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    return _technical_identifier(value)
+
 
 def _perf_event(stage, status, duration_ms=None, exception=None, metrics=None):
     """Emite apenas campos técnicos; falhas de logging não afetam a consulta."""
@@ -42,17 +168,27 @@ def _perf_event(stage, status, duration_ms=None, exception=None, metrics=None):
     if run_id is None:
         return
     try:
-        fields = [f"[RAG-PERF] run_id={run_id}", f"etapa={stage}"]
+        safe_run_id = _technical_identifier(run_id)
+        safe_stage = _technical_identifier(stage)
+        safe_status = _technical_identifier(status)
+        if safe_run_id is None or safe_stage is None or safe_status is None:
+            return
+        fields = [f"[RAG-PERF] run_id={safe_run_id}", f"etapa={safe_stage}"]
         if duration_ms is not None:
             fields.append(f"duracao_ms={duration_ms:.3f}")
-        fields.append(f"status={status}")
-        if exception is not None:
-            fields.append(f"excecao={exception}")
+        fields.append(f"status={safe_status}")
+        safe_exception = _exception_name(exception)
+        if safe_exception is not None:
+            fields.append(f"excecao={safe_exception}")
         for key, value in (metrics or {}).items():
             if key in _PERF_METRICS and isinstance(value, (int, float)):
                 fields.append(f"{key}={value}")
             elif key in _PERF_TEXT_METRICS and isinstance(value, str):
-                seguro = "".join(c for c in value if c.isalnum() or c == "_")
+                seguro = (
+                    _safe_enum_identifier(value, _SAFE_PROVIDERS)
+                    if key == "provedor"
+                    else _technical_identifier(value)
+                )
                 if seguro:
                     fields.append(f"{key}={seguro}")
         _perf_logger.info(" ".join(fields))
@@ -91,7 +227,7 @@ def perf_stage(stage):
 
 
 class RagPerfMiddleware:
-    """Observa o ciclo ASGI de POST /query/ask sem consumir ou alterar mensagens."""
+    """Observa as consultas RAG HTTP sem consumir ou alterar mensagens."""
 
     def __init__(self, app):
         self.app = app
@@ -101,8 +237,10 @@ class RagPerfMiddleware:
 
         perf_enabled = settings.rag_perf_log_enabled
         llm_http_enabled = settings.rag_llm_http_log_enabled
+        observed_paths = {"/query/ask", "/query/generate"}
         if (not (perf_enabled or llm_http_enabled) or scope["type"] != "http"
-                or scope.get("method") != "POST" or scope.get("path") != "/query/ask"):
+                or scope.get("method") != "POST"
+                or scope.get("path") not in observed_paths):
             await self.app(scope, receive, send)
             return
         started = time.perf_counter()
@@ -138,22 +276,26 @@ def novo_run_id() -> str:
 
 def registrar(run_id, stage, status="ok", latencia_ms=None, entrada=None,
               saida=None, tokens=None, modelo=None, query_id=None, **extra):
-    """Grava uma linha no log do dia, no formato do enunciado."""
+    """Grava somente telemetria minimizada; conteúdo bruto nunca vai ao JSONL."""
     PASTA_LOGS.mkdir(parents=True, exist_ok=True)
     evento = {
         "ts": datetime.now().astimezone().isoformat(timespec="seconds"),
-        "run_id": run_id,
-        "query_id": query_id,
-        "stage": stage,
-        "status": status,
-        "latencia_ms": latencia_ms,
-        "input": entrada,
-        "output": saida,
+        "run_id": _technical_identifier(run_id),
+        "query_id": _safe_query_id(query_id),
+        "stage": _technical_identifier(stage),
+        "status": _technical_identifier(status),
+        "latencia_ms": (
+            latencia_ms
+            if isinstance(latencia_ms, (int, float)) and not isinstance(latencia_ms, bool)
+            else None
+        ),
+        "input": _content_metadata(entrada),
+        "output": _content_metadata(saida),
         # Coleta e ingestão não chamam o LLM: os tokens ficam zerados de
         # propósito, para o campo existir em toda etapa.
-        "tokens": tokens or {"prompt": 0, "completion": 0, "total": 0},
-        "modelo": modelo,
-        "extra": extra,
+        "tokens": _safe_tokens(tokens),
+        "modelo": _technical_identifier(modelo),
+        "extra": _safe_extra(extra),
     }
     arquivo = PASTA_LOGS / f"pipeline-{datetime.now():%Y-%m-%d}.jsonl"
     with arquivo.open("a", encoding="utf-8") as f:
@@ -176,8 +318,16 @@ def etapa(run_id, stage, entrada=None, **extra):
     try:
         yield dados
     except Exception as erro:
-        registrar(run_id, stage, "erro", int((time.perf_counter() - inicio) * 1000),
-                  entrada, type(erro).__name__, **extra)
+        registrar(
+            run_id,
+            stage,
+            "erro",
+            int((time.perf_counter() - inicio) * 1000),
+            entrada,
+            None,
+            error_type=type(erro).__name__,
+            **extra,
+        )
         raise
     registrar(run_id, stage, "ok", int((time.perf_counter() - inicio) * 1000),
               entrada, dados["saida"], **extra)

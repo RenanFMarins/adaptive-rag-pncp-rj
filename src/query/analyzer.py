@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 from pydantic import ValidationError
 
-from app.core.logging import novo_run_id, perf_stage, registrar
+from app.core.logging import current_perf_run_id, novo_run_id, perf_stage, registrar
 from app.core.llm_http_observability import llm_http_operation
 from llm_ecoa import gerar_resposta_analyzer
 from src.query.prompts import montar_prompt_analise
@@ -26,6 +26,12 @@ AnalyzerLlmFn = Callable[[str], str]
 
 
 _NUMERO_CONTROLE_PNCP_RE = re.compile(r"\b\d{14}-\d-\d{6}/\d{4}\b")
+
+
+def _observability_run_id() -> str:
+    """Reutiliza a correlação HTTP quando disponível."""
+
+    return current_perf_run_id() or novo_run_id()
 
 
 def _analisar_pergunta_catalogo(pergunta: str) -> QueryAnalysis | None:
@@ -113,17 +119,20 @@ def _registrar_falha_validacao(
     resposta_llm: str,
     erros_validacao: list[dict[str, str]],
 ) -> None:
-    """Registra evidência local para depuração sem interromper a API."""
+    """Registra somente metadados da falha, sem pergunta ou saída da LLM."""
 
     try:
         registrar(
-            novo_run_id(),
+            _observability_run_id(),
             "query_analyzer",
             status="erro",
-            entrada={"pergunta": pergunta},
-            saida="Plano da LLM não passou na validação QueryAnalysis.",
-            respostaLlm=resposta_llm[:4000],
-            errosValidacao=erros_validacao,
+            question_length=len(pergunta),
+            llm_output_length=len(resposta_llm),
+            validation_error_count=len(erros_validacao),
+            validation_error_fields=[
+                f"{erro['campo']}:{erro['tipo']}" for erro in erros_validacao
+            ],
+            error_code="query_analysis_validation_failed",
         )
     except Exception:
         # Falha de observabilidade nunca deve ocultar a causa original do
@@ -359,18 +368,17 @@ def _registrar_normalizacao(
     resposta_llm: str,
     correcoes: list[str],
 ) -> None:
-    """Mantém visível quando uma normalização determinística foi aplicada."""
+    """Registra a normalização sem pergunta ou saída bruta da LLM."""
 
     if not correcoes:
         return
     try:
         registrar(
-            novo_run_id(),
+            _observability_run_id(),
             "query_analyzer",
             status="ajustado",
-            entrada={"pergunta": pergunta},
-            saida="Plano da LLM normalizado antes da validação.",
-            respostaLlm=resposta_llm[:4000],
+            question_length=len(pergunta),
+            llm_output_length=len(resposta_llm),
             correcoes=correcoes,
         )
     except Exception:
