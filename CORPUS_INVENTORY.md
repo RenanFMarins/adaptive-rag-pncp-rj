@@ -8,7 +8,7 @@ O que deve entrar está declarado no [`corpus_manifest.yaml`](corpus_manifest.ya
 | | |
 | --- | --- |
 | **Versão corrente** | `v1` |
-| **Última coleta** | 25/09/2026 |
+| **Coleta da v1** | 21 a 23/09/2026 |
 | **Como reproduzir** | `python -m app.modules.normative.services fetch --manifest corpus_manifest.yaml --versao v1` |
 | **Nova versão + diff** | `python -m app.modules.normative.services update --manifest corpus_manifest.yaml` |
 | **Inventário legível** | `python -m app.modules.normative.services inventory --versao v1` |
@@ -47,7 +47,7 @@ O que deve entrar está declarado no [`corpus_manifest.yaml`](corpus_manifest.ya
 **Fontes:** Lei 14.133/2021 (Planalto), 7 decretos estaduais do RJ e 5 editais de
 órgãos do RJ publicados no PNCP, ano-base 2025.
 
-**Coletado em:** 25/09/2026 · **Divergência em relação ao `volume_alvo`:** 0
+**Coletado em:** 21 a 23/09/2026 · **Divergência em relação ao `volume_alvo`:** 0
 
 ### 3.1 Lei e editais (baixados por URL)
 
@@ -144,8 +144,16 @@ Conferência de que o corpus responde às perguntas normativas do
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
-| `v1` | 25/09/2026 | Primeira coleta da base normativa (13 arquivos, 0 falhas) |
+| `v1` | 21 a 23/09/2026 | Primeira coleta da base normativa (13 arquivos, 0 falhas) |
 | `v2` | 25/09/2026 | Recoleta para validar o versionamento: nenhum arquivo entrou, saiu ou mudou de conteúdo ([DIFF_v1_v2.md](data/inventory/DIFF_v1_v2.md)) |
+
+> **Sobre as datas.** As datas acima vêm do histórico do repositório (o primeiro
+> inventário da `v1` foi comitado em 21/09/2026) e da data de modificação dos
+> arquivos em `data/raw/`. O campo `coletado_em` dos JSON em `data/inventory/`
+> ficou com a data da última execução do `fetch` sobre arquivos já baixados, e
+> não a do download: por isso a `v1` aparece ali com 28/09/2026. Desde a
+> correção do `preservar_coletado_em`, uma nova execução mantém a data original
+> quando o conteúdo do arquivo não mudou.
 
 > A `v1` permanece como corpus corrente. A `v2` foi gerada com o comando
 > `update` para demonstrar que a versão anterior não é sobrescrita e que o diff

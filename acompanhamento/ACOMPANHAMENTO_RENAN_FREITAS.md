@@ -1616,3 +1616,195 @@ Os próximos passos definidos foram:
 - estruturar a camada semântica para interpretação de perguntas;
 - implementar agentes de IA para consultas estruturadas;
 - integrar a recuperação documental com RAG, preservando as evidências utilizadas nas respostas.
+
+## Encontro 14 - 2026-10-21
+
+### Relato individual — José Renan Freitas Marins (4h)
+om foco na homologação operacional da API integrada à camada normalizada, na identificação e correção de problemas relacionados à segurança e à recuperação documental e no planejamento da arquitetura de processamento de PDFs sob demanda.
+
+O objetivo foi validar a utilização da base normalizada em consultas reais, verificar o funcionamento dos fluxos Structured, RAG e Hybrid e preparar o sistema para responder perguntas em linguagem natural com informações confiáveis, rastreáveis e fundamentadas em evidências.
+
+### Integração operacional da API com a base normalizada
+
+Inicialmente, foram consolidadas as implementações relacionadas à integração da API com a base normalizada SQLite, disponibilizadas nos PRs #60 e #61.
+A homologação confirmou que a conexão utiliza `mode=ro` e `PRAGMA query_only=1`, impedindo alterações no banco normalizado.
+Também foram verificadas as seguintes quantidades de registros:
+- 180.419 contratações;
+- 151.898 contratos;
+- 567 Planos de Contratações Anuais (PCA);
+- 228.469 itens de PCA;
+- 44.689 contratações referentes a 2026.
+
+A integridade do banco foi confirmada por meio de `PRAGMA integrity_check`, com resultado `ok`.
+
+### Homologação das rotas e consultas da API
+
+Na sequência, foi realizada a homologação operacional da API utilizando a base normalizada real em modo somente leitura e uma cópia temporária do banco operacional da aplicação.
+
+Foram avaliadas as rotas:
+
+- `/docs`, para acesso à documentação Swagger;
+- `/openapi.json`, para validação dos contratos da API;
+- `/auth/register`, `/auth/login` e `/auth/me`, para autenticação;
+- `/query/structured`, para consultas estruturadas;
+- `/query/ask`, para roteamento das perguntas;
+- `/query/generate`, para geração de respostas com recuperação documental;
+- `/query/catalog/documents`, para consulta ao catálogo de documentos.
+
+Os testes confirmaram o funcionamento do startup, da autenticação, da validação das entradas e da execução direta da SQL Tool sobre dados reais.
+
+Uma consulta relacionada a contratos de licenciamento de software em 2025, com valor superior a R$ 500 mil, retornou cinco registros compatíveis com os filtros disponíveis, incluindo informações dos fornecedores.
+
+Entretanto, foram identificadas limitações na execução completa das perguntas em linguagem natural, principalmente devido à instabilidade do provedor ECOA e à ausência de funcionalidades analíticas necessárias para responder integralmente às perguntas das personas.
+
+### Avaliação do Adaptive RAG e identificação de limitações
+
+Durante os testes, foram analisados os mecanismos de interpretação de perguntas, consultas SQL e recuperação documental.
+
+As principais limitações identificadas foram:
+
+- ausência do índice FAISS operacional;
+- instabilidade do provedor ECOA, com ocorrência de timeouts;
+- corpus operacional contendo apenas dois documentos e 55 chunks;
+- ausência de suporte a determinados filtros e relacionamentos necessários às perguntas oficiais;
+- necessidade de ampliar a proveniência estruturada das respostas;
+- impossibilidade de executar integralmente o fluxo Hybrid;
+- possibilidade de uma consulta retornar HTTP 200 sem responder corretamente à pergunta original.
+
+Também foram avaliadas as três personas do desafio.
+
+Na pergunta de Marina, relacionada ao preço médio por quilograma de arroz, foi identificada a necessidade de integrar itens de contratação, resultados homologados, quantidades e unidades de medida.
+
+Na pergunta de Rodrigo, relacionada a contratos estaduais de licenciamento de software, foi identificada a ausência de um filtro específico para esfera governamental.
+
+Na pergunta de Cláudia, relacionada à participação de MEI em pregões eletrônicos, foram identificadas necessidades de integração entre informações normativas, situação das oportunidades e recuperação documental.
+
+Essas verificações demonstraram que a camada SQL normalizada está operacional, mas que o Adaptive RAG ainda necessita de melhorias para responder integralmente às perguntas do desafio.
+
+### Implementação de segurança e minimização dos logs
+
+Após a homologação, foi realizada uma análise dos mecanismos de observabilidade e armazenamento de logs.
+
+Foi identificado que determinados eventos persistiam perguntas completas, prompts, respostas geradas e saídas brutas do Query Analyzer, representando um risco de exposição de informações sensíveis.
+
+Para corrigir esse comportamento, foi implementada uma política de minimização baseada em uma lista explícita de campos permitidos.
+
+As principais melhorias foram:
+
+- remoção de perguntas e respostas completas dos logs operacionais;
+- impedimento do armazenamento de prompts e saídas brutas dos modelos;
+- descarte de campos adicionais não autorizados;
+- preservação de métricas de latência, tokens, status e modelo utilizado;
+- manutenção da correlação entre requisições por `run_id`;
+- registro de quantidades e identificadores técnicos sem armazenar linhas completas das consultas SQL;
+- tratamento de exceções sem persistir mensagens que possam conter dados sensíveis.
+
+O histórico funcional das conversas, armazenado nas tabelas `queries` e `responses`, foi preservado, por possuir finalidade distinta dos logs operacionais.
+
+A implementação foi validada com dados sintéticos, incluindo CPF, e-mail, tokens e informações bancárias fictícias.
+
+Após essa etapa, foram registrados **612 testes e 107 subtestes aprovados**.
+
+### Tratamento seguro de indisponibilidade do FAISS
+
+Em seguida, foi realizada a correção do tratamento de erros relacionados ao carregamento do índice FAISS.
+
+Durante a homologação, foi identificado que a ausência do índice provocava erros HTTP 500 nas rotas de recuperação documental.
+
+Foi implementado um contrato específico para classificar três situações:
+
+- `faiss_index_missing`: índice inexistente;
+- `faiss_index_corrupt`: arquivos corrompidos ou inconsistentes;
+- `faiss_index_incompatible`: incompatibilidade de modelo ou dimensão dos embeddings.
+
+A API passou a retornar HTTP 503 quando a recuperação documental necessária estiver indisponível, utilizando mensagens controladas e sem exposição de caminhos locais, credenciais ou informações internas.
+
+Também foi preservada a independência das rotas Structured e Catalog, permitindo que continuem funcionando mesmo quando o índice FAISS não estiver disponível.
+
+O fluxo Hybrid passou a tratar a indisponibilidade de evidências obrigatórias sem apresentar respostas parciais como se fossem completas.
+
+Erros inesperados de programação continuam sendo tratados separadamente, evitando que falhas não relacionadas à infraestrutura sejam mascaradas.
+
+Após a implementação da H2, os resultados foram:
+
+- **624 testes automatizados aprovados;**
+- **110 subtestes aprovados;**
+- compilação dos módulos alterados aprovada;
+- `git diff --check` aprovado;
+- preservação das alterações anteriores da H1;
+- nenhuma alteração nos bancos operacionais.
+
+As implementações H1 e H2 permaneceram sem commit, aguardando revisão técnica.
+
+### Planejamento da arquitetura de processamento documental sob demanda
+
+Também foi retomada a discussão sobre o processamento dos documentos PDF associados às contratações públicas do PNCP.
+
+Considerando o grande volume potencial de editais, contratos, atas e anexos, foi definida como proposta a utilização de uma arquitetura híbrida, combinando **pré-processamento seletivo, processamento sob demanda e cache persistente**.
+
+A proposta busca evitar o download, a extração de texto, o OCR e a geração antecipada de embeddings para todo o acervo documental.
+
+O fluxo planejado contempla:
+
+- identificação dos documentos disponíveis por meio de um catálogo documental;
+- associação dos documentos às respectivas contratações e entidades do PNCP;
+- verificação da existência de conteúdo previamente processado;
+- recuperação direta de documentos já indexados;
+- download sob demanda de documentos ainda não processados;
+- extração de texto nativo dos PDFs;
+- utilização seletiva de OCR em páginas digitalizadas, imagens e tabelas;
+- divisão do conteúdo em chunks com preservação de página e proveniência;
+- geração de embeddings e indexação no FAISS;
+- integração com busca lexical FTS5/BM25 e fusão RRF;
+- armazenamento em cache para evitar processamento repetido;
+- controle de versões e integridade por hash SHA-256.
+
+Foi preparado um roteiro de auditoria técnica para verificar quais desses componentes já existem no repositório, identificar lacunas e definir um plano de implementação incremental.
+
+Essa arquitetura ainda está em fase de análise e planejamento, não tendo sido implementada neste encontro.
+
+### Uso de Inteligência Artificial
+
+Utilizei o ChatGPT como ferramentas de apoio para:
+
+- estruturar o planejamento da homologação operacional da API;
+- definir critérios de validação para consultas utilizando a base normalizada;
+- analisar os resultados dos testes Structured, RAG e Hybrid;
+- identificar limitações do Query Analyzer e da recuperação documental;
+- orientar a implementação da política de minimização de dados nos logs;
+- apoiar a definição do contrato de erros do FAISS;
+- estruturar testes automatizados de segurança e tratamento de falhas;
+- discutir a arquitetura de processamento de PDFs sob demanda;
+- planejar a integração entre catálogo documental, OCR, FAISS, FTS5 e Adaptive RAG;
+
+### Resultado do encontro
+
+A homologação confirmou que a API consegue acessar a base normalizada real em modo somente leitura, executar consultas estruturadas e preservar a integridade dos bancos operacionais.
+
+Foram implementadas melhorias de segurança e observabilidade, além de mecanismos de tratamento controlado para indisponibilidade do índice FAISS.
+
+A suíte automatizada alcançou **624 testes e 110 subtestes aprovados**, sem execução de novas coletas, migrations ou alterações nos bancos RAW e normalizado.
+
+Também foram identificadas as limitações que impedem a homologação completa do Adaptive RAG e estruturada uma proposta de processamento documental seletivo e sob demanda.
+
+As alterações H1 e H2 permaneceram locais, sem commit, push ou merge, aguardando revisão. Os PRs existentes também permaneceram sem integração à branch principal.
+
+### Próximos passos
+
+Os próximos passos definidos foram:
+
+- realizar a revisão técnica conjunta das implementações H1 e H2;
+- organizar as alterações em commits independentes após aprovação;
+- manter os PRs existentes sem merge até a validação da equipe;
+- avaliar a configuração de um provedor OpenAI como alternativa ao ECOA;
+- estabilizar a interpretação de perguntas em linguagem natural;
+- implementar validações para impedir respostas semanticamente incompletas;
+- ampliar os filtros e relacionamentos da SQL Tool para atender às três personas;
+- aprimorar a proveniência das respostas estruturadas;
+- auditar a arquitetura existente de catálogo e processamento documental;
+- definir o pipeline de extração de PDFs e OCR seletivo;
+- construir e validar o primeiro índice FAISS operacional;
+- integrar a recuperação híbrida com FTS5, FAISS e RRF;
+- implementar cache e processamento documental sob demanda;
+- realizar novos testes ponta a ponta nas rotas Structured, RAG e Hybrid;
+- avançar na homologação do Adaptive RAG com respostas fundamentadas e auditáveis.
