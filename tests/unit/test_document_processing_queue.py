@@ -35,6 +35,7 @@ from app.modules.documents.worker import (
     executar_uma_tarefa,
     normalizar_url_download_pncp,
 )
+from app.modules.query.services import _agendar_processamento_documental
 
 
 class DocumentProcessingQueueTests(unittest.TestCase):
@@ -71,6 +72,55 @@ class DocumentProcessingQueueTests(unittest.TestCase):
         self.assertTrue(criada_primeira)
         self.assertFalse(criada_segunda)
         self.assertEqual(primeira.id, segunda.id)
+
+    def test_consulta_adaptativa_agenda_e_reutiliza_tarefa_elegivel(self) -> None:
+        self.item.url_download = (
+            "https://pncp.gov.br/pncp-api/v1/orgaos/00394502000144/"
+            "compras/2026/9055/arquivos/1"
+        )
+        self.db.commit()
+        referencia = {
+            "id": self.item.id,
+            "availabilityStatus": "AVAILABLE",
+            "statusProcessamento": "PENDENTE",
+            "urlDownload": self.item.url_download,
+        }
+
+        primeira = _agendar_processamento_documental(
+            self.db, [referencia], limite=1
+        )
+        segunda = _agendar_processamento_documental(
+            self.db, [referencia], limite=1
+        )
+
+        self.assertEqual(primeira[0]["task_id"], segunda[0]["task_id"])
+        self.assertTrue(primeira[0]["created"])
+        self.assertFalse(segunda[0]["created"])
+        self.assertEqual(
+            primeira[0]["status_url"],
+            f"/documents/processing-tasks/{primeira[0]['task_id']}",
+        )
+
+    def test_consulta_adaptativa_nao_agenda_documento_inelegivel(self) -> None:
+        referencias = [
+            {
+                "id": self.item.id,
+                "availabilityStatus": "REMOVED",
+                "statusProcessamento": "PENDENTE",
+                "urlDownload": "https://pncp.gov.br/arquivo.pdf",
+            },
+            {
+                "id": self.item.id,
+                "availabilityStatus": "AVAILABLE",
+                "statusProcessamento": "PROCESSADO",
+                "urlDownload": "https://pncp.gov.br/arquivo.pdf",
+            },
+        ]
+
+        self.assertEqual(
+            _agendar_processamento_documental(self.db, referencias, limite=2),
+            [],
+        )
 
     def test_consulta_tarefa_por_id(self) -> None:
         criada, _ = solicitar_processamento_catalogo(self.db, self.item.id)

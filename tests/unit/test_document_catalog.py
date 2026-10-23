@@ -168,6 +168,11 @@ class DocumentCatalogTests(unittest.TestCase):
             resultado.external_documents[0]["numeroControlePNCP"],
             "00394502000144-1-009055/2026",
         )
+        self.assertEqual(len(resultado.processing_tasks), 1)
+        self.assertEqual(
+            resultado.processing_tasks[0]["catalog_entry_id"],
+            resultado.external_documents[0]["id"],
+        )
 
     def test_rota_catalogo_nao_executa_rag(self) -> None:
         analysis = QueryAnalysis(
@@ -194,6 +199,7 @@ class DocumentCatalogTests(unittest.TestCase):
         self.assertIsNone(resultado.rag_result)
         self.assertEqual(len(resultado.external_documents), 1)
         self.assertEqual(resultado.external_documents[0]["tipoDocumento"], "Edital")
+        self.assertEqual(len(resultado.processing_tasks), 1)
 
 
 if __name__ == "__main__":

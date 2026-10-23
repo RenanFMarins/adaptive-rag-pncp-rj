@@ -7,7 +7,11 @@ from unittest.mock import patch
 import requests
 from streamlit.testing.v1 import AppTest
 
-from app.streamlit_console import _chamar_api, _mensagem_erro
+from app.streamlit_console import (
+    _chamar_api,
+    _exibir_resposta_chat,
+    _mensagem_erro,
+)
 
 
 class StreamlitConsoleTests(unittest.TestCase):
@@ -44,6 +48,23 @@ class StreamlitConsoleTests(unittest.TestCase):
         self.assertIsNone(status)
         self.assertNotIn("/caminho/interno", str(payload))
         self.assertIn("FastAPI", str(payload))
+
+    def test_resposta_202_exibe_tarefa_sem_tratar_como_erro(self):
+        payload = {
+            "processing_tasks": [
+                {
+                    "task_id": 11,
+                    "status": "PENDENTE",
+                    "status_url": "/documents/processing-tasks/11",
+                }
+            ]
+        }
+        with patch("app.streamlit_console.st") as streamlit:
+            streamlit.expander.return_value.__enter__.return_value = streamlit
+            _exibir_resposta_chat(202, payload)
+
+        streamlit.error.assert_not_called()
+        self.assertTrue(streamlit.info.called)
 
 
 if __name__ == "__main__":

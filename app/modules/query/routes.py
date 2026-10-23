@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query as QueryParameter
+from fastapi import APIRouter, Depends, Query as QueryParameter, Response
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -51,6 +51,7 @@ def _detalhe_erro_consulta(exc: Exception) -> str | dict[str, object]:
 )
 def ask(
     request: AdaptiveAskRequest,
+    response: Response,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
 ) -> AdaptiveAskResponse:
@@ -97,6 +98,8 @@ def ask(
             if structured_result is not None
             else None
         )
+        if result.processing_tasks:
+            response.status_code = status.HTTP_202_ACCEPTED
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,
@@ -104,6 +107,7 @@ def ask(
             structured_result=structured_result,
             answer=answer,
             external_documents=result.external_documents,
+            processing_tasks=result.processing_tasks,
             trace_id=getattr(result.rag_result, "trace_id", None),
         )
 
@@ -113,6 +117,8 @@ def ask(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="A rota planejada não produziu resultado.",
         )
+    if result.processing_tasks:
+        response.status_code = status.HTTP_202_ACCEPTED
     return AdaptiveAskResponse(
         route=result.plan.route,
         analysis=result.analysis,
@@ -129,6 +135,7 @@ def ask(
             for rank, source in enumerate(rag_result.sources, start=1)
         ],
         external_documents=result.external_documents,
+        processing_tasks=result.processing_tasks,
         trace_id=getattr(rag_result, "trace_id", None),
     )
 

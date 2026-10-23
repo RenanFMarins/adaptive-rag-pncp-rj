@@ -11,7 +11,10 @@ from sqlalchemy.orm import Session
 from app.core.config import resolver_caminho_indice_faiss, settings
 from app.core.database.readonly import readonly_sqlite_connection
 from app.core.logging import perf_stage
-from app.modules.documents.services import consultar_catalogo_documentos_pncp
+from app.modules.documents.services import (
+    consultar_catalogo_documentos_pncp,
+    solicitar_processamento_catalogo,
+)
 from app.modules.query.model import Query, Response, ResponseSource
 from src.query.adaptive_executor import (
     AdaptiveExecutionResult,
@@ -36,6 +39,53 @@ AnalyzerFn = Callable[[str], QueryAnalysis]
 
 class NormalizedDatabaseUnavailable(RuntimeError):
     """Indica que a camada normalizada não pode atender a consulta."""
+
+
+def _agendar_processamento_documental(
+    db: Session,
+    referencias: list[dict[str, object]],
+    *,
+    limite: int,
+) -> list[dict[str, object]]:
+    """Cria/reutiliza poucas tarefas elegíveis sem executar o worker.
+
+    Entradas removidas, sem URL ou já processadas não entram na fila. O
+    limite acompanha o ``top_k`` pedido e evita uma fan-out acidental de uma
+    única pergunta.
+    """
+
+    tarefas: list[dict[str, object]] = []
+    for referencia in referencias:
+        if len(tarefas) >= limite:
+            break
+        catalog_entry_id = referencia.get("id")
+        if (
+            not isinstance(catalog_entry_id, int)
+            or referencia.get("availabilityStatus") == "REMOVED"
+            or referencia.get("statusProcessamento") == "PROCESSADO"
+            or not referencia.get("urlDownload")
+        ):
+            continue
+        try:
+            tarefa, criada = solicitar_processamento_catalogo(
+                db,
+                catalog_entry_id,
+                motivo="consulta_adaptativa",
+            )
+        except ValueError:
+            # O estado pode ter mudado entre a consulta do catálogo e a
+            # tentativa idempotente (por exemplo, o worker terminou o item).
+            continue
+        tarefas.append(
+            {
+                "task_id": tarefa.id,
+                "catalog_entry_id": tarefa.catalog_entry_id,
+                "status": tarefa.status,
+                "status_url": f"/documents/processing-tasks/{tarefa.id}",
+                "created": criada,
+            }
+        )
+    return tarefas
 
 
 @contextmanager
@@ -169,6 +219,15 @@ def executar_consulta_adaptativa_api(
                 structured_executor=_executar_analise_normalizada,
             )
 
+    if resultado.plan.route is QueryRoute.CATALOG and resultado.external_documents:
+        with perf_stage("document_queue"):
+            tarefas = _agendar_processamento_documental(
+                db,
+                resultado.external_documents,
+                limite=min(top_k, 5),
+            )
+        return replace(resultado, processing_tasks=tarefas)
+
     # Fallback informativo: se uma pergunta documental por número de controle
     # não encontrou chunks, mostramos os arquivos previamente listados no
     # PNCP. Esta etapa NÃO baixa o documento e não chama a API externa.
@@ -188,7 +247,17 @@ def executar_consulta_adaptativa_api(
                 tipo_documento=analysis.filters.tipo_documento,
                 limite=20,
             )
-        return replace(resultado, external_documents=referencias)
+        with perf_stage("document_queue"):
+            tarefas = _agendar_processamento_documental(
+                db,
+                referencias,
+                limite=min(top_k, 5),
+            )
+        return replace(
+            resultado,
+            external_documents=referencias,
+            processing_tasks=tarefas,
+        )
     return resultado
 
 

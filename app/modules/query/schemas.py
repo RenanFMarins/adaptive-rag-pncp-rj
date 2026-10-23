@@ -53,6 +53,16 @@ class ExternalDocumentResponse(BaseModel):
     chunksPersistidos: int = Field(ge=0)
 
 
+class ProcessingTaskSummary(BaseModel):
+    """Referência segura para acompanhar processamento iniciado sob demanda."""
+
+    task_id: int
+    catalog_entry_id: int
+    status: str
+    status_url: str
+    created: bool
+
+
 class GenerateResponse(BaseModel):
     answer: str
     sources: list[SourceResponse]
@@ -99,3 +109,4 @@ class AdaptiveAskResponse(BaseModel):
     trace_id: str | None = None
     sources: list[SourceResponse] = Field(default_factory=list)
     external_documents: list[ExternalDocumentResponse] = Field(default_factory=list)
+    processing_tasks: list[ProcessingTaskSummary] = Field(default_factory=list)

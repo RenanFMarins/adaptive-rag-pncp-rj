@@ -33,6 +33,9 @@ class AdaptiveExecutionResult:
     # Referências catalogadas para arquivos ainda não processados. Não são
     # baixadas automaticamente nem entram no prompt da LLM.
     external_documents: list[dict[str, Any]] = field(default_factory=list)
+    # Tarefas persistidas/reutilizadas para processamento assíncrono. Criar a
+    # tarefa não executa download, OCR ou indexação durante a requisição.
+    processing_tasks: list[dict[str, Any]] = field(default_factory=list)
 
 
 def executar_plano_adaptativo(

@@ -203,6 +203,52 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.json()["structured_result"]["rows"], [{"valor_global": 100.0}])
         self.assertEqual(response.json()["answer"], rag_result.answer)
 
+    def test_catalogo_com_processamento_pendente_retorna_202(self) -> None:
+        analysis = QueryAnalysis(
+            route=QueryRoute.CATALOG,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.DOCUMENTO,
+            bases=[KnowledgeBase.AGREGADA],
+        )
+        document = {
+            "id": 7,
+            "tipoEntidade": "contratacao",
+            "numeroControlePNCP": "12345678000199-1-000001/2026",
+            "sequencialDocumento": 1,
+            "periodoColeta": "fixture",
+            "statusProcessamento": "PENDENTE",
+            "documentoPersistido": False,
+            "chunksPersistidos": 0,
+        }
+        task = {
+            "task_id": 11,
+            "catalog_entry_id": 7,
+            "status": "PENDENTE",
+            "status_url": "/documents/processing-tasks/11",
+            "created": True,
+        }
+        execution = AdaptiveExecutionResult(
+            analysis=analysis,
+            plan=planejar_execucao(analysis),
+            external_documents=[document],
+            processing_tasks=[task],
+        )
+
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+            return_value=execution,
+        ):
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Quais documentos estão disponíveis?"},
+            )
+
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.json()["processing_tasks"], [task])
+        returned_document = response.json()["external_documents"][0]
+        for key, value in document.items():
+            self.assertEqual(returned_document[key], value)
+
     def test_retorna_campos_invalidos_quando_analyzer_rejeita_plano(self) -> None:
         erro = QueryAnalysisError(
             "A LLM retornou um plano inválido.",

@@ -92,6 +92,22 @@ def _exibir_fontes(payload: dict[str, Any]) -> None:
             st.json(external)
 
 
+def _exibir_tarefas_processamento(payload: dict[str, Any]) -> None:
+    tasks = payload.get("processing_tasks") or []
+    if not tasks:
+        return
+    st.info(
+        f"{len(tasks)} documento(s) foi(ram) colocado(s) na fila de "
+        "processamento. A resposta documental poderá ser completada depois."
+    )
+    with st.expander("Acompanhar processamento documental"):
+        for task in tasks:
+            st.write(
+                f"Tarefa {task.get('task_id')} · {task.get('status')} · "
+                f"{task.get('status_url')}"
+            )
+
+
 def _exibir_evidencias_estruturadas(payload: dict[str, Any]) -> None:
     structured = payload.get("structured_result")
     if not isinstance(structured, dict):
@@ -119,8 +135,11 @@ def _exibir_resposta_chat(status: int | None, payload: dict[str, Any] | str) -> 
     answer = payload.get("answer")
     if answer:
         st.write(answer)
+    elif status == 202 and payload.get("processing_tasks"):
+        st.info("Os documentos necessários ainda estão sendo preparados.")
     else:
         st.info("A consulta foi concluída, mas não retornou resposta textual.")
+    _exibir_tarefas_processamento(payload)
     _exibir_evidencias_estruturadas(payload)
     _exibir_fontes(payload)
     with st.expander("Detalhes técnicos"):
