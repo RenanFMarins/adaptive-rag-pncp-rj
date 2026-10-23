@@ -58,7 +58,8 @@ Perguntas sugeridas:
 Evidências do snapshot para conferência:
 
 - 22.685 atas com `ano_ata=2024`;
-- 5.614 atas classificadas como vigentes e com adesão permitida;
+- 5.606 atas classificadas como vigentes e com adesão permitida em
+  23/10/2026;
 - 185 PCAs de 2025;
 - 74.605 itens de PCA de 2025;
 - total planejado de R$ 46.359.966.536,52 nesses itens;

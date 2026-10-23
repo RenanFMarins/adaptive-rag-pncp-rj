@@ -84,6 +84,11 @@ class QuerySchemaTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             QueryFilters(valor_minimo=10, valor_maximo=5)
 
+    def test_campo_data_nulo_da_llm_usa_default_seguro(self):
+        filters = QueryFilters.model_validate({"ano": 2025, "campo_data": None})
+
+        self.assertEqual(filters.campo_data.value, "data_publicacao")
+
     def test_agregacao_exige_campo(self):
         with self.assertRaisesRegex(ValidationError, "aggregation_field"):
             QueryAnalysis(

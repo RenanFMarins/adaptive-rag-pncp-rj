@@ -11,7 +11,7 @@ from datetime import date
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class QueryRoute(str, Enum):
@@ -196,6 +196,15 @@ class QueryFilters(BaseModel):
     valor_maximo: float | None = Field(default=None, ge=0)
     quantidade_minima: float | None = Field(default=None, ge=0)
     quantidade_maxima: float | None = Field(default=None, ge=0)
+
+    @field_validator("campo_data", mode="before")
+    @classmethod
+    def normalizar_campo_data_ausente(cls, value: object) -> object:
+        """Trata ``null`` produzido pela LLM como o default seguro."""
+
+        if value is None:
+            return TemporalFilterField.DATA_PUBLICACAO
+        return value
 
     @model_validator(mode="after")
     def validar_intervalos(self) -> "QueryFilters":
