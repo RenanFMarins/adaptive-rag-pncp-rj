@@ -89,7 +89,12 @@ class StructuredQueryResponse(BaseModel):
 class AdaptiveAskRequest(BaseModel):
     """Entrada do endpoint principal de roteamento adaptativo."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [{"pergunta": "string", "top_k": 5}],
+        },
+    )
 
     pergunta: str = Field(min_length=1)
     top_k: int = Field(default=5, ge=1, le=100)

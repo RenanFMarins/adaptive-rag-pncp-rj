@@ -207,12 +207,32 @@ def _normalizar_plano_conhecido(
     if isinstance(operations, list):
         operacoes_normalizadas: list[object] = []
         for operacao in operations:
+            # Ordenação e limite já têm campos próprios. Aceitar somente
+            # aliases conhecidos quando o plano traz a informação necessária;
+            # nunca descartar uma operação arbitrária devolvida pelo modelo.
+            if (
+                operacao in ("limit", "top", "top_k")
+                and normalizado.get("route") in {"structured", "hybrid"}
+                and type(normalizado.get("limit")) is int
+                and 1 <= normalizado["limit"] <= 100
+            ):
+                correcoes.append(f"operations.{operacao}_representado_por_limit")
+                continue
             valor = "list" if operacao == "lookup" else operacao
+            if (
+                operacao in ("sort", "order")
+                and normalizado.get("route") in {"structured", "hybrid"}
+                and isinstance(normalizado.get("order_by"), list)
+                and normalizado["order_by"]
+            ):
+                valor = "order_by"
+                correcoes.append(f"operations.{operacao}_para_order_by")
             if valor not in operacoes_normalizadas:
                 operacoes_normalizadas.append(valor)
         if operacoes_normalizadas != operations:
             normalizado["operations"] = operacoes_normalizadas
-            correcoes.append("operations.lookup_para_list")
+            if "lookup" in operations:
+                correcoes.append("operations.lookup_para_list")
 
     # O modelo ocasionalmente preenche group_by/order_by, mas esquece de
     # declarar a operação correspondente. Esses campos são inequívocos e o

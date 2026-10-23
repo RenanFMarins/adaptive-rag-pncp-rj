@@ -81,6 +81,8 @@ Regras:
 - Para consultas individuais, use aggregation_field null, pois não existe operação de agregação.
 - Termos como "maior", "menor", "máximo" e "mínimo" exigem a operação agregada correspondente ou ordenação adequada.
 - Termos como "top", "ranking", "maiores" e "menores" exigem "list" e "order_by"; use limit quando a pergunta indicar uma quantidade.
+- Em operations, nunca use "limit", "top", "top_k", "sort" ou "order": limite pertence ao campo limit; ordenação usa a operação "order_by" e o campo order_by.
+- Para listar N contratos de maior valor global, use operations ["list", "order_by"], order_by [{{"field": "valor_global", "direction": "desc"}}] e limit N; não use MAX para listar registros. Se a pergunta disser "assinados" em um ano, filtre campo_data "data_assinatura" e o intervalo completo desse ano; não substitua a data de assinatura pelo ano do contrato.
 - Quando a pergunta pedir resultados "por" um campo, como "por modalidade" ou "por município", use "group_by" com esse campo e inclua a operação "group_by".
 - Para "qual modalidade/órgão/município possui mais contratações", use operations ["count", "group_by", "order_by"], agrupe pelo campo solicitado, ordene por {{"field": "count", "direction": "desc"}} e use limit 1.
 - Para valores "acima de", "mais de" ou "superior a" X, use filters.valor_minimo=X. Para "abaixo de", "menos de" ou "inferior a" X, use filters.valor_maximo=X. Quando a pergunta disser "valor estimado", use campo_valor="valor_estimado"; caso contrário, use "valor_global". Nunca use filters.valor_estimado.
