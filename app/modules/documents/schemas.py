@@ -18,7 +18,11 @@ class ProcessingTaskRequestCreate(BaseModel):
 class ProcessingTaskResponse(BaseModel):
     """Estado de uma tarefa de processamento documental."""
 
+    # ``id`` é mantido para clientes anteriores. Os campos explícitos abaixo
+    # formam o contrato assíncrono usado por clientes novos.
     id: int
+    task_id: int
+    status_url: str
     catalog_entry_id: int
     status: DocumentProcessingTaskStatus
     tentativas: int

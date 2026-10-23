@@ -29,6 +29,8 @@ def _serializar_tarefa(
 ) -> ProcessingTaskResponse:
     return ProcessingTaskResponse(
         id=tarefa.id,
+        task_id=tarefa.id,
+        status_url=f"/documents/processing-tasks/{tarefa.id}",
         catalog_entry_id=tarefa.catalog_entry_id,
         status=tarefa.status,
         tentativas=tarefa.tentativas,
@@ -48,6 +50,7 @@ def _serializar_tarefa(
 @router.post(
     "/catalog/{catalog_entry_id}/processing-tasks",
     response_model=ProcessingTaskResponse,
+    status_code=status.HTTP_202_ACCEPTED,
     summary="Solicitar processamento assíncrono de documento catalogado",
 )
 def solicitar_processamento(
@@ -75,6 +78,7 @@ def solicitar_processamento(
 @router.post(
     "/processing-tasks/{tarefa_id}/retry",
     response_model=ProcessingTaskResponse,
+    status_code=status.HTTP_202_ACCEPTED,
     summary="Retentar uma tarefa de processamento que falhou",
 )
 def retentar_processamento(
