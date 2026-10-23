@@ -30,6 +30,7 @@ from src.faiss_errors import FAISS_UNAVAILABLE_ERRORS, faiss_public_detail
 from src.query.analyzer import QueryAnalysisError
 from src.query.executor import QueryExecutionError
 from src.query.response_composer import compose_structured_answer
+from src.query.social import responder_interacao_social
 from src.query.structured_tool import StructuredQueryError
 
 
@@ -56,6 +57,10 @@ def ask(
     _user: Annotated[User, Depends(get_current_user)],
 ) -> AdaptiveAskResponse:
     """Executa SQL ou RAG conforme a rota validada pelo Planner."""
+
+    social_answer = responder_interacao_social(request.pergunta)
+    if social_answer is not None:
+        return AdaptiveAskResponse(answer=social_answer)
 
     try:
         result = executar_consulta_adaptativa_api(

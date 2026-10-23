@@ -75,6 +75,21 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertIn("A consulta retornou 1 contrato", response.json()["answer"])
         self.assertEqual(response.json()["external_documents"], [])
 
+    def test_saudacao_retorna_resposta_social_sem_executar_analyzer(self) -> None:
+        with patch(
+            "app.modules.query.routes.executar_consulta_adaptativa_api",
+        ) as execute:
+            response = self.client.post(
+                "/query/ask",
+                json={"pergunta": "Olá, bom dia!"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("assistente PNCP/RJ", response.json()["answer"])
+        self.assertIsNone(response.json()["route"])
+        self.assertIsNone(response.json()["analysis"])
+        execute.assert_not_called()
+
     def test_encaminha_contexto_validado_sem_historico_textual(self) -> None:
         analysis = QueryAnalysis(
             route=QueryRoute.STRUCTURED,
