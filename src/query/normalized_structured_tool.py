@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from app.core.text_normalization import normalizar_para_busca
 
 from .financial_quality import evaluate_financial_quality
+from .coverage import avaliar_cobertura
 from .schemas import (
     QueryAnalysis,
     QueryEntity,
@@ -836,4 +837,5 @@ def executar_consulta_normalizada(
         row_count=len(rows),
         limit_applied=limit,
         warnings=warnings,
+        coverage=avaliar_cobertura(connection, analysis),
     )

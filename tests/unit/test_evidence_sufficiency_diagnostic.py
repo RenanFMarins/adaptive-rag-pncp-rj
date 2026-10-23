@@ -49,13 +49,13 @@ def test_matriz_diagnostica_suficiencia(name, question, content, expected, capsy
 
 
 @pytest.mark.parametrize("rows,row_count", [([{"id": 1}], 1), ([], 0)])
-def test_consulta_estruturada_valida_mesmo_vazia(rows, row_count):
+def test_sql_nao_substitui_evidencia_documental(rows, row_count):
     result = StructuredQueryResult(
         entity=QueryEntity.DOCUMENTO, columns=["id"], rows=rows,
         row_count=row_count, limit_applied=10,
     )
     decision = verificar_suficiencia_evidencias("qual contrato?", [], result)
-    assert decision.status == "sufficient"
+    assert decision.status == "absent"
 
 
 def test_consulta_estruturada_com_resultado_zero_nao_chama_llm(tmp_path: Path):
@@ -68,7 +68,8 @@ def test_consulta_estruturada_com_resultado_zero_nao_chama_llm(tmp_path: Path):
         llm_fn=llm, audit_dir=tmp_path,
     )
     assert resposta.answer != MENSAGEM_SEM_EVIDENCIA
-    llm.assert_called_once()
+    llm.assert_not_called()
+    assert "Cobertura" in resposta.answer
 
 
 def test_regressao_fiscal_administrativo_sem_suporte_bloqueia():

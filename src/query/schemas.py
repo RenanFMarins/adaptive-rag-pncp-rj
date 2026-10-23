@@ -389,6 +389,17 @@ class StructuredWarning(BaseModel):
     affected_rows: int = Field(ge=1)
 
 
+class DataCoverage(BaseModel):
+    """Cobertura efetiva da consulta; não confundir com sucesso da carga."""
+
+    model_config = ConfigDict(extra="forbid")
+    state: str = Field(default="unknown", pattern="^(covered|partial|unavailable|unknown)$")
+    resources: list[dict[str, Any]] = Field(default_factory=list)
+    messages: list[str] = Field(default_factory=lambda: [
+        "Cobertura não comprovada; os resultados se limitam à base disponível e não comprovam inexistência."
+    ])
+
+
 class StructuredQueryResult(BaseModel):
     """Resultado serializável de uma consulta somente-leitura ao SQLite."""
 
@@ -400,6 +411,7 @@ class StructuredQueryResult(BaseModel):
     row_count: int
     limit_applied: int
     warnings: list[StructuredWarning] = Field(default_factory=list)
+    coverage: DataCoverage = Field(default_factory=DataCoverage)
 
 
 class AdaptiveQueryResult(BaseModel):

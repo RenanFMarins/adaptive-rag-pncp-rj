@@ -165,15 +165,16 @@ class GenerateTests(unittest.TestCase):
         resposta = gerar_resposta_rag(
             db=None,
             pergunta="Qual é o valor do contrato?",
-            retrieval_fn=lambda **_kwargs: [],
+            retrieval_fn=lambda **_kwargs: [chunk("c1", "O valor do contrato é R$ 100,00.")],
             llm_fn=lambda prompt: prompts.append(prompt) or "O valor é R$ 100,00.",
             structured_result=dados,
             incluir_prompt=True,
             audit_dir=self.audit_dir,
         )
 
-        self.assertEqual(resposta.answer, "O valor é R$ 100,00.")
-        self.assertEqual(resposta.sources, [])
+        self.assertTrue(resposta.answer.startswith("O valor é R$ 100,00."))
+        self.assertIn("Cobertura não comprovada", resposta.answer)
+        self.assertEqual(len(resposta.sources), 1)
         self.assertEqual(len(prompts), 1)
         self.assertIn("DADOS ESTRUTURADOS", prompts[0])
         self.assertIn("123-2-1/2026", prompts[0])

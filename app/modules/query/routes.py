@@ -30,6 +30,7 @@ from src.faiss_errors import FAISS_UNAVAILABLE_ERRORS, faiss_public_detail
 from src.query.analyzer import QueryAnalysisError
 from src.query.executor import QueryExecutionError
 from src.query.response_composer import compose_structured_answer
+from src.query.coverage import acrescentar_avisos_cobertura
 from src.query.social import responder_interacao_social
 from src.query.structured_tool import StructuredQueryError
 
@@ -129,7 +130,7 @@ def ask(
         analysis=result.analysis,
         plan=result.plan,
         structured_result=structured_result,
-        answer=rag_result.answer,
+        answer=acrescentar_avisos_cobertura(rag_result.answer, structured_result),
         sources=[
             SourceResponse(
                 rank=rank,

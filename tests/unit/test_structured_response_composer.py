@@ -70,9 +70,10 @@ def test_resultado_vazio_e_explicito():
         limit_applied=20,
     )
 
-    assert compose_structured_answer(analysis, result) == (
+    assert compose_structured_answer(analysis, result).startswith(
         "Nenhuma contratação foi encontrada (ano 2024)."
     )
+    assert "não comprovam inexistência" in compose_structured_answer(analysis, result)
 
 
 def test_listagem_resume_sem_afirmar_total_global():

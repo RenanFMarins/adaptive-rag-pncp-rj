@@ -17,6 +17,8 @@ from typing import Callable, Iterable, Iterator, Literal
 import faiss
 import numpy as np
 
+from src.embedding_identity import identidades_embedding_compativeis
+
 from src.faiss_errors import (
     FAISS_UNAVAILABLE_ERRORS,
     FaissIndexCorruptError,
@@ -511,7 +513,9 @@ def validar_indice_faiss(
     ]
     if bloqueantes:
         raise FaissIndexCorruptError()
-    if auditoria.modelo_embedding != modelo_esperado:
+    if not identidades_embedding_compativeis(
+        auditoria.modelo_embedding, modelo_esperado, auditoria.dimensao
+    ):
         raise FaissIndexIncompatibleError()
     if auditoria.dimensao is None or auditoria.dimensao <= 0:
         raise FaissIndexCorruptError()
@@ -533,7 +537,9 @@ def carregar_indice_faiss(
     ]
     if bloqueantes:
         raise FaissIndexCorruptError()
-    if modelo_esperado is not None and auditoria.modelo_embedding != modelo_esperado:
+    if modelo_esperado is not None and not identidades_embedding_compativeis(
+        auditoria.modelo_embedding, modelo_esperado, auditoria.dimensao
+    ):
         raise FaissIndexIncompatibleError()
     if auditoria.dimensao is None or auditoria.dimensao <= 0:
         raise FaissIndexCorruptError()
@@ -890,7 +896,9 @@ def indexar_chunks_incrementalmente(
             recuperacao(checkpoints_recuperados)
         estado, indice = _carregar_estado_escrita(cache_dir)
         if estado is not None:
-            if estado.get("modeloEmbedding") != modelo_embedding:
+            if not identidades_embedding_compativeis(
+                estado.get("modeloEmbedding"), modelo_embedding, indice.index.d
+            ):
                 raise RuntimeError(
                     "O modelo de embedding difere do índice existente "
                     f"({estado.get('modeloEmbedding')!r} != {modelo_embedding!r})."

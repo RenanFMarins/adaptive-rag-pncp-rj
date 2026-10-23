@@ -25,6 +25,7 @@ from src.guardrails import verificar_guardrails_pergunta
 from src.retrieve import RankedChunk, contar_chunks_por_base
 from src.query.base_catalog import resolver_base_ids
 from src.query.schemas import KnowledgeBase, QueryFilters, StructuredQueryResult
+from src.query.coverage import acrescentar_avisos_cobertura
 
 
 MENSAGEM_SEM_EVIDENCIA = (
@@ -121,8 +122,7 @@ def verificar_suficiencia_evidencias(
     structured_result: StructuredQueryResult | None = None,
 ) -> EvidenceSufficiency:
     """Classifica suporte recuperado antes de chamar a LLM."""
-    if structured_result is not None:
-        return EvidenceSufficiency("sufficient", True, "structured_result_present")
+    # A parcela SQL não substitui evidência documental da rota hybrid.
     if not chunks:
         return EvidenceSufficiency("absent", False, "no_documentary_evidence")
 
@@ -426,7 +426,7 @@ def gerar_resposta_rag(
         if not suficiencia.sufficient:
             informar("Evidências insuficientes; geração não será chamada.")
             resposta_insuficiente = RagAnswer(
-                answer=MENSAGEM_SEM_EVIDENCIA,
+                answer=acrescentar_avisos_cobertura(MENSAGEM_SEM_EVIDENCIA, structured_result),
                 sources=chunks,
                 prompt=None if not incluir_prompt else "",
                 trace_id=trace["trace_id"],
@@ -498,6 +498,7 @@ def gerar_resposta_rag(
         trace["generation"]["elapsed_ms"] = int(
             (time.perf_counter() - generation_started) * 1000
         )
+        resposta = acrescentar_avisos_cobertura(resposta, structured_result)
         trace["generation"]["answer"] = resposta
 
         if persistir:

@@ -216,7 +216,8 @@ class AdaptiveQueryRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["route"], "hybrid")
         self.assertEqual(response.json()["structured_result"]["rows"], [{"valor_global": 100.0}])
-        self.assertEqual(response.json()["answer"], rag_result.answer)
+        self.assertTrue(response.json()["answer"].startswith(rag_result.answer))
+        self.assertIn("Cobertura não comprovada", response.json()["answer"])
 
     def test_catalogo_com_processamento_pendente_retorna_202(self) -> None:
         analysis = QueryAnalysis(

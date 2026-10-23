@@ -11,6 +11,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from .schemas import QueryAnalysis, QueryEntity, StructuredQueryResult
+from .coverage import acrescentar_avisos_cobertura
 
 
 _ENTITY_LABELS = {
@@ -291,6 +292,7 @@ def compose_structured_answer(
 
 
 def _append_warnings(answer: str, result: StructuredQueryResult) -> str:
+    answer = acrescentar_avisos_cobertura(answer, result)
     if not result.warnings:
         return answer
     warnings = "\n".join(f"- {warning.message}" for warning in result.warnings)

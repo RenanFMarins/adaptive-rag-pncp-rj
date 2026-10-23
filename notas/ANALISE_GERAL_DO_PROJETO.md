@@ -1,10 +1,88 @@
 # Análise geral do projeto — Contratações Públicas RJ
 
 **Data da análise:** 19/10/2026.  
+**Atualização sobre bases normalizadas e cobertura:** 23/10/2026.
 **Projeto:** Grande Desafio de IA Generativa e RAG — Grupo 03.  
 **Escopo:** estrutura do repositório, código da aplicação, pipelines, contratos de dados, configurações de exemplo, testes e documentação disponível.
 
 Este documento explica o projeto a partir da implementação encontrada. Quando uma capacidade existe apenas nos requisitos ou na arquitetura proposta, isso é indicado explicitamente. A análise é estática: não certifica disponibilidade do PNCP ou da ECOA, qualidade das respostas, cobertura do banco local nem funcionamento completo em execução. Não foram lidos segredos do `.env` nem alterados banco, índices ou dados coletados.
+
+## Atualização de 23/10/2026: base normalizada, release e cobertura
+
+Esta seção atualiza especificamente as informações sobre consultas SQL, seleção de banco e cobertura. As demais seções preservam o diagnóstico original de 19/10/2026; referências históricas à consulta SQL diretamente na RAW ou à limitação da ferramenta a duas entidades não descrevem o fluxo normalizado atual.
+
+### Base oficial e versão distribuída na release
+
+O arquivo `data/normalized/pncp_rj_normalized.db` é a base oficial privada documentada na Fase 3. A release distribui uma **cópia sanitizada derivada dessa base**, com nome diferente; não distribui o arquivo privado original com esse mesmo nome.
+
+| Artefato | Papel | Situação local verificada em 23/10/2026 |
+| --- | --- | --- |
+| `data/normalized/pncp_rj_normalized.db` | Base oficial privada | Não encontrada no workspace |
+| `data/normalized/releases/pncp_rj_normalized_public_20261020.sqlite.gz` | Cópia sanitizada compactada, documentada como anexo da release | Não encontrada; diretório `releases` também ausente |
+| `data/normalized/pncp_rj_local_parcial_20261023.db` | Base parcial gerada a partir da RAW local | Existente e selecionada na configuração local verificada |
+| `app.db` | Banco operacional, documentos e RAW | Não possui o esquema normalizado exigido pelo SQL Tool |
+| `app_normativa.db` | Documentos normativos e estruturas operacionais | Não possui o esquema normalizado exigido pelo SQL Tool |
+
+A publicação documentada está na tag [`base-normalizada-pncp-rj-20261020-v1`](https://github.com/grande-desafio-ia-rag-03/rag-grande-desafio-grupo03-contratacoes-publicas/releases/tag/base-normalizada-pncp-rj-20261020-v1). Segundo o registro local da Fase 5, os anexos são:
+
+- `pncp_rj_normalized_public_20261020.sqlite.gz`;
+- `release_manifest.json`;
+- `SHA256SUMS.txt`.
+
+O pacote documentado tem 504.234.659 bytes e SHA-256 `fa28e5c8e2a15f947e47fc1c66326a842ad095cc39c706dbaab60e9f41f585b7`. O banco descompactado tem SHA-256 `dda99f3218477342e3c034ffa93f78b5c845d03f7ed4e84367cc8bf49279dcfb`. Esses valores identificam a versão sanitizada de 20/10/2026, não o banco privado nem a base parcial local.
+
+A existência da publicação foi obtida da documentação do repositório, sem nova consulta ao GitHub. A ausência do pacote no workspace não significa ausência na release remota. Nenhum download ou troca de base foi realizado nesta atualização.
+
+### Banco selecionado e evidência da conexão
+
+A configuração local verificada é:
+
+```dotenv
+NORMALIZED_DATABASE_URL=sqlite:///./data/normalized/pncp_rj_local_parcial_20261023.db
+```
+
+O serviço abre a conexão por `app/modules/query/services.py::_normalized_connection`, que usa `readonly_sqlite_connection` com `mode=ro` e `PRAGMA query_only=ON`. Essa conexão é entregue a `src/query/normalized_structured_tool.py`; a sessão operacional de `app.db` não é usada como fallback para SQL estruturado.
+
+Uma conexão de diagnóstico aberta pelo mesmo gerenciador, sem sobrescrever a URL, retornou em `PRAGMA database_list`:
+
+```text
+main: F:\ecoa_projetos\rag-grande-desafio-grupo03-contratacoes-publicas\data\normalized\pncp_rj_local_parcial_20261023.db
+```
+
+Na mesma conexão, `PRAGMA query_only` retornou `1`, e o SQL Tool retornou `count=37637`, com `coverage.state=partial`. O usuário também informou esse resultado em `POST /query/structured`. A inspeção do `PRAGMA` foi feita em um processo de diagnóstico: **não constitui inspeção da conexão interna do Uvicorn ativo**. Não se deve apresentar a configuração carregada pelo processo ativo como definitivamente comprovada apenas por essa evidência.
+
+### Validação e limites da base parcial
+
+A base foi gerada separadamente, usando um snapshot consistente criado pela API de backup do SQLite em `data/debug/app_raw_snapshot_20261023.db`.
+
+| Entidade | Registros na normalizada parcial |
+| --- | ---: |
+| Contratações | 37.637 |
+| Contratos | 41.978 |
+| Órgãos | 528 |
+| Unidades | 1.310 |
+| Fornecedores | 12.996 |
+| Itens, resultados por item, atas, PCA, itens de PCA e empenhos | 0 |
+
+A execução `f46c7fce-708c-472e-846c-69b26a232f18` terminou com `SUCCESS`, 79.615 registros RAW examinados, 94.449 entidades normalizadas, zero rejeições e zero problemas registrados. Snapshot e normalizada passaram no `integrity_check`; a normalizada não apresentou violações em `foreign_key_check`. Chaves, relacionamentos, linhagens e seis campos financeiros foram reconciliados com a RAW sem divergências. O relatório local está em `data/normalized/pncp_rj_local_parcial_20261023_validacao.json`.
+
+Existem 24.576 contratos cuja contratação-pai está fora do recorte e dois contratos sem identificador de fornecedor. Essas limitações refletem os dados de origem; sucesso da transformação não equivale a completude da coleta.
+
+### Proteção de cobertura nas respostas
+
+O resultado SQL agora inclui `coverage`, avaliado por `src/query/coverage.py`, com estados `covered`, `partial`, `unavailable` e `unknown`. A avaliação considera os metadados existentes, as contagens disponíveis e dependências entre recursos, especialmente contratos e contratações.
+
+`normalization_coverage.coverage_status=COMPLETE`, isoladamente, não comprova cobertura integral do PNCP. Nesta base, alguns recursos vazios foram marcados como completos em relação ao snapshot. Períodos e contagens de pais esperados/processados não foram preenchidos. Portanto, zero, `SUM=NULL` e listas vazias não podem ser interpretados como inexistência no universo consultado. Resultados positivos também recebem ressalvas quando a cobertura é parcial ou não comprovada.
+
+Os compositores structured e hybrid incluem avisos de cobertura por código. A geração hybrid não pode considerar a simples presença de um resultado SQL como substituto de evidência documental. A validação offline dessa implementação registrou 102 testes e três subtestes aprovados, sem LLM ou embeddings externos. Isso não certifica o fluxo completo com provedores reais.
+
+### Como utilizar outra base
+
+Para consumir a release sanitizada, é necessário obter o pacote, verificar os hashes publicados e descompactá-lo para um arquivo SQLite novo. Antes de selecionar a base, validar integridade, chaves estrangeiras, esquema obrigatório e última execução de `normalization_run` com `SUCCESS`, além do manifesto e dos limites de cobertura. O `.gz` não é aberto diretamente pela conexão SQLite da aplicação.
+
+Depois dessas verificações, `NORMALIZED_DATABASE_URL` deve apontar para o arquivo descompactado. A aplicação seleciona uma normalizada por vez; não combina automaticamente a oficial, a release e a parcial. Renomear a parcial para o nome da oficial não amplia sua cobertura. O reinício precisa considerar que o lifespan padrão também executa inicialização de esquema no banco operacional.
+
+Referências: [base oficial — Fase 3](../docs/FASE_3_BASE_NORMALIZADA_OFICIAL.md), [sanitização — Fase 4](../docs/FASE_4_EXPORTACAO_NORMALIZADA_SANITIZADA.md) e [publicação — Fase 5](../docs/FASE_5_PUBLICACAO_RELEASE_NORMALIZADA.md).
 
 ## 1. O que o projeto faz
 
