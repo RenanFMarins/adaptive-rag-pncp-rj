@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import requests
@@ -11,7 +12,8 @@ from app.streamlit_console import _chamar_api, _mensagem_erro
 
 class StreamlitConsoleTests(unittest.TestCase):
     def test_chat_renderiza_e_administracao_permanece_acessivel(self):
-        app = AppTest.from_file("app/streamlit_console.py", default_timeout=10).run()
+        script = Path(__file__).resolve().parents[2] / "app" / "streamlit_console.py"
+        app = AppTest.from_file(script, default_timeout=10).run()
         self.assertEqual(app.title[0].value, "Assistente PNCP/RJ")
         self.assertEqual(len(app.chat_input), 1)
         self.assertEqual(len(app.exception), 0)

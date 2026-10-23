@@ -20,9 +20,29 @@ python -m streamlit run app/streamlit_console.py
 
 Use `http://127.0.0.1:8000/docs` para criar ou autenticar um usuário. Copie
 somente o valor de `access_token` retornado por `/auth/login` para a barra
-lateral do Streamlit. O token expira conforme `expires_in`.
+lateral do Streamlit ou use o formulário **Entrar com usuário e senha**. O
+token expira conforme `expires_in` e permanece somente na sessão.
 
-## 2. Perguntas estruturadas e agregadas
+## 2. Chat conversacional
+
+O Chat é a experiência principal. Ele possui entrada inferior, mensagens do
+usuário e do assistente, fontes expansíveis, tabelas estruturadas, alertas,
+nova conversa e alternância entre conversas durante a sessão.
+
+Roteiro contextual:
+
+1. Pergunte `Quantos contratos foram assinados em 2025?`.
+2. Em seguida, na mesma conversa, pergunte `E somente os estaduais?`.
+3. Confirme nos detalhes técnicos que o ano 2025 foi preservado e que o filtro
+   `esfera=E` foi acrescentado.
+4. Clique em **Nova conversa** e confirme que o contexto anterior não é
+   reutilizado.
+
+O contexto enviado ao backend contém apenas a última análise validada. O texto
+completo do histórico não é reenviado ao modelo. Acompanhamentos ambíguos pedem
+esclarecimento em vez de inventar filtros.
+
+## 3. Perguntas estruturadas e agregadas
 
 Perguntas sugeridas:
 
@@ -51,7 +71,7 @@ Na pergunta de arroz, a resposta deve informar quantidade normalizada em kg,
 registros incluídos e excluídos. Unidades como `PACOTE`, `FARDO` ou `UNIDADE`
 sem massa explícita não são convertidas por suposição.
 
-## 3. Demonstração normativa isolada
+## 4. Demonstração normativa isolada
 
 O `app.db` oficial não foi alterado. A base abaixo é um artefato local de
 demonstração, ignorado pelo Git:
@@ -81,7 +101,7 @@ A validação recuperou edital, decreto estadual e Lei 14.133, todos com URL de
 origem. Os vetores dos 794 chunks normativos ainda não foram gerados; por isso,
 o recorte normativo desta demonstração depende da recuperação lexical FTS5.
 
-## 4. Limitações que devem ser ditas na apresentação
+## 5. Limitações que devem ser ditas na apresentação
 
 - A cobertura das atas é parcial; `coverage_status` acompanha cada registro.
 - A situação da ata é derivada de cancelamento e vigência no snapshot atual.
@@ -94,8 +114,12 @@ o recorte normativo desta demonstração depende da recuperação lexical FTS5.
   removidos automaticamente.
 - Uma ausência no top-k significa apenas ausência nas evidências recuperadas,
   não prova de inexistência no corpus completo.
+- O histórico de conversas do MVP existe somente durante a sessão do
+  Streamlit; ainda não há persistência entre reinicializações.
+- A continuidade contextual aceita apenas alterações explícitas e seguras de
+  esfera ou ano. Outros acompanhamentos devem repetir a pergunta completa.
 
-## 5. Validação técnica
+## 6. Validação técnica
 
 ```bash
 python -m pytest -q

@@ -140,7 +140,7 @@ def _barra_lateral(url_api: str) -> tuple[str, int, str]:
         st.text_input("URL da API", value=url_api, key="api_url")
 
         with st.expander("Entrar com usuário e senha", expanded=not bool(st.session_state["access_token"])):
-            with st.form("login_form"):
+            with st.form("login_form", clear_on_submit=True):
                 username = st.text_input("Usuário")
                 password = st.text_input("Senha", type="password")
                 login = st.form_submit_button("Entrar", type="primary")
