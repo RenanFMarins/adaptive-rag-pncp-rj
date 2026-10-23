@@ -723,6 +723,30 @@ def _select_clause(
     return selections
 
 
+def _weighted_having_clause(
+    analysis: QueryAnalysis,
+    config: _NormalizedEntitySqlConfig,
+) -> str:
+    """Omite grupos nos quais nenhuma massa possui conversão comprovada."""
+
+    if (
+        StructuredOperation.WEIGHTED_AVG_KG not in analysis.operations
+        or not analysis.group_by
+    ):
+        return ""
+    value = config.weighted_value_cents_expression
+    quantity = config.weighted_quantity_expression
+    unit = config.weighted_unit_expression
+    if not value or not quantity or not unit:
+        return ""
+    factor = f"fator_kg_seguro({unit})"
+    eligible = (
+        f"{factor} IS NOT NULL AND {quantity} IS NOT NULL "
+        f"AND {quantity} > 0 AND {factor} > 0 AND {value} IS NOT NULL"
+    )
+    return f" HAVING SUM(CASE WHEN {eligible} THEN 1 ELSE 0 END) > 0"
+
+
 def _order_clause(
     analysis: QueryAnalysis,
     config: _NormalizedEntitySqlConfig,
@@ -773,6 +797,7 @@ def executar_consulta_normalizada(
         group_sql = " GROUP BY " + ", ".join(
             _field_expression(config, field) for field in analysis.group_by
         )
+    having_sql = _weighted_having_clause(analysis, config)
     limit = analysis.limit or 20
     query = (
         "SELECT "
@@ -781,6 +806,7 @@ def executar_consulta_normalizada(
         + config.from_sql
         + where_sql
         + group_sql
+        + having_sql
         + _order_clause(analysis, config)
         + " LIMIT ?"
     )

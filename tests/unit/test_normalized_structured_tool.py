@@ -470,6 +470,22 @@ class NormalizedStructuredToolTests(unittest.TestCase):
         self.assertEqual(result.rows[0]["total_quantity_kg"], 90)
         self.assertEqual(result.warnings[0].code, "unit_conversion_exclusions")
 
+    def test_media_ponderada_agrupada_omite_grupo_sem_massa_elegivel(self) -> None:
+        result = executar_consulta_normalizada(
+            self.connection,
+            self.analysis(
+                QueryEntity.RESULTADO_ITEM,
+                filters=QueryFilters(ano=2025, objeto="arroz"),
+                operations=[StructuredOperation.WEIGHTED_AVG_KG],
+                aggregation_field=StructuredField.VALOR_HOMOLOGADO,
+                group_by=[StructuredField.UNIDADE_MEDIDA],
+            ),
+        )
+
+        self.assertEqual(result.row_count, 1)
+        self.assertEqual(result.rows[0]["unidade_medida"], "Quilograma")
+        self.assertIsNotNone(result.rows[0]["weighted_avg_valor_homologado_kg"])
+
     def test_lista_ata_vigente_com_adesao_e_proveniencia_de_cobertura(self) -> None:
         result = executar_consulta_normalizada(
             self.connection,

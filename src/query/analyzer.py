@@ -28,6 +28,20 @@ AnalyzerLlmFn = Callable[[str], str]
 _NUMERO_CONTROLE_PNCP_RE = re.compile(r"\b\d{14}-\d-\d{6}/\d{4}\b")
 
 
+def _pede_media_por_quilo(pergunta: str) -> bool:
+    """Reconhece somente pedido explícito de média monetária por massa."""
+
+    texto = pergunta.casefold()
+    pede_media = any(
+        termo in texto for termo in ("média", "media", "médio", "medio")
+    )
+    por_quilo = re.search(
+        r"(?:\bpor\b|/)\s*(?:kg\b|quilo(?:grama)?s?\b)",
+        texto,
+    )
+    return pede_media and por_quilo is not None
+
+
 def _observability_run_id() -> str:
     """Reutiliza a correlação HTTP quando disponível."""
 
@@ -240,6 +254,43 @@ def _normalizar_plano_conhecido(
     ):
         normalizado["operations"] = [*operations, "count"]
         correcoes.append("operations.count_adicionado_por_group_by")
+
+    # "Média por quilo" não é AVG(valor_total): exige dividir a soma dos
+    # valores homologados pela massa total comprovadamente conversível. Como
+    # a intenção é inequívoca, corrigimos aqui a variação recorrente do LLM
+    # e deixamos a SQL Tool aplicar as conversões auditáveis de unidade.
+    if (
+        _pede_media_por_quilo(pergunta)
+        and normalizado.get("entity") == "resultado_item"
+    ):
+        operations = normalizado.get("operations")
+        preserved_operations = []
+        if isinstance(operations, list):
+            preserved_operations = [
+                operation
+                for operation in operations
+                if operation in {"group_by", "order_by"}
+            ]
+        normalizado.update(
+            {
+                "route": "structured",
+                "intent": "aggregate",
+                "entity": "resultado_item",
+                "bases": ["estruturada"],
+                "operations": ["weighted_avg_kg", *preserved_operations],
+                "aggregation_field": "valor_homologado",
+                "semantic_query": None,
+                "needs_document_retrieval": False,
+            }
+        )
+        filtros_media = normalizado.get("filters")
+        if isinstance(filtros_media, dict):
+            filtros_media = dict(filtros_media)
+            # Não filtrar literalmente por "kg": "quilograma" e embalagens
+            # com massa explícita também são elegíveis para conversão.
+            filtros_media["unidade_medida"] = None
+            normalizado["filters"] = filtros_media
+        correcoes.append("aggregation.media_por_kg_ponderada")
 
     filtros = normalizado.get("filters")
     # ``valor_estimado`` é um campo de saída, não um filtro aceito. Para

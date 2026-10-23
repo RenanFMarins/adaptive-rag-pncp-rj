@@ -111,6 +111,54 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.entity, QueryEntity.PCA_ITEM)
         self.assertEqual(analysis.aggregation_field, StructuredField.VALOR_PLANEJADO)
 
+    def test_corrige_media_simples_para_media_ponderada_por_quilo(self):
+        analysis = analisar_pergunta(
+            "Qual foi o valor médio por quilo de arroz por município em 2025?",
+            llm_fn=lambda _prompt: """{
+              "route": "structured",
+              "intent": "aggregate",
+              "entity": "resultado_item",
+              "bases": ["estruturada"],
+              "filters": {
+                "ano": 2025,
+                "objeto": "arroz",
+                "unidade_medida": "kg"
+              },
+              "operations": ["avg", "group_by"],
+              "aggregation_field": "valor_homologado",
+              "group_by": ["municipio"],
+              "order_by": [],
+              "limit": 20,
+              "semantic_query": null,
+              "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(
+            analysis.operations,
+            [StructuredOperation.WEIGHTED_AVG_KG, StructuredOperation.GROUP_BY],
+        )
+        self.assertEqual(analysis.entity, QueryEntity.RESULTADO_ITEM)
+        self.assertEqual(analysis.aggregation_field, StructuredField.VALOR_HOMOLOGADO)
+        self.assertIsNone(analysis.filters.unidade_medida)
+
+    def test_nao_converte_media_planejada_de_pca_em_resultado_homologado(self):
+        analysis = analisar_pergunta(
+            "Qual o valor médio planejado por kg nos itens de PCA de 2025?",
+            llm_fn=lambda _prompt: """{
+              "route": "structured", "intent": "aggregate",
+              "entity": "pca_item", "bases": ["agregada"],
+              "filters": {"ano": 2025, "unidade_medida": "kg"},
+              "operations": ["avg"],
+              "aggregation_field": "valor_unitario",
+              "group_by": [], "order_by": [], "limit": 20,
+              "semantic_query": null, "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(analysis.entity, QueryEntity.PCA_ITEM)
+        self.assertEqual(analysis.operations, [StructuredOperation.AVG])
+
     def test_prompt_diferencia_item_estimado_de_resultado_homologado(self):
         prompt = montar_prompt_analise(
             "Quais resultados homologados de arroz existem em 2025?"
