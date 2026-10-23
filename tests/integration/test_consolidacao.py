@@ -14,6 +14,7 @@ from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
 from src.consolidacao import (BASE, check, consolidate, database_digest, index_audit, migrate,
                               readonly, rows, run, snapshot)
+from src.faiss_errors import FaissIndexCorruptError
 from src.index import carregar_indice_faiss, indexar_chunks_incrementalmente
 from src.query.schemas import KnowledgeBase
 from src.retrieve import retrieve_hibrido
@@ -131,7 +132,7 @@ def test_manifest_corruption_is_rejected(corpus):
     manifest.write_text('{}',encoding="utf-8")
     with closing(readonly(corpus/"source.db")) as src, closing(connect(corpus/"target.db")) as db:
         migrate(src,db)
-        with pytest.raises(RuntimeError,match="Checksum"):
+        with pytest.raises(FaissIndexCorruptError):
             consolidate(corpus/"pncp",corpus/"normative",corpus/"blocked",db)
 
 
@@ -183,7 +184,7 @@ def test_duplicate_ids_rejected(corpus):
     (folder/'chunk_ids.json').write_text(json.dumps(['pncp:1','pncp:1']))
     (folder/'estado_indexacao.json').write_text(json.dumps({'modeloEmbedding':'test','dimensao':2,'totalVetores':2}))
     with closing(connect(corpus/'target.db')) as db:
-        with pytest.raises(RuntimeError,match="duplicados"):
+        with pytest.raises(FaissIndexCorruptError):
             index_audit(folder,db)
 
 

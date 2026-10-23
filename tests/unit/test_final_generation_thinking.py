@@ -64,6 +64,7 @@ class FinalGenerationThinkingTests(unittest.TestCase):
             return httpx.Response(200, json=_response(), request=request)
 
         with patch.object(settings, "generation_disable_thinking", True), \
+                patch.object(settings, "llm_primary_provider", "ecoa"), \
                 patch.object(settings, "analyzer_openai_fallback_enabled", False), \
                 patch.object(llm_ecoa, "client", _client(handler)):
             self.assertEqual(llm_ecoa.gerar_resposta_analyzer("analisar"), "resultado")

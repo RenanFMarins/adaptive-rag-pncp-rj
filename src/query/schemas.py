@@ -47,6 +47,11 @@ class QueryEntity(str, Enum):
 
     CONTRATO = "contrato"
     CONTRATACAO = "contratacao"
+    CONTRATACAO_ITEM = "contratacao_item"
+    RESULTADO_ITEM = "resultado_item"
+    ATA_REGISTRO_PRECO = "ata_registro_preco"
+    PCA = "pca"
+    PCA_ITEM = "pca_item"
     DOCUMENTO = "documento"
 
 
@@ -65,6 +70,7 @@ class StructuredOperation(str, Enum):
     COUNT = "count"
     SUM = "sum"
     AVG = "avg"
+    WEIGHTED_AVG_KG = "weighted_avg_kg"
     MIN = "min"
     MAX = "max"
     GROUP_BY = "group_by"
@@ -76,14 +82,43 @@ class StructuredField(str, Enum):
     """Campos públicos que poderão ser mapeados pela SQL Tool."""
 
     VALOR_GLOBAL = "valor_global"
+    VALOR_INICIAL = "valor_inicial"
+    VALOR_ACUMULADO = "valor_acumulado"
+    VALOR_PARCELA = "valor_parcela"
     VALOR_ESTIMADO = "valor_estimado"
+    VALOR_HOMOLOGADO = "valor_homologado"
+    VALOR_UNITARIO = "valor_unitario"
+    VALOR_TOTAL = "valor_total"
+    VALOR_PLANEJADO = "valor_planejado"
+    QUANTIDADE = "quantidade"
     ANO = "ano"
     DATA_PUBLICACAO = "data_publicacao"
+    DATA_ASSINATURA = "data_assinatura"
+    DATA_RESULTADO = "data_resultado"
+    DATA_DESEJADA = "data_desejada"
+    VIGENCIA_INICIO = "vigencia_inicio"
+    VIGENCIA_FIM = "vigencia_fim"
+    DATA_CANCELAMENTO = "data_cancelamento"
     MUNICIPIO = "municipio"
     ORGAO = "orgao"
+    CNPJ_ORGAO = "cnpj_orgao"
+    ESFERA = "esfera"
+    CODIGO_UNIDADE = "codigo_unidade"
     FORNECEDOR = "fornecedor"
     MODALIDADE = "modalidade"
     OBJETO = "objeto"
+    NUMERO_ITEM = "numero_item"
+    SEQUENCIAL_RESULTADO = "sequencial_resultado"
+    UNIDADE_MEDIDA = "unidade_medida"
+    CATEGORIA = "categoria"
+    SITUACAO = "situacao"
+    BENEFICIO_ME_EPP = "beneficio_me_epp"
+    QUALIDADE_DADO = "qualidade_dado"
+    NUMERO_PARCELAS = "numero_parcelas"
+    POSSIBILIDADE_ADESAO = "possibilidade_adesao"
+    COBERTURA = "cobertura"
+    FORMATO_FONTE = "formato_fonte"
+    NOME_UNIDADE = "nome_unidade"
 
 
 class AggregateSortField(str, Enum):
@@ -97,6 +132,20 @@ class ValueFilterField(str, Enum):
 
     VALOR_GLOBAL = "valor_global"
     VALOR_ESTIMADO = "valor_estimado"
+    VALOR_HOMOLOGADO = "valor_homologado"
+    VALOR_UNITARIO = "valor_unitario"
+    VALOR_TOTAL = "valor_total"
+    VALOR_PLANEJADO = "valor_planejado"
+
+
+class TemporalFilterField(str, Enum):
+    """Semântica explícita do intervalo informado pelo usuário."""
+
+    DATA_PUBLICACAO = "data_publicacao"
+    DATA_ASSINATURA = "data_assinatura"
+    DATA_RESULTADO = "data_resultado"
+    DATA_DESEJADA = "data_desejada"
+    VIGENCIA_FIM = "vigencia_fim"
 
 
 class SortDirection(str, Enum):
@@ -126,17 +175,27 @@ class QueryFilters(BaseModel):
     tipo_entidade: QueryEntity | None = None
     tipo_documento: str | None = None
     orgao: str | None = None
+    cnpj_orgao: str | None = None
+    esfera: str | None = None
+    codigo_unidade: str | None = None
     municipio: str | None = None
     fornecedor: str | None = None
     modalidade: str | None = None
     objeto: str | None = None
+    unidade_medida: str | None = None
+    categoria: str | None = None
+    situacao: str | None = None
+    possibilidade_adesao: bool | None = None
     ano: int | None = Field(default=None, ge=2000, le=2100)
+    campo_data: TemporalFilterField = TemporalFilterField.DATA_PUBLICACAO
     period_start: date | None = None
     period_end: date | None = None
     # Ausente preserva o comportamento histórico: a faixa usa valor global.
     campo_valor: ValueFilterField | None = None
     valor_minimo: float | None = Field(default=None, ge=0)
     valor_maximo: float | None = Field(default=None, ge=0)
+    quantidade_minima: float | None = Field(default=None, ge=0)
+    quantidade_maxima: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validar_intervalos(self) -> "QueryFilters":
@@ -150,6 +209,14 @@ class QueryFilters(BaseModel):
         ):
             raise ValueError(
                 "valor_minimo não pode ser maior que valor_maximo.")
+        if (
+            self.quantidade_minima is not None
+            and self.quantidade_maxima is not None
+            and self.quantidade_minima > self.quantidade_maxima
+        ):
+            raise ValueError(
+                "quantidade_minima não pode ser maior que quantidade_maxima."
+            )
         return self
 
 
@@ -182,6 +249,7 @@ class QueryAnalysis(BaseModel):
             StructuredOperation.AVG,
             StructuredOperation.MIN,
             StructuredOperation.MAX,
+            StructuredOperation.WEIGHTED_AVG_KG,
         }
         if operacoes_agregadas.intersection(self.operations) and not self.aggregation_field:
             raise ValueError(
@@ -198,8 +266,20 @@ class QueryAnalysis(BaseModel):
                 raise ValueError("order_by por count exige a operação count.")
 
         if self.route is QueryRoute.STRUCTURED:
-            if KnowledgeBase.ESTRUTURADA not in self.bases:
-                raise ValueError("A rota structured exige a base estruturada.")
+            structured_base_by_entity = {
+                QueryEntity.CONTRATO: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.CONTRATACAO: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.CONTRATACAO_ITEM: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.RESULTADO_ITEM: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.ATA_REGISTRO_PRECO: KnowledgeBase.CONVERSACIONAL,
+                QueryEntity.PCA: KnowledgeBase.AGREGADA,
+                QueryEntity.PCA_ITEM: KnowledgeBase.AGREGADA,
+            }
+            required_base = structured_base_by_entity.get(self.entity)
+            if required_base is None or required_base not in self.bases:
+                raise ValueError(
+                    "A rota structured exige a base correspondente à entidade."
+                )
             if self.needs_document_retrieval:
                 raise ValueError(
                     "A rota structured não deve solicitar recuperação documental."
@@ -213,8 +293,31 @@ class QueryAnalysis(BaseModel):
                     "A rota rag exige needs_document_retrieval igual a true."
                 )
         elif self.route is QueryRoute.HYBRID:
-            if KnowledgeBase.ESTRUTURADA not in self.bases:
-                raise ValueError("A rota hybrid exige a base estruturada.")
+            hybrid_base_by_entity = {
+                QueryEntity.CONTRATO: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.CONTRATACAO: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.CONTRATACAO_ITEM: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.RESULTADO_ITEM: KnowledgeBase.ESTRUTURADA,
+                QueryEntity.ATA_REGISTRO_PRECO: KnowledgeBase.CONVERSACIONAL,
+                QueryEntity.PCA: KnowledgeBase.AGREGADA,
+                QueryEntity.PCA_ITEM: KnowledgeBase.AGREGADA,
+            }
+            required_base = hybrid_base_by_entity.get(self.entity)
+            # ``documento`` continua válido na rota híbrida por
+            # compatibilidade com planos documentais existentes. Para as
+            # entidades relacionais, entretanto, a base lógica correta é
+            # obrigatória.
+            if required_base is not None and required_base not in self.bases:
+                if self.entity in {
+                    QueryEntity.CONTRATO,
+                    QueryEntity.CONTRATACAO,
+                    QueryEntity.CONTRATACAO_ITEM,
+                    QueryEntity.RESULTADO_ITEM,
+                }:
+                    raise ValueError("A rota hybrid exige a base estruturada.")
+                raise ValueError(
+                    "A rota hybrid exige a base correspondente à entidade."
+                )
             if not self.needs_document_retrieval:
                 raise ValueError(
                     "A rota hybrid exige needs_document_retrieval igual a true."
@@ -267,6 +370,16 @@ class ExecutionPlan(BaseModel):
         return self
 
 
+class StructuredWarning(BaseModel):
+    """Alerta de qualidade que preserva, mas contextualiza, o dado de origem."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+    affected_rows: int = Field(ge=1)
+
+
 class StructuredQueryResult(BaseModel):
     """Resultado serializável de uma consulta somente-leitura ao SQLite."""
 
@@ -277,6 +390,7 @@ class StructuredQueryResult(BaseModel):
     rows: list[dict[str, Any]]
     row_count: int
     limit_applied: int
+    warnings: list[StructuredWarning] = Field(default_factory=list)
 
 
 class AdaptiveQueryResult(BaseModel):

@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
+import hashlib
+import uuid
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Iterable
 
-from sqlalchemy import func, select, update
+from sqlalchemy import and_, func, or_, select, tuple_, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.text_normalization import normalizar_para_busca
 from app.modules.documents.model import (
     Document,
     DocumentCatalogEntry,
+    DocumentCatalogInventory,
+    DocumentCatalogInventoryMember,
+    DocumentCatalogState,
     DocumentChunk,
     DocumentProcessingTask,
     DocumentProcessingTaskStatus,
@@ -182,11 +188,111 @@ def _data_hora(valor: Any) -> datetime | None:
         return None
 
 
+def _agora_utc_sem_fuso() -> datetime:
+    """SQLite persiste os timestamps do catálogo em UTC sem offset."""
+
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _hash_json(valor: Any) -> str:
+    serializado = json.dumps(
+        valor,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    return hashlib.sha256(serializado.encode("utf-8")).hexdigest()
+
+
+def _identidade_inventario(
+    manifestos: list[tuple[str, str, Path]],
+) -> tuple[str, str]:
+    descritores = []
+    for tipo_entidade, periodo_coleta, caminho in sorted(
+        manifestos, key=lambda item: (item[0], item[1], item[2].as_posix())
+    ):
+        if tipo_entidade not in {"contrato", "contratacao"}:
+            raise ValueError(f"Tipo de entidade inválido: {tipo_entidade}")
+        if not caminho.is_file():
+            raise FileNotFoundError(f"Manifesto não encontrado: {caminho}")
+        descritores.append(
+            {
+                "tipoEntidade": tipo_entidade,
+                "periodoColeta": periodo_coleta,
+                "sha256": hashlib.sha256(caminho.read_bytes()).hexdigest(),
+            }
+        )
+    if not descritores:
+        raise ValueError("Informe ao menos um manifesto para reconciliar o catálogo.")
+    digest = _hash_json(descritores)
+    escopo = json.dumps(
+        {
+            "tiposEntidade": sorted({item["tipoEntidade"] for item in descritores}),
+            "periodos": sorted({item["periodoColeta"] for item in descritores}),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return digest, escopo
+
+
+def _valores_catalogo(
+    tipo_entidade: str,
+    periodo_coleta: str,
+    caminho: Path,
+    entidade: dict[str, Any],
+    documento: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "cnpj_orgao": str(
+            documento.get("cnpj") or entidade.get("cnpjOrgao") or ""
+        ) or None,
+        "ano": documento.get("anoCompra") or entidade.get(
+            "anoContrato" if tipo_entidade == "contrato" else "anoCompra"
+        ),
+        "sequencial_entidade": documento.get("sequencialCompra") or entidade.get(
+            "sequencialContrato" if tipo_entidade == "contrato" else "sequencialCompra"
+        ),
+        "tipo_documento": documento.get("tipoDocumentoNome"),
+        "titulo": documento.get("titulo"),
+        "url_download": documento.get("url") or documento.get("uri"),
+        "uri_original": documento.get("uri"),
+        "data_publicacao_pncp": _data_hora(documento.get("dataPublicacaoPncp")),
+        "status_ativo": documento.get("statusAtivo"),
+        "periodo_coleta": periodo_coleta,
+        "manifesto_origem": caminho.as_posix(),
+    }
+
+
+def _fingerprint_catalogo(
+    tipo_entidade: str,
+    controle: str,
+    sequencial_documento: int,
+    valores: dict[str, Any],
+) -> str:
+    return _hash_json(
+        {
+            "tipoEntidade": tipo_entidade,
+            "numeroControlePNCP": controle,
+            "sequencialDocumento": sequencial_documento,
+            **{
+                campo: valor.isoformat() if isinstance(valor, datetime) else valor
+                for campo, valor in valores.items()
+                if campo not in {"periodo_coleta", "manifesto_origem"}
+            },
+        }
+    )
+
+
 def persistir_catalogo_documentos_pncp(
     db: Session,
     manifestos: Iterable[tuple[str, str, Path]],
-    tamanho_commit: int = 1_000,
-) -> dict[str, int]:
+    tamanho_commit: int = 2_000,
+    *,
+    authoritative_full_snapshot: bool = False,
+) -> dict[str, int | str]:
     """Persiste manifestos originais do PNCP como catálogo, sem baixar nada.
 
     Cada tupla é ``(tipo_entidade, periodo_coleta, caminho_manifesto)``. A
@@ -195,102 +301,259 @@ def persistir_catalogo_documentos_pncp(
     nenhum arquivo é consultado na rede.
     """
 
-    if tamanho_commit <= 0:
-        raise ValueError("tamanho_commit deve ser maior que zero.")
+    if tamanho_commit <= 0 or tamanho_commit > 10_000:
+        raise ValueError("tamanho_commit deve estar entre 1 e 10000.")
 
-    existentes = {
-        (
-            item.tipo_entidade,
-            item.numero_controle_pncp,
-            item.sequencial_documento,
-        ): item
-        for item in db.scalars(select(DocumentCatalogEntry)).all()
-    }
+    manifestos = list(manifestos)
+    inventory_id, scope = _identidade_inventario(manifestos)
+    agora = _agora_utc_sem_fuso()
+    inventario = db.get(DocumentCatalogInventory, inventory_id)
+    if inventario is None:
+        inventario = DocumentCatalogInventory(
+            id=inventory_id,
+            manifest_set_hash=inventory_id,
+            scope=scope,
+            authoritative_full_snapshot=authoritative_full_snapshot,
+            status="RUNNING",
+            manifest_count=len(manifestos),
+            last_reconciled_at=agora,
+        )
+        db.add(inventario)
+    else:
+        inventario.scope = scope
+        inventario.authoritative_full_snapshot = (
+            inventario.authoritative_full_snapshot or authoritative_full_snapshot
+        )
+        inventario.status = "RUNNING"
+        inventario.error_code = None
+        inventario.last_reconciled_at = agora
+    db.commit()
+
+    # Uma interrupção nunca invalida os lotes já confirmados. Ao retomar o
+    # mesmo inventário, ignoramos suas chaves antes de carregar objetos ORM e
+    # seguimos exatamente do primeiro membro ainda ausente.
+    chaves_processadas = set(
+        db.execute(
+            select(
+                DocumentCatalogEntry.tipo_entidade,
+                DocumentCatalogEntry.numero_controle_pncp,
+                DocumentCatalogEntry.sequencial_documento,
+            )
+            .join(
+                DocumentCatalogInventoryMember,
+                DocumentCatalogInventoryMember.catalog_entry_id
+                == DocumentCatalogEntry.id,
+            )
+            .join(
+                DocumentCatalogState,
+                DocumentCatalogState.catalog_entry_id == DocumentCatalogEntry.id,
+            )
+            .where(
+                DocumentCatalogInventoryMember.inventory_id == inventory_id,
+                DocumentCatalogState.last_inventory_id == inventory_id,
+                DocumentCatalogState.availability_status == "AVAILABLE",
+            )
+        ).all()
+    )
+
     resumo = {
+        "inventoryId": inventory_id,
         "manifestosLidos": 0,
         "entidadesLidas": 0,
         "documentosLidos": 0,
         "catalogados": 0,
         "atualizados": 0,
+        "inalterados": 0,
+        "metadadosAlterados": 0,
+        "reativados": 0,
+        "ausentes": 0,
         "ignoradosInvalidos": 0,
     }
-    pendentes_commit = 0
+    lote: list[tuple[str, str, int, dict[str, Any], str]] = []
 
-    for tipo_entidade, periodo_coleta, caminho in manifestos:
-        if tipo_entidade not in {"contrato", "contratacao"}:
-            raise ValueError(f"Tipo de entidade inválido: {tipo_entidade}")
-        if not caminho.is_file():
-            raise FileNotFoundError(f"Manifesto não encontrado: {caminho}")
-        try:
-            entidades = json.loads(caminho.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"Manifesto JSON inválido: {caminho}") from exc
-        if not isinstance(entidades, list):
-            raise ValueError(f"Manifesto deve conter uma lista: {caminho}")
+    def persistir_lote() -> None:
+        if not lote:
+            return
+        chaves = {(tipo, controle, sequencial) for tipo, controle, sequencial, _, _ in lote}
+        existentes = {
+            (item.tipo_entidade, item.numero_controle_pncp, item.sequencial_documento): item
+            for item in db.scalars(
+                select(DocumentCatalogEntry).where(
+                    tuple_(
+                        DocumentCatalogEntry.tipo_entidade,
+                        DocumentCatalogEntry.numero_controle_pncp,
+                        DocumentCatalogEntry.sequencial_documento,
+                    ).in_(chaves)
+                )
+            ).all()
+        }
+        itens: list[tuple[DocumentCatalogEntry, str]] = []
+        for tipo, controle, sequencial, valores, fingerprint in lote:
+            chave = (tipo, controle, sequencial)
+            item = existentes.get(chave)
+            if item is None:
+                item = DocumentCatalogEntry(
+                    tipo_entidade=tipo,
+                    numero_controle_pncp=controle,
+                    sequencial_documento=sequencial,
+                    **valores,
+                )
+                db.add(item)
+                existentes[chave] = item
+                resumo["catalogados"] += 1
+            else:
+                alterado = any(getattr(item, campo) != valor for campo, valor in valores.items())
+                for campo, valor in valores.items():
+                    setattr(item, campo, valor)
+                resumo["atualizados" if alterado else "inalterados"] += 1
+            itens.append((item, fingerprint))
+        db.flush()
 
-        resumo["manifestosLidos"] += 1
-        for entidade in entidades:
-            if not isinstance(entidade, dict):
-                resumo["ignoradosInvalidos"] += 1
-                continue
-            resumo["entidadesLidas"] += 1
-            controle = entidade.get("numeroControlePNCP")
-            documentos = entidade.get("documentos") or []
-            if not isinstance(controle, str) or not controle or not isinstance(documentos, list):
-                resumo["ignoradosInvalidos"] += 1
-                continue
-
-            for documento in documentos:
-                if not isinstance(documento, dict):
-                    resumo["ignoradosInvalidos"] += 1
-                    continue
-                sequencial_documento = documento.get("sequencialDocumento")
-                if not isinstance(sequencial_documento, int):
-                    resumo["ignoradosInvalidos"] += 1
-                    continue
-                resumo["documentosLidos"] += 1
-                chave = (tipo_entidade, controle, sequencial_documento)
-                item = existentes.get(chave)
-                valores = {
-                    "cnpj_orgao": str(
-                        documento.get("cnpj") or entidade.get("cnpjOrgao") or ""
-                    ) or None,
-                    "ano": documento.get("anoCompra") or entidade.get(
-                        "anoContrato" if tipo_entidade == "contrato" else "anoCompra"
-                    ),
-                    "sequencial_entidade": documento.get("sequencialCompra") or entidade.get(
-                        "sequencialContrato" if tipo_entidade == "contrato" else "sequencialCompra"
-                    ),
-                    "tipo_documento": documento.get("tipoDocumentoNome"),
-                    "titulo": documento.get("titulo"),
-                    "url_download": documento.get("url") or documento.get("uri"),
-                    "uri_original": documento.get("uri"),
-                    "data_publicacao_pncp": _data_hora(documento.get("dataPublicacaoPncp")),
-                    "status_ativo": documento.get("statusAtivo"),
-                    "periodo_coleta": periodo_coleta,
-                    "manifesto_origem": caminho.as_posix(),
-                }
-                if item is None:
-                    item = DocumentCatalogEntry(
-                        tipo_entidade=tipo_entidade,
-                        numero_controle_pncp=controle,
-                        sequencial_documento=sequencial_documento,
-                        **valores,
+        ids = [item.id for item, _ in itens]
+        estados = {
+            estado.catalog_entry_id: estado
+            for estado in db.scalars(
+                select(DocumentCatalogState).where(
+                    DocumentCatalogState.catalog_entry_id.in_(ids)
+                )
+            ).all()
+        }
+        membros_existentes = set(
+            db.scalars(
+                select(DocumentCatalogInventoryMember.catalog_entry_id).where(
+                    DocumentCatalogInventoryMember.inventory_id == inventory_id,
+                    DocumentCatalogInventoryMember.catalog_entry_id.in_(ids),
+                )
+            ).all()
+        )
+        for item, fingerprint in itens:
+            estado = estados.get(item.id)
+            if estado is None:
+                db.add(
+                    DocumentCatalogState(
+                        catalog_entry_id=item.id,
+                        availability_status="AVAILABLE",
+                        current_fingerprint=fingerprint,
+                        first_seen_at=agora,
+                        last_seen_at=agora,
+                        missing_since=None,
+                        last_inventory_id=inventory_id,
                     )
-                    db.add(item)
-                    existentes[chave] = item
-                    resumo["catalogados"] += 1
-                else:
-                    for campo, valor in valores.items():
-                        setattr(item, campo, valor)
-                    resumo["atualizados"] += 1
-                pendentes_commit += 1
-                if pendentes_commit >= tamanho_commit:
-                    db.commit()
-                    pendentes_commit = 0
+                )
+            else:
+                if estado.current_fingerprint != fingerprint:
+                    resumo["metadadosAlterados"] += 1
+                if estado.availability_status == "REMOVED":
+                    resumo["reativados"] += 1
+                estado.availability_status = "AVAILABLE"
+                estado.current_fingerprint = fingerprint
+                estado.last_seen_at = agora
+                estado.missing_since = None
+                estado.last_inventory_id = inventory_id
+            if item.id not in membros_existentes:
+                db.add(
+                    DocumentCatalogInventoryMember(
+                        inventory_id=inventory_id,
+                        catalog_entry_id=item.id,
+                        metadata_fingerprint=fingerprint,
+                        observed_at=agora,
+                    )
+                )
+        db.commit()
+        chaves_processadas.update(
+            (item.tipo_entidade, item.numero_controle_pncp, item.sequencial_documento)
+            for item, _ in itens
+        )
+        lote.clear()
 
-    db.commit()
-    return resumo
+    try:
+        for tipo_entidade, periodo_coleta, caminho in manifestos:
+            try:
+                entidades = json.loads(caminho.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Manifesto JSON inválido: {caminho}") from exc
+            if not isinstance(entidades, list):
+                raise ValueError(f"Manifesto deve conter uma lista: {caminho}")
+
+            resumo["manifestosLidos"] += 1
+            for entidade in entidades:
+                if not isinstance(entidade, dict):
+                    resumo["ignoradosInvalidos"] += 1
+                    continue
+                resumo["entidadesLidas"] += 1
+                controle = entidade.get("numeroControlePNCP")
+                documentos = entidade.get("documentos") or []
+                if not isinstance(controle, str) or not controle or not isinstance(documentos, list):
+                    resumo["ignoradosInvalidos"] += 1
+                    continue
+
+                for documento in documentos:
+                    if not isinstance(documento, dict):
+                        resumo["ignoradosInvalidos"] += 1
+                        continue
+                    sequencial_documento = documento.get("sequencialDocumento")
+                    if not isinstance(sequencial_documento, int):
+                        resumo["ignoradosInvalidos"] += 1
+                        continue
+                    resumo["documentosLidos"] += 1
+                    chave = (
+                        tipo_entidade,
+                        controle,
+                        sequencial_documento,
+                    )
+                    if chave in chaves_processadas:
+                        resumo["inalterados"] += 1
+                        continue
+                    valores = _valores_catalogo(
+                        tipo_entidade, periodo_coleta, caminho, entidade, documento
+                    )
+                    fingerprint = _fingerprint_catalogo(
+                        tipo_entidade, controle, sequencial_documento, valores
+                    )
+                    lote.append(
+                        (
+                            tipo_entidade,
+                            controle,
+                            sequencial_documento,
+                            valores,
+                            fingerprint,
+                        )
+                    )
+                    if len(lote) >= tamanho_commit:
+                        persistir_lote()
+        persistir_lote()
+
+        if authoritative_full_snapshot:
+            ausentes = db.execute(
+                update(DocumentCatalogState)
+                .where(
+                    DocumentCatalogState.last_inventory_id != inventory_id,
+                    DocumentCatalogState.availability_status == "AVAILABLE",
+                )
+                .values(availability_status="REMOVED", missing_since=agora)
+            )
+            resumo["ausentes"] = int(ausentes.rowcount or 0)
+
+        inventario = db.get(DocumentCatalogInventory, inventory_id)
+        assert inventario is not None
+        inventario.status = "COMPLETED"
+        inventario.documents_seen = int(resumo["documentosLidos"])
+        inventario.documents_cataloged = int(resumo["documentosLidos"])
+        inventario.documents_updated = int(resumo["atualizados"])
+        inventario.documents_missing = int(resumo["ausentes"])
+        inventario.completed_at = _agora_utc_sem_fuso()
+        inventario.error_code = None
+        db.commit()
+        return resumo
+    except Exception as exc:
+        db.rollback()
+        inventario = db.get(DocumentCatalogInventory, inventory_id)
+        if inventario is not None:
+            inventario.status = "FAILED"
+            inventario.error_code = type(exc).__name__[:128]
+            inventario.completed_at = _agora_utc_sem_fuso()
+            db.commit()
+        raise
 
 
 def _url_canonica_pncp_catalogo(item: DocumentCatalogEntry) -> str | None:
@@ -332,7 +595,12 @@ def _status_processamento_catalogo(
         )
         .select_from(Document)
         .outerjoin(DocumentChunk, DocumentChunk.document_id == Document.id)
-        .where(Document.source_file.like(f"%{sufixo_origem}"))
+        .where(
+            or_(
+                Document.source_file.like(f"%{sufixo_origem}"),
+                Document.source_file.like(f"%{sufixo_origem}|%"),
+            )
+        )
     ).one()
     documento_persistido = bool(documentos)
     chunks_persistidos = int(chunks or 0)
@@ -352,6 +620,7 @@ def serializar_catalogo_documento(
 ) -> dict[str, Any]:
     """Formato público do catálogo usado pelo endpoint e pelo fallback RAG."""
 
+    estado = item.catalog_state
     return {
         "id": item.id,
         "tipoEntidade": item.tipo_entidade,
@@ -371,6 +640,21 @@ def serializar_catalogo_documento(
         ),
         "statusAtivo": item.status_ativo,
         "periodoColeta": item.periodo_coleta,
+        "availabilityStatus": (
+            estado.availability_status if estado is not None else "UNKNOWN"
+        ),
+        "firstSeenAt": (
+            estado.first_seen_at.isoformat() if estado is not None else None
+        ),
+        "lastSeenAt": (
+            estado.last_seen_at.isoformat() if estado is not None else None
+        ),
+        "missingSince": (
+            estado.missing_since.isoformat()
+            if estado is not None and estado.missing_since is not None
+            else None
+        ),
+        "inventoryId": estado.last_inventory_id if estado is not None else None,
         "statusProcessamento": status_processamento,
         "documentoPersistido": documento_persistido,
         "chunksPersistidos": chunks_persistidos,
@@ -470,7 +754,23 @@ def solicitar_processamento_catalogo(
         motivo=motivo.strip()[:200] if motivo.strip() else None,
     )
     db.add(tarefa)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # A restrição parcial resolve a corrida entre duas requisições que
+        # tentem criar simultaneamente a tarefa do mesmo documento.
+        db.rollback()
+        concorrente = db.scalar(
+            select(DocumentProcessingTask)
+            .where(
+                DocumentProcessingTask.catalog_entry_id == catalog_entry_id,
+                DocumentProcessingTask.status.in_(_STATUS_TAREFA_ATIVA),
+            )
+            .order_by(DocumentProcessingTask.id.desc())
+        )
+        if concorrente is None:
+            raise
+        return concorrente, False
     db.refresh(tarefa)
     return tarefa, True
 
@@ -505,6 +805,12 @@ def retentar_tarefa_processamento(
         raise ValueError("Somente tarefas com erro podem ser retentadas.")
     tarefa.status = DocumentProcessingTaskStatus.PENDENTE.value
     tarefa.erro = None
+    tarefa.error_code = None
+    tarefa.lease_owner = None
+    tarefa.lease_token = None
+    tarefa.lease_expires_at = None
+    tarefa.iniciado_em = None
+    tarefa.concluido_em = None
     db.commit()
     db.refresh(tarefa)
     return tarefa
@@ -512,6 +818,10 @@ def retentar_tarefa_processamento(
 
 def reservar_proxima_tarefa_processamento(
     db: Session,
+    *,
+    worker_id: str = "document-worker",
+    lease_seconds: int = 900,
+    now: datetime | None = None,
 ) -> DocumentProcessingTask | None:
     """Reserva uma tarefa pendente de modo seguro para um worker local.
 
@@ -520,25 +830,45 @@ def reservar_proxima_tarefa_processamento(
     regra continua válida se o processo for iniciado duas vezes por engano.
     """
 
+    if lease_seconds <= 0:
+        raise ValueError("lease_seconds deve ser maior que zero.")
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    expiracao = instante + timedelta(seconds=lease_seconds)
+    recuperavel = or_(
+        DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value,
+        and_(
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_expires_at.is_not(None),
+            DocumentProcessingTask.lease_expires_at <= instante,
+        ),
+    )
     candidata = db.scalar(
         select(DocumentProcessingTask)
-        .where(DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value)
+        .where(recuperavel)
         .order_by(DocumentProcessingTask.id.asc())
         .limit(1)
     )
     if candidata is None:
         return None
 
+    token = str(uuid.uuid4())
     reservado = db.execute(
         update(DocumentProcessingTask)
         .where(
             DocumentProcessingTask.id == candidata.id,
-            DocumentProcessingTask.status == DocumentProcessingTaskStatus.PENDENTE.value,
+            recuperavel,
         )
         .values(
             status=DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
             tentativas=DocumentProcessingTask.tentativas + 1,
             erro=None,
+            error_code=None,
+            lease_owner=worker_id.strip()[:200] or "document-worker",
+            lease_token=token,
+            lease_expires_at=expiracao,
+            iniciado_em=instante,
+            concluido_em=None,
         )
     )
     if reservado.rowcount != 1:
@@ -548,39 +878,115 @@ def reservar_proxima_tarefa_processamento(
     return db.get(DocumentProcessingTask, candidata.id)
 
 
+def renovar_lease_tarefa_processamento(
+    db: Session,
+    tarefa_id: int,
+    lease_token: str,
+    *,
+    lease_seconds: int = 900,
+    now: datetime | None = None,
+) -> DocumentProcessingTask:
+    """Renova somente o lease que ainda pertence ao worker solicitante."""
+
+    if lease_seconds <= 0:
+        raise ValueError("lease_seconds deve ser maior que zero.")
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    renovado = db.execute(
+        update(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.id == tarefa_id,
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_token == lease_token,
+            DocumentProcessingTask.lease_expires_at > instante,
+        )
+        .values(lease_expires_at=instante + timedelta(seconds=lease_seconds))
+    )
+    if renovado.rowcount != 1:
+        db.rollback()
+        raise ValueError("Lease ausente, expirado ou pertencente a outro worker.")
+    db.commit()
+    return db.get(DocumentProcessingTask, tarefa_id)
+
+
 def concluir_tarefa_processamento(
     db: Session,
     tarefa_id: int,
+    lease_token: str,
+    *,
+    now: datetime | None = None,
 ) -> DocumentProcessingTask:
     """Marca como concluída somente uma tarefa que estava em execução."""
 
-    tarefa = db.get(DocumentProcessingTask, tarefa_id)
-    if tarefa is None:
-        raise ValueError("Tarefa de processamento não encontrada.")
-    if tarefa.status != DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value:
-        raise ValueError("A tarefa não está em processamento.")
-    tarefa.status = DocumentProcessingTaskStatus.CONCLUIDO.value
-    tarefa.erro = None
+    instante = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+    concluida = db.execute(
+        update(DocumentProcessingTask)
+        .where(
+            DocumentProcessingTask.id == tarefa_id,
+            DocumentProcessingTask.status
+            == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+            DocumentProcessingTask.lease_token == lease_token,
+            DocumentProcessingTask.lease_expires_at > instante,
+        )
+        .values(
+            status=DocumentProcessingTaskStatus.CONCLUIDO.value,
+            erro=None,
+            error_code=None,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            concluido_em=instante,
+        )
+    )
+    if concluida.rowcount != 1:
+        db.rollback()
+        raise ValueError("A tarefa perdeu o lease e não pode ser concluída.")
     db.commit()
-    db.refresh(tarefa)
-    return tarefa
+    return db.get(DocumentProcessingTask, tarefa_id)
 
 
 def falhar_tarefa_processamento(
     db: Session,
     tarefa_id: int,
-    erro: str,
+    error_code: str,
+    lease_token: str | None = None,
 ) -> DocumentProcessingTask:
-    """Registra falha explicável sem deixar uma tarefa presa em execução."""
+    """Registra somente um código seguro, nunca a mensagem bruta da exceção."""
 
-    tarefa = db.get(DocumentProcessingTask, tarefa_id)
-    if tarefa is None:
-        raise ValueError("Tarefa de processamento não encontrada.")
-    tarefa.status = DocumentProcessingTaskStatus.ERRO.value
-    tarefa.erro = erro.strip()[:2_000] or "falha_desconhecida"
+    codigo = error_code.strip().casefold()
+    if not codigo or len(codigo) > 100 or any(
+        caractere not in "abcdefghijklmnopqrstuvwxyz0123456789_" for caractere in codigo
+    ):
+        codigo = "processing_failed"
+    instante = datetime.now(timezone.utc).replace(tzinfo=None)
+    criterios = [DocumentProcessingTask.id == tarefa_id]
+    if lease_token is not None:
+        criterios.extend(
+            [
+                DocumentProcessingTask.status
+                == DocumentProcessingTaskStatus.EM_PROCESSAMENTO.value,
+                DocumentProcessingTask.lease_token == lease_token,
+                DocumentProcessingTask.lease_expires_at > instante,
+            ]
+        )
+    falhou = db.execute(
+        update(DocumentProcessingTask)
+        .where(*criterios)
+        .values(
+            status=DocumentProcessingTaskStatus.ERRO.value,
+            erro=None,
+            error_code=codigo,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            concluido_em=instante,
+        )
+    )
+    if falhou.rowcount != 1:
+        db.rollback()
+        raise ValueError("A tarefa perdeu o lease e não pode ser alterada.")
     db.commit()
-    db.refresh(tarefa)
-    return tarefa
+    return db.get(DocumentProcessingTask, tarefa_id)
 
 
 def persistir_chunks_jsonl_normativos(

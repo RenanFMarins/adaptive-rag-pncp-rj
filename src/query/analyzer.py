@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 from pydantic import ValidationError
 
-from app.core.logging import novo_run_id, perf_stage, registrar
+from app.core.logging import current_perf_run_id, novo_run_id, perf_stage, registrar
 from app.core.llm_http_observability import llm_http_operation
 from llm_ecoa import gerar_resposta_analyzer
 from src.query.prompts import montar_prompt_analise
@@ -26,6 +26,12 @@ AnalyzerLlmFn = Callable[[str], str]
 
 
 _NUMERO_CONTROLE_PNCP_RE = re.compile(r"\b\d{14}-\d-\d{6}/\d{4}\b")
+
+
+def _observability_run_id() -> str:
+    """Reutiliza a correlação HTTP quando disponível."""
+
+    return current_perf_run_id() or novo_run_id()
 
 
 def _analisar_pergunta_catalogo(pergunta: str) -> QueryAnalysis | None:
@@ -113,17 +119,20 @@ def _registrar_falha_validacao(
     resposta_llm: str,
     erros_validacao: list[dict[str, str]],
 ) -> None:
-    """Registra evidência local para depuração sem interromper a API."""
+    """Registra somente metadados da falha, sem pergunta ou saída da LLM."""
 
     try:
         registrar(
-            novo_run_id(),
+            _observability_run_id(),
             "query_analyzer",
             status="erro",
-            entrada={"pergunta": pergunta},
-            saida="Plano da LLM não passou na validação QueryAnalysis.",
-            respostaLlm=resposta_llm[:4000],
-            errosValidacao=erros_validacao,
+            question_length=len(pergunta),
+            llm_output_length=len(resposta_llm),
+            validation_error_count=len(erros_validacao),
+            validation_error_fields=[
+                f"{erro['campo']}:{erro['tipo']}" for erro in erros_validacao
+            ],
+            error_code="query_analysis_validation_failed",
         )
     except Exception:
         # Falha de observabilidade nunca deve ocultar a causa original do
@@ -132,9 +141,32 @@ def _registrar_falha_validacao(
 
 
 def _entidade_explicita_na_pergunta(pergunta: str) -> str | None:
-    """Reconhece apenas as duas entidades estruturadas em texto inequívoco."""
+    """Reconhece entidades estruturadas somente em texto inequívoco."""
 
     texto = pergunta.casefold()
+    if any(termo in texto for termo in (
+        "item do pca", "itens do pca", "item de pca", "itens de pca",
+        "item do plano de contratações", "itens do plano de contratações",
+    )):
+        return "pca_item"
+    if "plano de contratações anual" in texto or re.search(r"\bpcas?\b", texto):
+        return "pca"
+    if any(termo in texto for termo in (
+        "ata de registro de preço", "ata de registro de preços",
+        "atas de registro de preço", "atas de registro de preços",
+    )) or re.search(r"\barp\b", texto):
+        return "ata_registro_preco"
+    if any(termo in texto for termo in (
+        "resultado homologado", "resultados homologados",
+        "resultado do item", "resultados dos itens",
+    )):
+        return "resultado_item"
+    if any(termo in texto for termo in (
+        "item da contratação", "itens da contratação",
+        "item de contratação", "itens de contratação",
+        "item licitado", "itens licitados",
+    )):
+        return "contratacao_item"
     if "contratação" in texto or "contratacao" in texto:
         return "contratacao"
     if "contrato" in texto:
@@ -197,7 +229,7 @@ def _normalizar_plano_conhecido(
     # na Structured Tool. Quando o plano estruturado já escolheu group_by,
     # ``count`` é a agregação mínima e determinística para completar o plano.
     operations = normalizado.get("operations")
-    aggregate_operations = {"count", "sum", "avg", "min", "max"}
+    aggregate_operations = {"count", "sum", "avg", "weighted_avg_kg", "min", "max"}
     if (
         normalizado.get("route") in {"structured", "hybrid"}
         and isinstance(normalizado.get("group_by"), list)
@@ -265,14 +297,43 @@ def _normalizar_plano_conhecido(
     aggregation_field = normalizado.get("aggregation_field")
     campos_estruturados = {
         "valor_global",
+        "valor_inicial",
+        "valor_acumulado",
+        "valor_parcela",
         "valor_estimado",
+        "valor_homologado",
+        "valor_unitario",
+        "valor_total",
+        "valor_planejado",
+        "quantidade",
         "ano",
         "data_publicacao",
+        "data_assinatura",
+        "data_resultado",
+        "data_desejada",
+        "vigencia_inicio",
+        "vigencia_fim",
+        "data_cancelamento",
         "municipio",
         "orgao",
+        "cnpj_orgao",
+        "esfera",
+        "codigo_unidade",
         "fornecedor",
         "modalidade",
         "objeto",
+        "numero_item",
+        "sequencial_resultado",
+        "unidade_medida",
+        "categoria",
+        "situacao",
+        "beneficio_me_epp",
+        "qualidade_dado",
+        "numero_parcelas",
+        "possibilidade_adesao",
+        "cobertura",
+        "formato_fonte",
+        "nome_unidade",
     }
     pede_dado_estruturado = (
         isinstance(aggregation_field, str)
@@ -312,7 +373,7 @@ def _normalizar_plano_conhecido(
         and all(
             isinstance(operacao, str)
             and operacao in {
-                "count", "sum", "avg", "min", "max", "group_by",
+                "count", "sum", "avg", "weighted_avg_kg", "min", "max", "group_by",
                 "order_by", "list",
             }
             for operacao in normalizado["operations"]
@@ -359,18 +420,17 @@ def _registrar_normalizacao(
     resposta_llm: str,
     correcoes: list[str],
 ) -> None:
-    """Mantém visível quando uma normalização determinística foi aplicada."""
+    """Registra a normalização sem pergunta ou saída bruta da LLM."""
 
     if not correcoes:
         return
     try:
         registrar(
-            novo_run_id(),
+            _observability_run_id(),
             "query_analyzer",
             status="ajustado",
-            entrada={"pergunta": pergunta},
-            saida="Plano da LLM normalizado antes da validação.",
-            respostaLlm=resposta_llm[:4000],
+            question_length=len(pergunta),
+            llm_output_length=len(resposta_llm),
             correcoes=correcoes,
         )
     except Exception:
@@ -472,3 +532,66 @@ def analisar_pergunta_estruturada(
         llm_fn=llm_fn,
         rota_obrigatoria=QueryRoute.STRUCTURED,
     )
+
+
+_FOLLOW_UP_RE = re.compile(
+    r"^\s*(?:e\b|agora\b|somente\b|apenas\b|desses?\b|dessas?\b)",
+    re.IGNORECASE,
+)
+
+
+def _atualizacoes_contextuais_explicitas(pergunta: str) -> dict[str, object]:
+    """Extrai apenas mudanças inequívocas aceitas no MVP conversacional."""
+
+    texto = pergunta.casefold()
+    updates: dict[str, object] = {}
+    if re.search(r"\b(?:estadual|estaduais)\b", texto):
+        updates["esfera"] = "E"
+    elif re.search(r"\b(?:municipal|municipais)\b", texto):
+        updates["esfera"] = "M"
+    elif re.search(r"\b(?:federal|federais)\b", texto):
+        updates["esfera"] = "F"
+
+    years = re.findall(r"\b(20\d{2})\b", texto)
+    if len(set(years)) == 1:
+        updates["ano"] = int(years[0])
+    return updates
+
+
+def analisar_pergunta_com_contexto(
+    pergunta: str,
+    contexto: QueryAnalysis,
+    llm_fn: AnalyzerLlmFn = gerar_resposta_analyzer,
+) -> QueryAnalysis:
+    """Aplica um acompanhamento seguro ou analisa uma nova pergunta.
+
+    A função nunca concatena o histórico ao prompt. Apenas um plano Pydantic
+    previamente validado pode ser reutilizado, e somente filtros expressos de
+    forma inequívoca são substituídos.
+    """
+
+    clean = pergunta.strip()
+    if not clean:
+        raise QueryAnalysisError("A pergunta não pode estar vazia.")
+
+    explicit_entity = _entidade_explicita_na_pergunta(clean)
+    is_follow_up = bool(_FOLLOW_UP_RE.search(clean))
+    if not is_follow_up or (
+        explicit_entity is not None and explicit_entity != contexto.entity.value
+    ):
+        return analisar_pergunta(clean, llm_fn=llm_fn)
+
+    if contexto.route is not QueryRoute.STRUCTURED:
+        raise QueryAnalysisError(
+            "O acompanhamento documental ficou ambíguo. Repita a pergunta completa."
+        )
+
+    updates = _atualizacoes_contextuais_explicitas(clean)
+    if not updates:
+        raise QueryAnalysisError(
+            "Não foi possível identificar com segurança o filtro alterado. "
+            "Informe a entidade, o período ou o filtro desejado."
+        )
+
+    filters = contexto.filters.model_copy(update=updates)
+    return contexto.model_copy(update={"filters": filters}, deep=True)

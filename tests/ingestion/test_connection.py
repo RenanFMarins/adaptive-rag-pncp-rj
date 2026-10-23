@@ -18,12 +18,20 @@ class ConnectionTests(unittest.TestCase):
                 pragma = connection.execute(
                     "PRAGMA foreign_keys"
                 ).fetchone()[0]
+                busy_timeout = connection.execute(
+                    "PRAGMA busy_timeout"
+                ).fetchone()[0]
+                journal_mode = connection.execute(
+                    "PRAGMA journal_mode"
+                ).fetchone()[0]
             finally:
                 connection.close()
 
             self.assertIsInstance(row, sqlite3.Row)
             self.assertEqual(row["value"], 1)
             self.assertEqual(pragma, 1)
+            self.assertEqual(busy_timeout, 30_000)
+            self.assertEqual(journal_mode, "wal")
 
 
 if __name__ == "__main__":

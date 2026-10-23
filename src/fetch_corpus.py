@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from .ingest import RawRepository, ingest_records
 from .ingestion.pncp_client import PNCPClient
+from .ingestion.checkpoint import stable_target_metadata
 from .ingestion.pncp_collector import (
     CommitmentCollector,
     ContractCollector,
@@ -33,27 +34,39 @@ def resolve_source_targets(
     if not target_source_ids or not source.target_resource_type:
         return source
 
-    assets = []
-    for target_source_id in target_source_ids:
-        assets.extend(
-            repository.latest_assets(
-                target_source_id, source.target_resource_type
-            )
-        )
-    if not assets:
-        return source
     if not source.target_field_paths:
         raise ValueError("Fonte dependente sem target_field_paths")
 
     targets = []
     seen = set()
-    for asset in sorted(assets, key=lambda item: item["external_id"]):
-        payload = asset["payload"]
-        external_id = asset["external_id"]
-        target = {
-            name: _target_value(payload, external_id, path)
-            for name, path in source.target_field_paths.items()
-        }
+    if len(target_source_ids) == 1 and hasattr(
+        repository, "latest_targets"
+    ):
+        resolved = repository.latest_targets(
+            target_source_ids[0],
+            source.target_resource_type,
+            dict(source.target_field_paths),
+        )
+    else:
+        assets = []
+        for target_source_id in target_source_ids:
+            assets.extend(
+                repository.latest_assets(
+                    target_source_id, source.target_resource_type
+                )
+            )
+        resolved = (
+            {
+                name: _target_value(
+                    asset["payload"], asset["external_id"], path
+                )
+                for name, path in source.target_field_paths.items()
+            }
+            for asset in sorted(
+                assets, key=lambda item: item["external_id"]
+            )
+        )
+    for target in resolved:
         missing = [
             name for name, value in target.items() if value in (None, "")
         ]
@@ -66,7 +79,37 @@ def resolve_source_targets(
         if identity not in seen:
             seen.add(identity)
             targets.append(target)
+    if not targets:
+        return source
     return replace(source, targets=tuple(targets))
+
+
+def prepare_window_targets(
+    sync_repository,
+    source: SourceConfig,
+    window_id: str,
+    *,
+    qualifier: str | None = None,
+) -> SourceConfig:
+    """Registra e filtra alvos v2 por identidade, nunca pela posição.
+
+    A ordem da lista pode mudar entre execuções. Um alvo só é retirado da
+    retomada quando a mesma identidade e o mesmo fingerprint já estiverem
+    confirmados na janela.
+    """
+
+    pending = []
+    for target in source.targets:
+        target_key, fingerprint = stable_target_metadata(target, qualifier)
+        row = sync_repository.register_target(
+            window_id, target_key, fingerprint
+        )
+        if not (
+            row["status"] == "COMPLETED"
+            and row["processed_fingerprint"] == fingerprint
+        ):
+            pending.append(target)
+    return replace(source, targets=tuple(pending))
 
 
 def _target_value(payload: dict, external_id: str, path: str):

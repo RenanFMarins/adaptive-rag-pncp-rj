@@ -55,6 +55,22 @@ class PNCPClientTests(unittest.TestCase):
             client.get("/api")
 
     @patch("src.ingestion.pncp_client.urlopen")
+    def test_http_error_exposes_status_code(self, urlopen):
+        client = PNCPClient(base_url="https://pncp.example", max_retries=0)
+        urlopen.side_effect = HTTPError(
+            "https://pncp.example/api",
+            422,
+            "unprocessable entity",
+            {},
+            io.BytesIO(),
+        )
+
+        with self.assertRaises(PNCPClientError) as raised:
+            client.get("/api")
+
+        self.assertEqual(raised.exception.status_code, 422)
+
+    @patch("src.ingestion.pncp_client.urlopen")
     def test_get_retries_transient_http_error(self, urlopen):
         urlopen.side_effect = [
             HTTPError(
@@ -159,6 +175,49 @@ class PNCPClientTests(unittest.TestCase):
         payload = client.get("/api")
 
         self.assertEqual(payload, [])
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_response_preserves_http_outcome_and_attempts(self, urlopen):
+        urlopen.side_effect = HTTPError(
+            "https://pncp.example/api",
+            404,
+            "not found",
+            {"Content-Type": "application/json"},
+            io.BytesIO(),
+        )
+        client = PNCPClient(base_url="https://pncp.example")
+
+        response = client.get_response("/api", not_found_as_empty=True)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.outcome, "NOT_FOUND")
+        self.assertEqual(response.payload, [])
+        self.assertEqual(response.attempts, 1)
+        self.assertEqual(response.content_type, "application/json")
+
+    @patch("src.ingestion.pncp_client.urlopen")
+    def test_get_response_reports_retry_count(self, urlopen):
+        urlopen.side_effect = [
+            HTTPError(
+                "https://pncp.example/api",
+                503,
+                "unavailable",
+                {},
+                io.BytesIO(),
+            ),
+            FakeResponse({"data": []}),
+        ]
+        client = PNCPClient(
+            base_url="https://pncp.example",
+            max_retries=1,
+            retry_backoff_seconds=0,
+        )
+
+        response = client.get_response("/api")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.outcome, "RESPONSE")
+        self.assertEqual(response.attempts, 2)
 
 
 if __name__ == "__main__":

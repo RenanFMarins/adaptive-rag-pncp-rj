@@ -33,9 +33,13 @@ def _serializar_tarefa(
         status=tarefa.status,
         tentativas=tarefa.tentativas,
         erro=tarefa.erro,
+        error_code=tarefa.error_code,
+        lease_expires_at=tarefa.lease_expires_at,
         motivo=tarefa.motivo,
         criado_em=tarefa.criado_em,
         atualizado_em=tarefa.atualizado_em,
+        iniciado_em=tarefa.iniciado_em,
+        concluido_em=tarefa.concluido_em,
         created=created,
         retried=retried,
     )

@@ -1,6 +1,10 @@
+from dataclasses import replace
 import unittest
 
-from src.ingestion.pncp_collector import ContractCollector
+from src.ingestion.pncp_collector import (
+    ContractCollector,
+    PNCPPaginationError,
+)
 from src.schema import CollectionCheckpoint, SourceConfig
 
 
@@ -20,6 +24,16 @@ class FakePNCPClient:
     def fetch_page(self, source, page):
         self.requested_pages.append(page)
         return self.pages[page], f"{source.url}?pagina={page}"
+
+
+class ScriptedPNCPClient:
+    def __init__(self, pages):
+        self.pages = {page: list(responses) for page, responses in pages.items()}
+        self.requested_pages = []
+
+    def fetch_page(self, source, page):
+        self.requested_pages.append(page)
+        return self.pages[page].pop(0), f"{source.url}?pagina={page}"
 
 
 class ContractCollectorTests(unittest.TestCase):
@@ -111,6 +125,138 @@ class ContractCollectorTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertIsInstance(records[0], CollectionCheckpoint)
         self.assertEqual(records[0].cursor, "1")
+
+    def test_transient_empty_intermediate_page_is_retried(self):
+        first = self.contract("compra-1")
+        second = self.contract("compra-2")
+        third = self.contract("compra-3")
+        client = ScriptedPNCPClient(
+            {
+                1: [
+                    {
+                        "data": [first],
+                        "totalPaginas": 3,
+                        "numeroPagina": 1,
+                    }
+                ],
+                2: [
+                    {
+                        "data": [],
+                        "totalPaginas": 3,
+                        "numeroPagina": 2,
+                    },
+                    {
+                        "data": [second],
+                        "totalPaginas": 3,
+                        "numeroPagina": 2,
+                    },
+                ],
+                3: [
+                    {
+                        "data": [third],
+                        "totalPaginas": 3,
+                        "numeroPagina": 3,
+                    }
+                ],
+            }
+        )
+        source = replace(
+            self.source(), max_retries=1, retry_backoff_seconds=0
+        )
+
+        records = list(ContractCollector(client).collect(source))
+
+        self.assertEqual(client.requested_pages, [1, 2, 2, 3])
+        self.assertEqual(
+            [record.external_id for record in records],
+            ["compra-1", "compra-2", "compra-3"],
+        )
+
+    def test_persistent_empty_intermediate_page_fails_collection(self):
+        empty = {
+            "data": [],
+            "totalPaginas": 3,
+            "numeroPagina": 2,
+        }
+        client = ScriptedPNCPClient(
+            {
+                1: [
+                    {
+                        "data": [self.contract("compra-1")],
+                        "totalPaginas": 3,
+                        "numeroPagina": 1,
+                    }
+                ],
+                2: [empty, empty, empty],
+            }
+        )
+        source = replace(self.source(), retry_backoff_seconds=0)
+
+        with self.assertRaisesRegex(
+            PNCPPaginationError, "intermediária vazia"
+        ):
+            list(ContractCollector(client).collect(source))
+
+        self.assertEqual(client.requested_pages, [1, 2, 2, 2])
+
+    def test_total_pages_change_fails_collection(self):
+        client = FakePNCPClient(
+            {
+                1: {
+                    "data": [self.contract("compra-1")],
+                    "totalPaginas": 2,
+                    "numeroPagina": 1,
+                },
+                2: {
+                    "data": [self.contract("compra-2")],
+                    "totalPaginas": 3,
+                    "numeroPagina": 2,
+                },
+            }
+        )
+
+        with self.assertRaisesRegex(
+            PNCPPaginationError, "total_pages_changed"
+        ):
+            list(ContractCollector(client).collect(self.source()))
+
+    def test_unexpected_response_page_fails_collection(self):
+        client = FakePNCPClient(
+            {
+                1: {
+                    "data": [self.contract()],
+                    "totalPaginas": 2,
+                    "numeroPagina": 2,
+                }
+            }
+        )
+
+        with self.assertRaisesRegex(
+            PNCPPaginationError, "unexpected_page_number"
+        ):
+            list(ContractCollector(client).collect(self.source()))
+
+    def test_empty_declared_final_page_finishes_normally(self):
+        client = FakePNCPClient(
+            {
+                1: {
+                    "data": [self.contract()],
+                    "totalPaginas": 2,
+                    "numeroPagina": 1,
+                },
+                2: {
+                    "data": [],
+                    "totalPaginas": 2,
+                    "numeroPagina": 2,
+                },
+            }
+        )
+
+        records = list(ContractCollector(client).collect(self.source()))
+
+        self.assertEqual(client.requested_pages, [1, 2])
+        self.assertEqual(records[0].external_id, "compra-1")
+        self.assertEqual(records[-1], CollectionCheckpoint("2"))
 
 
 if __name__ == "__main__":

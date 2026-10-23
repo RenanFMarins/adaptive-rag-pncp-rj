@@ -10,6 +10,7 @@
 # Python virtual environments
 # ==============================
 .venv/
+.venv312/
 venv/
 env/
 
@@ -26,6 +27,9 @@ __pycache__/
 # Test / coverage cache
 # ==============================
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 .coverage
 htmlcov/
 
@@ -47,6 +51,20 @@ htmlcov/
 *.sqlite3-wal
 *.sqlite3-shm
 *.sqlite3-journal
+*.db.backup
+
+
+# ==============================
+# Generated indexes / embeddings
+# ==============================
+*.faiss
+*.ann
+*.hnsw
+*.npy
+*.npz
+*.safetensors
+*.pt
+*.pth
 
 
 # ==============================
@@ -54,6 +72,12 @@ htmlcov/
 # ==============================
 data/raw/
 data/exports/
+data/debug/backups/
+data/normalized/
+data/cache/
+data/chunks/
+data/embeddings/
+data/indexes/
 index/
 indexes/
 logs/
@@ -65,6 +89,20 @@ data/lotes_documentos/
 data/index/
 data/adaptive_jobs/
 data/adaptive_tasks/
+
+
+# ==============================
+# Operational logs / temporary files
+# ==============================
+*.log
+*.log.*
+*.pid
+*.tmp
+*.temp
+*.swp
+*~
+tmp/
+temp/
 
 
 
@@ -80,8 +118,3 @@ data/adaptive_tasks/
 # ==============================
 .DS_Store
 Thumbs.db
-app.db
-app.db
-
-.venv312/
-/app.db

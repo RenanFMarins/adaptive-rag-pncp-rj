@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from dotenv import load_dotenv
 from openai import DefaultHttpxClient, OpenAI
 
@@ -18,8 +19,18 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ecoa-llm.duckdns.org:11434/v1")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "ollama")
 GENERATION_MODEL = os.getenv(
     "GENERATION_MODEL", "qcwind/qwen3-8b-instruct-Q4-K-M")
-EMBEDDING_MODEL = os.getenv(
-    "EMBEDDING_MODEL", "xagi/qwen3-embedding:0.6b-q4_k_m")
+EMBEDDING_PROVIDER = settings.embedding_provider
+EMBEDDING_API_MODEL = settings.embedding_model or (
+    "text-embedding-3-small"
+    if EMBEDDING_PROVIDER == "openai"
+    else "xagi/qwen3-embedding:0.6b-q4_k_m"
+)
+EMBEDDING_DIMENSIONS = settings.embedding_dimensions
+# O identificador persistido no FAISS inclui provedor e dimensão. Assim, dois
+# serviços que exponham o mesmo nome de modelo nunca compartilham um índice.
+EMBEDDING_MODEL = (
+    f"{EMBEDDING_PROVIDER}:{EMBEDDING_API_MODEL}:d{EMBEDDING_DIMENSIONS}"
+)
 GENERATION_MAX_TOKENS = int(os.getenv("GENERATION_MAX_TOKENS", "3072"))
 ECOA_TIMEOUT_SECONDS = float(os.getenv("ECOA_TIMEOUT_SECONDS", "30"))
 
@@ -114,15 +125,40 @@ def gerar_resposta_analyzer(prompt: str) -> str:
     ).content
 
 
-def gerar_embedding(texto: str) -> list[float]:
-    """Exemplo simples de geração de embedding vetorial para um texto."""
-    with llm_http_operation("embedding"):
-        response = client.embeddings.create(
-            model=EMBEDDING_MODEL,
-            input=texto,
+@lru_cache(maxsize=1)
+def _cliente_embedding_openai() -> OpenAI:
+    chave = settings.openai_api_key.get_secret_value()
+    if not chave:
+        raise RuntimeError(
+            "Embeddings OpenAI indisponíveis: configure OPENAI_API_KEY no .env."
         )
+    return OpenAI(
+        api_key=chave,
+        timeout=settings.embedding_timeout_seconds,
+        max_retries=2,
+    )
+
+
+def gerar_embedding(texto: str) -> list[float]:
+    """Gera vetor pelo provedor configurado e valida sua dimensão."""
+
+    if not isinstance(texto, str) or not texto.strip():
+        raise ValueError("O texto do embedding não pode ser vazio.")
+    provedor = settings.embedding_provider
+    cliente = _cliente_embedding_openai() if provedor == "openai" else client
+    parametros = {"model": EMBEDDING_API_MODEL, "input": texto}
+    if provedor == "openai":
+        parametros["dimensions"] = EMBEDDING_DIMENSIONS
+    with llm_http_operation("embedding", provider=provedor):
+        response = cliente.embeddings.create(**parametros)
         log_current_usage(getattr(response, "usage", None))
-    return response.data[0].embedding
+    vetor = response.data[0].embedding
+    if len(vetor) != EMBEDDING_DIMENSIONS:
+        raise RuntimeError(
+            "O provedor retornou uma dimensão de embedding incompatível "
+            f"({len(vetor)} != {EMBEDDING_DIMENSIONS})."
+        )
+    return vetor
 
 
 if __name__ == "__main__":

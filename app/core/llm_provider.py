@@ -1,7 +1,7 @@
-"""Fallback configurável de LLM para Analyzer e geração RAG.
+"""Seleção configurável de LLM para Analyzer e geração RAG.
 
-O módulo não participa da criação de embeddings. FAISS continua dependente de
-um único modelo Ecoa para preservar dimensão e comparabilidade dos vetores.
+O módulo não participa da criação de embeddings. A seleção do provedor de
+embeddings é independente e o índice registra modelo e dimensão.
 """
 
 from __future__ import annotations
@@ -59,6 +59,14 @@ def _modelo_fallback(provider: str) -> str:
     if provider == "groq":
         return settings.llm_fallback_groq_model
     raise ValueError(f"Provedor de fallback não suportado: {provider}.")
+
+
+def _modelo_primario(provider: str) -> str:
+    if provider == "openai":
+        return settings.llm_primary_openai_model
+    if provider == "groq":
+        return settings.llm_primary_groq_model
+    raise ValueError(f"Provedor principal não suportado: {provider}.")
 
 
 def _motivo_fallback(error: Exception) -> str | None:
@@ -154,7 +162,32 @@ def gerar_com_fallback(
     ecoa_model: str,
     fallback_fn: Callable[[str, str, str], str] | None = None,
 ) -> LlmGeneration:
-    """Executa Ecoa e troca de provedor somente em falhas transitórias."""
+    """Executa o provedor principal e aplica fallback apenas quando permitido.
+
+    ``ecoa`` continua sendo o padrão por compatibilidade. Quando OpenAI ou
+    Groq é selecionado como principal, o Ecoa não é chamado.
+    """
+
+    primary_provider = settings.llm_primary_provider
+    if primary_provider != "ecoa":
+        model = _modelo_primario(primary_provider)
+        try:
+            if fallback_fn is not None:
+                content = fallback_fn(prompt, primary_provider, model)
+            else:
+                content = _executar_fallback(
+                    prompt, primary_provider, model, operation
+                )
+        except Exception as primary_error:
+            raise LlmProviderError(
+                "O provedor principal de LLM está indisponível "
+                f"({primary_provider}/{type(primary_error).__name__})."
+            ) from primary_error
+        return LlmGeneration(
+            content=content,
+            provider=primary_provider,
+            model=model,
+        )
 
     try:
         with llm_http_operation(operation, provider="ecoa"):

@@ -21,12 +21,15 @@ from app.modules.query.schemas import (
 )
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
 from app.modules.query.services import (
+    NormalizedDatabaseUnavailable,
     executar_consulta_adaptativa_api,
     executar_consulta_estruturada,
 )
 from src.generate import gerar_resposta_rag
+from src.faiss_errors import FAISS_UNAVAILABLE_ERRORS, faiss_public_detail
 from src.query.analyzer import QueryAnalysisError
 from src.query.executor import QueryExecutionError
+from src.query.response_composer import compose_structured_answer
 from src.query.structured_tool import StructuredQueryError
 
 
@@ -58,11 +61,22 @@ def ask(
             db,
             request.pergunta,
             request.top_k,
+            previous_analysis=request.contexto,
         )
     except LlmProviderError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
+        ) from exc
+    except NormalizedDatabaseUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except FAISS_UNAVAILABLE_ERRORS as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=faiss_public_detail(exc),
         ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
@@ -78,11 +92,17 @@ def ask(
     if result.rag_result is None and (
         structured_result is not None or result.plan.route.value == "catalog"
     ):
+        answer = (
+            compose_structured_answer(result.analysis, structured_result)
+            if structured_result is not None
+            else None
+        )
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,
             plan=result.plan,
             structured_result=structured_result,
+            answer=answer,
             external_documents=result.external_documents,
             trace_id=getattr(result.rag_result, "trace_id", None),
         )
@@ -109,7 +129,7 @@ def ask(
             for rank, source in enumerate(rag_result.sources, start=1)
         ],
         external_documents=result.external_documents,
-        trace_id=rag_result.trace_id,
+        trace_id=getattr(rag_result, "trace_id", None),
     )
 
 
@@ -164,13 +184,23 @@ def structured(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+    except NormalizedDatabaseUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=_detalhe_erro_consulta(exc),
         ) from exc
 
-    return StructuredQueryResponse(**result.model_dump())
+    payload = result.model_dump()
+    payload["answer"] = compose_structured_answer(
+        result.analysis,
+        result.structured_result,
+    )
+    return StructuredQueryResponse(**payload)
 
 
 @router.post("/generate", response_model=GenerateResponse)
@@ -190,6 +220,11 @@ def generate(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
+        ) from exc
+    except FAISS_UNAVAILABLE_ERRORS as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=faiss_public_detail(exc),
         ) from exc
 
     return GenerateResponse(

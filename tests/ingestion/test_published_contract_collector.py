@@ -1,6 +1,7 @@
 import unittest
 
 from src.ingestion.pncp_collector import PublishedContractCollector
+from src.ingestion.pncp_client import PNCPClientError
 from src.schema import CollectionCheckpoint, CollectedRecord, SourceConfig
 
 
@@ -15,6 +16,18 @@ class FakePNCPClient:
     def get(self, endpoint, params=None, **kwargs):
         self.requests.append((endpoint, dict(params or {})))
         return self.pages[params["pagina"]]
+
+
+class FallbackPNCPClient(FakePNCPClient):
+    def __init__(self, fallback_response):
+        super().__init__({})
+        self.fallback_response = fallback_response
+
+    def get(self, endpoint, params=None, **kwargs):
+        self.requests.append((endpoint, dict(params or {})))
+        if "codigoUnidadeAdministrativa" in params:
+            raise PNCPClientError("HTTP 422", status_code=422)
+        return self.fallback_response
 
 
 class PublishedContractCollectorTests(unittest.TestCase):
@@ -76,6 +89,44 @@ class PublishedContractCollectorTests(unittest.TestCase):
         collected = list(PublishedContractCollector(client).collect(self.source()))
 
         self.assertEqual(collected, [CollectionCheckpoint("1")])
+
+    def test_normalizes_numeric_unit_code_for_the_request(self):
+        client = FakePNCPClient({
+            1: {"data": [], "totalPaginas": 0},
+        })
+        source = self.source(targets=({
+            "cnpj": self.CNPJ,
+            "codigo_unidade": "000000001",
+            "uf": "RJ",
+        },))
+
+        collected = list(PublishedContractCollector(client).collect(source))
+
+        self.assertEqual(collected, [CollectionCheckpoint("1")])
+        self.assertEqual(
+            client.requests[0][1]["codigoUnidadeAdministrativa"], "1"
+        )
+
+    def test_falls_back_without_unit_filter_after_http_422(self):
+        contract = self.contract()
+        client = FallbackPNCPClient({
+            "data": [contract],
+            "totalPaginas": 1,
+            "numeroPagina": 1,
+        })
+
+        collected = list(PublishedContractCollector(client).collect(self.source()))
+        records = [item for item in collected if isinstance(item, CollectedRecord)]
+
+        self.assertEqual(len(client.requests), 2)
+        self.assertIn("codigoUnidadeAdministrativa", client.requests[0][1])
+        self.assertNotIn("codigoUnidadeAdministrativa", client.requests[1][1])
+        self.assertEqual(len(records), 1)
+        self.assertTrue(records[0].query_params["consultaSemFiltroUnidade"])
+        self.assertEqual(
+            records[0].query_params["codigoUnidadeAdministrativaOriginal"],
+            self.UNIT,
+        )
 
     def test_skips_contract_outside_target_unit(self):
         contract = self.contract(unit="999999")

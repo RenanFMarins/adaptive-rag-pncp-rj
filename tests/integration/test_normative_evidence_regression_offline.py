@@ -85,28 +85,35 @@ def corpus(tmp_path_factory, no_network_or_models):
                 source.backup(dest)
     register_models()
     engine = create_readonly_sqlite_engine("sqlite:///" + snapshot.as_posix())
-    with Session(engine) as session:
-        document = session.execute(text(
-            "SELECT id FROM documents WHERE base_id='editais_normativo' "
-            "AND source_file='editais_normativo|decreto-48817-2023-gestao-fiscalizacao.pdf'"
-        )).scalar_one()
-        ids = set(session.scalars(text("SELECT chunk_id FROM document_chunks")))
-        assert set(TARGETS) <= ids, "Snapshot não contém todos os quatro chunks reais"
-        other_document = session.execute(text(
-            "SELECT id FROM documents WHERE base_id='editais_normativo' "
-            "AND source_file='editais_normativo|planalto_l14133.html'"
-        )).scalar_one()
-    traces = []
-    before = digest(snapshot)
-    yield {"engine": engine, "document": document, "other_document": other_document,
-           "ids": sorted(ids), "traces": traces, "folder": folder}
-    engine.dispose()
-    assert digest(snapshot) == before, "Teste alterou o snapshot usado somente para leitura"
-    (folder / "trace.json").write_text(json.dumps(traces, ensure_ascii=False, indent=2), encoding="utf-8")
-    compact = [{"bm25_limit": t["bm25_limit"], "top_k": t["top_k"],
-                "dense_simulation": t["dense_simulation"], "targets": t.get("targets", []),
-                "error": t.get("error")} for t in traces]
-    print("\nOFFLINE_REGRESSION_TRACE=" + json.dumps(compact, ensure_ascii=True))
+    try:
+        with Session(engine) as session:
+            document = session.execute(text(
+                "SELECT id FROM documents WHERE base_id='editais_normativo' "
+                "AND source_file='editais_normativo|decreto-48817-2023-gestao-fiscalizacao.pdf'"
+            )).scalar_one_or_none()
+            if document is None and not supplied:
+                pytest.skip(
+                    "app.db local não contém o corpus normativo exigido pelo diagnóstico"
+                )
+            assert document is not None, "Snapshot informado não contém o decreto esperado"
+            ids = set(session.scalars(text("SELECT chunk_id FROM document_chunks")))
+            assert set(TARGETS) <= ids, "Snapshot não contém todos os quatro chunks reais"
+            other_document = session.execute(text(
+                "SELECT id FROM documents WHERE base_id='editais_normativo' "
+                "AND source_file='editais_normativo|planalto_l14133.html'"
+            )).scalar_one()
+        traces = []
+        before = digest(snapshot)
+        yield {"engine": engine, "document": document, "other_document": other_document,
+               "ids": sorted(ids), "traces": traces, "folder": folder}
+        assert digest(snapshot) == before, "Teste alterou o snapshot usado somente para leitura"
+        (folder / "trace.json").write_text(json.dumps(traces, ensure_ascii=False, indent=2), encoding="utf-8")
+        compact = [{"bm25_limit": t["bm25_limit"], "top_k": t["top_k"],
+                    "dense_simulation": t["dense_simulation"], "targets": t.get("targets", []),
+                    "error": t.get("error")} for t in traces]
+        print("\nOFFLINE_REGRESSION_TRACE=" + json.dumps(compact, ensure_ascii=True))
+    finally:
+        engine.dispose()
 
 
 class SimulatedFaiss:

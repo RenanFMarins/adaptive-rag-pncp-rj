@@ -32,6 +32,14 @@ def test_evento_tem_os_campos_do_enunciado(tmp_path, monkeypatch):
     assert evento["stage"] == "coleta"
     assert evento["status"] == "ok"
     assert evento["latencia_ms"] is not None
+    assert evento["input"] == {
+        "type": "text",
+        "length": len("https://exemplo.gov.br/a.pdf"),
+    }
+    assert evento["output"] == {
+        "type": "text",
+        "length": len("842103 bytes"),
+    }
     # Coleta e ingestão não chamam o LLM: os tokens ficam zerados, mas o campo
     # existe em toda etapa, para quem instrumentar a geração só preencher.
     assert evento["tokens"] == {"prompt": 0, "completion": 0, "total": 0}
@@ -67,16 +75,23 @@ def test_excecao_vira_status_erro_e_nao_e_engolida(tmp_path, monkeypatch):
 
     evento = _eventos(tmp_path)[0]
     assert evento["status"] == "erro"
-    assert evento["output"] == "ValueError"
+    assert evento["output"] is None
+    assert evento["extra"]["error_type"] == "ValueError"
 
 
 def test_falha_registrada_sem_abortar(tmp_path, monkeypatch):
     # A coleta registra URL morta como "falhou" e segue adiante, como o
     # enunciado exige: falha vira linha no log, não exceção que mata a coleta.
     monkeypatch.setattr(obs, "PASTA_LOGS", tmp_path)
-    obs.registrar(obs.novo_run_id(), obs.STAGE_COLETA, "falhou",
-                  entrada="https://exemplo.gov.br/morto.pdf", erro="HTTP 404")
+    obs.registrar(
+        obs.novo_run_id(),
+        obs.STAGE_COLETA,
+        "falhou",
+        entrada="https://exemplo.gov.br/morto.pdf",
+        error_code="http_404",
+        erro="resposta bruta que não deve ser persistida",
+    )
 
     evento = _eventos(tmp_path)[0]
     assert evento["status"] == "falhou"
-    assert evento["extra"]["erro"] == "HTTP 404"
+    assert evento["extra"] == {"error_code": "http_404"}

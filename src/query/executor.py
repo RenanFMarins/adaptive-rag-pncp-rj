@@ -7,11 +7,20 @@ from collections.abc import Callable
 
 from .analyzer import analisar_pergunta
 from .planner import planejar_execucao
-from .schemas import AdaptiveQueryResult, QueryAnalysis, QueryRoute
+from .schemas import (
+    AdaptiveQueryResult,
+    QueryAnalysis,
+    QueryRoute,
+    StructuredQueryResult,
+)
 from .structured_tool import executar_consulta_estruturada
 
 
 AnalyzerFn = Callable[[str], QueryAnalysis]
+StructuredToolFn = Callable[
+    [sqlite3.Connection, QueryAnalysis],
+    StructuredQueryResult,
+]
 
 
 class QueryExecutionError(RuntimeError):
@@ -22,6 +31,8 @@ def executar_consulta_adaptativa(
     connection: sqlite3.Connection,
     pergunta: str,
     analyzer_fn: AnalyzerFn = analisar_pergunta,
+    *,
+    structured_tool_fn: StructuredToolFn = executar_consulta_estruturada,
 ) -> AdaptiveQueryResult:
     """Executa a rota estruturada de ponta a ponta.
 
@@ -36,12 +47,18 @@ def executar_consulta_adaptativa(
         raise QueryExecutionError(
             f"A rota '{analysis.route.value}' ainda não está integrada a este executor."
         )
-    return executar_analise_estruturada(connection, analysis)
+    return executar_analise_estruturada(
+        connection,
+        analysis,
+        structured_tool_fn=structured_tool_fn,
+    )
 
 
 def executar_analise_estruturada(
     connection: sqlite3.Connection,
     analysis: QueryAnalysis,
+    *,
+    structured_tool_fn: StructuredToolFn = executar_consulta_estruturada,
 ) -> AdaptiveQueryResult:
     """Executa a parcela SQL de uma análise, sem chamar a LLM novamente."""
 
@@ -51,7 +68,7 @@ def executar_analise_estruturada(
             f"A rota '{plan.route.value}' não possui parcela SQL estruturada."
         )
 
-    structured_result = executar_consulta_estruturada(connection, analysis)
+    structured_result = structured_tool_fn(connection, analysis)
     return AdaptiveQueryResult(
         analysis=analysis,
         plan=plan,

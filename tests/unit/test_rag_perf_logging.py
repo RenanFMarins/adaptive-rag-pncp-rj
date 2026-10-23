@@ -4,6 +4,7 @@ import asyncio
 import logging
 from pathlib import Path
 import re
+import sqlite3
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -24,6 +25,7 @@ import app.modules.rag.model  # noqa: F401
 from app.modules.query.routes import router
 from src.fts import inicializar_fts5
 from src.generate import gerar_resposta_rag
+from src.faiss_errors import FaissIndexMissingError
 from src.index import indexar_chunks_incrementalmente
 from src.query.analyzer import QueryAnalysisError, analisar_pergunta
 from src.query.schemas import (
@@ -51,6 +53,13 @@ class RagPerfHttpTests(unittest.TestCase):
                                   content="alpha sensitive-document", orgao="sensitive-person"))
         self.db.commit()
         temporary = self.enterContext(TemporaryDirectory())
+        normalized_database = Path(temporary) / "normalized.db"
+        sqlite3.connect(normalized_database).close()
+        self.enterContext(patch.object(
+            settings,
+            "normalized_database_url",
+            f"sqlite:///{normalized_database}",
+        ))
         cache_dir = Path(temporary) / "index"
         indexar_chunks_incrementalmente(
             [("sensitive-id", "alpha sensitive-document")],
@@ -107,13 +116,17 @@ class RagPerfHttpTests(unittest.TestCase):
                 enabled = self.ask()
         self.assertEqual(disabled.status_code, 200)
         self.assertEqual(enabled.status_code, 200)
-        self.assertEqual(disabled.json(), enabled.json())
+        disabled_body = disabled.json()
+        enabled_body = enabled.json()
+        self.assertIsInstance(disabled_body.pop("trace_id"), str)
+        self.assertIsInstance(enabled_body.pop("trace_id"), str)
+        self.assertEqual(disabled_body, enabled_body)
         self.assertEqual(disabled_query_count, len(queries))
         messages = [record.getMessage() for record in captured.records]
         self.assertEqual(len({re.search(r"run_id=(\w+)", message)[1] for message in messages}), 1)
         completed = {re.search(r"etapa=(\w+)", message)[1] for message in messages if "status=ok" in message}
         self.assertTrue({
-            "recebimento", "analyzer", "analyzer_llm", "planner", "database_connection",
+            "recebimento", "analyzer", "analyzer_llm", "planner",
             "base_filters", "chunk_ids", "fts5", "faiss", "embedding", "faiss_load",
             "faiss_search", "faiss_filter", "rrf", "context", "llm_generation",
             "persistence", "audit", "total", "retrieval", "source_load",
@@ -179,6 +192,27 @@ class RagPerfHttpTests(unittest.TestCase):
         self.assertNotIn("etapa=context", messages)
         self.assertNotIn("sensitive-", messages)
 
+    def test_faiss_ausente_no_fluxo_rag_retorna_503_e_log_seguro(self):
+        with patch.object(settings, "rag_perf_log_enabled", True), patch(
+            "src.retrieve.carregar_indice_faiss",
+            side_effect=FaissIndexMissingError(),
+        ), self.assertLogs("uvicorn.error", level=logging.INFO) as captured:
+            response = self.ask()
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            {
+                "code": "faiss_index_missing",
+                "message": "Recuperação documental temporariamente indisponível.",
+            },
+        )
+        messages = "\n".join(record.getMessage() for record in captured.records)
+        self.assertIn("etapa=faiss_load", messages)
+        self.assertIn("excecao=FaissIndexMissingError", messages)
+        self.assertIn("etapa=total", messages)
+        self.assertNotIn("sensitive-", messages)
+
     def test_rota_estruturada_nao_registra_etapas_documentais(self):
         analysis = QueryAnalysis(
             route=QueryRoute.STRUCTURED, intent=QueryIntent.LOOKUP, entity=QueryEntity.CONTRATO,
@@ -192,7 +226,7 @@ class RagPerfHttpTests(unittest.TestCase):
         )
         with patch.object(settings, "rag_perf_log_enabled", True), patch(
             "app.modules.query.services.analisar_pergunta", return_value=analysis
-        ), patch("src.query.adaptive_executor.executar_analise_estruturada", return_value=result), self.assertLogs(
+        ), patch("app.modules.query.services._executar_analise_normalizada", return_value=result), self.assertLogs(
             "uvicorn.error", level=logging.INFO
         ) as captured:
             response = self.ask()
@@ -223,7 +257,7 @@ class RagPerfMiddlewareTests(unittest.IsolatedAsyncioTestCase):
             with perf_stage("fts5"):
                 pass
         middleware = RagPerfMiddleware(app)
-        for enabled, path in ((False, "/query/ask"), (True, "/query/generate")):
+        for enabled, path in ((False, "/query/ask"), (True, "/query/structured")):
             with patch.object(settings, "rag_perf_log_enabled", enabled), patch(
                 "app.core.logging.time.perf_counter"
             ) as clock, self.assertNoLogs("uvicorn.error", level=logging.INFO):

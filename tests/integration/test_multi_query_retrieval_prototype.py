@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sqlite3
 from pathlib import Path
@@ -30,13 +31,25 @@ SUBQUESTIONS = {
 @pytest.fixture(scope="module")
 def db(tmp_path_factory):
     target = tmp_path_factory.mktemp("multi_query") / "snapshot.db"
-    source = sqlite3.connect(f"file:{(ROOT / 'app.db').resolve()}?mode=ro", uri=True)
+    configured = os.environ.get("PNCP_REGRESSION_SNAPSHOT")
+    source_path = Path(configured).resolve() if configured else (ROOT / "app.db").resolve()
+    if not source_path.is_file():
+        pytest.skip("Diagnóstico real requer um snapshot SQLite local")
+    source = sqlite3.connect(f"file:{source_path}?mode=ro", uri=True)
     dest = sqlite3.connect(target); source.backup(dest); source.close(); dest.close()
     register_models()
     engine = create_readonly_sqlite_engine("sqlite:///" + target.as_posix())
-    with Session(engine) as session:
-        yield session
-    engine.dispose()
+    try:
+        with Session(engine) as session:
+            if _identificar_norma(session, ORIGINAL) is None:
+                if configured:
+                    pytest.fail("Snapshot informado não contém o decreto esperado")
+                pytest.skip(
+                    "app.db local não contém o corpus normativo exigido pelo diagnóstico"
+                )
+            yield session
+    finally:
+        engine.dispose()
 
 
 def _run(db, question: str, document_id: int, limit: int = 20):
@@ -100,8 +113,10 @@ def test_subperguntas_reais_preservam_filtros_e_registram_origem(db, capsys):
     document_id = _identificar_norma(db, ORIGINAL)
     assert document_id is not None
     original = _run(db, ORIGINAL, document_id)
-    trace = json.loads(TRACE.read_text(encoding="utf-8"))
-    original_rerank = trace["retrieval"]["ranking_stages"]["rerank"]
+    original_rerank = []
+    if TRACE.is_file():
+        trace = json.loads(TRACE.read_text(encoding="utf-8"))
+        original_rerank = trace["retrieval"]["ranking_stages"]["rerank"]
     runs = {name: _run(db, question, document_id) for name, question in SUBQUESTIONS.items()}
     union: dict[str, set[str]] = {}
     for name, result in runs.items():

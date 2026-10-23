@@ -4,7 +4,12 @@ import json
 import os
 from pathlib import Path
 
-from src.audit.schemas import AuditTrace, sanitize_for_audit
+from src.audit.schemas import (
+    AuditTrace,
+    minimize_audit_trace,
+    new_trace_id,
+    sanitize_for_audit,
+)
 
 
 DEFAULT_AUDIT_DIR = Path("logs/queries")
@@ -21,9 +26,14 @@ def write_audit_trace(
     trace: AuditTrace,
     base_dir: str | Path = DEFAULT_AUDIT_DIR,
 ) -> Path:
-    path = audit_path(trace, Path(base_dir))
+    # A minimização estrutural remove conteúdo bruto. A sanitização por
+    # padrões permanece como defesa em profundidade, não como garantia única.
+    minimized = minimize_audit_trace(trace)
+    if minimized.get("trace_id") is None:
+        minimized["trace_id"] = new_trace_id()
+    payload = sanitize_for_audit(minimized)
+    path = audit_path(payload, Path(base_dir))
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = sanitize_for_audit(trace)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2, default=str),

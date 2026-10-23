@@ -8,6 +8,7 @@ from .executor import (
     executar_consulta_adaptativa,
 )
 from .planner import planejar_execucao
+from .normalized_structured_tool import executar_consulta_normalizada
 from .schemas import (
     ExecutionPlan,
     ExecutionTool,
@@ -34,6 +35,7 @@ __all__ = [
     "analisar_pergunta",
     "executar_analise_estruturada",
     "executar_consulta_adaptativa",
+    "executar_consulta_normalizada",
     "executar_consulta_estruturada",
     "executar_plano_adaptativo",
     "planejar_execucao",

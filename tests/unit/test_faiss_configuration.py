@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -13,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, resolver_caminho_indice_faiss, settings
 from app.core.faiss_startup import validar_faiss_no_startup
 from app.modules.query import services as query_services
+from src.faiss_errors import FaissIndexIncompatibleError
 from src.index import indexar_chunks_incrementalmente, validar_indice_faiss
 from src.query.adaptive_executor import AdaptiveExecutionResult
 from src.query.planner import planejar_execucao
@@ -46,7 +49,10 @@ def _analysis(route: QueryRoute) -> QueryAnalysis:
 
 class FaissConfigurationTests(unittest.TestCase):
     def test_default_permanece_v1_e_resolucao_e_absoluta(self):
-        isolated = Settings(database_url="sqlite:///:memory:", _env_file=None)
+        # Plugins de teste podem carregar o .env no processo do pytest. O
+        # contrato aqui é o default da classe, sem overrides operacionais.
+        with patch.dict(os.environ, {}, clear=True):
+            isolated = Settings(database_url="sqlite:///:memory:", _env_file=None)
         self.assertEqual(isolated.rag_faiss_index_dir, Path("data/index/faiss/v1"))
         with patch.object(settings, "rag_faiss_index_dir", Path("indice-relativo")):
             self.assertEqual(
@@ -66,7 +72,7 @@ class FaissConfigurationTests(unittest.TestCase):
             audit = validar_indice_faiss(path, modelo_esperado="modelo-teste")
             self.assertEqual(audit.total_vetores, 1)
             self.assertEqual(audit.dimensao, 2)
-            with self.assertRaisesRegex(RuntimeError, "Modelo de embedding"):
+            with self.assertRaises(FaissIndexIncompatibleError):
                 validar_indice_faiss(path, modelo_esperado="outro-modelo")
 
     def test_startup_invalido_nao_bloqueia_aplicacao_independente(self):
@@ -77,8 +83,9 @@ class FaissConfigurationTests(unittest.TestCase):
             ready = validar_faiss_no_startup(app)
         self.assertFalse(ready)
         self.assertFalse(app.state.faiss_index_ready)
-        self.assertEqual(app.state.faiss_index_error, "FileNotFoundError")
-        self.assertIn(str((Path(directory) / "ausente").resolve()), "\n".join(captured.output))
+        self.assertEqual(app.state.faiss_index_error, "faiss_index_missing")
+        self.assertNotIn(str((Path(directory) / "ausente").resolve()), "\n".join(captured.output))
+        self.assertIn("codigo=faiss_index_missing", "\n".join(captured.output))
         self.assertIn("structured permanecem disponíveis", "\n".join(captured.output))
 
     def test_startup_valido_registra_caminho_absoluto(self):
@@ -97,7 +104,8 @@ class FaissConfigurationTests(unittest.TestCase):
                 ready = validar_faiss_no_startup(app)
         self.assertTrue(ready)
         self.assertTrue(app.state.faiss_index_ready)
-        self.assertIn(str(path.resolve()), "\n".join(captured.output))
+        self.assertNotIn(str(path.resolve()), "\n".join(captured.output))
+        self.assertIn("FAISS validado", "\n".join(captured.output))
 
     def test_rollback_reseleciona_v1_sem_alterar_indices(self):
         with TemporaryDirectory() as directory:
@@ -141,13 +149,20 @@ class FaissConfigurationTests(unittest.TestCase):
             )
 
         engine = create_engine("sqlite:///:memory:")
-        with Session(engine) as db, TemporaryDirectory() as directory, \
+        with Session(engine) as db, TemporaryDirectory() as directory:
+            normalized = Path(directory) / "normalized.db"
+            sqlite3.connect(normalized).close()
+            with \
                 patch.object(settings, "rag_faiss_index_dir", Path(directory)), \
                 patch.object(query_services, "executar_plano_adaptativo", side_effect=execute), \
                 patch("src.generate.gerar_resposta_rag", return_value=object()) as generate:
-            query_services.executar_consulta_adaptativa_api(
-                db, "pergunta", 5, analyzer_fn=lambda _: analysis
-            )
+                query_services.executar_consulta_adaptativa_api(
+                    db,
+                    "pergunta",
+                    5,
+                    analyzer_fn=lambda _: analysis,
+                    normalized_database_url=f"sqlite:///{normalized}",
+                )
         self.assertEqual(generate.call_args.kwargs["cache_dir"], Path(directory).resolve())
         self.assertIs(generate.call_args.kwargs["structured_result"], expected)
 
@@ -158,12 +173,19 @@ class FaissConfigurationTests(unittest.TestCase):
             plan=planejar_execucao(analysis),
         )
         engine = create_engine("sqlite:///:memory:")
-        with Session(engine) as db, \
+        with Session(engine) as db, TemporaryDirectory() as directory:
+            normalized = Path(directory) / "normalized.db"
+            sqlite3.connect(normalized).close()
+            with \
                 patch.object(query_services, "resolver_caminho_indice_faiss") as resolver, \
                 patch.object(query_services, "executar_plano_adaptativo", return_value=result):
-            actual = query_services.executar_consulta_adaptativa_api(
-                db, "pergunta", 5, analyzer_fn=lambda _: analysis
-            )
+                actual = query_services.executar_consulta_adaptativa_api(
+                    db,
+                    "pergunta",
+                    5,
+                    analyzer_fn=lambda _: analysis,
+                    normalized_database_url=f"sqlite:///{normalized}",
+                )
         self.assertIs(actual, result)
         resolver.assert_not_called()
 

@@ -8,12 +8,14 @@ from src.schema import CollectionCheckpoint, CollectedRecord, SourceConfig
 class FakePNCPClient:
     def __init__(self):
         self.requested = []
+        self.request_options = []
 
     def build_url(self, endpoint, params=None, base_url=None):
         return f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
     def get(self, endpoint, params=None, **kwargs):
         self.requested.append(endpoint)
+        self.request_options.append(kwargs)
         return [
             {
                 "numeroControlePNCPCompra": "12345678000199-1-000001/2025",
@@ -78,6 +80,7 @@ class ItemResultCollectorTests(unittest.TestCase):
         self.assertEqual(len(client.requested), 1)
         self.assertIn("/itens/1/resultados", client.requested[0])
         self.assertNotIn("/itens?", client.requested[0])
+        self.assertTrue(client.request_options[0]["not_found_as_empty"])
 
     def test_item_without_result_does_not_call_api_but_advances_target(self):
         client = FakePNCPClient()

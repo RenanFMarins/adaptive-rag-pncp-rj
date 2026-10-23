@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from http.client import HTTPException
 import json
 import time
@@ -14,6 +15,25 @@ from ..schema import SourceConfig
 
 class PNCPClientError(RuntimeError):
     """Erro de comunicação ou desserialização da resposta do PNCP."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+@dataclass(frozen=True)
+class PNCPHTTPResponse:
+    status_code: int
+    payload: Any
+    url: str
+    content_type: str | None
+    attempts: int
+    outcome: str
 
 
 class PNCPClient:
@@ -51,6 +71,16 @@ class PNCPClient:
         return url
 
     def get(
+        self,
+        endpoint: str,
+        params: Mapping[str, Any] | None = None,
+        **options,
+    ) -> Any:
+        """Interface legada: preserva o retorno direto do JSON."""
+
+        return self.get_response(endpoint, params, **options).payload
+
+    def get_response(
         self,
         endpoint: str,
         params: Mapping[str, Any] | None = None,
@@ -110,6 +140,12 @@ class PNCPClient:
                     else:
                         payload = json.loads(raw_payload.decode("utf-8"))
             except HTTPError as error:
+                error_headers = getattr(error, "headers", None)
+                error_content_type = (
+                    error_headers.get("Content-Type")
+                    if error_headers is not None
+                    else None
+                )
                 if error.code == 404 and not_found_as_empty:
                     self.logger.event(
                         "pncp_response",
@@ -121,16 +157,17 @@ class PNCPClient:
                         attempt=attempt + 1,
                         latency_seconds=time.perf_counter() - started,
                     )
-                    return []
+                    return PNCPHTTPResponse(
+                        404,
+                        [],
+                        url,
+                        error_content_type,
+                        attempt + 1,
+                        "NOT_FOUND",
+                    )
                 should_retry = (
                     error.code in self.RETRYABLE_HTTP_STATUS
                     and attempt < retry_limit
-                )
-                error_headers = getattr(error, "headers", None)
-                error_content_type = (
-                    error_headers.get("Content-Type")
-                    if error_headers is not None
-                    else None
                 )
                 retry_after_seconds = self._retry_after_seconds(error_headers)
                 self.logger.event(
@@ -153,7 +190,8 @@ class PNCPClient:
                     attempt += 1
                     continue
                 raise PNCPClientError(
-                    f"PNCP retornou HTTP {error.code} para {url}"
+                    f"PNCP retornou HTTP {error.code} para {url}",
+                    status_code=error.code,
                 ) from error
             except (URLError, TimeoutError, HTTPException, ConnectionError) as error:
                 should_retry = attempt < retry_limit
@@ -198,7 +236,15 @@ class PNCPClient:
                 attempt=attempt + 1,
                 latency_seconds=time.perf_counter() - started,
             )
-            return payload
+            status_code = int(status or 200)
+            return PNCPHTTPResponse(
+                status_code,
+                payload,
+                url,
+                content_type,
+                attempt + 1,
+                "EMPTY" if status_code == 204 else "RESPONSE",
+            )
 
     @staticmethod
     def _http_error_summary(error: HTTPError) -> dict[str, Any]:

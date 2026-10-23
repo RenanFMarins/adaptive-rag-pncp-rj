@@ -47,7 +47,7 @@ from app.core.text_normalization import normalizar_para_busca
 
 from app.modules.documents.model import Document, DocumentChunk
 
-from llm_ecoa import gerar_embedding
+from llm_ecoa import EMBEDDING_MODEL, gerar_embedding
 
 from src.fts import buscar_fts5
 
@@ -226,7 +226,12 @@ def buscar_dense(
 
     with perf_stage("faiss_load"):
 
-        indice = carregar_indice_faiss(cache_dir)
+        indice = carregar_indice_faiss(
+            cache_dir,
+            modelo_esperado=(
+                EMBEDDING_MODEL if embedding_fn is gerar_embedding else None
+            ),
+        )
 
     if allowed_chunk_ids is None:
 

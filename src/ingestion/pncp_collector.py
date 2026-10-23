@@ -17,7 +17,175 @@ from ..schema import (
     records_from_response,
     value_at_path,
 )
-from .pncp_client import PNCPClient
+from .checkpoint import stable_target_metadata
+from .pca import pca_plan_context, validate_complete_pca_plan
+from .pncp_client import PNCPClient, PNCPClientError
+
+
+class PNCPPaginationError(RuntimeError):
+    """Envelope paginado inconsistente, sem cobertura segura comprovável."""
+
+
+class _PaginationGuard:
+    def __init__(
+        self,
+        source_id: str,
+        logger: JsonlLogger,
+        **log_context: Any,
+    ) -> None:
+        self.source_id = source_id
+        self.logger = logger
+        self.log_context = log_context
+        self.expected_total_pages: int | None = None
+
+    def inspect(
+        self,
+        response: Any,
+        page: int,
+        record_count: int,
+    ) -> str:
+        total_pages = self._envelope_integer(
+            response, "totalPaginas", page=page, minimum=0
+        )
+        response_page = self._envelope_integer(
+            response, "numeroPagina", page=page, minimum=0
+        )
+        if response_page is not None and response_page != page:
+            self._fail(
+                "unexpected_page_number",
+                page,
+                reported_page=response_page,
+                total_pages=total_pages,
+            )
+        if total_pages is not None:
+            if self.expected_total_pages is None:
+                self.expected_total_pages = total_pages
+            elif total_pages != self.expected_total_pages:
+                self._fail(
+                    "total_pages_changed",
+                    page,
+                    expected_total_pages=self.expected_total_pages,
+                    reported_total_pages=total_pages,
+                )
+            if total_pages == 0:
+                if page != 1 or record_count:
+                    self._fail(
+                        "invalid_zero_total",
+                        page,
+                        record_count=record_count,
+                    )
+                return "last"
+            if page > total_pages:
+                self._fail(
+                    "page_exceeds_total",
+                    page,
+                    total_pages=total_pages,
+                )
+            if not record_count and page < total_pages:
+                return "empty_intermediate"
+            if page >= total_pages:
+                return "last"
+        return "last" if not record_count else "continue"
+
+    def _envelope_integer(
+        self,
+        response: Any,
+        field: str,
+        *,
+        page: int,
+        minimum: int,
+    ) -> int | None:
+        if not isinstance(response, Mapping) or field not in response:
+            return None
+        value = response[field]
+        if isinstance(value, bool):
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        if parsed < minimum:
+            self._fail(
+                "invalid_envelope_field", page, field=field, value=value
+            )
+        return parsed
+
+    def _fail(self, reason: str, page: int, **fields: Any) -> None:
+        self.logger.event(
+            "pncp_pagination_anomaly",
+            source_id=self.source_id,
+            page=page,
+            reason=reason,
+            **self.log_context,
+            **fields,
+        )
+        raise PNCPPaginationError(
+            f"Paginação PNCP inconsistente em {self.source_id}: "
+            f"{reason} (página {page})"
+        )
+
+
+def _fetch_validated_page(
+    request: Callable[[], tuple[Any, Any]],
+    source: SourceConfig,
+    page: int,
+    guard: _PaginationGuard,
+) -> tuple[Any, list[Mapping[str, Any]], Any, int, str]:
+    """Busca uma página e nunca aceita vazio intermediário silencioso."""
+
+    attempts = 0
+    empty_retries = 0
+    while True:
+        response, context = request()
+        attempts += 1
+        records = (
+            []
+            if response == []
+            else records_from_response(response, source.item_path)
+        )
+        outcome = guard.inspect(response, page, len(records))
+        if outcome != "empty_intermediate":
+            return response, records, context, attempts, outcome
+
+        retrying = empty_retries < source.max_retries
+        guard.logger.event(
+            "pncp_pagination_empty_intermediate",
+            source_id=source.id,
+            page=page,
+            total_pages=guard.expected_total_pages,
+            attempt=empty_retries + 1,
+            retrying=retrying,
+            **guard.log_context,
+        )
+        if not retrying:
+            raise PNCPPaginationError(
+                "Página intermediária vazia persistente no PNCP: "
+                f"fonte={source.id}, página={page}, "
+                f"total={guard.expected_total_pages}"
+            )
+        delay = source.retry_backoff_seconds * (2**empty_retries)
+        if delay:
+            time.sleep(delay)
+        empty_retries += 1
+
+
+def _target_checkpoint(
+    cursor: int | str,
+    target: Mapping[str, Any],
+    *,
+    qualifier: str | None = None,
+    target_key: str | None = None,
+) -> CollectionCheckpoint:
+    """Anexa ao cursor legado a identidade estável usada pelo checkpoint v2."""
+
+    derived_key, fingerprint = stable_target_metadata(target, qualifier)
+    return CollectionCheckpoint(
+        str(cursor), target_key or derived_key, fingerprint
+    )
 
 
 class PNCPCollector:
@@ -32,12 +200,13 @@ class PNCPCollector:
     def collect(self, source: SourceConfig, start_page: int = 1):
         ordinal = 0
         page = start_page
+        guard = _PaginationGuard(source.id, self.logger)
         while source.max_pages is None or page < start_page + source.max_pages:
-            response, url = self.client.fetch_page(source, page)
-            records = (
-                []
-                if response == []
-                else records_from_response(response, source.item_path)
+            response, records, url, _, outcome = _fetch_validated_page(
+                lambda: self.client.fetch_page(source, page),
+                source,
+                page,
+                guard,
             )
             query_params = {
                 **source.audit_context,
@@ -67,7 +236,7 @@ class PNCPCollector:
                     ordinal,
                     query_params=query_params,
                 )
-            if _is_last_response_page(response, page):
+            if outcome == "last":
                 break
             page += 1
             if source.rate_limit_seconds:
@@ -75,29 +244,90 @@ class PNCPCollector:
 
 
 class PCACollector(PNCPCollector):
-    """Collector PCA que preserva o registro sem normalização."""
+    """Usa o feed fragmentado para descobrir e buscar cada PCA completo."""
 
     external_id_field = "idPcaPncp"
 
     def collect(self, source: SourceConfig, start_page: int = 1):
+        if not source.detail_endpoint_template:
+            raise ValueError(
+                "Fonte PCA por atualização sem detail_endpoint_template"
+            )
+        discovered: dict[str, dict[str, Any]] = {}
         for record in super().collect(source, start_page):
             if isinstance(record, CollectionCheckpoint):
-                yield record
                 continue
-            if not record.payload.get(self.external_id_field):
+            external_id = record.payload.get(self.external_id_field)
+            if not external_id:
                 raise ValueError(
                     "Registro PCA sem idPcaPncp; coleta interrompida"
                 )
-            yield record
+            external_id = str(external_id)
+            context = pca_plan_context(external_id)
+            entry = discovered.setdefault(
+                external_id,
+                {
+                    "context": context,
+                    "pages": [],
+                    "fragment_count": 0,
+                },
+            )
+            if record.cursor not in entry["pages"]:
+                entry["pages"].append(record.cursor)
+            entry["fragment_count"] += 1
+
+        # Busca e valida todos os planos antes de emitir o primeiro registro.
+        # Assim, uma falha no detalhe não deixa um checkpoint parcial.
+        plans = []
+        for external_id, entry in discovered.items():
+            context = entry["context"]
+            endpoint = source.detail_endpoint_template.format(**context)
+            url = self.client.build_url(endpoint, base_url=source.base)
+            payload = self.client.get(
+                endpoint,
+                base_url=source.base,
+                timeout_seconds=source.timeout_seconds,
+                headers=source.headers,
+                max_retries=source.max_retries,
+                retry_backoff_seconds=source.retry_backoff_seconds,
+            )
+            validate_complete_pca_plan(payload, context, url)
+            plans.append((external_id, entry, url, payload))
+
+        for ordinal, (external_id, entry, url, payload) in enumerate(
+            plans, start=1
+        ):
+            pages = entry["pages"]
+            yield CollectedRecord(
+                source.id,
+                payload,
+                url,
+                pages[-1],
+                ordinal,
+                external_id=external_id,
+                query_params={
+                    **source.audit_context,
+                    **source.params,
+                    "numeroControlePNCP": external_id,
+                    "discovery_pages": list(pages),
+                    "discovery_fragment_count": entry["fragment_count"],
+                    "representation": "complete_pca_plan",
+                },
+            )
+        self.logger.event(
+            "pncp_pca_update_discovery",
+            source_id=source.id,
+            fragments_count=sum(
+                entry["fragment_count"] for entry in discovered.values()
+            ),
+            plans_count=len(plans),
+        )
 
 
 class PCAFullCollector:
     """Descobre PCAs por órgão e preserva cada plano completo com seus itens."""
 
     required_target_fields = ("cnpj",)
-    control_number_pattern = re.compile(
-        r"^(?P<cnpj>\d{14})-0-(?P<sequencial>\d+)/(?P<ano>\d{4})$"
-    )
 
     def __init__(
         self, client: PNCPClient, logger: JsonlLogger | None = None
@@ -159,7 +389,7 @@ class PCAFullCollector:
                 seen.add(numero_controle)
                 endpoint = source.endpoint.format(**context)
                 payload, url = request(endpoint)
-                self._validate_payload(payload, context, url)
+                validate_complete_pca_plan(payload, context, url)
                 plans.append((context, url, payload))
             return target_index, cnpj, plans
 
@@ -193,7 +423,7 @@ class PCAFullCollector:
                 ano_pca=ano,
                 plans_count=len(plans),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, {"cnpj": cnpj})
 
     def _target_cnpj(self, target) -> str:
         missing = [
@@ -211,39 +441,12 @@ class PCAFullCollector:
     def _plan_context(self, cnpj, ano, sequencial, numero_controle):
         if sequencial is None or not numero_controle:
             raise ValueError("Resumo de PCA sem identificador obrigatório")
-        match = self.control_number_pattern.fullmatch(str(numero_controle))
-        if not match:
-            raise ValueError("Resumo de PCA com numeroControlePNCP inválido")
-        if (
-            match.group("cnpj") != cnpj
-            or int(match.group("ano")) != ano
-            or int(match.group("sequencial")) != int(sequencial)
-        ):
-            raise ValueError("Resumo de PCA inconsistente com o órgão/ano alvo")
-        return {
-            "cnpj": cnpj,
-            "ano": ano,
-            "sequencial": int(sequencial),
-            "numero_controle": str(numero_controle),
-        }
-
-    @staticmethod
-    def _validate_payload(payload, context, source_url):
-        if not isinstance(payload, Mapping):
-            raise ValueError(f"PCA completo não retornou objeto em {source_url}")
-        items = payload.get("itens")
-        if not isinstance(items, list):
-            raise ValueError(f"PCA completo sem lista de itens em {source_url}")
-        for item in items:
-            if not isinstance(item, Mapping):
-                raise ValueError(f"PCA completo possui item inválido em {source_url}")
-            if (
-                str(item.get("cnpj")) != context["cnpj"]
-                or int(item.get("anoPca", -1)) != context["ano"]
-                or int(item.get("sequencialPca", -1))
-                != context["sequencial"]
-            ):
-                raise ValueError(f"Item fora do PCA esperado em {source_url}")
+        return pca_plan_context(
+            numero_controle,
+            expected_cnpj=cnpj,
+            expected_year=ano,
+            expected_sequence=sequencial,
+        )
 
 
 class PriceRegistryCollector:
@@ -288,6 +491,13 @@ class PriceRegistryCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                work_index=work_index,
+                cnpj=context["cnpj"],
+                codigo_unidade=context["codigo_unidade"],
+            )
             while True:
                 params = {
                     "dataInicial": window_start,
@@ -302,27 +512,33 @@ class PriceRegistryCollector:
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            source.endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = self._validate_ata(payload, context, url)
                     if external_id is not None:
                         found.append((payload, external_id, url, params))
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             return (
@@ -376,7 +592,11 @@ class PriceRegistryCollector:
                 pages_requested=pages_requested,
                 records_count=len(records),
             )
-            yield CollectionCheckpoint(str(work_index))
+            yield _target_checkpoint(
+                work_index,
+                context,
+                qualifier=f"{window_start}:{window_end}",
+            )
 
     def _target_context(self, target, expected_uf):
         missing = [
@@ -458,40 +678,88 @@ class PublishedContractCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                target_index=target_index,
+                cnpj=context["cnpj"],
+                codigo_unidade=context["codigo_unidade"],
+            )
             while True:
+                query_unit = self._query_unit_code(
+                    context["codigo_unidade"]
+                )
                 params = {
                     **source.params,
                     "cnpjOrgao": context["cnpj"],
-                    "codigoUnidadeAdministrativa": context["codigo_unidade"],
+                    "codigoUnidadeAdministrativa": query_unit,
                     source.page_param: page,
                     source.page_size_param: source.page_size,
                 }
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
+
+                def request():
+                    pacer.wait()
+                    try:
+                        response = self._request(source, params)
+                        request_url = url
+                        record_params = {
+                            **params,
+                            "codigoUnidadeAdministrativaOriginal": context[
+                                "codigo_unidade"
+                            ],
+                            "consultaSemFiltroUnidade": False,
+                        }
+                    except PNCPClientError as error:
+                        if error.status_code != 422:
+                            raise
+                        fallback_params = dict(params)
+                        fallback_params.pop("codigoUnidadeAdministrativa")
+                        request_url = self.client.build_url(
+                            source.endpoint,
+                            fallback_params,
+                            base_url=source.base,
+                        )
+                        self.logger.event(
+                            "pncp_contract_unit_fallback",
+                            source_id=source.id,
+                            target_index=target_index,
+                            cnpj=context["cnpj"],
+                            codigo_unidade=context["codigo_unidade"],
+                            codigo_unidade_consulta=query_unit,
+                            page=page,
+                            status_original=422,
+                            action="retry_without_unit_filter",
+                        )
+                        pacer.wait()
+                        response = self._request(source, fallback_params)
+                        record_params = {
+                            **fallback_params,
+                            "codigoUnidadeAdministrativaOriginal": context[
+                                "codigo_unidade"
+                            ],
+                            "consultaSemFiltroUnidade": True,
+                        }
+                    return response, (request_url, record_params)
+
+                response, records, request_context, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
+                url, record_params = request_context
                 for payload in records:
                     external_id = self._validate_contract(
                         payload, context, url
                     )
                     if external_id is not None:
-                        found.append((payload, external_id, url, params))
-                if not records or _is_last_response_page(response, page):
+                        found.append(
+                            (payload, external_id, url, record_params)
+                        )
+                if outcome == "last":
                     break
                 page += 1
             return target_index, context, found, pages_requested
@@ -525,7 +793,7 @@ class PublishedContractCollector:
                 pages_requested=pages_requested,
                 contracts_count=len(contracts),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target, expected_uf):
         missing = [
@@ -549,6 +817,32 @@ class PublishedContractCollector:
             "uf": actual_uf,
         }
 
+    def _request(self, source, params):
+        return self.client.get(
+            source.endpoint,
+            params,
+            base_url=source.base,
+            timeout_seconds=source.timeout_seconds,
+            headers=source.headers,
+            max_retries=source.max_retries,
+            retry_backoff_seconds=source.retry_backoff_seconds,
+        )
+
+    @staticmethod
+    def _query_unit_code(unit_code: str) -> str:
+        if len(unit_code) > 6 and unit_code.isdigit():
+            return str(int(unit_code))
+        return unit_code
+
+    @staticmethod
+    def _same_unit_code(actual: object, expected: str) -> bool:
+        actual_text = str(actual)
+        if actual_text == expected:
+            return True
+        if actual_text.isdigit() and expected.isdigit():
+            return int(actual_text) == int(expected)
+        return False
+
     def _validate_contract(self, payload, context, source_url):
         external_id = payload.get("numeroControlePNCP")
         match = self.control_number_pattern.fullmatch(str(external_id or ""))
@@ -563,7 +857,7 @@ class PublishedContractCollector:
             or str(actual_uf) != context["uf"]
         ):
             raise ValueError(f"Contrato fora do órgão/UF alvo em {source_url}")
-        if str(actual_unit) != context["codigo_unidade"]:
+        if not self._same_unit_code(actual_unit, context["codigo_unidade"]):
             self.logger.event(
                 "pncp_contract_scope_mismatch",
                 external_id=str(external_id),
@@ -606,6 +900,12 @@ class CommitmentCollector:
             page = 1
             found = []
             pages_requested = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                target_index=target_index,
+                numero_controle=context["numero_controle"],
+            )
             while True:
                 params = {
                     source.page_param: page,
@@ -614,29 +914,35 @@ class CommitmentCollector:
                 url = self.client.build_url(
                     endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
-                    not_found_as_empty=True,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                            not_found_as_empty=True,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = self._validate_commitment(
                         payload, context, url
                     )
                     found.append((payload, external_id, url, params))
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             return target_index, context, found, pages_requested
@@ -669,7 +975,7 @@ class CommitmentCollector:
                 pages_requested=pages_requested,
                 commitments_count=len(commitments),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target):
         numero_controle = str(target.get("numero_controle") or "")
@@ -755,6 +1061,14 @@ class ContractTimelineCollector:
             page = 1
             pages_requested = 0
             records_count = 0
+            guard = _PaginationGuard(
+                source.id,
+                self.logger,
+                work_index=work_index,
+                window_start=window_start,
+                window_end=window_end,
+                modality=modality,
+            )
             while True:
                 params = {
                     **base_params,
@@ -767,22 +1081,28 @@ class ContractTimelineCollector:
                 url = self.client.build_url(
                     source.endpoint, params, base_url=source.base
                 )
-                pacer.wait()
-                response = self.client.get(
-                    source.endpoint,
-                    params,
-                    base_url=source.base,
-                    timeout_seconds=source.timeout_seconds,
-                    headers=source.headers,
-                    max_retries=source.max_retries,
-                    retry_backoff_seconds=source.retry_backoff_seconds,
+
+                def request():
+                    pacer.wait()
+                    return (
+                        self.client.get(
+                            source.endpoint,
+                            params,
+                            base_url=source.base,
+                            timeout_seconds=source.timeout_seconds,
+                            headers=source.headers,
+                            max_retries=source.max_retries,
+                            retry_backoff_seconds=source.retry_backoff_seconds,
+                        ),
+                        None,
+                    )
+
+                response, records, _, attempts, outcome = (
+                    _fetch_validated_page(
+                        request, source, page, guard
+                    )
                 )
-                pages_requested += 1
-                records = (
-                    []
-                    if response == []
-                    else records_from_response(response, source.item_path)
-                )
+                pages_requested += attempts
                 for payload in records:
                     external_id = payload.get(self.external_id_field)
                     actual_uf = value_at_path(payload, self.uf_field_path)
@@ -813,7 +1133,7 @@ class ContractTimelineCollector:
                             "work_index": work_index,
                         },
                     )
-                if not records or _is_last_response_page(response, page):
+                if outcome == "last":
                     break
                 page += 1
             self.logger.event(
@@ -827,7 +1147,17 @@ class ContractTimelineCollector:
                 pages_requested=pages_requested,
                 records_count=records_count,
             )
-            yield CollectionCheckpoint(str(work_index))
+            yield _target_checkpoint(
+                work_index,
+                {
+                    "window_start": window_start,
+                    "window_end": window_end,
+                    "modality": modality,
+                },
+                target_key=(
+                    f"{window_start}:{window_end}|modalidade={modality}"
+                ),
+            )
 
 
 class ContractCollector(PNCPCollector):
@@ -898,16 +1228,6 @@ def _response_envelope_summary(response: Any) -> dict[str, Any]:
         if key in response:
             summary[key] = response[key]
     return summary
-
-
-def _is_last_response_page(response: Any, current_page: int) -> bool:
-    if not isinstance(response, Mapping):
-        return False
-    total_pages = response.get("totalPaginas")
-    try:
-        return total_pages is not None and current_page >= int(total_pages)
-    except (TypeError, ValueError):
-        return False
 
 
 def _quarter_date_windows(
@@ -1064,6 +1384,7 @@ class PurchaseItemCollector:
                 headers=source.headers,
                 max_retries=source.max_retries,
                 retry_backoff_seconds=source.retry_backoff_seconds,
+                not_found_as_empty=True,
             )
             return (
                 target_index,
@@ -1107,7 +1428,7 @@ class PurchaseItemCollector:
                 numero_controle=context["numero_controle"],
                 items_count=len(items),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(target_index, context)
 
     def _target_context(self, target):
         missing = [
@@ -1179,6 +1500,7 @@ class ItemResultCollector:
                 headers=source.headers,
                 max_retries=source.max_retries,
                 retry_backoff_seconds=source.retry_backoff_seconds,
+                not_found_as_empty=True,
             )
             return (
                 target_index,
@@ -1237,7 +1559,14 @@ class ItemResultCollector:
                 requested=requested,
                 results_count=len(results),
             )
-            yield CollectionCheckpoint(str(target_index))
+            yield _target_checkpoint(
+                target_index,
+                {
+                    "numero_controle": context["numero_controle"],
+                    "numero_item": context["numeroItem"],
+                    "tem_resultado": requested,
+                },
+            )
 
     def _target_context(self, target):
         missing = [

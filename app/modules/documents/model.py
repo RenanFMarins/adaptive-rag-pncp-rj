@@ -7,15 +7,18 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -89,6 +92,88 @@ class DocumentCatalogEntry(Base):
         onupdate=func.current_timestamp(),
     )
 
+    catalog_state: Mapped[DocumentCatalogState | None] = relationship(
+        back_populates="catalog_entry",
+        uselist=False,
+    )
+
+
+class DocumentCatalogInventory(Base):
+    """Snapshot imutável do conjunto de manifestos usado na reconciliação."""
+
+    __tablename__ = "document_catalog_inventories"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('RUNNING', 'COMPLETED', 'FAILED')",
+            name="ck_document_catalog_inventory_status",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    manifest_set_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    scope: Mapped[str] = mapped_column(Text)
+    authoritative_full_snapshot: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String, index=True)
+    manifest_count: Mapped[int] = mapped_column(Integer, default=0)
+    documents_seen: Mapped[int] = mapped_column(Integer, default=0)
+    documents_cataloged: Mapped[int] = mapped_column(Integer, default=0)
+    documents_updated: Mapped[int] = mapped_column(Integer, default=0)
+    documents_missing: Mapped[int] = mapped_column(Integer, default=0)
+    error_code: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.current_timestamp()
+    )
+    last_reconciled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class DocumentCatalogState(Base):
+    """Estado de disponibilidade da fonte, separado do processamento local."""
+
+    __tablename__ = "document_catalog_states"
+    __table_args__ = (
+        CheckConstraint(
+            "availability_status IN ('AVAILABLE', 'REMOVED')",
+            name="ck_document_catalog_availability",
+        ),
+    )
+
+    catalog_entry_id: Mapped[int] = mapped_column(
+        ForeignKey("document_catalog_entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    availability_status: Mapped[str] = mapped_column(String, index=True)
+    current_fingerprint: Mapped[str] = mapped_column(String(64))
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime)
+    missing_since: Mapped[datetime | None] = mapped_column(DateTime)
+    last_inventory_id: Mapped[str] = mapped_column(
+        ForeignKey("document_catalog_inventories.id"),
+        index=True,
+    )
+
+    catalog_entry: Mapped[DocumentCatalogEntry] = relationship(
+        back_populates="catalog_state"
+    )
+    last_inventory: Mapped[DocumentCatalogInventory] = relationship()
+
+
+class DocumentCatalogInventoryMember(Base):
+    """Observação de um documento em um inventário específico."""
+
+    __tablename__ = "document_catalog_inventory_members"
+
+    inventory_id: Mapped[str] = mapped_column(
+        ForeignKey("document_catalog_inventories.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    catalog_entry_id: Mapped[int] = mapped_column(
+        ForeignKey("document_catalog_entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    metadata_fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    observed_at: Mapped[datetime] = mapped_column(DateTime)
+
 
 class DocumentProcessingTaskStatus(str, Enum):
     """Estados da tarefa assíncrona de processamento documental."""
@@ -104,6 +189,14 @@ class DocumentProcessingTask(Base):
 
     # Mantém o nome físico legado para não exigir migração nem perder tarefas já gravadas.
     __tablename__ = "document_processing_jobs"
+    __table_args__ = (
+        Index(
+            "uq_document_processing_active_catalog",
+            "catalog_entry_id",
+            unique=True,
+            sqlite_where=text("status IN ('PENDENTE', 'EM_PROCESSAMENTO')"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     catalog_entry_id: Mapped[int] = mapped_column(
@@ -112,7 +205,13 @@ class DocumentProcessingTask(Base):
     status: Mapped[str] = mapped_column(String, index=True)
     tentativas: Mapped[int] = mapped_column(Integer, default=0)
     erro: Mapped[str | None] = mapped_column(Text)
+    error_code: Mapped[str | None] = mapped_column(String(100))
     motivo: Mapped[str | None] = mapped_column(String)
+    lease_owner: Mapped[str | None] = mapped_column(String(200))
+    lease_token: Mapped[str | None] = mapped_column(String(36), index=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    iniciado_em: Mapped[datetime | None] = mapped_column(DateTime)
+    concluido_em: Mapped[datetime | None] = mapped_column(DateTime)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.current_timestamp()
     )

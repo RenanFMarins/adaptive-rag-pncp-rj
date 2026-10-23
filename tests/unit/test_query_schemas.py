@@ -125,6 +125,35 @@ class QuerySchemaTests(unittest.TestCase):
                 needs_document_retrieval=True,
             )
 
+    def test_rota_structured_aceita_bases_logicas_de_ata_e_pca(self):
+        ata = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.LOOKUP,
+            entity=QueryEntity.ATA_REGISTRO_PRECO,
+            bases=[KnowledgeBase.CONVERSACIONAL],
+            operations=[StructuredOperation.LIST],
+        )
+        pca = QueryAnalysis(
+            route=QueryRoute.STRUCTURED,
+            intent=QueryIntent.AGGREGATE,
+            entity=QueryEntity.PCA,
+            bases=[KnowledgeBase.AGREGADA],
+            operations=[StructuredOperation.COUNT],
+        )
+
+        self.assertEqual(ata.entity, QueryEntity.ATA_REGISTRO_PRECO)
+        self.assertEqual(pca.entity, QueryEntity.PCA)
+
+    def test_rota_structured_rejeita_base_incorreta_para_pca(self):
+        with self.assertRaisesRegex(ValidationError, "base correspondente"):
+            QueryAnalysis(
+                route=QueryRoute.STRUCTURED,
+                intent=QueryIntent.LOOKUP,
+                entity=QueryEntity.PCA,
+                bases=[KnowledgeBase.ESTRUTURADA],
+                operations=[StructuredOperation.LIST],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
