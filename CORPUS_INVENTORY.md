@@ -2,12 +2,19 @@
 
 **Time 03 · Contratações Públicas do Estado do Rio de Janeiro**
 
-Este documento registra **o que entrou de fato no corpus**, versão por versão.
+Este documento registra **o que entrou de fato no corpus**, versão por versão,
+e o estado das camadas operacionais produzidas a partir das coletas do PNCP.
 O que deve entrar está declarado no [`corpus_manifest.yaml`](corpus_manifest.yaml).
+
+> **Escopos diferentes.** A versão `v1` abaixo identifica o corpus documental
+> normativo reproduzível. As contagens estruturadas, conversacionais e agregadas
+> pertencem ao snapshot operacional normalizado de 20/10/2026, conferido em
+> 23/10/2026. Elas não alteram nem substituem a versão `v1`.
 
 | | |
 | --- | --- |
-| **Versão corrente** | `v1` |
+| **Versão documental corrente** | `v1` |
+| **Snapshot normalizado** | 20/10/2026 (contagens conferidas em 23/10/2026) |
 | **Coleta da v1** | 21 a 23/09/2026 |
 | **Como reproduzir** | `python -m app.modules.normative.services fetch --manifest corpus_manifest.yaml --versao v1` |
 | **Nova versão + diff** | `python -m app.modules.normative.services update --manifest corpus_manifest.yaml` |
@@ -17,28 +24,107 @@ O que deve entrar está declarado no [`corpus_manifest.yaml`](corpus_manifest.ya
 
 ---
 
-## 1. Totais da versão v1
+## 1. Totais do corpus documental v1
 
 | | |
 | --- | --- |
 | **Arquivos coletados** | 13 |
 | **Bytes** | 8.916.113 (8,5 MB) |
 | **Falhas** | 0 |
-| **Bases concluídas** | 1 de 4 |
+| **Base normativa declarada concluída** | 1 de 1 (`editais_normativo`) |
 
 ---
 
-## 2. Por base
+## 2. Estado real das quatro bases
 
-| base_id | Natureza | Arquivos | Formatos | Bytes | volume_alvo | Divergência | Falhas |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `editais_normativo` | normativa | 13 | 12 pdf, 1 html | 8.916.113 | 13 | 0 | 0 |
-| `contratos_estruturado` | estruturada | — | — | — | 1200 | — | — |
-| `atas_conversacional` | conversacional | — | — | — | 20 | — | — |
-| `pca_agregada` | agregada | — | — | — | a definir | — | — |
+| base_id | Natureza | Conteúdo disponível | Situação em 23/10/2026 |
+| --- | --- | --- | --- |
+| `editais_normativo` | normativa | 13 documentos e 794 chunks: Lei 14.133/2021, 7 decretos estaduais e 5 editais | Corpus `v1` completo em relação à lista fixa do manifesto; persiste no SQLite de demonstração e possui recuperação lexical |
+| `contratos_estruturado` | estruturada | 180.419 contratações, 557.211 itens, 151.898 contratos e 1.900 empenhos normalizados | Contratações, itens e contratos completos em relação ao snapshot RAW; empenhos com cobertura parcial |
+| `atas_conversacional` | conversacional | 80.761 atas de registro de preços normalizadas | Cobertura oficial classificada como `PARTIAL`; a trilha sintética de e-mails ainda não foi integrada |
+| `pca_agregada` | agregada | 567 PCAs, 228.469 itens de PCA e 417.675 resultados homologados por item | Completa em relação ao snapshot e ao inventário RJ; não existe associação PCA→contratação confirmada |
 
-> As três últimas bases ainda não foram coletadas pelo script de coleta. Os
-> responsáveis por cada base preenchem a própria linha quando a coleta rodar.
+As palavras `COMPLETE` e `PARTIAL` descrevem a cobertura em relação ao
+snapshot e ao inventário usados pelo projeto. Elas **não** significam que o
+banco contenha todos os registros que já existiram no PNCP.
+
+### 2.1 Camada RAW principal
+
+O banco histórico local usado pela ingestão preserva 1.311.310 payloads RAW.
+Os itens de PCA permanecem aninhados no payload de `pca`, como recebidos da API.
+
+| `resource_type` | Registros RAW |
+| --- | ---: |
+| `contratacao` | 181.048 |
+| `contratacao_item` | 557.211 |
+| `resultado_item` | 417.675 |
+| `contrato` | 151.898 |
+| `empenho` | 1.900 |
+| `pca` | 1.578 |
+
+As diferenças entre RAW e normalizada são esperadas: a normalização resolve
+escopo, formatos alternativos, versões e relacionamentos antes de materializar
+as entidades analíticas. As atas vieram de uma coleta direcionada com cobertura
+híbrida e são auditadas separadamente.
+
+### 2.2 Camada normalizada
+
+**Arquivo operacional:** `data/normalized/pncp_rj_normalized.db`
+
+**Modo de consumo pela API:** somente leitura
+
+| Tabela | Registros | Cobertura registrada |
+| --- | ---: | --- |
+| `orgao` | 618 | entidades compartilhadas |
+| `unidade` | 2.117 | entidades compartilhadas |
+| `fornecedor` | 42.766 | entidades compartilhadas |
+| `contratacao` | 180.419 | `COMPLETE` para o snapshot RAW |
+| `contratacao_item` | 557.211 | `COMPLETE` para o snapshot RAW |
+| `resultado_item` | 417.675 | `COMPLETE` para o snapshot RAW |
+| `contrato` | 151.898 | `COMPLETE` para o snapshot RAW |
+| `empenho` | 1.900 | `PARTIAL`; 4 lacunas conhecidas |
+| `ata_registro_preco` | 80.761 | `PARTIAL`; coleta híbrida e direcionada |
+| `pca` | 567 | `COMPLETE` para o snapshot/inventário RJ |
+| `pca_item` | 228.469 | itens pertencentes aos 567 PCAs |
+| `pca_contratacao_link` | 0 | nenhuma associação sustentada por evidência |
+
+O recorte principal é 2023–2026. O banco preserva registros fora desse
+intervalo e valores anômalos vindos da fonte, em vez de corrigi-los
+silenciosamente:
+
+- 179.597 das 180.419 contratações pertencem a 2023–2026; 822 têm ano 2021,
+  2022 ou 2027;
+- 555.208 dos 557.211 itens de contratação pertencem a contratações de
+  2023–2026;
+- 416.325 dos 417.675 resultados pertencem a contratações de 2023–2026;
+- 151.700 dos 151.898 contratos informam ano entre 2023 e 2026; quatro registros
+  possuem anos claramente anômalos (`2302`, `2950`, `4761` e `20024`);
+- 80.660 das 80.761 atas informam ano entre 2023 e 2026; 101 informam `2424`;
+- os 567 PCAs e seus 228.469 itens estão distribuídos entre 2023 e 2026.
+
+### 2.3 Distribuição dos PCAs
+
+| Ano | PCAs | Itens de PCA |
+| ---: | ---: | ---: |
+| 2023 | 68 | 26.952 |
+| 2024 | 114 | 42.945 |
+| 2025 | 185 | 74.605 |
+| 2026 | 200 | 83.967 |
+| **Total** | **567** | **228.469** |
+
+### 2.4 Corpus documental e índices de recuperação
+
+| Artefato | Conteúdo | Modelo/situação |
+| --- | --- | --- |
+| `data/debug/pncp_normative_demo.db` | 13 documentos, 794 chunks e 13 URLs de origem | Corpus normativo completo do recorte; FTS5/BM25 disponível |
+| `indice/faiss_normativo_794/` | 794 vetores, dimensão 1.024 | `xagi/qwen3-embedding:0.6b-q4_k_m`; não é intercambiável com embeddings OpenAI |
+| `app.db` | 2 documentos de contrato e 55 chunks | Corpus operacional piloto |
+| `data/index/faiss/staging/openai-v1/` | 55 vetores, dimensão 1.024 | `openai:text-embedding-3-small:d1024`; índice selecionado atualmente pela aplicação local |
+| catálogo operacional | 0 entradas | importação do catálogo documental ainda pendente |
+
+Um FAISS só pode ser usado com os mesmos chunks e com o mesmo modelo de
+embedding que o originou. Ter a mesma dimensão não torna dois índices
+semanticamente compatíveis.
 
 ---
 
