@@ -15,6 +15,16 @@ A arquitetura evoluiu de um pipeline RAG inicialmente focado em recuperação do
 
 O objetivo é permitir que uma mesma aplicação identifique o tipo de pergunta recebida e utilize a estratégia adequada para respondê-la, podendo realizar consultas estruturadas, recuperação documental ou combinar as duas abordagens.
 
+## Demonstração em vídeo
+
+🎬 **[Assistir à apresentação do Adaptive RAG PNCP/RJ](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/download/demonstracao-adaptive-rag-2026-10-27-v1/video02.mp4)**
+
+Duração: 8min21s · gravado em 27/10/2026.
+
+O vídeo também está disponível na
+**[página da Release](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/tag/demonstracao-adaptive-rag-2026-10-27-v1)**,
+com a descrição e o arquivo original para download.
+
 ---
 
 # 1. Início rápido
