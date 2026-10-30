@@ -111,6 +111,29 @@ class QueryAnalyzerTests(unittest.TestCase):
         self.assertEqual(analysis.entity, QueryEntity.PCA_ITEM)
         self.assertEqual(analysis.aggregation_field, StructuredField.VALOR_PLANEJADO)
 
+    def test_corrige_data_assinatura_inventada_para_contratacao(self):
+        analysis = analisar_pergunta(
+            "Quantas contratações existem por modalidade em 2024?",
+            llm_fn=lambda _prompt: """{
+              "route": "structured", "intent": "aggregate",
+              "entity": "contratacao", "bases": ["estruturada"],
+              "filters": {
+                "ano": 2024, "campo_data": "data_assinatura",
+                "period_start": "2024-01-01", "period_end": "2024-12-31"
+              },
+              "operations": ["count", "group_by"],
+              "aggregation_field": null, "group_by": ["modalidade"],
+              "order_by": [], "limit": null, "semantic_query": null,
+              "needs_document_retrieval": false
+            }""",
+        )
+
+        self.assertEqual(analysis.entity, QueryEntity.CONTRATACAO)
+        self.assertEqual(
+            analysis.filters.campo_data.value,
+            "data_publicacao",
+        )
+
     def test_corrige_media_simples_para_media_ponderada_por_quilo(self):
         analysis = analisar_pergunta(
             "Qual foi o valor médio por quilo de arroz por município em 2025?",

@@ -21,6 +21,7 @@ from src.query.schemas import (
     QueryIntent,
     QueryRoute,
 )
+from src.query.structured_tool import StructuredQueryError
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -160,6 +161,22 @@ class NormalizedQueryServicesTests(unittest.TestCase):
             )
         self.assertEqual(str(raised.exception), "Base normalizada indisponível.")
         self.assertNotIn(str(secret_path), str(raised.exception))
+
+    def test_erro_de_plano_nao_e_reportado_como_banco_indisponivel(self) -> None:
+        with patch(
+            "app.modules.query.services.executar_consulta_adaptativa",
+            side_effect=StructuredQueryError("Campo temporal incompatível."),
+        ):
+            with self.assertRaisesRegex(
+                StructuredQueryError,
+                "Campo temporal incompatível",
+            ):
+                executar_consulta_estruturada(
+                    object(),  # type: ignore[arg-type]
+                    "Quantas contratações existem?",
+                    analyzer_fn=lambda _: _analysis(QueryRoute.STRUCTURED),
+                    normalized_database_url=self.database_url,
+                )
 
     def test_rota_rag_nao_exige_base_normalizada(self) -> None:
         expected = object()

@@ -313,6 +313,25 @@ def _normalizar_plano_conhecido(
         correcoes.append("aggregation.media_por_kg_ponderada")
 
     filtros = normalizado.get("filters")
+    # ``data_assinatura`` pertence a contratos, não a contratações. Alguns
+    # modelos associam qualquer ano dessa entidade a esse campo mesmo quando a
+    # pergunta não menciona assinatura. Nesse caso inequívoco, usamos a data
+    # pública disponível para contratações e evitamos entregar um plano que a
+    # SQL Tool necessariamente rejeitaria.
+    if (
+        normalizado.get("entity") == "contratacao"
+        and isinstance(filtros, dict)
+        and filtros.get("campo_data") == "data_assinatura"
+        and not re.search(r"\bassinad[oa]s?\b|\bassinatura\b", pergunta.casefold())
+    ):
+        filtros_normalizados = dict(filtros)
+        filtros_normalizados["campo_data"] = "data_publicacao"
+        normalizado["filters"] = filtros_normalizados
+        filtros = filtros_normalizados
+        correcoes.append(
+            "filters.data_assinatura_para_publicacao_em_contratacao"
+        )
+
     # ``valor_estimado`` é um campo de saída, não um filtro aceito. Para
     # perguntas com limiar explícito, convertemos a chave recorrente da LLM
     # para o filtro semântico correto, sem aceitar campos livres no schema.

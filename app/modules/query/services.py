@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import replace
 from uuid import uuid4
 
@@ -97,13 +97,20 @@ def _normalized_connection(
         raise NormalizedDatabaseUnavailable(
             "Base normalizada não configurada."
         )
+    stack = ExitStack()
     try:
-        with readonly_sqlite_connection(selected_url) as connection:
-            yield connection
+        connection = stack.enter_context(readonly_sqlite_connection(selected_url))
     except (ValueError, FileNotFoundError, sqlite3.Error) as exc:
         raise NormalizedDatabaseUnavailable(
             "Base normalizada indisponível."
         ) from exc
+    try:
+        yield connection
+    finally:
+        # Erros da consulta executada pelo chamador não significam que o
+        # arquivo normalizado esteja indisponível. O bloco de abertura acima
+        # converte somente falhas reais de configuração/conexão.
+        stack.close()
 
 
 def _executar_analise_normalizada(
