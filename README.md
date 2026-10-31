@@ -1,5 +1,7 @@
 # Adaptive RAG PNCP/RJ
 
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-176b5b.svg)](LICENSE)
+
 Sistema de consulta em linguagem natural sobre contratações públicas do Estado do Rio de Janeiro. O projeto combina consultas estruturadas em SQLite com recuperação documental, roteamento adaptativo e geração de respostas fundamentadas.
 
 Desenvolvido pelo Time 03 no Grande Desafio de IA Generativa da Residência TIC/PUC-Rio/Instituto ECOA.
@@ -204,6 +206,13 @@ data/README.md          convenções para dados locais
 - a base normalizada é aberta em modo somente leitura pela API;
 - o workflow de governança bloqueia novos artefatos proibidos em pull requests;
 - logs operacionais preservam correlação e métricas sem persistir perguntas ou respostas completas por padrão.
+
+## Licença e atribuição
+
+O software e a documentação autoral do projeto são distribuídos sob a
+[licença MIT](LICENSE). Dados e documentos provenientes do PNCP ou de outros
+publicadores continuam sujeitos à sua origem e aos termos aplicáveis; a MIT
+não relicencia conteúdo de terceiros. Consulte [NOTICE.md](NOTICE.md).
 
 ## Equipe
 
