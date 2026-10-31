@@ -67,6 +67,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm audit --registry=https://registry.npmjs.org --omit=dev --audit-level=moderate
+
+      - name: Reject high or critical development vulnerabilities
+        run: npm audit --registry=https://registry.npmjs.org --audit-level=high
+
       - name: Lint frontend
         run: npm run lint
 
