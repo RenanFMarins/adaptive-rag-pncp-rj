@@ -21,11 +21,43 @@ export interface SourceResponse {
   metadata: Record<string, unknown>
 }
 
+export type CoverageState = 'covered' | 'partial' | 'unavailable' | 'unknown'
+
+export interface CoverageResource {
+  resource?: string
+  dependency?: string
+  available_records?: number
+  state?: CoverageState
+  [key: string]: unknown
+}
+
+export interface DataCoverage {
+  state: CoverageState
+  resources: CoverageResource[]
+  messages: string[]
+}
+
+export interface StructuredWarning {
+  code: string
+  message: string
+  affected_rows: number
+}
+
+export interface StructuredResult {
+  entity: string
+  columns: string[]
+  rows: Record<string, unknown>[]
+  row_count: number
+  limit_applied: number
+  warnings: StructuredWarning[]
+  coverage: DataCoverage
+}
+
 export interface AskResponse {
   route?: string | null
   analysis?: Record<string, unknown> | null
   plan?: Record<string, unknown> | null
-  structured_result?: Record<string, unknown> | null
+  structured_result?: StructuredResult | null
   answer?: string | null
   refused?: boolean
   trace_id?: string | null
