@@ -136,6 +136,11 @@ Abra <http://127.0.0.1:5173>. Em desenvolvimento, o Vite encaminha `/auth` e `/q
 python -m pytest -q
 ```
 
+Em pull requests, o GitHub Actions executa a suíte Python offline e valida o
+lint e o build do frontend React. As dependências enxutas desse ambiente ficam
+em `requirements-ci.txt`; OCR/Docling e chamadas a serviços externos não fazem
+parte da CI.
+
 ## O que funciona sem os artefatos opcionais
 
 | Recurso | Requisito |

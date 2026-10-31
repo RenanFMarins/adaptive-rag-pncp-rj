@@ -28,7 +28,10 @@ CASES = [
 @pytest.fixture(scope="module")
 def db(tmp_path_factory):
     target = tmp_path_factory.mktemp("factual_eval") / "snapshot.db"
-    source = sqlite3.connect(f"file:{(ROOT / 'app.db').resolve()}?mode=ro", uri=True)
+    source_path = ROOT / "app.db"
+    if not source_path.is_file():
+        pytest.skip("app.db operacional ausente; avaliação factual não executada")
+    source = sqlite3.connect(f"file:{source_path.resolve()}?mode=ro", uri=True)
     dest = sqlite3.connect(target); source.backup(dest); source.close(); dest.close()
     register_models()
     engine = create_readonly_sqlite_engine("sqlite:///" + target.as_posix())
