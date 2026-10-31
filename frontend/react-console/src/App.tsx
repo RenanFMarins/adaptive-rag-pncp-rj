@@ -27,6 +27,7 @@ function App() {
   const [question, setQuestion] = useState('')
   const [topK, setTopK] = useState(5)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [conversationContext, setConversationContext] = useState<Record<string, unknown> | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -66,7 +67,10 @@ function App() {
     setBusy(true)
     setMessages((current) => [...current, { id: Date.now(), role: 'user', content: text }])
     try {
-      const response = await askQuestion(text, topK)
+      const response = await askQuestion(text, topK, conversationContext ?? undefined)
+      if (response.analysis && !response.refused) {
+        setConversationContext(response.analysis)
+      }
       setMessages((current) => [...current, { id: Date.now() + 1, role: 'assistant', content: response.answer ?? 'Consulta concluída.', response, topK }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao consultar a API')
@@ -80,6 +84,14 @@ function App() {
     sessionStorage.removeItem('rag-token')
     setUser(null)
     setMessages([])
+    setConversationContext(null)
+  }
+
+  function startNewConversation() {
+    setMessages([])
+    setConversationContext(null)
+    setQuestion('')
+    setError('')
   }
 
   if (!user) {
@@ -116,18 +128,18 @@ function App() {
       <aside className="sidebar">
         <div>
           <div className="side-brand"><div className="brand-mark small"><Building2 size={18} /></div><span>PNCP RAG</span></div>
-          <button className="new-chat" onClick={() => setMessages([])}><MessageSquarePlus size={17} /> Nova consulta</button>
+          <button className="new-chat" onClick={startNewConversation} disabled={busy}><MessageSquarePlus size={17} /> Nova consulta</button>
           <nav aria-label="Fontes disponíveis">
             <p>Fontes</p>
             <span><Database size={16} /> Dados estruturados</span>
             <span><ShieldCheck size={16} /> Documentos normativos</span>
           </nav>
         </div>
-        <div className="user-row"><div className="avatar">{user.username.slice(0, 2).toUpperCase()}</div><div><strong>{user.username}</strong><small>{user.role === 'admin' ? 'Administrador' : 'Usuário'}</small></div><button className="icon-button" onClick={logout} aria-label="Sair"><LogOut size={17} /></button></div>
+        <div className="user-row"><div className="avatar">{user.username.slice(0, 2).toUpperCase()}</div><div><strong>{user.username}</strong><small>{user.role === 'admin' ? 'Administrador' : 'Usuário'}</small></div><button className="icon-button" onClick={logout} aria-label="Sair" disabled={busy}><LogOut size={17} /></button></div>
       </aside>
 
       <section className="conversation">
-        <header><div><p className="eyebrow">Assistente de contratações</p><h2>Conversa</h2></div><label className="top-k">Top K <input type="number" min="1" max="100" value={topK} onChange={(event) => setTopK(Number(event.target.value))} /></label></header>
+        <header><div><p className="eyebrow">Assistente de contratações</p><div className="conversation-heading"><h2>Conversa</h2>{conversationContext && <span className="context-status">Contexto validado ativo</span>}</div></div><label className="top-k">Top K <input type="number" min="1" max="100" value={topK} onChange={(event) => setTopK(Number(event.target.value))} /></label></header>
         <div className="messages">
           {messages.length === 0 ? <div className="empty-state"><span className="empty-icon"><Building2 size={28} /></span><h1>O que você precisa consultar?</h1><p>Faça uma pergunta sobre contratos, contratações, normas ou documentos públicos.</p><div className="suggestions">{suggestions.map((item) => <button key={item} onClick={() => submitQuestion(item)}>{item}</button>)}</div></div> : messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-label">{message.role === 'user' ? user.username : 'Assistente'}</div><p>{message.content}</p>{message.response && <ResponseEvidence response={message.response} topK={message.topK ?? topK} />}</article>)}
           {busy && <article className="message assistant"><div className="message-label">Assistente</div><div className="thinking"><span /><span /><span /></div></article>}

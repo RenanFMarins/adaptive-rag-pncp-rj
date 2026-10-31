@@ -145,6 +145,11 @@ npm run dev
 
 Abra <http://127.0.0.1:5173>. Em desenvolvimento, o Vite encaminha `/auth` e `/query` para a API na porta 8000.
 
+Na mesma conversa, o React envia apenas a última análise estruturada validada
+para permitir acompanhamentos seguros, como `E somente os estaduais?`. O texto
+completo do histórico não é reenviado. **Nova consulta** e o logout descartam
+esse contexto.
+
 ### 6. Executar os testes
 
 ```bash
