@@ -1,0 +1,24 @@
+# Dependências necessárias para testes, lint e contratos offline da CI.
+# OCR/Docling e coletores online não são executados no GitHub Actions.
+email-validator==2.3.0
+faiss-cpu==1.15.1
+fastapi==0.141.1
+httpx==0.28.1
+httpx2==2.13.1
+langchain-text-splitters==1.1.2
+numpy==2.4.6
+openai==3.22.1
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pwdlib[argon2]==0.3.1
+PyJWT==2.15.1
+pypdf==6.21.1
+pytest==9.1.1
+python-dotenv==1.2.3
+PyYAML==6.0.3
+requests==2.34.2
+rich==15.0.0
+SQLAlchemy==2.0.54
+streamlit==1.65.0
+truststore==0.10.4
+zstandard==0.25.0
