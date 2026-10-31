@@ -54,7 +54,11 @@ _CACHE_PARTS = {
     ".cache",
 }
 _GENERATED_PATH_PREFIXES = (
+    ".pytest_tmp/",
+    "data/checkpoints/",
     "data/chunks/",
+    "data/normalized/",
+    "indice/",
 )
 
 
@@ -78,9 +82,11 @@ def policy_violations(path: str, size: int) -> list[str]:
     if name.endswith(_GENERATED_INDEX_SUFFIXES):
         violations.append("índice ou embedding gerado")
 
-    lowered_path = normalized.lower().lstrip("./")
+    lowered_path = normalized.lower()
+    while lowered_path.startswith("./"):
+        lowered_path = lowered_path[2:]
     if lowered_path.startswith(_GENERATED_PATH_PREFIXES):
-        violations.append("artefato de chunks gerado")
+        violations.append("artefato operacional gerado")
 
     if name.endswith(".log") or ".log." in name:
         violations.append("log operacional")

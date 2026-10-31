@@ -1,5 +1,0 @@
-scenario_id: contratacoes-rj
-bases:
-  - base_id: editais_normativo
-    natureza: normativa
-    volume_alvo: 2

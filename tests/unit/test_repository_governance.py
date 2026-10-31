@@ -57,12 +57,20 @@ class RepositoryGovernanceTests(unittest.TestCase):
         )
         self.assertIn("arquivo maior que 50 MiB", violations)
 
-    def test_blocks_generated_chunks_even_below_size_limit(self):
-        violations = policy_violations(
+    def test_blocks_generated_operational_paths_even_below_size_limit(self):
+        blocked = (
+            ".pytest_tmp/test_example/output.json",
+            "data/checkpoints/contratos/estado.json",
             "data/chunks/v2/2026/chunks_2026_10_lote_001.jsonl",
-            1024,
+            "data/normalized/contratos/2026/contratos_2026_10.json",
+            "indice/faiss_normativo/manifest.json",
         )
-        self.assertIn("artefato de chunks gerado", violations)
+        for path in blocked:
+            with self.subTest(path=path):
+                self.assertIn(
+                    "artefato operacional gerado",
+                    policy_violations(path, 1024),
+                )
 
     def test_accepts_file_at_size_limit(self):
         self.assertEqual(
