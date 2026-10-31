@@ -104,7 +104,20 @@ O projeto utiliza dois bancos com finalidades diferentes:
 | `app.db` | autenticação, histórico e metadados da aplicação | `python -m app.init_db` |
 | `data/normalized/pncp_rj_normalized.db` | consultas estruturadas do PNCP/RJ | gerar pela pipeline ou restaurar um snapshot publicado |
 
-Bancos, dados coletados e índices não são versionados no Git. Consulte [data/README.md](data/README.md) e a página de [Releases](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases) para os artefatos publicados.
+Bancos, dados coletados e índices não são versionados no Git. A base
+normalizada sanitizada pode ser instalada diretamente da
+[release de 20/10/2026](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/tag/base-normalizada-pncp-rj-20261020-v1):
+
+```bash
+python -m scripts.restore_normalized_release
+```
+
+O restaurador confere tamanho, SHA-256, manifesto, contagens, integridade e
+chaves estrangeiras antes de publicar o SQLite no destino. Ele recusa
+sobrescrever um banco existente e também interrompe antes do download pesado
+se não houver espaço livre seguro. Consulte o
+[guia de restauração](docs/RESTAURACAO_BASE_NORMALIZADA.md) e
+[data/README.md](data/README.md) para opções adicionais.
 
 ### 4. Iniciar o backend
 

@@ -27,10 +27,10 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 
 | Ordem | Tarefa | Estimativa | Estado | Critério de conclusão |
 | ---: | --- | ---: | :---: | --- |
-| 8 | Gerar snapshot sanitizado da base normalizada | 2–4 h | [ ] | sem usuários, tokens, logs ou segredos |
-| 9 | Compactar, dividir se necessário e gerar SHA-256 | 1–2 h | [ ] | artefatos verificáveis e dentro dos limites do GitHub |
-| 10 | Publicar release versionada da base | 1 h | [ ] | release com cobertura, data e limitações documentadas |
-| 11 | Criar script de download e restauração | 2–4 h | [ ] | instalação reproduzível sem versionar SQLite |
+| 8 | Gerar snapshot sanitizado da base normalizada | 2–4 h | [x] | sem usuários, tokens, logs ou segredos |
+| 9 | Compactar, dividir se necessário e gerar SHA-256 | 1–2 h | [x] | artefatos verificáveis e dentro dos limites do GitHub |
+| 10 | Publicar release versionada da base | 1 h | [x] | release com cobertura, data e limitações documentadas |
+| 11 | Criar script de download e restauração | 2–4 h | [x] | instalação reproduzível sem versionar SQLite |
 | 12 | Homologar em clone limpo | 2–4 h | [ ] | API, base normalizada e interface iniciam do zero |
 
 ## P1 — experiência conversacional
@@ -98,7 +98,7 @@ componentes e testes, mas ainda precisam de ativação online controlada.
 - [x] Autenticação, minimização de logs (H1) e indisponibilidade segura
   do FAISS (H2).
 - [x] Corpus normativo com 13 documentos e 794 chunks.
-- [x] Testes automatizados: 816 aprovados, 35 ignorados e 118 subtestes na
+- [x] Testes automatizados: 827 aprovados, 35 ignorados e 123 subtestes na
   última auditoria completa.
 
 As contagens e coberturas detalhadas ficam em
