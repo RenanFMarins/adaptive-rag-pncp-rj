@@ -98,6 +98,8 @@ componentes e testes, mas ainda precisam de ativação online controlada.
 - [x] Autenticação, minimização de logs (H1) e indisponibilidade segura
   do FAISS (H2).
 - [x] Corpus normativo com 13 documentos e 794 chunks.
+- [x] Auditoria de dependências do frontend, com produção sem vulnerabilidades
+  conhecidas e exceção temporária de tooling documentada.
 - [x] Testes automatizados: 827 aprovados, 35 ignorados e 123 subtestes na
   última auditoria completa.
 
