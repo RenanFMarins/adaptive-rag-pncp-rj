@@ -11,6 +11,7 @@ from app.modules.admin.routes import router as admin_router
 from app.modules.auth.routes import router as auth_router
 from app.modules.documents.routes import router as documents_router
 from app.modules.query.routes import router as query_router
+from app.modules.system.routes import router as system_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app = FastAPI(
 )
 app.add_middleware(RagPerfMiddleware)
 
+app.include_router(system_router)
 app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(admin_router)

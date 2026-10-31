@@ -115,6 +115,8 @@ python -m uvicorn app.main:app --reload
 - API: <http://127.0.0.1:8000>
 - Swagger: <http://127.0.0.1:8000/docs>
 - ReDoc: <http://127.0.0.1:8000/redoc>
+- Saúde: <http://127.0.0.1:8000/health>
+- Prontidão e capacidades: <http://127.0.0.1:8000/ready>
 
 ### 5. Iniciar o frontend React
 
