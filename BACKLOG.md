@@ -19,7 +19,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 2 | Criar `main` estável no repositório pessoal | 20–40 min | [x] | `main` publicada e definida como padrão |
 | 3 | Atualizar este roadmap com o estado real | 30–60 min | [x] | tarefas concluídas e pendentes separadas |
 | 4 | Escolher e adicionar uma licença | 15–30 min | [ ] | `LICENSE` compatível com os dados e o código |
-| 5 | Expor `/health` e `/ready` sem dados sensíveis | 1–2 h | [ ] | saúde da API e dependências verificáveis |
+| 5 | Expor `/health` e `/ready` sem dados sensíveis | 1–2 h | [x] | saúde da API e dependências verificáveis |
 | 6 | Criar CI de Python e React | 1–2 h | [ ] | testes, lint e build executados em PRs |
 | 7 | Revisar o PR amplo de limpeza do repositório | 1–2 h | [ ] | clone limpo validado antes de integrar o PR #1 |
 
