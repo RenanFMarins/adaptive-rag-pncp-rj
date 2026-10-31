@@ -27,6 +27,7 @@ __pycache__/
 # Test / coverage cache
 # ==============================
 .pytest_cache/
+.pytest_tmp/
 .mypy_cache/
 .ruff_cache/
 .cache/
@@ -72,6 +73,7 @@ htmlcov/
 # ==============================
 data/raw/
 data/exports/
+data/checkpoints/
 data/debug/backups/
 data/normalized/
 data/cache/
@@ -80,6 +82,7 @@ data/embeddings/
 data/indexes/
 index/
 indexes/
+indice/
 logs/
 data/documents/
 data/extracted/
