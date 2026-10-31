@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Building2, Database, LogOut, MessageSquarePlus, Send, ShieldCheck } from 'lucide-react'
 import { askQuestion, getCurrentUser, login, register, type AskResponse, type UserResponse } from './api'
+import { ResponseEvidence } from './ResponseEvidence'
 
 interface ChatMessage {
   id: number
   role: 'user' | 'assistant'
   content: string
   response?: AskResponse
+  topK?: number
 }
 
 const suggestions = [
@@ -65,7 +67,7 @@ function App() {
     setMessages((current) => [...current, { id: Date.now(), role: 'user', content: text }])
     try {
       const response = await askQuestion(text, topK)
-      setMessages((current) => [...current, { id: Date.now() + 1, role: 'assistant', content: response.answer ?? 'Consulta concluída.', response }])
+      setMessages((current) => [...current, { id: Date.now() + 1, role: 'assistant', content: response.answer ?? 'Consulta concluída.', response, topK }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao consultar a API')
       setMessages((current) => [...current, { id: Date.now() + 1, role: 'assistant', content: 'Não foi possível concluir a consulta.' }])
@@ -127,7 +129,7 @@ function App() {
       <section className="conversation">
         <header><div><p className="eyebrow">Assistente de contratações</p><h2>Conversa</h2></div><label className="top-k">Top K <input type="number" min="1" max="100" value={topK} onChange={(event) => setTopK(Number(event.target.value))} /></label></header>
         <div className="messages">
-          {messages.length === 0 ? <div className="empty-state"><span className="empty-icon"><Building2 size={28} /></span><h1>O que você precisa consultar?</h1><p>Faça uma pergunta sobre contratos, contratações, normas ou documentos públicos.</p><div className="suggestions">{suggestions.map((item) => <button key={item} onClick={() => submitQuestion(item)}>{item}</button>)}</div></div> : messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-label">{message.role === 'user' ? user.username : 'Assistente'}</div><p>{message.content}</p>{message.response && <div className="response-meta"><span>Rota: {message.response.route ?? 'não definida'}</span>{message.response.sources.length > 0 && <span>{message.response.sources.length} fontes</span>}<span>Top K: {topK}</span></div>}{message.response?.sources && message.response.sources.length > 0 && <details><summary>Fontes recuperadas</summary>{message.response.sources.map((source) => <div className="source" key={`${source.chunk_id}-${source.rank}`}><strong>{source.rank}. {source.chunk_id}</strong><small>{JSON.stringify(source.metadata)}</small></div>)}</details>}</article>)}
+          {messages.length === 0 ? <div className="empty-state"><span className="empty-icon"><Building2 size={28} /></span><h1>O que você precisa consultar?</h1><p>Faça uma pergunta sobre contratos, contratações, normas ou documentos públicos.</p><div className="suggestions">{suggestions.map((item) => <button key={item} onClick={() => submitQuestion(item)}>{item}</button>)}</div></div> : messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-label">{message.role === 'user' ? user.username : 'Assistente'}</div><p>{message.content}</p>{message.response && <ResponseEvidence response={message.response} topK={message.topK ?? topK} />}</article>)}
           {busy && <article className="message assistant"><div className="message-label">Assistente</div><div className="thinking"><span /><span /><span /></div></article>}
         </div>
         <footer><form className="composer" onSubmit={(event) => { event.preventDefault(); void submitQuestion() }}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua pergunta sobre contratações públicas..." rows={1} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitQuestion() } }} /><button type="submit" disabled={busy || !question.trim()} aria-label="Enviar"><Send size={18} /></button></form>{error && <p className="composer-error">{error}</p>}</footer>

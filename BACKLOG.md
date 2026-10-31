@@ -38,7 +38,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | Ordem | Tarefa | Estimativa | Estado | Critério de conclusão |
 | ---: | --- | ---: | :---: | --- |
 | 13 | Enviar contexto nas perguntas seguintes do React | 3–6 h | [ ] | conversa preserva filtros e entidade anterior |
-| 14 | Exibir fontes, cobertura e limitações na interface | 2–4 h | [ ] | usuário distingue dado estruturado, documental e parcial |
+| 14 | Exibir fontes, cobertura e limitações na interface | 2–4 h | [x] | usuário distingue dado estruturado, documental e parcial |
 | 15 | Publicar rotas de histórico com privacidade H1 | 4–8 h | [ ] | histórico autenticado e com retenção definida |
 | 16 | Publicar rotas e interface de feedback | 4–8 h | [ ] | avaliação vinculada a `query_id`, sem payload sensível |
 
