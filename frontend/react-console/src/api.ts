@@ -101,9 +101,17 @@ export function getCurrentUser() {
   return request<UserResponse>('/auth/me')
 }
 
-export function askQuestion(pergunta: string, topK: number) {
+export function askQuestion(
+  pergunta: string,
+  topK: number,
+  contexto?: Record<string, unknown>,
+) {
   return request<AskResponse>('/query/ask', {
     method: 'POST',
-    body: JSON.stringify({ pergunta, top_k: topK }),
+    body: JSON.stringify({
+      pergunta,
+      top_k: topK,
+      ...(contexto ? { contexto } : {}),
+    }),
   })
 }
