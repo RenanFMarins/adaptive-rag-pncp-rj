@@ -58,7 +58,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | ---: | --- | ---: | :---: | --- |
 | 22 | Auditar 72 resultados com datas suspeitas | 2–4 h | [x] | 59 anteriores à publicação, 10 futuras e 3 outliers; RAW preservada |
 | 23 | Auditar anos anômalos de contratos e atas | 2–4 h | [x] | 4 contratos e 101 atas confirmados como anomalias da origem |
-| 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [ ] | valor, unidade e proveniência conferidos |
+| 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [x] | 8 inconsistentes, 6 internamente coerentes; RAW e centavos conferidos |
 | 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [ ] | relatório reproduzível por snapshot |
 | 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [~] | inventário e janelas de coleta atualizados |
 | 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [~] | lacunas resolvidas ou justificadas |
