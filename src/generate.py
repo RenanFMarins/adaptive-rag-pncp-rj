@@ -204,7 +204,22 @@ def montar_contexto(
     return "\n\n".join(partes)
 
 
+def _restricao_escopo_pergunta(pergunta: str) -> str:
+    termos = _termos(pergunta)
+    if any(termo.startswith("dispens") for termo in termos) and "valor" in termos:
+        return (
+            "RESTRIÇÃO DE ESCOPO OBRIGATÓRIA: responda somente as hipóteses "
+            "em que o baixo valor é o próprio fundamento da dispensa. Não inclua "
+            "pesquisa e desenvolvimento, emergência, calamidade ou redução de "
+            "documentos de habilitação, ainda que esses assuntos apareçam nas "
+            "evidências recuperadas."
+        )
+    return ""
+
+
 def montar_prompt(pergunta: str, contexto: str) -> str:
+    restricao_escopo = _restricao_escopo_pergunta(pergunta)
+    bloco_restricao = f"{restricao_escopo}\n" if restricao_escopo else ""
     return (
         "Você é um assistente de RAG para contratações públicas.\n"
         "Responda SOMENTE com base nas evidências numeradas abaixo.\n"
@@ -228,13 +243,36 @@ def montar_prompt(pergunta: str, contexto: str) -> str:
         "diferentes. Só relacione evidências quando os identificadores e o "
         "conteúdo demonstrarem explicitamente que pertencem ao mesmo processo. "
         "Caso contrário, responda cada caso separadamente ou informe que não há "
-        "informação suficiente para fazer essa associação.\n\n"
+        "informação suficiente para fazer essa associação.\n"
+        "Em perguntas jurídicas gerais, use leis e regulamentos como fundamento "
+        "principal. Uma cláusula de edital ou contrato concreto é apenas exemplo "
+        "daquele documento: nunca a apresente como regra geral. Se houver fonte "
+        "legal ou regulamentar suficiente, omita condições encontradas somente "
+        "em editais concretos.\n"
+        "Responda ao recorte exato da pergunta. Não acrescente hipóteses jurídicas "
+        "próximas que tenham fundamento diferente. Diferencie procedimento "
+        "licitatório, ata de registro de preços e contrato administrativo; o prazo "
+        "ou a regra de um deles não vale automaticamente para os demais. Se a "
+        "pergunta for somente sobre contrato, omita prazos de atas, e vice-versa, "
+        "salvo quando o usuário pedir expressamente a comparação.\n"
+        "Quando a pergunta limitar a causa, como 'por valor' ou 'por emergência', "
+        "inclua somente hipóteses cujo fundamento seja essa causa. A existência de "
+        "um limite monetário acessório em outra hipótese não a transforma em "
+        "dispensa fundamentada apenas no valor. Em pergunta sobre dispensa "
+        "exclusivamente por baixo valor, omita emergência, pesquisa e "
+        "desenvolvimento e dispensa de documentos de habilitação, pois possuem "
+        "fundamentos jurídicos diferentes.\n\n"
         "Quando houver a seção DADOS ESTRUTURADOS, use-a somente como evidência "
         "tabular. Não atribua marcadores [n] a esses dados; os marcadores [n] "
         "referem-se exclusivamente às evidências documentais numeradas. Ao "
         "combinar as fontes, apresente primeiro os dados estruturados sem "
         "citação e cite apenas as afirmações extraídas dos documentos. Toda "
-        "afirmação documental deve trazer ao menos um marcador [n].\n\n"
+        "afirmação documental deve trazer ao menos um marcador [n]. Cada "
+        "parágrafo ou item de lista com informação documental deve conter sua "
+        "própria citação.\n\n"
+        "FORMATO OBRIGATÓRIO: cada parágrafo ou item factual, inclusive "
+        "introdução e conclusão, deve conter sua própria citação [n].\n"
+        f"{bloco_restricao}"
         f"Pergunta:\n{pergunta}\n\n"
         f"Evidências:\n{contexto}\n\n"
         "Resposta fundamentada:"

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from src.generate import (
     MENSAGEM_SEM_EVIDENCIA,
+    _restricao_escopo_pergunta,
     gerar_resposta_rag,
     montar_contexto,
     montar_prompt,
@@ -83,6 +84,29 @@ class GenerateTests(unittest.TestCase):
         self.assertIn("limite afirmações negativas", prompt)
         self.assertIn("dados estruturados sem citação", prompt)
         self.assertIn("Toda afirmação documental deve trazer", prompt)
+        self.assertIn("leis e regulamentos como fundamento principal", prompt)
+        self.assertIn("nunca a apresente como regra geral", prompt)
+        self.assertIn("Responda ao recorte exato da pergunta", prompt)
+        self.assertIn("ata de registro de preços e contrato administrativo", prompt)
+        self.assertIn("omita prazos de atas", prompt)
+        self.assertIn("limite monetário acessório", prompt)
+        self.assertIn("omita emergência, pesquisa", prompt)
+        self.assertIn("dispensa de documentos de habilitação", prompt)
+        self.assertIn("Cada parágrafo ou item de lista", prompt)
+        self.assertIn("FORMATO OBRIGATÓRIO", prompt)
+
+    def test_prompt_reforca_escopo_de_dispensa_por_valor(self):
+        prompt = montar_prompt(
+            "Quando existe dispensa por causa do valor?",
+            "[1]\nArtigo legal",
+        )
+
+        self.assertIn("RESTRIÇÃO DE ESCOPO OBRIGATÓRIA", prompt)
+        self.assertIn("baixo valor é o próprio fundamento", prompt)
+        self.assertIn("Não inclua pesquisa e desenvolvimento", prompt)
+
+    def test_restricao_de_escopo_nao_e_aplicada_a_outra_pergunta(self):
+        assert _restricao_escopo_pergunta("Qual a vigência do contrato?") == ""
 
     def test_gerar_resposta_chama_llm_com_prompt_montado(self):
         chamadas: list[str] = []

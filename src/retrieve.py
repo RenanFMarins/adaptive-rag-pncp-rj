@@ -660,6 +660,75 @@ def _continuidade_chunk(chunk_id: str, candidatos: set[str]) -> int:
     )
 
 
+def _consulta_juridica_geral(
+    pergunta: str,
+    filters: QueryFilters | None,
+    bases: list[KnowledgeBase] | None,
+) -> bool:
+    """Distingue regra jurídica geral de consulta a um documento concreto."""
+
+    if set(bases or []) != {KnowledgeBase.NORMATIVA}:
+        return False
+    if filters is not None and (filters.document_id or filters.tipo_documento):
+        return False
+
+    texto = normalizar_para_busca(pergunta)
+    documento_concreto = (
+        "este edital",
+        "esse edital",
+        "deste edital",
+        "desse edital",
+        "clausula",
+        "termo de referencia",
+        "numero controle pncp",
+    )
+    if any(expressao in texto for expressao in documento_concreto):
+        return False
+
+    indicadores = (
+        "lei",
+        "decreto",
+        "legislacao",
+        "regra",
+        "licitacao",
+        "contrato administrativo",
+        "modalidade",
+        "pregao",
+        "dispensa",
+        "dispensada",
+        "vigencia",
+    )
+    return any(indicador in texto for indicador in indicadores)
+
+
+def _reordenar_por_autoridade_normativa(
+    candidatos: list[tuple[str, float]],
+    chunks: dict[str, DocumentChunk],
+) -> list[tuple[str, float]]:
+    """Prioriza fontes gerais sem alterar nem recalcular o score RRF."""
+
+    autoridade = {"lei": 1, "decreto": 1}
+    melhor_score_secao: dict[str, float] = {}
+    for chunk_id, score in candidatos:
+        secao = re.sub(r":p\d+$", "", chunk_id)
+        melhor_score_secao[secao] = max(melhor_score_secao.get(secao, 0.0), score)
+
+    return sorted(
+        candidatos,
+        key=lambda item: (
+            autoridade.get(
+                normalizar_para_busca(chunks[item[0]].document.doc_type or ""),
+                0,
+            ),
+            melhor_score_secao[re.sub(r":p\d+$", "", item[0])],
+            int(item[0].endswith(":p1")),
+            item[1],
+            item[0],
+        ),
+        reverse=True,
+    )
+
+
 def _buscar_no_documento(
     db: Session,
     pergunta: str,
@@ -867,11 +936,27 @@ def retrieve_hibrido(
 
     if documento_normativo_id is None:
 
-        ordenados = candidatos[:top_k]
-
-        with perf_stage("source_load"):
-
-            chunks = carregar_chunks_por_ids(db, [cid for cid, _ in ordenados])
+        if _consulta_juridica_geral(pergunta, filters, bases):
+            with perf_stage("source_load"):
+                chunks = carregar_chunks_por_ids(db, [cid for cid, _ in candidatos])
+            validos = [(cid, score) for cid, score in candidatos if cid in chunks]
+            with perf_stage("normative_authority_rerank"):
+                ordenados = _reordenar_por_autoridade_normativa(
+                    validos,
+                    chunks,
+                )[:top_k]
+            if trace_collector is not None:
+                trace_collector["ranking_stages"]["authority_rerank"] = [
+                    {"chunk_id": cid, "rank": rank, "score": score}
+                    for rank, (cid, score) in enumerate(
+                        _reordenar_por_autoridade_normativa(validos, chunks),
+                        start=1,
+                    )
+                ]
+        else:
+            ordenados = candidatos[:top_k]
+            with perf_stage("source_load"):
+                chunks = carregar_chunks_por_ids(db, [cid for cid, _ in ordenados])
 
     else:
 
