@@ -70,9 +70,10 @@ referências com ano `2950` e uma com ano `20024`; elas devem ser tratadas como
 anomalias de qualidade, não corrigidas silenciosamente no catálogo.
 
 Catálogo e corpus processado têm finalidades diferentes: as 549.171 entradas
-indicam arquivos disponíveis e suas URLs, enquanto apenas 2 documentos e 55
-chunks estão processados no corpus operacional atual. Consultar o conteúdo dos
-demais arquivos ainda depende da fila de processamento sob demanda.
+indicam arquivos disponíveis e suas URLs. Em 01/11/2026, o corpus operacional
+contém 15 documentos e 849 chunks: 13 documentos/794 chunks normativos e 2
+documentos/55 chunks estruturados. Consultar o conteúdo dos demais arquivos
+catalogados ainda depende da fila de processamento sob demanda.
 
 ## Diagnósticos offline sem copiar o banco operacional
 

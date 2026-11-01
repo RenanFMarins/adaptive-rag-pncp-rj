@@ -37,9 +37,9 @@ O que deve entrar está declarado no [`corpus_manifest.yaml`](corpus_manifest.ya
 
 ## 2. Estado real das quatro bases
 
-| base_id | Natureza | Conteúdo disponível | Situação em 23/10/2026 |
+| base_id | Natureza | Conteúdo disponível | Situação em 01/11/2026 |
 | --- | --- | --- | --- |
-| `editais_normativo` | normativa | 13 documentos e 794 chunks: Lei 14.133/2021, 7 decretos estaduais e 5 editais | Corpus `v1` completo em relação à lista fixa do manifesto; persiste no SQLite de demonstração e possui recuperação lexical |
+| `editais_normativo` | normativa | 13 documentos e 794 chunks: Lei 14.133/2021, 7 decretos estaduais e 5 editais | Corpus `normativo-v1` integrado ao `app.db`, com proveniência, URLs e recuperação FTS5/BM25; FAISS operacional ainda não cobre esses chunks |
 | `contratos_estruturado` | estruturada | 180.419 contratações, 557.211 itens, 151.898 contratos e 1.900 empenhos normalizados | Contratações, itens e contratos completos em relação ao snapshot RAW; empenhos com cobertura parcial |
 | `atas_conversacional` | conversacional | 80.761 atas de registro de preços normalizadas | Cobertura oficial classificada como `PARTIAL`; a trilha sintética de e-mails ainda não foi integrada |
 | `pca_agregada` | agregada | 567 PCAs, 228.469 itens de PCA e 417.675 resultados homologados por item | Completa em relação ao snapshot e ao inventário RJ; não existe associação PCA→contratação confirmada |
@@ -118,13 +118,16 @@ silenciosamente:
 | --- | --- | --- |
 | `data/debug/pncp_normative_demo.db` | 13 documentos, 794 chunks e 13 URLs de origem | Corpus normativo completo do recorte; FTS5/BM25 disponível |
 | `indice/faiss_normativo_794/` | 794 vetores, dimensão 1.024 | `xagi/qwen3-embedding:0.6b-q4_k_m`; não é intercambiável com embeddings OpenAI |
-| `app.db` | 2 documentos processados, 55 chunks e 549.171 referências catalogadas | Corpus textual operacional ainda é piloto; catálogo de URLs está carregado |
+| `app.db` | 15 documentos processados, 849 chunks e 549.171 referências catalogadas | 13 documentos/794 chunks normativos e 2 documentos/55 chunks estruturados; FTS5 cobre os 849 chunks |
 | `data/index/faiss/staging/openai-v1/` | 55 vetores, dimensão 1.024 | `openai:text-embedding-3-small:d1024`; índice selecionado atualmente pela aplicação local |
 | catálogo operacional | 549.171 entradas | 335.565 de contratações e 213.606 de contratos; 90 manifestos entre 2023-01 e 2026-09 |
 
 Um FAISS só pode ser usado com os mesmos chunks e com o mesmo modelo de
 embedding que o originou. Ter a mesma dimensão não torna dois índices
 semanticamente compatíveis.
+
+A integração operacional do corpus normativo está documentada em
+[`docs/CORPUS_NORMATIVO_OPERACIONAL.md`](docs/CORPUS_NORMATIVO_OPERACIONAL.md).
 
 ---
 
