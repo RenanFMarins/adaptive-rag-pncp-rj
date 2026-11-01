@@ -170,3 +170,15 @@ Adiciona controle recuperável à fila documental: lease com expiração,
 token de fencing, timestamps operacionais, código de erro seguro e unicidade
 parcial de tarefa ativa por documento. Deve ser aplicada somente depois de
 backup e validação em cópia isolada.
+
+## 104_private_query_history.sql
+
+Cria um histórico técnico separado e vinculado ao usuário autenticado. A
+tabela não possui campos para pergunta, resposta, prompt, token ou payload
+bruto. Registra somente rota, entidade, status, comprimentos/contagens e o
+prazo de expiração. A API remove registros vencidos durante leitura e escrita,
+com retenção padrão de 30 dias configurável entre 1 e 365 dias.
+
+As tabelas legadas `queries` e `responses` não possuem vínculo com usuário e
+não são expostas pelas rotas `/history`. Esta migração não altera nem remove
+seus registros existentes.

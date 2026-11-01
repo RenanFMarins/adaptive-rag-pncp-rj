@@ -39,7 +39,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | ---: | --- | ---: | :---: | --- |
 | 13 | Enviar contexto nas perguntas seguintes do React | 3–6 h | [x] | conversa preserva filtros e entidade anterior |
 | 14 | Exibir fontes, cobertura e limitações na interface | 2–4 h | [x] | usuário distingue dado estruturado, documental e parcial |
-| 15 | Publicar rotas de histórico com privacidade H1 | 4–8 h | [ ] | histórico autenticado e com retenção definida |
+| 15 | Publicar rotas de histórico com privacidade H1 | 4–8 h | [x] | histórico autenticado e com retenção definida |
 | 16 | Publicar rotas e interface de feedback | 4–8 h | [ ] | avaliação vinculada a `query_id`, sem payload sensível |
 
 ## P1 — RAG documental
@@ -100,7 +100,7 @@ componentes e testes, mas ainda precisam de ativação online controlada.
 - [x] Corpus normativo com 13 documentos e 794 chunks.
 - [x] Auditoria de dependências do frontend, com produção sem vulnerabilidades
   conhecidas e exceção temporária de tooling documentada.
-- [x] Testes automatizados: 827 aprovados, 35 ignorados e 123 subtestes na
+- [x] Testes automatizados: 835 aprovados, 35 ignorados e 124 subtestes na
   última auditoria completa.
 
 As contagens e coberturas detalhadas ficam em

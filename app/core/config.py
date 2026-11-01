@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = SecretStr("")
     jwt_algorithm: Literal["HS256"] = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=30, gt=0, le=10080)
+    query_history_retention_days: int = Field(default=30, gt=0, le=365)
 
     model_config = SettingsConfigDict(
         env_file=".env",

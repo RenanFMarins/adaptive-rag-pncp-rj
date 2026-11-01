@@ -20,6 +20,7 @@ from app.modules.query.schemas import (
     StructuredQueryResponse,
 )
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
+from app.modules.history.services import record_query_event_safely
 from app.modules.query.services import (
     NormalizedDatabaseUnavailable,
     executar_consulta_adaptativa_api,
@@ -36,6 +37,29 @@ from src.query.structured_tool import StructuredQueryError
 
 
 router = APIRouter(prefix="/query", tags=["Query"])
+
+
+def _record_history(
+    db: Session,
+    user: User,
+    request: AdaptiveAskRequest,
+    *,
+    status_value: str,
+    route: str | None = None,
+    entity: str | None = None,
+    result_count: int = 0,
+) -> int | None:
+    """Registra somente metadados técnicos; nunca o texto da requisição."""
+
+    return record_query_event_safely(
+        db,
+        user_id=getattr(user, "id", None),
+        status=status_value,
+        question_length=len(request.pergunta),
+        route=route,
+        entity=entity,
+        result_count=result_count,
+    )
 
 
 def _detalhe_erro_consulta(exc: Exception) -> str | dict[str, object]:
@@ -55,13 +79,19 @@ def ask(
     request: AdaptiveAskRequest,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-    _user: Annotated[User, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
 ) -> AdaptiveAskResponse:
     """Executa SQL ou RAG conforme a rota validada pelo Planner."""
 
     social_answer = responder_interacao_social(request.pergunta)
     if social_answer is not None:
-        return AdaptiveAskResponse(answer=social_answer)
+        history_id = _record_history(
+            db,
+            user,
+            request,
+            status_value="success",
+        )
+        return AdaptiveAskResponse(answer=social_answer, history_id=history_id)
 
     try:
         result = executar_consulta_adaptativa_api(
@@ -71,25 +101,32 @@ def ask(
             previous_analysis=request.contexto,
         )
     except LlmProviderError as exc:
+        _record_history(db, user, request, status_value="error")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
     except NormalizedDatabaseUnavailable as exc:
+        _record_history(db, user, request, status_value="error")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
     except FAISS_UNAVAILABLE_ERRORS as exc:
+        _record_history(db, user, request, status_value="error")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=faiss_public_detail(exc),
         ) from exc
     except (QueryAnalysisError, QueryExecutionError, StructuredQueryError) as exc:
+        _record_history(db, user, request, status_value="error")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=_detalhe_erro_consulta(exc),
         ) from exc
+    except Exception:
+        _record_history(db, user, request, status_value="error")
+        raise
 
     structured_result = (
         result.structured_result.structured_result
@@ -106,6 +143,19 @@ def ask(
         )
         if result.processing_tasks:
             response.status_code = status.HTTP_202_ACCEPTED
+        history_id = _record_history(
+            db,
+            user,
+            request,
+            status_value="success",
+            route=result.plan.route.value,
+            entity=result.analysis.entity.value,
+            result_count=(
+                structured_result.row_count
+                if structured_result is not None
+                else len(result.external_documents)
+            ),
+        )
         return AdaptiveAskResponse(
             route=result.plan.route,
             analysis=result.analysis,
@@ -115,6 +165,7 @@ def ask(
             external_documents=result.external_documents,
             processing_tasks=result.processing_tasks,
             trace_id=getattr(result.rag_result, "trace_id", None),
+            history_id=history_id,
         )
 
     rag_result = result.rag_result
@@ -125,6 +176,19 @@ def ask(
         )
     if result.processing_tasks:
         response.status_code = status.HTTP_202_ACCEPTED
+    history_id = _record_history(
+        db,
+        user,
+        request,
+        status_value="success",
+        route=result.plan.route.value,
+        entity=result.analysis.entity.value,
+        result_count=(
+            structured_result.row_count
+            if structured_result is not None
+            else len(rag_result.sources)
+        ),
+    )
     return AdaptiveAskResponse(
         route=result.plan.route,
         analysis=result.analysis,
@@ -143,6 +207,7 @@ def ask(
         external_documents=result.external_documents,
         processing_tasks=result.processing_tasks,
         trace_id=getattr(rag_result, "trace_id", None),
+        history_id=history_id,
     )
 
 

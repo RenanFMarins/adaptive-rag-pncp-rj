@@ -1,7 +1,7 @@
 """Offline relational persistence tests, isolated from the project's app.db."""
 
 from contextlib import closing
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 import os
 from pathlib import Path
@@ -23,6 +23,7 @@ with patch.dict(os.environ, {"DATABASE_URL": "sqlite:///:memory:"}):
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
 from app.modules.feedback.model import Feedback
+from app.modules.history.model import QueryHistoryEvent
 from app.modules.query.model import Query, Response, ResponseSource
 from app.modules.rag.model import PIPELINE_STAGES, PipelineEvent
 
@@ -30,6 +31,7 @@ from app.modules.rag.model import PIPELINE_STAGES, PipelineEvent
 TABLES = {
     "corpus_versions", "documents", "document_chunks", "queries",
     "responses", "response_sources", "feedback", "pipeline_events", "users",
+    "query_history_events",
 }
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -142,6 +144,7 @@ class DatabaseTests(unittest.TestCase):
             (ResponseSource, {"response_id": response.id, "chunk_id": -1}),
             (Feedback, {"query_id": -1, "rating": 1}),
             (PipelineEvent, {"query_id": -1, "run_id": "x", "stage": "query_analysis", "status": "error"}),
+            (QueryHistoryEvent, {"user_id": -1, "status": "success", "question_length": 1, "result_count": 0, "expires_at": datetime.now() + timedelta(days=1)}),
         ]
         for model, values in invalid_rows:
             with self.subTest(table=model.__tablename__, values=values):

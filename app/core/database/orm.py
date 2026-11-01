@@ -87,6 +87,7 @@ def register_models() -> None:
         "feedback",
         "rag",
         "auth",
+        "history",
     ):
         import_module(f"app.modules.{module}.model")
 

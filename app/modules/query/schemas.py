@@ -112,6 +112,7 @@ class AdaptiveAskResponse(BaseModel):
     answer: str | None = None
     refused: bool = False
     trace_id: str | None = None
+    history_id: int | None = None
     sources: list[SourceResponse] = Field(default_factory=list)
     external_documents: list[ExternalDocumentResponse] = Field(default_factory=list)
     processing_tasks: list[ProcessingTaskSummary] = Field(default_factory=list)
