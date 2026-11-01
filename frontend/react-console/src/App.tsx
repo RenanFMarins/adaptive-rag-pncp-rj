@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Building2, Database, LogOut, MessageSquarePlus, Send, ShieldCheck } from 'lucide-react'
 import { askQuestion, getCurrentUser, login, register, type AskResponse, type UserResponse } from './api'
 import { ResponseEvidence } from './ResponseEvidence'
+import { FeedbackControls } from './FeedbackControls'
 
 interface ChatMessage {
   id: number
@@ -141,7 +142,7 @@ function App() {
       <section className="conversation">
         <header><div><p className="eyebrow">Assistente de contratações</p><div className="conversation-heading"><h2>Conversa</h2>{conversationContext && <span className="context-status">Contexto validado ativo</span>}</div></div><label className="top-k">Top K <input type="number" min="1" max="100" value={topK} onChange={(event) => setTopK(Number(event.target.value))} /></label></header>
         <div className="messages">
-          {messages.length === 0 ? <div className="empty-state"><span className="empty-icon"><Building2 size={28} /></span><h1>O que você precisa consultar?</h1><p>Faça uma pergunta sobre contratos, contratações, normas ou documentos públicos.</p><div className="suggestions">{suggestions.map((item) => <button key={item} onClick={() => submitQuestion(item)}>{item}</button>)}</div></div> : messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-label">{message.role === 'user' ? user.username : 'Assistente'}</div><p>{message.content}</p>{message.response && <ResponseEvidence response={message.response} topK={message.topK ?? topK} />}</article>)}
+          {messages.length === 0 ? <div className="empty-state"><span className="empty-icon"><Building2 size={28} /></span><h1>O que você precisa consultar?</h1><p>Faça uma pergunta sobre contratos, contratações, normas ou documentos públicos.</p><div className="suggestions">{suggestions.map((item) => <button key={item} onClick={() => submitQuestion(item)}>{item}</button>)}</div></div> : messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-label">{message.role === 'user' ? user.username : 'Assistente'}</div><p>{message.content}</p>{message.response && <ResponseEvidence response={message.response} topK={message.topK ?? topK} />}{message.response?.history_id && <FeedbackControls historyId={message.response.history_id} />}</article>)}
           {busy && <article className="message assistant"><div className="message-label">Assistente</div><div className="thinking"><span /><span /><span /></div></article>}
         </div>
         <footer><form className="composer" onSubmit={(event) => { event.preventDefault(); void submitQuestion() }}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua pergunta sobre contratações públicas..." rows={1} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitQuestion() } }} /><button type="submit" disabled={busy || !question.trim()} aria-label="Enviar"><Send size={18} /></button></form>{error && <p className="composer-error">{error}</p>}</footer>

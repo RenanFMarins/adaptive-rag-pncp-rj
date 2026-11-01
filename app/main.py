@@ -10,6 +10,7 @@ from app.core.normalized_startup import validar_normalizada_no_startup
 from app.modules.admin.routes import router as admin_router
 from app.modules.auth.routes import router as auth_router
 from app.modules.documents.routes import router as documents_router
+from app.modules.feedback.routes import router as feedback_router
 from app.modules.history.routes import router as history_router
 from app.modules.query.routes import router as query_router
 from app.modules.system.routes import router as system_router
@@ -39,6 +40,7 @@ app.include_router(documents_router)
 app.include_router(admin_router)
 app.include_router(query_router)
 app.include_router(history_router)
+app.include_router(feedback_router)
 
 
 @app.get("/")

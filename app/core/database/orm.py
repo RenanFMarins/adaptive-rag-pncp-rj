@@ -77,6 +77,20 @@ def _migrar_colunas_documents(banco: Engine) -> None:
             )
 
 
+def _garantir_indice_proprietario_historico(banco: Engine) -> None:
+    """Completa com segurança bancos criados antes do feedback privado."""
+
+    if banco.dialect.name != "sqlite":
+        return
+    if "query_history_events" not in inspect(banco).get_table_names():
+        return
+    with banco.begin() as conexao:
+        conexao.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_query_history_owner "
+            "ON query_history_events(id, user_id)"
+        )
+
+
 def register_models() -> None:
     """Import all ORM models so every relationship target is registered."""
 
@@ -99,6 +113,7 @@ def init_db(bind: Engine | None = None) -> None:
     banco = engine if bind is None else bind
     Base.metadata.create_all(bind=banco)
     _migrar_colunas_documents(banco)
+    _garantir_indice_proprietario_historico(banco)
 
     # FTS5 é uma tabela virtual SQLite, portanto não é representada por um
     # modelo ORM comum. Ela indexa DocumentChunk e é mantida por triggers.

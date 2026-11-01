@@ -67,6 +67,15 @@ export interface AskResponse {
   processing_tasks?: Record<string, unknown>[]
 }
 
+export interface FeedbackResponse {
+  id: number
+  history_id: number
+  rating: -1 | 1
+  reason_code: 'helpful' | 'incorrect' | 'incomplete' | 'outdated' | 'other' | null
+  created_at: string
+  updated_at: string
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = sessionStorage.getItem('rag-token')
   const headers = new Headers(options.headers)
@@ -113,6 +122,17 @@ export function askQuestion(
       pergunta,
       top_k: topK,
       ...(contexto ? { contexto } : {}),
+    }),
+  })
+}
+
+export function submitFeedback(historyId: number, rating: -1 | 1) {
+  return request<FeedbackResponse>('/feedback', {
+    method: 'POST',
+    body: JSON.stringify({
+      history_id: historyId,
+      rating,
+      reason_code: rating === 1 ? 'helpful' : 'incorrect',
     }),
   })
 }

@@ -22,3 +22,6 @@ CREATE INDEX IF NOT EXISTS idx_query_history_user_created
 
 CREATE INDEX IF NOT EXISTS idx_query_history_expires
     ON query_history_events(expires_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_query_history_owner
+    ON query_history_events(id, user_id);
