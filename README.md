@@ -119,7 +119,9 @@ chaves estrangeiras antes de publicar o SQLite no destino. Ele recusa
 sobrescrever um banco existente e também interrompe antes do download pesado
 se não houver espaço livre seguro. Consulte o
 [guia de restauração](docs/RESTAURACAO_BASE_NORMALIZADA.md) e
-[data/README.md](data/README.md) para opções adicionais.
+[data/README.md](data/README.md) para opções adicionais. O estado do ensaio
+reproduzível mais recente está no
+[relatório de homologação em clone limpo](docs/HOMOLOGACAO_CLONE_LIMPO.md).
 
 ### 4. Iniciar o backend
 
