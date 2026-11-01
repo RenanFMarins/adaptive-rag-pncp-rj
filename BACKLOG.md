@@ -46,7 +46,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 
 | Ordem | Tarefa | Estimativa | Estado | Critério de conclusão |
 | ---: | --- | ---: | :---: | --- |
-| 17 | Importar o catálogo documental operacional | 4–8 h | [ ] | catálogo deixa de ter zero entradas |
+| 17 | Importar o catálogo documental operacional | 4–8 h | [x] | 549.171 referências reconciliadas de forma idempotente |
 | 18 | Integrar os 794 chunks normativos ao fluxo operacional | 1–2 dias | [~] | proveniência e versão preservadas |
 | 19 | Regerar FAISS com um modelo de embedding compatível | 1 dia | [~] | índice deixa de ser apenas o piloto de 55 chunks |
 | 20 | Comparar BM25, FAISS e RRF no mesmo benchmark | 1–2 dias | [ ] | métricas e conjunto de perguntas idênticos |
