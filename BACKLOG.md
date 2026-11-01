@@ -56,7 +56,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 
 | Ordem | Tarefa | Estimativa | Estado | Critério de conclusão |
 | ---: | --- | ---: | :---: | --- |
-| 22 | Auditar 72 resultados com datas suspeitas | 2–4 h | [ ] | anomalias classificadas sem reescrever a RAW |
+| 22 | Auditar 72 resultados com datas suspeitas | 2–4 h | [x] | 59 anteriores à publicação, 10 futuras e 3 outliers; RAW preservada |
 | 23 | Auditar anos anômalos de contratos e atas | 2–4 h | [ ] | origem e impacto documentados |
 | 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [ ] | valor, unidade e proveniência conferidos |
 | 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [ ] | relatório reproduzível por snapshot |
