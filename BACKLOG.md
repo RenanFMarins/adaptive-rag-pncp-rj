@@ -50,7 +50,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 18 | Integrar os 794 chunks normativos ao fluxo operacional | 1–2 dias | [x] | 13 documentos, 794 chunks, FTS5, proveniência e versão validados |
 | 19 | Regerar FAISS com um modelo de embedding compatível | 1 dia | [x] | 849/849 chunks cobertos por OpenAI 1.024d, sem inconsistências |
 | 20 | Comparar BM25, FAISS e RRF no mesmo benchmark | 1–2 dias | [x] | 7 perguntas, mesmos julgamentos e cortes; resultado reproduzível |
-| 21 | Revisar respostas e citações manualmente | 4–8 h | [ ] | amostra aprovada e erros documentados |
+| 21 | Revisar respostas e citações manualmente | 4–8 h | [x] | 4 casos revalidados; correções factuais aprovadas e ressalva formal documentada |
 
 ## P2 — qualidade e cobertura dos dados
 
