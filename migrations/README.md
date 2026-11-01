@@ -182,3 +182,14 @@ com retenção padrão de 30 dias configurável entre 1 e 365 dias.
 As tabelas legadas `queries` e `responses` não possuem vínculo com usuário e
 não são expostas pelas rotas `/history`. Esta migração não altera nem remove
 seus registros existentes.
+
+## 105_private_query_feedback.sql
+
+Cria avaliações mínimas vinculadas a `query_history_events` e ao usuário
+autenticado. Cada evento aceita uma avaliação atual, atualizável de forma
+idempotente. A tabela restringe a nota a `-1` ou `1` e o motivo a códigos
+fechados; não existe campo de comentário livre. Excluir um evento de histórico
+remove sua avaliação por cascata.
+
+A tabela legada `feedback` permanece intacta para compatibilidade e não é
+exposta pelas novas rotas.

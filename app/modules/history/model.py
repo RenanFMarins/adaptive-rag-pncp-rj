@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -31,6 +38,7 @@ class QueryHistoryEvent(Base):
             "created_at",
         ),
         Index("idx_query_history_expires", "expires_at"),
+        Index("uq_query_history_owner", "id", "user_id", unique=True),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

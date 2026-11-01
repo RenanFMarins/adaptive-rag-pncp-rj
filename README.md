@@ -136,6 +136,8 @@ python -m uvicorn app.main:app --reload
 O histórico técnico autenticado fica em `/history`, com retenção limitada e
 sem perguntas ou respostas brutas. Consulte a
 [política de histórico privado](docs/HISTORICO_PRIVADO.md).
+As respostas também aceitam uma avaliação mínima, sem comentário livre,
+descrita na [política de feedback privado](docs/FEEDBACK_PRIVADO.md).
 
 ### 5. Iniciar o frontend React
 

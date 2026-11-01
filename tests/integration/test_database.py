@@ -22,7 +22,7 @@ with patch.dict(os.environ, {"DATABASE_URL": "sqlite:///:memory:"}):
 
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentChunk
-from app.modules.feedback.model import Feedback
+from app.modules.feedback.model import Feedback, PrivateQueryFeedback
 from app.modules.history.model import QueryHistoryEvent
 from app.modules.query.model import Query, Response, ResponseSource
 from app.modules.rag.model import PIPELINE_STAGES, PipelineEvent
@@ -32,6 +32,7 @@ TABLES = {
     "corpus_versions", "documents", "document_chunks", "queries",
     "responses", "response_sources", "feedback", "pipeline_events", "users",
     "query_history_events",
+    "private_query_feedback",
 }
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -68,6 +69,24 @@ class DatabaseTests(unittest.TestCase):
         self.assertNotIn("embedding", columns)
         self.assertEqual(columns["valor"]["type"].precision, 15)
         self.assertEqual(columns["valor"]["type"].scale, 2)
+
+    def test_existing_history_receives_owner_index(self):
+        engine = create_sqlite_engine("sqlite:///:memory:")
+        self.addCleanup(engine.dispose)
+        with engine.begin() as connection:
+            connection.exec_driver_sql(
+                "CREATE TABLE query_history_events ("
+                "id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL)"
+            )
+
+        init_db(engine)
+
+        indexes = inspect(engine).get_indexes("query_history_events")
+        owner = next(
+            item for item in indexes if item["name"] == "uq_query_history_owner"
+        )
+        self.assertTrue(owner["unique"])
+        self.assertEqual(owner["column_names"], ["id", "user_id"])
 
     def test_traceability_and_value_round_trip(self):
         chunk = self.make_chunk()
