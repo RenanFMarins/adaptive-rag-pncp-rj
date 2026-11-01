@@ -61,6 +61,7 @@ export interface AskResponse {
   answer?: string | null
   refused?: boolean
   trace_id?: string | null
+  history_id?: number | null
   sources: SourceResponse[]
   external_documents?: Record<string, unknown>[]
   processing_tasks?: Record<string, unknown>[]

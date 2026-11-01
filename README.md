@@ -133,6 +133,10 @@ python -m uvicorn app.main:app --reload
 - Saúde: <http://127.0.0.1:8000/health>
 - Prontidão e capacidades: <http://127.0.0.1:8000/ready>
 
+O histórico técnico autenticado fica em `/history`, com retenção limitada e
+sem perguntas ou respostas brutas. Consulte a
+[política de histórico privado](docs/HISTORICO_PRIVADO.md).
+
 ### 5. Iniciar o frontend React
 
 Requer Node.js 22 ou superior.
