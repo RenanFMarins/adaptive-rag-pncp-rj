@@ -10,11 +10,7 @@ from tempfile import TemporaryDirectory
 from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 
-import app.modules.auth.model  # noqa: F401
-import app.modules.feedback.model  # noqa: F401
-import app.modules.query.model  # noqa: F401
-import app.modules.rag.model  # noqa: F401
-from app.core.database.orm import Base, create_sqlite_engine
+from app.core.database.orm import Base, create_sqlite_engine, register_models
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import (
     Document,
@@ -35,6 +31,7 @@ class DocumentCatalogInventoryTests(unittest.TestCase):
         self.temp = TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         engine = create_sqlite_engine("sqlite:///:memory:")
+        register_models()
         Base.metadata.create_all(engine)
         self.db = sessionmaker(bind=engine)()
         self.db.add(CorpusVersion(version="teste", status="ativo"))
