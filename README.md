@@ -207,7 +207,11 @@ data/README.md          convenções para dados locais
 
 ## Limitações conhecidas
 
-- o índice FAISS operacional publicado é um piloto e não representa toda a cobertura documental;
+- o FAISS local homologado cobre os 849 chunks processados, mas o índice e o
+  banco não são versionados no Git; uma instalação limpa precisa restaurar ou
+  regenerar esses artefatos;
+- o catálogo registra 549.171 referências documentais, mas somente 15
+  documentos/849 chunks foram processados para recuperação textual;
 - `pca_contratacao_link` permanece vazio porque a API não fornece uma chave confiável para associar planejamento e execução;
 - a cobertura de atas é parcial e depende do inventário de órgãos e unidades coletados;
 - snapshots de dados são distribuídos fora do histórico Git para evitar repositórios gigantes e exposição indevida.

@@ -58,10 +58,13 @@ python3 -m src.base_estruturada.pipelines.pipeline_persistencia_normativa \
   --inventario data/inventory/v1_editais_normativo.json
 ```
 
-## Limitação atual
+## Recuperação vetorial
 
-Esta etapa habilita a recuperação lexical FTS5/BM25 dos 794 chunks. Ela não
-gera embeddings. O índice FAISS selecionado pela aplicação continua sendo o
-piloto OpenAI com 55 vetores da base estruturada. A próxima etapa deve gerar
-um índice compatível para o corpus ampliado e, depois, comparar BM25, FAISS e
-RRF usando o mesmo benchmark.
+Em seguida, os 794 chunks normativos foram adicionados em staging separado ao
+índice OpenAI dos 55 chunks estruturados. O `openai-v2` passou a cobrir 849 de
+849 chunks com `text-embedding-3-small`, dimensão 1.024, sem IDs órfãos,
+duplicados ou hashes divergentes. A aplicação local seleciona esse staging.
+
+O índice permanece fora do Git. A próxima etapa é comparar BM25, FAISS e RRF
+com o mesmo benchmark; cobertura vetorial integral não equivale, por si só, a
+qualidade de recuperação homologada.
