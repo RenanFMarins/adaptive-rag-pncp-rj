@@ -201,6 +201,7 @@ data/README.md          convenções para dados locais
 - [Arquitetura](ARQUITETURA.md)
 - [Ingestão incremental](INGESTAO_INCREMENTAL.md)
 - [Inventário do corpus](CORPUS_INVENTORY.md)
+- [Benchmark BM25 × FAISS × RRF](docs/RAG_BENCHMARK_COMPARATIVO.md)
 - [Cenários do desafio](GRANDE_DESAFIO_CENARIOS.md)
 - [Backlog](BACKLOG.md)
 - [Acompanhamento da equipe](acompanhamento/ACOMPANHAMENTO_GERAL.md)

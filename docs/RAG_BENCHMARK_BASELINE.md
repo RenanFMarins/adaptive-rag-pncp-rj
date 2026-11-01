@@ -96,3 +96,7 @@ O arquivo SQLite de demonstração é um artefato local e não é versionado no
 Git. Os resultados de latência não são comparáveis entre máquinas sem um
 ambiente controlado. Esta linha de base não homologa FAISS, RRF, geração ou
 fidelidade da resposta final.
+
+A comparação posterior, executada com o FAISS OpenAI de 849 vetores e os
+mesmos julgamentos, está em
+[`RAG_BENCHMARK_COMPARATIVO.md`](RAG_BENCHMARK_COMPARATIVO.md).
