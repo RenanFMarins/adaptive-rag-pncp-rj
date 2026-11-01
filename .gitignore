@@ -72,6 +72,7 @@ htmlcov/
 # Project generated data
 # ==============================
 data/raw/
+data/backups/
 data/exports/
 data/checkpoints/
 data/debug/backups/

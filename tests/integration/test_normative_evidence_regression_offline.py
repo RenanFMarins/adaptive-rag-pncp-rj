@@ -35,6 +35,7 @@ from src.query.schemas import KnowledgeBase, QueryFilters
 
 
 ROOT = Path(__file__).resolve().parents[2]
+MAX_AUTOMATIC_SNAPSHOT_BYTES = 512 * 1024 * 1024
 PREFIX = "editais_normativo:decreto-48817-2023-gestao-fiscalizacao:"
 TARGETS = [PREFIX + part for part in ("24:p1", "25:p1", "25:p2", "26:p1")]
 QUESTION = (
@@ -79,6 +80,11 @@ def corpus(tmp_path_factory, no_network_or_models):
         assert snapshot.is_file()
     elif not original.is_file():
         pytest.skip("Diagnóstico real requer app.db local; não fabricar textos normativos")
+    elif original.stat().st_size > MAX_AUTOMATIC_SNAPSHOT_BYTES:
+        pytest.skip(
+            "app.db excede o limite de cópia automática; informe "
+            "PNCP_REGRESSION_SNAPSHOT"
+        )
     else:
         with closing(sqlite3.connect(original.resolve().as_uri() + "?mode=ro", uri=True)) as source:
             with closing(sqlite3.connect(snapshot)) as dest:

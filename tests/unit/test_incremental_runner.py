@@ -425,10 +425,10 @@ class IncrementalRunnerTests(unittest.TestCase):
         fixture = self.write_fixture(
             {
                 "strategy": "endpoint",
-                "delay_seconds": 0.025,
+                "delay_seconds": 0.2,
                 "pages": [
                     {"cursor": str(index), "records": [self.record(str(index))]}
-                    for index in range(1, 4)
+                    for index in range(1, 7)
                 ],
             }
         )
@@ -436,8 +436,8 @@ class IncrementalRunnerTests(unittest.TestCase):
         report = run_offline_incremental(
             self.config(
                 fixture,
-                lease_seconds=0.08,
-                lease_renewal_seconds=0.02,
+                lease_seconds=1.0,
+                lease_renewal_seconds=0.1,
             )
         )
 

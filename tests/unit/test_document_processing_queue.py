@@ -9,11 +9,7 @@ from tempfile import TemporaryDirectory
 
 from sqlalchemy.orm import sessionmaker
 
-from app.core.database.orm import Base, create_sqlite_engine
-import app.modules.auth.model  # noqa: F401
-import app.modules.feedback.model  # noqa: F401
-import app.modules.query.model  # noqa: F401
-import app.modules.rag.model  # noqa: F401
+from app.core.database.orm import Base, create_sqlite_engine, register_models
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import (
     Document,
@@ -41,6 +37,7 @@ from app.modules.query.services import _agendar_processamento_documental
 class DocumentProcessingQueueTests(unittest.TestCase):
     def setUp(self) -> None:
         engine = create_sqlite_engine("sqlite:///:memory:")
+        register_models()
         Base.metadata.create_all(engine)
         self.Session = sessionmaker(bind=engine)
         self.db = self.Session()

@@ -7,13 +7,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.core.database.orm import Base, create_sqlite_engine
-# O service adaptativo importa Query/Response; registramos também os modelos
-# relacionados antes de configurar os mappers do banco temporário.
-import app.modules.auth.model  # noqa: F401
-import app.modules.feedback.model  # noqa: F401
-import app.modules.query.model  # noqa: F401
-import app.modules.rag.model  # noqa: F401
+from app.core.database.orm import Base, create_sqlite_engine, register_models
 from app.modules.corpus.model import CorpusVersion
 from app.modules.documents.model import Document, DocumentCatalogEntry, DocumentChunk
 from app.modules.documents.services import consultar_catalogo_documentos_pncp
@@ -31,6 +25,7 @@ from src.query.schemas import (
 class DocumentCatalogTests(unittest.TestCase):
     def setUp(self) -> None:
         engine = create_sqlite_engine("sqlite:///:memory:")
+        register_models()
         Base.metadata.create_all(engine)
         self.db = sessionmaker(bind=engine)()
         self.db.add(CorpusVersion(version="teste", status="ativo"))

@@ -17,6 +17,7 @@ from src.fts import buscar_fts5
 from src.retrieve import _buscar_no_documento, _identificar_norma, construir_consulta_chunks_elegiveis
 
 ROOT = Path(__file__).resolve().parents[2]
+MAX_AUTOMATIC_SNAPSHOT_BYTES = 512 * 1024 * 1024
 CASES = [
     {"id": "normativa_fiscais", "question": "Quais são as competências comuns dos fiscais de contrato e as atribuições específicas dos fiscais técnicos e administrativos?", "aspects": ["competências comuns", "atribuições do fiscal técnico", "atribuições do fiscal administrativo"]},
     {"id": "edital_obrigacoes", "question": "Quais obrigações o edital impõe ao fornecedor e ao órgão?", "aspects": ["obrigações do fornecedor", "obrigações do órgão"]},
@@ -27,12 +28,22 @@ CASES = [
 
 @pytest.fixture(scope="module")
 def db(tmp_path_factory):
-    target = tmp_path_factory.mktemp("factual_eval") / "snapshot.db"
-    source_path = ROOT / "app.db"
+    configured = os.environ.get("PNCP_REGRESSION_SNAPSHOT")
+    source_path = (
+        Path(configured).resolve() if configured else (ROOT / "app.db").resolve()
+    )
     if not source_path.is_file():
         pytest.skip("app.db operacional ausente; avaliação factual não executada")
-    source = sqlite3.connect(f"file:{source_path.resolve()}?mode=ro", uri=True)
-    dest = sqlite3.connect(target); source.backup(dest); source.close(); dest.close()
+    if not configured and source_path.stat().st_size > MAX_AUTOMATIC_SNAPSHOT_BYTES:
+        pytest.skip(
+            "app.db excede o limite de cópia automática; informe "
+            "PNCP_REGRESSION_SNAPSHOT"
+        )
+    target = source_path
+    if not configured:
+        target = tmp_path_factory.mktemp("factual_eval") / "snapshot.db"
+        source = sqlite3.connect(f"file:{source_path}?mode=ro", uri=True)
+        dest = sqlite3.connect(target); source.backup(dest); source.close(); dest.close()
     register_models()
     engine = create_readonly_sqlite_engine("sqlite:///" + target.as_posix())
     with Session(engine) as session:

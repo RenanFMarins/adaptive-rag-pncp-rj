@@ -118,9 +118,9 @@ silenciosamente:
 | --- | --- | --- |
 | `data/debug/pncp_normative_demo.db` | 13 documentos, 794 chunks e 13 URLs de origem | Corpus normativo completo do recorte; FTS5/BM25 disponível |
 | `indice/faiss_normativo_794/` | 794 vetores, dimensão 1.024 | `xagi/qwen3-embedding:0.6b-q4_k_m`; não é intercambiável com embeddings OpenAI |
-| `app.db` | 2 documentos de contrato e 55 chunks | Corpus operacional piloto |
+| `app.db` | 2 documentos processados, 55 chunks e 549.171 referências catalogadas | Corpus textual operacional ainda é piloto; catálogo de URLs está carregado |
 | `data/index/faiss/staging/openai-v1/` | 55 vetores, dimensão 1.024 | `openai:text-embedding-3-small:d1024`; índice selecionado atualmente pela aplicação local |
-| catálogo operacional | 0 entradas | importação do catálogo documental ainda pendente |
+| catálogo operacional | 549.171 entradas | 335.565 de contratações e 213.606 de contratos; 90 manifestos entre 2023-01 e 2026-09 |
 
 Um FAISS só pode ser usado com os mesmos chunks e com o mesmo modelo de
 embedding que o originou. Ter a mesma dimensão não torna dois índices

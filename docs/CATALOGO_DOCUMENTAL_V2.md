@@ -44,9 +44,47 @@ sqlite3 -readonly /tmp/pncp-catalog-test.db \
 proteção impede que um recorte mensal marque os demais documentos como
 removidos.
 
-## Resultado de referência
+## Resultado operacional
 
-O ensaio completo de 22/10/2026 reconciliou 90 manifestos, 329.750 entidades e
-549.171 referências documentais, sem duplicidades de chave de negócio e sem
-violações de chave estrangeira. O ensaio foi realizado em `/tmp`; o caminho da
-cópia não faz parte do contrato operacional.
+Em 01/11/2026, a reconciliação foi primeiro homologada em uma cópia isolada e
+depois aplicada ao `app.db` local. Foram lidos 90 manifestos mensais, 329.750
+entidades e 549.171 referências documentais:
+
+| Tipo da entidade | Referências |
+| --- | ---: |
+| Contratação | 335.565 |
+| Contrato | 213.606 |
+| **Total** | **549.171** |
+
+A validação retornou `integrity_check=ok`, zero violações de chave
+estrangeira, zero chaves de negócio duplicadas, zero registros sem URL e zero
+documentos inválidos. A segunda execução classificou as 549.171 referências
+como inalteradas e não inseriu nenhuma linha, confirmando a idempotência.
+
+O backup anterior à importação foi criado pela API de backup do SQLite e
+mantido localmente em `data/backups/`, diretório ignorado pelo Git. O banco e o
+backup não fazem parte do commit.
+
+Os metadados preservam valores fornecidos pelo PNCP. A auditoria encontrou três
+referências com ano `2950` e uma com ano `20024`; elas devem ser tratadas como
+anomalias de qualidade, não corrigidas silenciosamente no catálogo.
+
+Catálogo e corpus processado têm finalidades diferentes: as 549.171 entradas
+indicam arquivos disponíveis e suas URLs, enquanto apenas 2 documentos e 55
+chunks estão processados no corpus operacional atual. Consultar o conteúdo dos
+demais arquivos ainda depende da fila de processamento sob demanda.
+
+## Diagnósticos offline sem copiar o banco operacional
+
+Os testes factuais e de regressão normativa aceitam um snapshot explícito:
+
+```bash
+PNCP_REGRESSION_SNAPSHOT=data/debug/pncp_normative_demo.db \
+  python -m pytest -q
+```
+
+Quando a variável é informada, o snapshot é aberto em modo somente leitura e
+não é copiado. Sem a variável, os testes ainda podem criar uma cópia isolada
+do `app.db`, mas recusam automaticamente essa operação quando o arquivo excede
+512 MiB. Essa proteção impede que um catálogo grande esgote o disco durante a
+suíte.
