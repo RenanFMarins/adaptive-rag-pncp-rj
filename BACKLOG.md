@@ -1,6 +1,6 @@
 # Roadmap priorizado do Adaptive RAG PNCP/RJ
 
-Atualizado em **31/10/2026** para refletir o estado real do repositório
+Atualizado em **01/11/2026** para refletir o estado real do repositório
 pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 
 ## Critérios
@@ -31,7 +31,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 9 | Compactar, dividir se necessário e gerar SHA-256 | 1–2 h | [x] | artefatos verificáveis e dentro dos limites do GitHub |
 | 10 | Publicar release versionada da base | 1 h | [x] | release com cobertura, data e limitações documentadas |
 | 11 | Criar script de download e restauração | 2–4 h | [x] | instalação reproduzível sem versionar SQLite |
-| 12 | Homologar em clone limpo | 2–4 h | [ ] | API, base normalizada e interface iniciam do zero |
+| 12 | Homologar em clone limpo | 2–4 h | [~] | código, testes, API degradada e interface validados; restauração integral aguarda espaço local |
 
 ## P1 — experiência conversacional
 
