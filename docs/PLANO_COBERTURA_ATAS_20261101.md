@@ -35,6 +35,23 @@ A fonte tem identidade e checkpoint próprios. Reexecutá-la não depende do
 checkpoint antigo e não cria duplicatas de entidade, pois a identidade canônica
 da ata continua sendo `numeroControlePNCPAta`.
 
+## Piloto operacional
+
+Em 02/11/2026 foi executado um piloto isolado em `/tmp`, sem modificar a RAW
+oficial. Seis alvos-base cobriram respostas reais HTTP `200` e `204`, com 17
+registros observados, 14 novos, 3 inalterados e nenhuma falha.
+
+O ensaio inicial com oito workers e intervalo de 0,5 segundo provocou respostas
+HTTP `429`. A primeira execução oficial mostrou que 1 segundo ainda poderia ser
+limitado após rajadas anteriores. Por isso a fonte oficial adota uma política
+ainda mais conservadora:
+
+- uma execução por vez (`max_concurrency: 1`);
+- intervalo mínimo de 2 segundos entre chamadas;
+- cinco retries com espera progressiva.
+
+Essa configuração privilegia integridade e retomada em vez de velocidade.
+
 ## Execução operacional
 
 Antes de executar, deve-se confirmar que nenhum coletor escreve no SQLite e

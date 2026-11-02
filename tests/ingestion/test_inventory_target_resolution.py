@@ -7,7 +7,7 @@ import pytest
 
 from src.fetch_corpus import resolve_source_targets
 from src.ingestion.scope_inventory import OrganizationUnit, ScopeInventory
-from src.schema import SourceConfig
+from src.schema import Manifest, SourceConfig
 
 
 class RepositoryMustNotBeUsed:
@@ -91,3 +91,14 @@ def test_rejects_mixed_inventory_and_raw_target_sources(tmp_path: Path) -> None:
             mixed,
             manifest_directory=tmp_path,
         )
+
+
+def test_expanded_ata_source_uses_homologated_request_policy() -> None:
+    manifest_path = Path(__file__).resolve().parents[2] / "corpus_manifest.yaml"
+    source = Manifest.load(manifest_path).source(
+        "pncp_atas_rj_inventario_2023_ate_2026_10_31"
+    )
+
+    assert source.rate_limit_seconds == 2.0
+    assert source.max_concurrency == 1
+    assert source.max_retries == 5
