@@ -61,7 +61,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [x] | 8 inconsistentes, 6 internamente coerentes; RAW e centavos conferidos |
 | 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [x] | JSON e Markdown reproduzíveis; integridade, cobertura, linhagem e alertas validados |
 | 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [~] | inventário e janelas de coleta atualizados |
-| 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [~] | lacunas resolvidas ou justificadas |
+| 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [x] | 4 alvos revalidados; HTTP 502/503 confirma indisponibilidade externa e mantém cobertura parcial |
 
 ## P2 — ingestão incremental completa
 
