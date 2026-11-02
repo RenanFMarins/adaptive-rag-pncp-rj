@@ -27,9 +27,32 @@ ITEM_RESULT_FIELDS = {
 }
 
 
+def _has_targets(source: SourceConfig) -> bool:
+    return bool(
+        source.targets
+        or source.target_source_id
+        or source.target_source_ids
+        or source.target_inventory_path
+    )
+
+
 def validate_source(source: SourceConfig) -> list[str]:
     errors: list[str] = []
     prefix = f"Fonte {source.id!r}"
+
+    if (
+        source.target_inventory_path
+        and source.collector != "pncp_price_registry"
+    ):
+        errors.append(
+            f"{prefix}: target_inventory_path é suportado somente para atas"
+        )
+    if source.target_inventory_path and (
+        source.target_source_id or source.target_source_ids
+    ):
+        errors.append(
+            f"{prefix}: não misture inventário e fontes RAW de alvos"
+        )
 
     if not source.base.startswith(("http://", "https://")):
         errors.append(f"{prefix}: base deve ser uma URL HTTP(S)")
@@ -65,11 +88,7 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: endpoint de resultados não possui {placeholder}"
                 )
-        if (
-            not source.targets
-            and not source.target_source_id
-            and not source.target_source_ids
-        ):
+        if not _has_targets(source):
             errors.append(
                 f"{prefix}: configure target_source_id para os itens RAW"
             )
@@ -85,11 +104,7 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: endpoint de itens não possui {placeholder}"
                 )
-        if (
-            not source.targets
-            and not source.target_source_id
-            and not source.target_source_ids
-        ):
+        if not _has_targets(source):
             errors.append(
                 f"{prefix}: configure targets ou target_source_id para as compras"
             )
@@ -107,11 +122,7 @@ def validate_source(source: SourceConfig) -> list[str]:
                     f"{prefix}: endpoint de descoberta de PCA não possui "
                     f"{placeholder}"
                 )
-        if (
-            not source.targets
-            and not source.target_source_id
-            and not source.target_source_ids
-        ):
+        if not _has_targets(source):
             errors.append(
                 f"{prefix}: configure fontes RAW para resolver os órgãos do PCA"
             )
@@ -137,11 +148,7 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: parâmetro obrigatório ausente: {parameter}"
                 )
-        if (
-            not source.targets
-            and not source.target_source_id
-            and not source.target_source_ids
-        ):
+        if not _has_targets(source):
             errors.append(
                 f"{prefix}: configure fontes RAW para resolver as unidades"
             )
@@ -164,11 +171,7 @@ def validate_source(source: SourceConfig) -> list[str]:
                 errors.append(
                     f"{prefix}: parâmetro obrigatório ausente: {parameter}"
                 )
-        if (
-            not source.targets
-            and not source.target_source_id
-            and not source.target_source_ids
-        ):
+        if not _has_targets(source):
             errors.append(
                 f"{prefix}: configure fontes RAW para resolver as unidades"
             )
@@ -287,6 +290,7 @@ def source_summary(source: SourceConfig) -> dict[str, object]:
         "target_count": len(source.targets),
         "target_source_id": source.target_source_id,
         "target_source_ids": list(source.target_source_ids),
+        "target_inventory_path": source.target_inventory_path,
         "max_concurrency": source.max_concurrency,
     }
 

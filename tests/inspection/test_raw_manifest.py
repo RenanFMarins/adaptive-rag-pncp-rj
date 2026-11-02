@@ -31,6 +31,22 @@ class RawManifestInspectionTests(unittest.TestCase):
         self.assertTrue(any("natureza" in error for error in errors))
         self.assertTrue(any("duplicados" in error for error in errors))
 
+    def test_rejects_inventory_targets_for_unsupported_collector(self):
+        source = SourceConfig(
+            id="itens-inventario",
+            base="https://pncp.example",
+            endpoint="/itens",
+            collector="pncp_purchase_items",
+            target_inventory_path="inventory.json",
+            key_fields=("numeroItem",),
+        )
+
+        errors = validate_source(source)
+
+        self.assertTrue(
+            any("suportado somente para atas" in error for error in errors)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

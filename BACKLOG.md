@@ -60,7 +60,7 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 23 | Auditar anos anômalos de contratos e atas | 2–4 h | [x] | 4 contratos e 101 atas confirmados como anomalias da origem |
 | 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [x] | 8 inconsistentes, 6 internamente coerentes; RAW e centavos conferidos |
 | 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [x] | JSON e Markdown reproduzíveis; integridade, cobertura, linhagem e alertas validados |
-| 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [~] | inventário e janelas de coleta atualizados |
+| 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [~] | fonte validada para 2.116 unidades/8.464 alvos; execução aguarda espaço para backup e RAW |
 | 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [x] | 4 alvos revalidados; HTTP 502/503 confirma indisponibilidade externa e mantém cobertura parcial |
 
 ## P2 — ingestão incremental completa
@@ -100,7 +100,7 @@ componentes e testes, mas ainda precisam de ativação online controlada.
 - [x] Corpus normativo com 13 documentos e 794 chunks.
 - [x] Auditoria de dependências do frontend, com produção sem vulnerabilidades
   conhecidas e exceção temporária de tooling documentada.
-- [x] Testes automatizados: 869 aprovados, 36 ignorados e 124 subtestes na
+- [x] Testes automatizados: 873 aprovados, 36 ignorados e 124 subtestes na
   última auditoria completa.
 
 As contagens e coberturas detalhadas ficam em
