@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+from typing import Mapping
 
 from app.core.database.connection import database_path
 from src.ingestion.adapter_runner import (
@@ -16,6 +17,7 @@ from src.ingestion.incremental_runner import (
 from src.ingestion.pncp_client import PNCPClient
 from src.ingestion.pncp_incremental_adapters import (
     PNCPEndpointIncrementalAdapter,
+    PNCPPCAIncrementalAdapter,
     UPDATE_ENDPOINTS,
 )
 from src.ingestion.scope_inventory import (
@@ -29,6 +31,7 @@ from src.obs import JsonlLogger
 PNCP_BASE_URL = "https://pncp.gov.br"
 CONTRATACAO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contratacao"].endpoint
 CONTRATO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contrato"].endpoint
+PCA_UPDATE_ENDPOINT = PNCPPCAIncrementalAdapter.DISCOVERY_ENDPOINT
 DEFAULT_SCOPE_INVENTORY = (
     Path(__file__).resolve().parents[2]
     / "config"
@@ -37,9 +40,10 @@ DEFAULT_SCOPE_INVENTORY = (
 
 
 def _validate_online_scope(config: IncrementalRunConfig) -> None:
-    if config.resource not in {"contratacao", "contrato"}:
+    if config.resource not in {"contratacao", "contrato", "pca"}:
         raise IncrementalConfigurationError(
-            "Execução online habilitada somente para contratacao e contrato"
+            "Execução online habilitada somente para contratacao, "
+            "contrato e pca"
         )
     if config.normalized_start != config.normalized_end:
         raise IncrementalConfigurationError(
@@ -58,13 +62,13 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
         return
     if config.modality is not None:
         raise IncrementalConfigurationError(
-            "Execução online de contrato não aceita modalidade"
+            f"Execução online de {config.resource} não aceita modalidade"
         )
 
 
-def _contract_scope(
+def _inventory_scope(
     config: IncrementalRunConfig,
-) -> tuple[IncrementalRunConfig, dict[str, str], dict[str, str]]:
+) -> tuple[IncrementalRunConfig, OrganizationUnit, Mapping[str, object]]:
     try:
         member = OrganizationUnit(
             config.organization_cnpj or "",
@@ -73,13 +77,14 @@ def _contract_scope(
         )
         inventory, plan = load_scope_inventory(
             config.scope_inventory_path or DEFAULT_SCOPE_INVENTORY,
-            resource="contrato",
+            resource=config.resource,
         )
     except ScopeInventoryError as error:
         raise IncrementalConfigurationError(str(error)) from error
     if inventory.uf != config.uf:
         raise IncrementalConfigurationError(
-            "Inventário de contratos não corresponde à UF solicitada"
+            f"Inventário de {config.resource} não corresponde à UF "
+            "solicitada"
         )
     if member not in inventory.members:
         raise IncrementalConfigurationError(
@@ -101,7 +106,7 @@ def _contract_scope(
             "Cobertura informada diverge do inventário congelado"
         )
     source_id = config.job_name or (
-        "pncp_incremental_pilot_contrato_rj_"
+        f"pncp_incremental_pilot_{config.resource}_rj_"
         f"{member.cnpj}_{member.unit_code}"
     )
     prepared = replace(
@@ -111,12 +116,29 @@ def _contract_scope(
         coverage_member=expected_coverage[1],
         coverage_members=expected_coverage[2],
     )
+    return prepared, member, plan
+
+
+def _contract_scope(
+    config: IncrementalRunConfig,
+) -> tuple[IncrementalRunConfig, dict[str, str], dict[str, str]]:
+    prepared, member, _ = _inventory_scope(config)
     filters = {
         "cnpjOrgao": member.cnpj,
         "codigoUnidadeAdministrativa": member.unit_code,
     }
     validation_scope = {**filters, "uf": config.uf}
     return prepared, filters, validation_scope
+
+
+def _pca_scope(
+    config: IncrementalRunConfig,
+) -> tuple[IncrementalRunConfig, dict[str, str]]:
+    prepared, member, _ = _inventory_scope(config)
+    return prepared, {
+        "cnpj": member.cnpj,
+        "codigoUnidade": member.unit_code,
+    }
 
 
 def _run_online_endpoint(
@@ -135,8 +157,12 @@ def _run_online_endpoint(
             "uf": config.uf,
         }
         validation_scope = filters
-    else:
+    elif config.resource == "contrato":
         config, filters, validation_scope = _contract_scope(config)
+        source_id = str(config.job_name)
+    else:
+        config, filters = _pca_scope(config)
+        validation_scope = filters
         source_id = str(config.job_name)
     sqlite_path = Path(database_path(config.database_url)).resolve()
     http_log = (
@@ -153,13 +179,24 @@ def _run_online_endpoint(
         retry_backoff_seconds=0.5,
         logger=JsonlLogger(http_log),
     )
-    adapter = PNCPEndpointIncrementalAdapter(
-        PNCPIncrementalHTTPAdapter(client)
-    )
-    plan = IncrementalAdapterPlan(
-        endpoint=UPDATE_ENDPOINTS[config.resource].endpoint,
-        filters=filters,
-        event_provider=lambda _: adapter.collect(
+    transport = PNCPIncrementalHTTPAdapter(client)
+    if config.resource == "pca":
+        pca_adapter = PNCPPCAIncrementalAdapter(transport)
+        endpoint = PCA_UPDATE_ENDPOINT
+        event_provider = lambda _: pca_adapter.collect(
+            source_id,
+            config.normalized_start,
+            config.normalized_end,
+            filters=filters,
+            base_url=PNCP_BASE_URL,
+            timeout_seconds=30.0,
+            max_retries=2,
+            retry_backoff_seconds=0.5,
+        )
+    else:
+        endpoint_adapter = PNCPEndpointIncrementalAdapter(transport)
+        endpoint = UPDATE_ENDPOINTS[config.resource].endpoint
+        event_provider = lambda _: endpoint_adapter.collect(
             config.resource,
             source_id,
             config.normalized_start,
@@ -170,7 +207,11 @@ def _run_online_endpoint(
             timeout_seconds=30.0,
             max_retries=2,
             retry_backoff_seconds=0.5,
-        ),
+        )
+    plan = IncrementalAdapterPlan(
+        endpoint=endpoint,
+        filters=filters,
+        event_provider=event_provider,
     )
     return run_adapter_incremental(
         config,
