@@ -24,9 +24,10 @@ substituído.
 
 A coleta real possui entrada controlada para contratações, contratos e PCA.
 Os pilotos de contratações e contratos já foram validados contra a API real
-em bancos isolados em `/tmp`. O PCA está habilitado no código, mas ainda requer
-a primeira homologação real isolada. Atas e recursos dependentes continuam
-bloqueados no CLI online.
+em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
+ainda falta observar uma janela HTTP 200 para validar descoberta e plano
+integral com payload real. Atas e recursos dependentes continuam bloqueados no
+CLI online.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -183,7 +184,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 
 | Recurso | Suporte offline | Estratégia | Situação para API real |
 |---|---:|---|---|
-| `pca` | Sim | `endpoint` | CLI online protegido por CNPJ/unidade; piloto real pendente |
+| `pca` | Sim | `endpoint` | HTTP 204 real homologado; fluxo HTTP 200 + plano integral pendente |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
 | `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | adaptador HTTP testado com transporte simulado; não ativado |
@@ -412,6 +413,21 @@ descartável em `/tmp`, usando um único membro do inventário e a janela de
 - `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
   violações.
 
+Na mesma data, o piloto de PCA foi executado em outro banco descartável em
+`/tmp`. Três janelas de um dia, para dois membros válidos do inventário,
+retornaram HTTP 204 e foram concluídas corretamente:
+
+- nenhum ativo RAW vazio ou artificial foi criado;
+- as três execuções e janelas terminaram com sucesso;
+- as coberturas permaneceram `PENDING`, sem declarar completude indevida;
+- a comparação diagnóstica com e sem o filtro opcional de unidade retornou o
+  mesmo HTTP 204, descartando esse filtro como causa da janela vazia;
+- `PRAGMA integrity_check` retornou `ok` e não houve violações de chave
+  estrangeira.
+
+Essa evidência homologa o transporte e o caso vazio, mas não substitui um
+piloto HTTP 200. A recuperação do plano integral real permanece pendente.
+
 ## Pendências para ativação operacional
 
 1. Obter uma fonte externa oficial para medir a completude absoluta do
@@ -422,3 +438,5 @@ descartável em `/tmp`, usando um único membro do inventário e a janela de
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
 5. Habilitar online os demais recursos um por vez, repetindo o piloto isolado.
+6. Encontrar uma janela PCA com retorno HTTP 200 e confirmar, em `/tmp`, a
+   descoberta fragmentada, a recuperação integral e a idempotência do plano.
