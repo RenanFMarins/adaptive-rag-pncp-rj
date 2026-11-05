@@ -46,7 +46,7 @@ Guardrail → Analyzer → Planner → Executor → Resposta
 
 ## Cobertura da base normalizada
 
-Inventário validado em outubro de 2026:
+Inventário validado em 5 de novembro de 2026:
 
 | Entidade | Registros |
 | --- | ---: |
@@ -55,7 +55,7 @@ Inventário validado em outubro de 2026:
 | Resultados homologados | 417.675 |
 | Contratos | 151.898 |
 | Empenhos | 1.900 |
-| Atas de registro de preços | 80.761 |
+| Atas de registro de preços | 82.713 |
 | PCAs | 567 |
 | Itens de PCA | 228.469 |
 
