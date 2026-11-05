@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from src.schema import value_at_path
@@ -123,9 +124,61 @@ def build_scope_inventory(
     return ScopeInventory(uf, tuple(sorted(members)))
 
 
+def load_scope_inventory(
+    path: str | Path,
+    *,
+    resource: str,
+) -> tuple[ScopeInventory, Mapping[str, Any]]:
+    """Carrega e valida um inventário congelado e seu plano de cobertura."""
+
+    inventory_path = Path(path).expanduser().resolve()
+    try:
+        document = json.loads(inventory_path.read_text(encoding="utf-8"))
+        scope = document["scope"]
+        members = tuple(
+            sorted(
+                OrganizationUnit(
+                    member["cnpj"],
+                    member["codigo_unidade"],
+                    member["uf"],
+                )
+                for member in scope["members"]
+            )
+        )
+        inventory = ScopeInventory(str(scope["uf"]), members)
+        plan = document["coverage_plans"][resource]
+    except (
+        KeyError,
+        OSError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+    ) as error:
+        raise ScopeInventoryError(
+            f"Inventário de cobertura inválido: {inventory_path}"
+        ) from error
+
+    if scope.get("inventory_id") != inventory.inventory_id:
+        raise ScopeInventoryError(
+            "Inventário de cobertura possui identidade divergente"
+        )
+    if plan.get("inventory_id") != inventory.inventory_id:
+        raise ScopeInventoryError(
+            "Plano de cobertura não corresponde ao inventário"
+        )
+    if int(plan.get("member_count", -1)) != len(inventory.members):
+        raise ScopeInventoryError(
+            "Plano de cobertura possui contagem divergente"
+        )
+    if not str(plan.get("name") or "").strip():
+        raise ScopeInventoryError("Plano de cobertura não possui nome")
+    return inventory, plan
+
+
 __all__ = [
     "OrganizationUnit",
     "ScopeInventory",
     "ScopeInventoryError",
     "build_scope_inventory",
+    "load_scope_inventory",
 ]

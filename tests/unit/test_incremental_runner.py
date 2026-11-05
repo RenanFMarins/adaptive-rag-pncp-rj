@@ -197,6 +197,57 @@ class IncrementalRunnerTests(unittest.TestCase):
         self.assertEqual((config.resource, config.modality), ("contratacao", 6))
         self.assertEqual(json.loads(stdout.getvalue())["status"], "SUCCEEDED")
 
+    def test_cli_passes_contract_inventory_scope_to_online_pilot(self):
+        report = IncrementalRunReport(
+            job_id="job-1",
+            window_id="window-1",
+            run_id="run-1",
+            resource="contrato",
+            strategy="endpoint",
+            status="SUCCEEDED",
+            records_seen=0,
+            new=0,
+            updated=0,
+            unchanged=0,
+            lease_renewals=0,
+            watermark_value="2023-04-01T23:59:59.999999",
+            resumed=False,
+            reprocessed=False,
+        )
+        inventory = self.root / "inventory.json"
+        inventory.write_text("{}", encoding="utf-8")
+        with patch(
+            "src.fetch_incremental.run_online_pilot", return_value=report
+        ) as online:
+            status = main(
+                [
+                    "--resource",
+                    "contrato",
+                    "--start-date",
+                    "2023-04-01",
+                    "--end-date",
+                    "2023-04-01",
+                    "--uf",
+                    "RJ",
+                    "--organization-cnpj",
+                    "12345678000199",
+                    "--unit-code",
+                    "000001",
+                    "--scope-inventory",
+                    str(inventory),
+                    "--db-path",
+                    str(self.database),
+                    "--online-pilot",
+                ]
+            )
+
+        self.assertEqual(status, 0)
+        config = online.call_args.args[0]
+        self.assertEqual(config.resource, "contrato")
+        self.assertEqual(config.organization_cnpj, "12345678000199")
+        self.assertEqual(config.unit_code, "000001")
+        self.assertEqual(config.scope_inventory_path, inventory.resolve())
+
     def test_cli_rejects_operational_database_path(self):
         fixture = self.endpoint_fixture([])
         operational = Path(__file__).parents[2] / "data" / "operational.db"
