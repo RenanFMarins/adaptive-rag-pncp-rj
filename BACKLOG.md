@@ -1,6 +1,6 @@
 # Roadmap priorizado do Adaptive RAG PNCP/RJ
 
-Atualizado em **01/11/2026** para refletir o estado real do repositório
+Atualizado em **05/11/2026** para refletir o estado real do repositório
 pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 
 ## Critérios
@@ -59,9 +59,9 @@ pessoal. As estimativas indicam tempo de trabalho, não tempo de espera de APIs.
 | 22 | Auditar 72 resultados com datas suspeitas | 2–4 h | [x] | 59 anteriores à publicação, 10 futuras e 3 outliers; RAW preservada |
 | 23 | Auditar anos anômalos de contratos e atas | 2–4 h | [x] | 4 contratos e 101 atas confirmados como anomalias da origem |
 | 24 | Auditar 14 contratos acima de R$ 1 bilhão | 2–4 h | [x] | 8 inconsistentes, 6 internamente coerentes; RAW e centavos conferidos |
-| 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [ ] | relatório reproduzível por snapshot |
-| 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [~] | inventário e janelas de coleta atualizados |
-| 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [~] | lacunas resolvidas ou justificadas |
+| 25 | Gerar relatório automático de qualidade e cobertura | 1 dia | [x] | JSON e Markdown reproduzíveis; integridade, cobertura, linhagem e alertas validados |
+| 26 | Ampliar a cobertura parcial de atas | 1–3 dias | [x] | 2.116 unidades/8.464 alvos concluídos; 82.713 atas normalizadas e integridade validada |
+| 27 | Recuperar as quatro lacunas conhecidas de empenhos | 2–4 h | [x] | 4 alvos revalidados; HTTP 502/503 confirma indisponibilidade externa e mantém cobertura parcial |
 
 ## P2 — ingestão incremental completa
 
@@ -100,7 +100,7 @@ componentes e testes, mas ainda precisam de ativação online controlada.
 - [x] Corpus normativo com 13 documentos e 794 chunks.
 - [x] Auditoria de dependências do frontend, com produção sem vulnerabilidades
   conhecidas e exceção temporária de tooling documentada.
-- [x] Testes automatizados: 845 aprovados, 35 ignorados e 124 subtestes na
+- [x] Testes automatizados: 873 aprovados, 36 ignorados e 124 subtestes na
   última auditoria completa.
 
 As contagens e coberturas detalhadas ficam em

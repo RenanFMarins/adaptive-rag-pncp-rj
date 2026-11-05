@@ -22,6 +22,7 @@ class SourceConfig:
 	targets: tuple[Mapping[str, Any], ...] = ()
 	target_source_id: str | None = None
 	target_source_ids: tuple[str, ...] = ()
+	target_inventory_path: str | None = None
 	target_resource_type: str | None = None
 	target_field_paths: Mapping[str, str] = field(default_factory=dict)
 	discovery_endpoint_template: str | None = None
@@ -63,6 +64,7 @@ class SourceConfig:
 				str(source_id)
 				for source_id in value.get("target_source_ids", ())
 			),
+			target_inventory_path=value.get("target_inventory_path"),
 			target_resource_type=value.get("target_resource_type"),
 			target_field_paths=dict(value.get("target_field_paths", {})),
 			discovery_endpoint_template=value.get(

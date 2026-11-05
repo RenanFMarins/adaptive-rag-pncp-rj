@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import replace
+from pathlib import Path
 
 from .ingest import RawRepository, ingest_records
 from .ingestion.pncp_client import PNCPClient
 from .ingestion.checkpoint import stable_target_metadata
+from .ingestion.scope_inventory import OrganizationUnit, ScopeInventory
 from .ingestion.pncp_collector import (
     CommitmentCollector,
     ContractCollector,
@@ -25,9 +27,50 @@ Collector = PNCPCollector
 
 
 def resolve_source_targets(
-    repository: RawRepository, source: SourceConfig
+    repository: RawRepository,
+    source: SourceConfig,
+    *,
+    manifest_directory: Path | None = None,
 ) -> SourceConfig:
     """Resolve alvos a partir da última versão dos ativos RAW."""
+    if source.target_inventory_path:
+        if source.target_source_id or source.target_source_ids:
+            raise ValueError(
+                "Fonte não pode misturar inventário e fontes RAW de alvos"
+            )
+        base = manifest_directory or Path.cwd()
+        inventory_path = Path(source.target_inventory_path)
+        if not inventory_path.is_absolute():
+            inventory_path = base / inventory_path
+        try:
+            document = json.loads(inventory_path.read_text(encoding="utf-8"))
+            scope = document["scope"]
+            members = tuple(
+                sorted(
+                    OrganizationUnit(
+                        member["cnpj"],
+                        member["codigo_unidade"],
+                        member["uf"],
+                    )
+                    for member in scope["members"]
+                )
+            )
+            inventory = ScopeInventory(str(scope["uf"]), members)
+            plan = document["coverage_plans"][source.resource_type]
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError(
+                f"Inventário de alvos inválido: {inventory_path}"
+            ) from error
+        if scope.get("inventory_id") != inventory.inventory_id:
+            raise ValueError("Inventário de alvos possui identidade divergente")
+        if plan.get("inventory_id") != inventory.inventory_id:
+            raise ValueError(
+                "Plano de cobertura não corresponde ao inventário de alvos"
+            )
+        if int(plan.get("member_count", -1)) != len(inventory.members):
+            raise ValueError("Plano de cobertura possui contagem divergente")
+        return replace(source, targets=inventory.targets)
+
     target_source_ids = source.target_source_ids
     if not target_source_ids and source.target_source_id:
         target_source_ids = (source.target_source_id,)
@@ -131,7 +174,11 @@ def run(
     source = manifest.source(source_id)
     repository = RawRepository(database_url)
     try:
-        source = resolve_source_targets(repository, source)
+        source = resolve_source_targets(
+            repository,
+            source,
+            manifest_directory=Path(manifest_path).resolve().parent,
+        )
         checkpoint = repository.get_checkpoint(
             source.id, source.resource_type
         )
