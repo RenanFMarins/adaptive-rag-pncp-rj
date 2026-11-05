@@ -22,10 +22,9 @@ substituído.
   existentes;
 - nunca usa um banco padrão implícito.
 
-A coleta real possui entrada controlada para contratações e contratos. O
-piloto de contratações já foi validado contra a API real; o de contratos está
-habilitado no código, mas ainda requer a primeira homologação real isolada em
-`/tmp`. PCA, atas e recursos dependentes continuam bloqueados no CLI online.
+A coleta real possui entrada controlada para contratações e contratos. Os dois
+pilotos já foram validados contra a API real em bancos isolados em `/tmp`.
+PCA, atas e recursos dependentes continuam bloqueados no CLI online.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -165,7 +164,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 |---|---:|---|---|
 | `pca` | Sim | `endpoint` | adaptador testado; CLI online ainda bloqueado |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
-| `contrato` | Sim | `endpoint` | CLI online protegido habilitado por CNPJ/unidade; piloto real pendente |
+| `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | adaptador HTTP testado com transporte simulado; não ativado |
 | `contratacao_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `resultado_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
@@ -379,6 +378,19 @@ Em uma cópia migrada em `/tmp` foram validados:
 - item novo → resultado homologado novo;
 - integridade e chaves estrangeiras válidas após todas as execuções.
 
+Em 05/11/2026, o piloto de contratos também foi homologado em um banco novo e
+descartável em `/tmp`, usando um único membro do inventário e a janela de
+16/10/2026:
+
+- HTTP 200 com um contrato, classificado como `NEW`;
+- reprocessamento da mesma janela classificou a entidade como `UNCHANGED`,
+  sem criar outra versão RAW;
+- a janela adjacente sem registros retornou HTTP 204 e foi concluída sem erro;
+- o payload confirmou o mesmo CNPJ, unidade e UF RJ do membro solicitado;
+- a cobertura permaneceu `PENDING`, com 1 de 2.116 membros concluído;
+- `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
+  violações.
+
 ## Pendências para ativação operacional
 
 1. Obter uma fonte externa oficial para medir a completude absoluta do
@@ -389,5 +401,3 @@ Em uma cópia migrada em `/tmp` foram validados:
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
 5. Habilitar online os demais recursos um por vez, repetindo o piloto isolado.
-6. Homologar o primeiro piloto real de `contrato` em banco migrado dentro de
-   `/tmp`, sem aplicar mudanças ao banco operacional.
