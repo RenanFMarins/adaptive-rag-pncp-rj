@@ -37,6 +37,11 @@ class OnlinePilotTests(unittest.TestCase):
                             "name": "pncp-rj-contrato-inventario",
                             "inventory_id": inventory.inventory_id,
                             "member_count": 1,
+                        },
+                        "pca": {
+                            "name": "pncp-rj-pca-inventario",
+                            "inventory_id": inventory.inventory_id,
+                            "member_count": 1,
                         }
                     },
                 }
@@ -64,7 +69,7 @@ class OnlinePilotTests(unittest.TestCase):
             (self.config(end_date="2023-04-02"), "um dia"),
             (self.config(uf="SP"), "UF RJ"),
             (self.config(modality=15), "entre 1 e 14"),
-            (self.config(resource="pca"), "contratacao e contrato"),
+            (self.config(resource="ata"), "contratacao, contrato e pca"),
         )
         for config, message in invalid:
             with self.subTest(message=message), self.assertRaisesRegex(
@@ -172,6 +177,59 @@ class OnlinePilotTests(unittest.TestCase):
                 IncrementalConfigurationError, message
             ):
                 run_online_pilot(config)
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    @patch("src.ingestion.online_pilot.PNCPPCAIncrementalAdapter.collect")
+    def test_builds_pca_plan_from_frozen_inventory(
+        self, collect, run_adapter
+    ):
+        sentinel = object()
+        run_adapter.return_value = sentinel
+        collect.return_value = iter(())
+        config = self.config(
+            resource="pca",
+            modality=None,
+            organization_cnpj=self.member.cnpj,
+            unit_code=self.member.unit_code,
+            scope_inventory_path=self.inventory_path,
+        )
+
+        result = run_online_pilot(config)
+
+        self.assertIs(result, sentinel)
+        prepared, plan = run_adapter.call_args.args
+        self.assertEqual(
+            prepared.job_name,
+            "pncp_incremental_pilot_pca_rj_12345678000199_000001",
+        )
+        self.assertEqual(prepared.coverage_name, "pncp-rj-pca-inventario")
+        self.assertEqual(
+            plan.endpoint, "/api/consulta/v1/pca/atualizacao"
+        )
+        self.assertEqual(
+            plan.filters,
+            {"cnpj": "12345678000199", "codigoUnidade": "000001"},
+        )
+
+        list(plan.event_provider(()))
+        self.assertEqual(collect.call_args.args[0], prepared.job_name)
+        self.assertEqual(
+            collect.call_args.kwargs["filters"], plan.filters
+        )
+
+    def test_rejects_pca_with_modality(self):
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError, "pca não aceita modalidade"
+        ):
+            run_online_pilot(
+                self.config(
+                    resource="pca",
+                    modality=6,
+                    organization_cnpj=self.member.cnpj,
+                    unit_code=self.member.unit_code,
+                    scope_inventory_path=self.inventory_path,
+                )
+            )
 
     def test_operational_requires_explicit_log(self):
         with self.assertRaisesRegex(
