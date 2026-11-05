@@ -60,6 +60,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--uf", required=True)
     parser.add_argument("--modality", type=int, default=None)
     parser.add_argument(
+        "--organization-cnpj",
+        default=None,
+        help="CNPJ do órgão para recursos particionados por inventário",
+    )
+    parser.add_argument(
+        "--unit-code",
+        default=None,
+        help="Código da unidade do inventário congelado",
+    )
+    parser.add_argument(
+        "--scope-inventory",
+        type=Path,
+        default=None,
+        help=(
+            "Inventário congelado; por padrão usa "
+            "config/pncp_rj_scope_inventory.json"
+        ),
+    )
+    parser.add_argument(
         "--db-path",
         required=True,
         type=safe_sqlite_database_path,
@@ -120,8 +139,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--online-pilot",
         action="store_true",
         help=(
-            "Habilita explicitamente o piloto real de contratações: RJ, "
-            "uma modalidade, um dia e banco em /tmp"
+            "Habilita explicitamente um piloto real: RJ, um dia e banco "
+            "em /tmp; contratos exigem CNPJ/unidade do inventário"
         ),
     )
     parser.add_argument(
@@ -210,6 +229,9 @@ def main(argv: list[str] | None = None) -> int:
             end_date=args.end_date,
             uf=args.uf,
             modality=args.modality,
+            organization_cnpj=args.organization_cnpj,
+            unit_code=args.unit_code,
+            scope_inventory_path=args.scope_inventory,
             database_url=database_url,
             fixture_path=args.fixture,
             job_name=args.job_name,

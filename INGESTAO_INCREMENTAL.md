@@ -8,19 +8,24 @@ substituído.
 
 `src/fetch_incremental.py` é um ponto de entrada separado. Nesta etapa ele:
 
-- exige a escolha explícita entre `--offline` e `--online-pilot`;
+- exige a escolha explícita entre `--offline`, `--online-pilot` e
+  `--online-operational`;
 - no modo offline, exige uma fixture JSON local;
-- no modo online, aceita somente `contratacao`, UF RJ, uma modalidade entre
-  1 e 14 e uma janela de exatamente um dia;
+- no modo online, aceita `contratacao` ou `contrato`, sempre com UF RJ e uma
+  janela de exatamente um dia;
+- `contratacao` exige uma modalidade entre 1 e 14;
+- `contrato` exige um par CNPJ/unidade presente no inventário congelado e não
+  aceita modalidade;
 - aceita somente banco SQLite em `/tmp`;
 - utiliza exclusivamente os checkpoints v2;
 - reutiliza a persistência RAW, a identidade canônica e o versionamento já
   existentes;
 - nunca usa um banco padrão implícito.
 
-A coleta real permanece limitada a um piloto de contratações. PCA, contratos,
-atas e recursos dependentes possuem adaptadores validados, mas ainda não são
-selecionáveis pelo CLI online.
+A coleta real possui entrada controlada para contratações e contratos. O
+piloto de contratações já foi validado contra a API real; o de contratos está
+habilitado no código, mas ainda requer a primeira homologação real isolada em
+`/tmp`. PCA, atas e recursos dependentes continuam bloqueados no CLI online.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -71,6 +76,27 @@ python3 -m src.fetch_incremental \
 
 O banco precisa ser novo ou uma cópia que tenha recebido as migrações
 `001`–`005`. Requisições e ingestão geram logs JSONL ao lado do banco.
+
+Piloto de um membro da cobertura de contratos:
+
+```bash
+python3 -m src.fetch_incremental \
+  --resource contrato \
+  --uf RJ \
+  --start-date 2023-04-01 \
+  --end-date 2023-04-01 \
+  --organization-cnpj 00038166000105 \
+  --unit-code 925136 \
+  --scope-inventory config/pncp_rj_scope_inventory.json \
+  --online-pilot \
+  --db-path /tmp/pncp_incremental_contrato_pilot.db
+```
+
+O endpoint de contratos não aceita UF. Por isso o CLI não envia `uf` na URL:
+ele comprova o recorte do RJ pelo par CNPJ/unidade do inventário e ainda
+valida CNPJ, unidade e UF de cada payload retornado. O plano de cobertura com
+2.116 membros é registrado automaticamente; executar um único membro não
+declara a janela completa.
 
 ## Retomada e reprocessamento
 
@@ -139,7 +165,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 |---|---:|---|---|
 | `pca` | Sim | `endpoint` | adaptador testado; CLI online ainda bloqueado |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
-| `contrato` | Sim | `endpoint` | adaptador HTTP testado com transporte simulado; não ativado |
+| `contrato` | Sim | `endpoint` | CLI online protegido habilitado por CNPJ/unidade; piloto real pendente |
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | adaptador HTTP testado com transporte simulado; não ativado |
 | `contratacao_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `resultado_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
@@ -363,3 +389,5 @@ Em uma cópia migrada em `/tmp` foram validados:
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
 5. Habilitar online os demais recursos um por vez, repetindo o piloto isolado.
+6. Homologar o primeiro piloto real de `contrato` em banco migrado dentro de
+   `/tmp`, sem aplicar mudanças ao banco operacional.

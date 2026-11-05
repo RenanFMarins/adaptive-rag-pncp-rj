@@ -104,6 +104,7 @@ class PNCPEndpointIncrementalAdapter:
         window_end: str,
         *,
         filters: Mapping[str, Any],
+        scope: Mapping[str, Any] | None = None,
         base_url: str = "https://pncp.gov.br",
         timeout_seconds: float = 30.0,
         max_retries: int = 2,
@@ -167,7 +168,7 @@ class PNCPEndpointIncrementalAdapter:
                     raise IncrementalAdapterError(
                         f"{resource} sem identidade {spec.identity_field}"
                     )
-                self._validate_scope(resource, payload, params)
+                self._validate_scope(resource, payload, scope or params)
                 ordinal += 1
                 yield CollectedRecord(
                     source_id,

@@ -233,6 +233,35 @@ class PNCPEndpointIncrementalAdapterTests(unittest.TestCase):
                 )
             )
 
+    def test_contract_uses_separate_validation_scope(self):
+        payload = {
+            "numeroControlePNCP": "contrato-1",
+            "orgaoEntidade": {"cnpj": "12345678000199"},
+            "unidadeOrgao": {
+                "codigoUnidade": "000001",
+                "ufSigla": "SP",
+            },
+        }
+        transport = FakeTransport([page(1, (payload,))])
+        filters = {
+            "cnpjOrgao": "12345678000199",
+            "codigoUnidadeAdministrativa": "000001",
+        }
+
+        with self.assertRaisesRegex(IncrementalAdapterError, "UF esperada"):
+            list(
+                PNCPEndpointIncrementalAdapter(transport).collect(
+                    "contrato",
+                    "source",
+                    "2023-04-01",
+                    "2023-04-01",
+                    filters=filters,
+                    scope={**filters, "uf": "RJ"},
+                )
+            )
+
+        self.assertNotIn("uf", transport.calls[0][1])
+
     def test_validates_direct_ata_scope_and_equivalent_numeric_unit(self):
         payload = {
             "numeroControlePNCPAta": "12345678000199-1-000007/2023-000001",

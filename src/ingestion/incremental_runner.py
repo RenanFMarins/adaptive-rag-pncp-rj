@@ -129,6 +129,9 @@ class IncrementalRunConfig:
     database_url: str
     fixture_path: Path | None = None
     modality: int | None = None
+    organization_cnpj: str | None = None
+    unit_code: str | None = None
+    scope_inventory_path: Path | None = None
     job_name: str | None = None
     worker_id: str = "offline-worker"
     resume: bool = False
@@ -153,6 +156,18 @@ class IncrementalRunConfig:
         if len(normalized_uf) != 2 or not normalized_uf.isalpha():
             raise IncrementalConfigurationError("UF deve possuir duas letras")
         object.__setattr__(self, "uf", normalized_uf)
+        if self.organization_cnpj is not None:
+            object.__setattr__(
+                self, "organization_cnpj", self.organization_cnpj.strip()
+            )
+        if self.unit_code is not None:
+            object.__setattr__(self, "unit_code", self.unit_code.strip())
+        if self.scope_inventory_path is not None:
+            object.__setattr__(
+                self,
+                "scope_inventory_path",
+                Path(self.scope_inventory_path).expanduser().resolve(),
+            )
         if self.resume and self.reprocess:
             raise IncrementalConfigurationError(
                 "Retomada e reprocessamento são opções mutuamente exclusivas"
