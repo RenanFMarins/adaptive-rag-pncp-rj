@@ -6,9 +6,10 @@ arquivos SQLite no histórico Git.
 ## Release padrão
 
 - repositório: `RenanFMarins/adaptive-rag-pncp-rj`;
-- tag: `base-normalizada-pncp-rj-20261020-v1`;
+- tag: `base-normalizada-pncp-rj-20261105-v1`;
 - destino: `data/normalized/pncp_rj_normalized.db`;
-- cobertura principal: PNCP/RJ até 19/10/2026;
+- cobertura estruturada principal: PNCP/RJ até 19/10/2026;
+- cobertura ampliada de atas: inventário congelado até 31/10/2026;
 - atas e empenhos possuem cobertura parcial declarada no manifesto.
 
 O snapshot protege identificadores e nomes de fornecedores PF/PE por
@@ -22,7 +23,7 @@ Na raiz do clone:
 python -m scripts.restore_normalized_release
 ```
 
-O diretório de destino precisa ter aproximadamente 3,4 GB livres para manter
+O diretório de destino precisa ter aproximadamente 3,6 GB livres para manter
 o arquivo compactado, a base em validação e uma margem de segurança. O script
 verifica o espaço antes de baixar o anexo principal.
 
@@ -30,7 +31,7 @@ verifica o espaço antes de baixar o anexo principal.
 
 Baixe na mesma pasta:
 
-- `pncp_rj_normalized_public_20261020.sqlite.gz`;
+- `pncp_rj_normalized_public_20261105.sqlite.gz`;
 - `release_manifest.json`;
 - `SHA256SUMS.txt`.
 

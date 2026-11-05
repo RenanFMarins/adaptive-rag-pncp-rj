@@ -23,7 +23,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_REPOSITORY = "RenanFMarins/adaptive-rag-pncp-rj"
-DEFAULT_TAG = "base-normalizada-pncp-rj-20261020-v1"
+DEFAULT_TAG = "base-normalizada-pncp-rj-20261105-v1"
 DEFAULT_DESTINATION = Path("data/normalized/pncp_rj_normalized.db")
 MANIFEST_NAME = "release_manifest.json"
 CHECKSUMS_NAME = "SHA256SUMS.txt"

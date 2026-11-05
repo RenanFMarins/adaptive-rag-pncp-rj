@@ -108,7 +108,7 @@ O projeto utiliza dois bancos com finalidades diferentes:
 
 Bancos, dados coletados e índices não são versionados no Git. A base
 normalizada sanitizada pode ser instalada diretamente da
-[release de 20/10/2026](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/tag/base-normalizada-pncp-rj-20261020-v1):
+[release de 05/11/2026](https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/tag/base-normalizada-pncp-rj-20261105-v1):
 
 ```bash
 python -m scripts.restore_normalized_release
