@@ -1,8 +1,9 @@
 # Homologação em clone limpo
 
-Execução realizada em **01/11/2026** contra o commit
+Execução inicial realizada em **01/11/2026** contra o commit
 `895ffd98ad48153d2a5386a4d303f109d69348ff` da branch `main` do repositório
-pessoal.
+pessoal. A restauração integral foi revalidada pela internet em **05/11/2026**
+contra a release `base-normalizada-pncp-rj-20261105-v1`.
 
 ## Escopo
 
@@ -22,7 +23,7 @@ original e seus bancos operacionais não foram alterados. O clone não continha
 | Build de produção do React | aprovado |
 | Auditoria de dependências de produção | 0 vulnerabilidades conhecidas |
 | Inicialização da API sem base e sem FAISS | aprovado em modo degradado seguro |
-| Restauração integral da base normalizada | pendente por espaço local insuficiente |
+| Restauração integral da base normalizada | aprovada em 05/11/2026 |
 
 As dependências Python do ensaio local foram executadas pelo ambiente virtual
 já homologado, para não duplicar pacotes no disco quase cheio. A instalação
@@ -44,7 +45,7 @@ Esse resultado confirma que a ausência dos artefatos não impede a inicializaç
 e é representada corretamente pelo contrato de readiness. Ele não homologa as
 capacidades `structured`, `rag` ou `hybrid` sem seus respectivos artefatos.
 
-## Bloqueio da restauração completa
+## Bloqueio histórico da restauração completa
 
 O restaurador leu e validou os pequenos arquivos de manifesto e checksums e
 interrompeu antes do download do snapshot principal:
@@ -58,13 +59,36 @@ Faltavam **1.202.442.194 bytes** (aproximadamente 1,12 GiB) para cumprir a
 margem de segurança. A recusa é o comportamento esperado: nenhum arquivo
 parcial foi publicado e nenhum banco existente foi substituído.
 
-Não foram removidos backups ou dados do usuário para liberar espaço. A tarefa
-deve permanecer como cobertura parcial até que haja pelo menos 3.562.278.866
-bytes livres no filesystem de destino.
+Não foram removidos backups ou dados do usuário para liberar espaço. Esse
+bloqueio foi resolvido posteriormente com a liberação segura de espaço e a
+publicação do snapshot de 05/11/2026.
 
-## Reprodução da etapa pendente
+## Revalidação integral de 05/11/2026
 
-Depois de disponibilizar o espaço necessário, em um clone novo:
+O restaurador foi executado sem `--source-directory`, obrigando o download
+real dos três anexos publicados no GitHub. O destino ficou em um diretório
+temporário isolado e foi removido automaticamente ao final.
+
+| Verificação | Resultado |
+| --- | --- |
+| Download de `SHA256SUMS.txt` e manifesto | aprovado |
+| Download do pacote de 510.390.154 bytes | aprovado |
+| SHA-256 compactado | aprovado |
+| Descompactação para 2.138.464.256 bytes | aprovada |
+| SHA-256 descompactado | aprovado |
+| Contagens do manifesto | aprovadas |
+| `PRAGMA integrity_check` | `ok` |
+| `PRAGMA foreign_key_check` | zero violações |
+| Política e fingerprint da sanitização | aprovados |
+
+O ensaio confirma que um clone sem bancos versionados consegue instalar o
+snapshot público somente com o código e acesso à release. A cópia temporária
+de 2,14 GB foi descartada depois da validação; os bancos operacionais locais
+não foram modificados.
+
+## Reprodução
+
+Em um clone novo com ao menos 3,6 GB livres:
 
 ```bash
 cp .env.example .env

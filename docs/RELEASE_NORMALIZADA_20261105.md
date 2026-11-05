@@ -10,6 +10,7 @@ pares órgão–unidade, consultados em 8.464 alvos entre 01/01/2023 e
 | Item | Valor |
 | --- | --- |
 | Tag | `base-normalizada-pncp-rj-20261105-v1` |
+| URL | <https://github.com/RenanFMarins/adaptive-rag-pncp-rj/releases/tag/base-normalizada-pncp-rj-20261105-v1> |
 | Banco sanitizado | `pncp_rj_normalized_public_20261105.sqlite.gz` |
 | Tamanho compactado | 510.390.154 bytes |
 | SHA-256 compactado | `87e7bbffb8aea76bf77d6b041a3effad30f0b8ef66b56133796d9e554321d2ef` |
@@ -50,6 +51,8 @@ anexos da release. Foram protegidos:
 - zero entidades com mais de uma linhagem atual;
 - `gzip -t` aprovado;
 - hashes do banco e do pacote conferidos;
+- anexos remotos confirmados com estado `uploaded`;
+- restauração integral pela internet aprovada em diretório temporário;
 - 874 testes e 124 subtestes aprovados;
 - lint e build do React aprovados com Node 22.22.0.
 
