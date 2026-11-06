@@ -342,7 +342,22 @@ class PNCPPCAIncrementalAdapterTests(unittest.TestCase):
         self.assertEqual(len(transport.document_calls), 1)
         self.assertIn("/12345678000199/pca/2023/7/", transport.document_calls[0][0])
         self.assertEqual(transport.calls[0][1]["dataInicio"], "20230401")
-        self.assertEqual(transport.calls[0][1]["dataFim"], "20230402")
+        self.assertEqual(transport.calls[0][1]["dataFim"], "20230403")
+
+    def test_uses_exclusive_api_end_for_single_day_window(self):
+        transport = FakeTransport([page(1, ())])
+
+        list(
+            PNCPPCAIncrementalAdapter(transport).collect(
+                "incremental-pca",
+                "2025-04-02",
+                "2025-04-02",
+                filters={"cnpj": self.CNPJ, "codigoUnidade": "U1"},
+            )
+        )
+
+        self.assertEqual(transport.calls[0][1]["dataInicio"], "20250402")
+        self.assertEqual(transport.calls[0][1]["dataFim"], "20250403")
 
     def test_fetches_all_details_before_emitting_and_rejects_missing_plan(self):
         second_id = f"{self.CNPJ}-0-000008/2023"
