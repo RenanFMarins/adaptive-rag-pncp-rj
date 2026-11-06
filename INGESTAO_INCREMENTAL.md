@@ -246,6 +246,28 @@ confirmados e limita cada janela a um dia. Tanto `overlap_days` quanto
 `max_window_days` são configuráveis e validados. Janelas que atravessam o
 watermark confirmado são marcadas explicitamente para reprocessamento.
 
+`src.fetch_incremental_schedule` conecta esse planejamento ao manifesto de
+cobertura das 14 modalidades. Sem `--execute`, ele abre o SQLite somente para
+leitura, consulta o watermark composto e informa `RUN`, `RESUME`, `REPROCESS`,
+`SKIP` ou `BLOCK` para cada shard:
+
+```bash
+python3 -m src.fetch_incremental_schedule \
+  --initial-start 2026-10-16 \
+  --through 2026-10-21 \
+  --db-path /caminho/absoluto/pncp.db
+```
+
+Se `--through` for omitido, o limite é ontem no fuso
+`America/Sao_Paulo`. A escrita continua exigindo `--execute`, repetição exata
+do banco em `--confirm-operational-database` e log JSONL absoluto. Em uma
+falha, a próxima execução replaneja o lote, ignora membros concluídos e retoma
+somente os incompletos.
+
+Os modelos `pncp-incremental-scheduler.service.example` e
+`pncp-incremental-scheduler.timer.example` preparam um disparo diário às 03:00.
+Eles não são instalados, habilitados ou iniciados pelo projeto.
+
 ## Jobs, janelas e watermark
 
 O `job_id` é derivado deterministicamente de:
@@ -628,6 +650,8 @@ no mesmo banco descartável:
    inventário de órgãos/unidades do RJ.
 2. Acompanhar longitudinalmente um empenho alterado para verificar se o
    contrato-pai também muda; os retornos HTTP 200 e 404 já foram comprovados.
-3. Criar a orquestração/scheduler que consome janelas planejadas e descobertas
-   de dependência com retomada automática.
-4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
+3. Estender o scheduler, hoje completo para as 14 modalidades de contratação,
+   ao encadeamento contratação → item → resultado e contrato → empenho.
+4. Validar o scheduler em uma cópia recente do banco operacional antes de
+   considerar a instalação do timer. As migrações `001`–`005` já foram
+   aplicadas ao banco oficial na Fase 4.
