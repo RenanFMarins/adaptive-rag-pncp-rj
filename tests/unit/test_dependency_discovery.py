@@ -151,6 +151,30 @@ class DependencyDiscoveryTests(unittest.TestCase):
                 expected_uf="SP",
             )
 
+        contract_run = self.ingest(
+            "contrato",
+            self.CONTRACT,
+            {"unidadeOrgao": {"ufSigla": "RJ"}},
+        )
+        self.assertEqual(
+            discover_dependency_targets(
+                self.repository.connection,
+                contract_run,
+                "empenho",
+                expected_uf="RJ",
+            ),
+            ({"numero_controle": self.CONTRACT},),
+        )
+        with self.assertRaisesRegex(
+            DependencyDiscoveryError, "fora da UF esperada"
+        ):
+            discover_dependency_targets(
+                self.repository.connection,
+                contract_run,
+                "empenho",
+                expected_uf="SP",
+            )
+
         item_run = self.ingest(
             "contratacao_item",
             f"{self.PURCHASE}|3",

@@ -75,9 +75,9 @@ class OnlinePilotTests(unittest.TestCase):
             (self.config(uf="SP"), "UF RJ"),
             (self.config(modality=15), "entre 1 e 14"),
             (
-                self.config(resource="empenho"),
+                self.config(resource="desconhecido"),
                 "contratacao, contrato, pca, ata_registro_preco, "
-                "contratacao_item e resultado_item",
+                "contratacao_item, resultado_item e empenho",
             ),
         )
         for config, message in invalid:
@@ -416,6 +416,45 @@ class OnlinePilotTests(unittest.TestCase):
         self.assertEqual(
             collect.call_args.args[:3],
             ("resultado_item", prepared.job_name, target),
+        )
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    @patch(
+        "src.ingestion.online_pilot."
+        "PNCPRelationshipIncrementalAdapter.collect_target"
+    )
+    @patch("src.ingestion.online_pilot._dependency_discoveries")
+    def test_builds_commitment_plan_from_parent_run(
+        self, discover, collect, run_adapter
+    ):
+        sentinel = object()
+        target = {"numero_controle": "12345678000199-2-000009/2023"}
+        discover.return_value = (target,)
+        collect.return_value = iter(())
+        run_adapter.return_value = sentinel
+        config = self.config(
+            resource="empenho",
+            modality=None,
+            parent_run_id="contract-parent-run",
+        )
+
+        result = run_online_pilot(config)
+
+        self.assertIs(result, sentinel)
+        prepared, plan = run_adapter.call_args.args
+        self.assertEqual(prepared.job_name, "pncp_incremental_empenho_rj")
+        self.assertEqual(
+            plan.endpoint,
+            "/api/pncp/v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}"
+            "/empenhos",
+        )
+        self.assertEqual(plan.discoveries, (target,))
+        discover.assert_called_once_with(prepared, self.database.resolve())
+
+        list(plan.event_provider((target,)))
+        self.assertEqual(
+            collect.call_args.args[:3],
+            ("empenho", prepared.job_name, target),
         )
 
     def test_rejects_parent_run_for_endpoint_resource(self):
