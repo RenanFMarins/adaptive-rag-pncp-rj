@@ -28,14 +28,13 @@ substituído.
 A coleta real possui entrada controlada para contratações, contratos, PCA e
 atas.
 Os pilotos de contratações e contratos já foram validados contra a API real
-em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
-ainda falta observar uma janela HTTP 200 para validar descoberta e plano
-integral com payload real. O piloto de atas foi homologado com respostas HTTP
-200 e 204, validação de escopo e reprocessamento idempotente. Itens de
-contratação, resultados homologados e empenhos estão habilitados de forma
-controlada. A cadeia contratação → item → resultado foi homologada com
-payloads reais. Para empenhos, tanto o HTTP 404 contextual quanto o HTTP 200
-com payload e reprocessamento idempotente foram homologados.
+em bancos isolados em `/tmp`. No PCA, os casos HTTP 200 e 204, a descoberta e
+a recuperação do plano integral estão homologados. O piloto de atas foi
+homologado com respostas HTTP 200 e 204, validação de escopo e reprocessamento
+idempotente. Itens de contratação, resultados homologados e empenhos estão
+habilitados de forma controlada. A cadeia contratação → item → resultado foi
+homologada com payloads reais. Para empenhos, tanto o HTTP 404 contextual
+quanto o HTTP 200 com payload e reprocessamento idempotente foram homologados.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -126,6 +125,9 @@ python3 -m src.fetch_incremental \
 O feed fragmentado serve apenas para descobrir PCAs alterados. Antes de emitir
 qualquer registro, o adaptador busca o endpoint direto de cada plano, valida
 seu CNPJ, unidade e integridade e persiste uma representação RAW integral.
+Como `dataFim` é exclusivo nesse feed, o adaptador acrescenta um dia somente ao
+parâmetro HTTP final. A janela, o checkpoint e o watermark continuam
+representando exatamente o dia solicitado.
 
 As atas também usam o inventário congelado:
 
@@ -266,7 +268,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 
 | Recurso | Suporte offline | Estratégia | Situação para API real |
 |---|---:|---|---|
-| `pca` | Sim | `endpoint` | HTTP 204 real homologado; fluxo HTTP 200 + plano integral pendente |
+| `pca` | Sim | `endpoint` | HTTP 200/204, plano integral e idempotência homologados |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
 | `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
@@ -547,8 +549,23 @@ retornaram HTTP 204 e foram concluídas corretamente:
 - `PRAGMA integrity_check` retornou `ok` e não houve violações de chave
   estrangeira.
 
-Essa evidência homologa o transporte e o caso vazio, mas não substitui um
-piloto HTTP 200. A recuperação do plano integral real permanece pendente.
+Essa evidência homologa o transporte e o caso vazio.
+
+Em 06/11/2026, o caso HTTP 200 foi homologado com um membro válido do
+inventário e a janela lógica de 02/04/2025. A auditoria da API demonstrou que
+`dataFim` é exclusivo no feed de atualização de PCA; por isso o adaptador passou
+a enviar 03/04/2025 como limite HTTP, sem ampliar a janela interna:
+
+- o feed fragmentado respondeu HTTP 200 e descobriu um PCA;
+- o endpoint de detalhe respondeu HTTP 200 com o plano integral e 96 itens;
+- CNPJ, unidade, ano e sequencial dos itens foram validados contra o plano e o
+  membro congelado do inventário;
+- a primeira execução criou uma entidade `NEW` e o reprocessamento classificou
+  a mesma entidade como `UNCHANGED`;
+- permaneceu somente uma versão RAW e uma observação, sem duplicação;
+- as quatro respostas HTTP das duas execuções foram 200;
+- `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
+  violações.
 
 Ainda em 05/11/2026, o piloto de atas foi homologado em um banco novo e
 descartável em `/tmp`, usando o membro CNPJ `00394452000103`, unidade `160270`,
@@ -614,5 +631,3 @@ no mesmo banco descartável:
 3. Criar a orquestração/scheduler que consome janelas planejadas e descobertas
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
-5. Encontrar uma janela PCA com retorno HTTP 200 e confirmar, em `/tmp`, a
-   descoberta fragmentada, a recuperação integral e a idempotência do plano.
