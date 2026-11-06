@@ -27,9 +27,9 @@ atas.
 Os pilotos de contratações e contratos já foram validados contra a API real
 em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
 ainda falta observar uma janela HTTP 200 para validar descoberta e plano
-integral com payload real. Atas estão habilitadas, mas o primeiro piloto real
-ainda está pendente. Somente os recursos dependentes continuam bloqueados no
-CLI online.
+integral com payload real. O piloto de atas foi homologado com respostas HTTP
+200 e 204, validação de escopo e reprocessamento idempotente. Somente os
+recursos dependentes continuam bloqueados no CLI online.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -208,7 +208,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 | `pca` | Sim | `endpoint` | HTTP 204 real homologado; fluxo HTTP 200 + plano integral pendente |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
 | `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
-| `ata` / `ata_registro_preco` | Sim | `endpoint` | CLI online protegido por CNPJ/unidade; piloto real pendente |
+| `ata` / `ata_registro_preco` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `contratacao_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `resultado_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `empenho` | Sim | `relationship` | adaptador por alvo testado; não ativado |
@@ -449,6 +449,29 @@ retornaram HTTP 204 e foram concluídas corretamente:
 Essa evidência homologa o transporte e o caso vazio, mas não substitui um
 piloto HTTP 200. A recuperação do plano integral real permanece pendente.
 
+Ainda em 05/11/2026, o piloto de atas foi homologado em um banco novo e
+descartável em `/tmp`, usando o membro CNPJ `00394452000103`, unidade `160270`,
+do inventário congelado do RJ:
+
+- a janela de 30/10/2026 retornou HTTP 200 com três atas, todas classificadas
+  como `NEW` na primeira execução;
+- o reprocessamento da mesma janela classificou as três entidades como
+  `UNCHANGED`, sem criar outra versão RAW;
+- a janela de 01/11/2026 retornou HTTP 204 e foi concluída sem criar ativos
+  RAW vazios ou artificiais;
+- todos os payloads persistidos confirmaram o CNPJ e a unidade solicitados;
+- o watermark não retrocedeu quando a janela de 30/10 foi processada depois da
+  janela de 01/11;
+- cada cobertura permaneceu `PENDING`, com somente 1 de 2.116 membros
+  concluído;
+- `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
+  violações.
+
+A comparação diagnóstica também mostrou que uma consulta mais ampla, sem o
+filtro de unidade, pode retornar HTTP 500 no próprio PNCP. O piloto operacional
+mantém por isso o par CNPJ/unidade do inventário, que reduz a carga e comprova
+o recorte territorial sem inferir UF ausente no payload da ata.
+
 ## Pendências para ativação operacional
 
 1. Obter uma fonte externa oficial para medir a completude absoluta do
@@ -458,6 +481,7 @@ piloto HTTP 200. A recuperação do plano integral real permanece pendente.
 3. Criar a orquestração/scheduler que consome janelas planejadas e descobertas
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
-5. Habilitar online os demais recursos um por vez, repetindo o piloto isolado.
+5. Habilitar online os recursos dependentes um por vez, repetindo o piloto
+   isolado.
 6. Encontrar uma janela PCA com retorno HTTP 200 e confirmar, em `/tmp`, a
    descoberta fragmentada, a recuperação integral e a idempotência do plano.
