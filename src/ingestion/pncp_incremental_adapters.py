@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, timedelta
 import hashlib
 import json
 import re
@@ -293,10 +294,17 @@ class PNCPPCAIncrementalAdapter:
         max_retries: int = 2,
         retry_backoff_seconds: float = 0.5,
     ) -> Iterator[CollectedRecord | CollectionCheckpoint]:
-        start = normalized_date(window_start).replace("-", "")
-        end = normalized_date(window_end).replace("-", "")
-        if end < start:
+        normalized_start = normalized_date(window_start)
+        normalized_end = normalized_date(window_end)
+        if normalized_end < normalized_start:
             raise ValueError("Janela incremental possui limites invertidos")
+        start = normalized_start.replace("-", "")
+        # O feed de PCA trata dataFim como limite exclusivo. A janela interna
+        # continua inclusiva, como nos demais recursos, e somente o contrato
+        # HTTP recebe o dia seguinte.
+        end = (
+            date.fromisoformat(normalized_end) + timedelta(days=1)
+        ).strftime("%Y%m%d")
         params = {
             **dict(filters),
             "dataInicio": start,
