@@ -70,6 +70,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Código da unidade do inventário congelado",
     )
     parser.add_argument(
+        "--parent-run-id",
+        default=None,
+        help=(
+            "Execução incremental pai concluída, usada para descobrir "
+            "alvos de recursos dependentes"
+        ),
+    )
+    parser.add_argument(
         "--scope-inventory",
         type=Path,
         default=None,
@@ -141,7 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Habilita explicitamente um piloto real: RJ, um dia e banco "
             "em /tmp; contratos, PCA e atas exigem CNPJ/unidade do "
-            "inventário"
+            "inventário, e recursos dependentes exigem execução pai"
         ),
     )
     parser.add_argument(
@@ -232,6 +240,7 @@ def main(argv: list[str] | None = None) -> int:
             modality=args.modality,
             organization_cnpj=args.organization_cnpj,
             unit_code=args.unit_code,
+            parent_run_id=args.parent_run_id,
             scope_inventory_path=args.scope_inventory,
             database_url=database_url,
             fixture_path=args.fixture,

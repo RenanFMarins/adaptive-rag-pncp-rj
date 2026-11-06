@@ -49,6 +49,8 @@ def discover_dependency_targets(
     connection: sqlite3.Connection,
     parent_run_id: str,
     child_resource: str,
+    *,
+    expected_uf: str | None = None,
 ) -> tuple[dict[str, Any], ...]:
     """Extrai pais NEW/UPDATED persistidos por uma execução concluída.
 
@@ -85,6 +87,20 @@ def discover_dependency_targets(
     )
     for external_id, serialized in rows:
         payload = json.loads(serialized)
+        if expected_uf is not None and expected_parent in {
+            "contratacao",
+            "contrato",
+        }:
+            unidade = payload.get("unidadeOrgao")
+            actual_uf = (
+                unidade.get("ufSigla")
+                if isinstance(unidade, Mapping)
+                else None
+            )
+            if str(actual_uf or "").upper() != expected_uf.upper():
+                raise DependencyDiscoveryError(
+                    "Execução pai possui registro fora da UF esperada"
+                )
         target = _target_from_parent(
             child_resource, str(external_id), payload
         )
