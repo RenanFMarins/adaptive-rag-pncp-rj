@@ -11,11 +11,14 @@ substituído.
 - exige a escolha explícita entre `--offline`, `--online-pilot` e
   `--online-operational`;
 - no modo offline, exige uma fixture JSON local;
-- no modo online, aceita `contratacao`, `contrato`, `pca` ou
-  `ata_registro_preco`, sempre com UF RJ e uma janela de exatamente um dia;
+- no modo online, aceita `contratacao`, `contrato`, `pca`,
+  `ata_registro_preco` ou `contratacao_item`, sempre com UF RJ e uma janela de
+  exatamente um dia;
 - `contratacao` exige uma modalidade entre 1 e 14;
 - `contrato`, `pca` e `ata_registro_preco` exigem um par CNPJ/unidade presente
   no inventário congelado e não aceitam modalidade;
+- `contratacao_item` exige o identificador de uma execução-pai de contratação
+  concluída e validada no RJ;
 - aceita somente banco SQLite em `/tmp`;
 - utiliza exclusivamente os checkpoints v2;
 - reutiliza a persistência RAW, a identidade canônica e o versionamento já
@@ -28,8 +31,10 @@ Os pilotos de contratações e contratos já foram validados contra a API real
 em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
 ainda falta observar uma janela HTTP 200 para validar descoberta e plano
 integral com payload real. O piloto de atas foi homologado com respostas HTTP
-200 e 204, validação de escopo e reprocessamento idempotente. Somente os
-recursos dependentes continuam bloqueados no CLI online.
+200 e 204, validação de escopo e reprocessamento idempotente. Resultados
+homologados e empenhos continuam bloqueados no CLI online. Itens de
+contratação estão habilitados de forma controlada e tiveram o fluxo real
+pai → filhos homologado em banco isolado.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -140,6 +145,26 @@ O JSON de ata não possui UF. O recorte territorial é comprovado pelo membro
 CNPJ/unidade do inventário do RJ; o adaptador valida que esses dois campos do
 payload correspondem exatamente ao membro solicitado.
 
+Itens de contratação são descobertos exclusivamente a partir de uma execução
+incremental pai, concluída no mesmo banco:
+
+```bash
+python3 -m src.fetch_incremental \
+  --resource contratacao_item \
+  --uf RJ \
+  --start-date 2026-10-16 \
+  --end-date 2026-10-16 \
+  --parent-run-id ID_DA_EXECUCAO_PAI \
+  --online-pilot \
+  --db-path /tmp/pncp_incremental_itens_pilot.db
+```
+
+O `parent_run_id` não é aceito como uma lista arbitrária de controles PNCP. A
+execução precisa existir, ter terminado com sucesso, ser do recurso
+`contratacao` e conter somente registros cuja unidade esteja no RJ. Assim, a
+fila de reconciliação recebe alvos auditáveis derivados da RAW, sem confiar em
+identificadores informados manualmente.
+
 ## Retomada e reprocessamento
 
 Uma janela que falhou ou perdeu o lease exige retomada explícita:
@@ -209,11 +234,11 @@ nunca usa o horário local de conclusão como posição da fonte.
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
 | `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
-| `contratacao_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
+| `contratacao_item` | Sim | `relationship` | piloto real homologado a partir de execução-pai validada no RJ |
 | `resultado_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `empenho` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 
-Nenhum endpoint dependente foi habilitado genericamente no CLI.
+Nenhum endpoint dependente aceita alvos arbitrários no CLI.
 
 ## Formato das fixtures
 
@@ -471,6 +496,22 @@ A comparação diagnóstica também mostrou que uma consulta mais ampla, sem o
 filtro de unidade, pode retornar HTTP 500 no próprio PNCP. O piloto operacional
 mantém por isso o par CNPJ/unidade do inventário, que reduz a carga e comprova
 o recorte territorial sem inferir UF ausente no payload da ata.
+
+O piloto de itens de contratação foi homologado na mesma data, em outro banco
+novo e descartável em `/tmp`:
+
+- uma janela de contratações de 16/10/2026, modalidade 12 e UF RJ retornou
+  quatro entidades `NEW`;
+- o `run_id` dessa execução-pai originou quatro alvos de reconciliação, sem
+  entrada manual de controles PNCP;
+- os quatro endpoints paginados retornaram 96 itens, todos classificados como
+  `NEW` na primeira execução;
+- o reprocessamento classificou os mesmos 96 itens como `UNCHANGED`, mantendo
+  somente 96 versões RAW e 96 observações;
+- todos os alvos terminaram como `COMPLETED` e `FOUND`, sem itens órfãos;
+- nenhum pai estava fora do RJ;
+- `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
+  violações.
 
 ## Pendências para ativação operacional
 
