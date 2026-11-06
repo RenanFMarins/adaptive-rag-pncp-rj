@@ -4,7 +4,11 @@ import json
 import sqlite3
 from typing import Any, Mapping
 
+from app.core.database.repositories.raw_repository import (
+    RawRepository as RawAssetRepository,
+)
 from src.ingestion.checkpoint import stable_target_metadata
+from src.ingestion.identity import CanonicalIdentity
 
 
 DEPENDENCY_PARENTS = {
@@ -16,6 +20,37 @@ DEPENDENCY_PARENTS = {
 
 class DependencyDiscoveryError(ValueError):
     pass
+
+
+def _payload_uf(payload: Mapping[str, Any]) -> str:
+    unidade = payload.get("unidadeOrgao")
+    return str(
+        unidade.get("ufSigla") if isinstance(unidade, Mapping) else ""
+    ).upper()
+
+
+def _validate_parent_scope(
+    connection: sqlite3.Connection,
+    expected_parent: str,
+    payload: Mapping[str, Any],
+    target: Mapping[str, Any],
+    expected_uf: str,
+) -> None:
+    scope_payload = payload
+    if expected_parent == "contratacao_item":
+        parent_control = str(target.get("numero_controle") or "")
+        parent = RawAssetRepository(connection).find_current(
+            CanonicalIdentity("pncp", "contratacao", parent_control)
+        )
+        if parent is None:
+            raise DependencyDiscoveryError(
+                "Item pai não possui contratação ancestral na RAW"
+            )
+        scope_payload = json.loads(parent["payload"])
+    if _payload_uf(scope_payload) != expected_uf.upper():
+        raise DependencyDiscoveryError(
+            "Execução pai possui registro fora da UF esperada"
+        )
 
 
 def _target_from_parent(
@@ -87,23 +122,17 @@ def discover_dependency_targets(
     )
     for external_id, serialized in rows:
         payload = json.loads(serialized)
-        if expected_uf is not None and expected_parent in {
-            "contratacao",
-            "contrato",
-        }:
-            unidade = payload.get("unidadeOrgao")
-            actual_uf = (
-                unidade.get("ufSigla")
-                if isinstance(unidade, Mapping)
-                else None
-            )
-            if str(actual_uf or "").upper() != expected_uf.upper():
-                raise DependencyDiscoveryError(
-                    "Execução pai possui registro fora da UF esperada"
-                )
         target = _target_from_parent(
             child_resource, str(external_id), payload
         )
+        if expected_uf is not None:
+            _validate_parent_scope(
+                connection,
+                expected_parent,
+                payload,
+                target,
+                expected_uf,
+            )
         key, _ = stable_target_metadata(target)
         targets[key] = target
     return tuple(targets[key] for key in sorted(targets))

@@ -42,6 +42,7 @@ ATA_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["ata_registro_preco"].endpoint
 CONTRATACAO_ITEM_ENDPOINT = RELATIONSHIP_ENDPOINTS[
     "contratacao_item"
 ].endpoint
+RESULTADO_ITEM_ENDPOINT = RELATIONSHIP_ENDPOINTS["resultado_item"].endpoint
 PCA_UPDATE_ENDPOINT = PNCPPCAIncrementalAdapter.DISCOVERY_ENDPOINT
 DEFAULT_SCOPE_INVENTORY = (
     Path(__file__).resolve().parents[2]
@@ -57,10 +58,12 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
         "pca",
         "ata_registro_preco",
         "contratacao_item",
+        "resultado_item",
     }:
         raise IncrementalConfigurationError(
             "Execução online habilitada somente para contratacao, "
-            "contrato, pca, ata_registro_preco e contratacao_item"
+            "contrato, pca, ata_registro_preco, contratacao_item e "
+            "resultado_item"
         )
     if config.normalized_start != config.normalized_end:
         raise IncrementalConfigurationError(
@@ -70,7 +73,8 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
         raise IncrementalConfigurationError(
             "Execução online permanece restrita à UF RJ"
         )
-    if config.resource != "contratacao_item" and config.parent_run_id:
+    dependent_resources = {"contratacao_item", "resultado_item"}
+    if config.resource not in dependent_resources and config.parent_run_id:
         raise IncrementalConfigurationError(
             "--parent-run-id é aceito somente por recursos dependentes"
         )
@@ -81,20 +85,21 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
                 "entre 1 e 14"
             )
         return
-    if config.resource == "contratacao_item":
+    if config.resource in dependent_resources:
         if not config.parent_run_id:
             raise IncrementalConfigurationError(
-                "Execução online de contratacao_item requer "
+                f"Execução online de {config.resource} requer "
                 "--parent-run-id"
             )
         if config.modality is not None:
             raise IncrementalConfigurationError(
-                "Execução online de contratacao_item não aceita modalidade"
+                f"Execução online de {config.resource} não aceita "
+                "modalidade"
             )
         if config.organization_cnpj or config.unit_code:
             raise IncrementalConfigurationError(
-                "contratacao_item deriva o escopo da execução pai e não "
-                "aceita CNPJ/unidade avulsos"
+                f"{config.resource} deriva o escopo da execução pai e "
+                "não aceita CNPJ/unidade avulsos"
             )
         return
     if config.modality is not None:
@@ -256,10 +261,12 @@ def _run_online_endpoint(
         config, filters = _pca_scope(config)
         validation_scope = filters
         source_id = str(config.job_name)
-    elif config.resource == "contratacao_item":
-        source_id = config.job_name or "pncp_incremental_contratacao_item_rj"
+    elif config.resource in {"contratacao_item", "resultado_item"}:
+        source_id = config.job_name or (
+            f"pncp_incremental_{config.resource}_rj"
+        )
         config = replace(config, job_name=source_id)
-        filters = {"scope": "parentes_incrementais_rj"}
+        filters = {"scope": f"parentes_incrementais_rj_{config.resource}"}
         validation_scope = filters
     else:
         config, filters = _price_registry_scope(config)
@@ -294,9 +301,13 @@ def _run_online_endpoint(
             max_retries=2,
             retry_backoff_seconds=0.5,
         )
-    elif config.resource == "contratacao_item":
+    elif config.resource in {"contratacao_item", "resultado_item"}:
         relationship_adapter = PNCPRelationshipIncrementalAdapter(transport)
-        endpoint = CONTRATACAO_ITEM_ENDPOINT
+        endpoint = (
+            CONTRATACAO_ITEM_ENDPOINT
+            if config.resource == "contratacao_item"
+            else RESULTADO_ITEM_ENDPOINT
+        )
         discoveries = _dependency_discoveries(config, sqlite_path)
         event_provider = lambda targets: _relationship_events(
             relationship_adapter,
