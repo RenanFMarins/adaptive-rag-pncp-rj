@@ -1,0 +1,10 @@
+[Unit]
+Description=Disparo diário do scheduler incremental do PNCP/RJ
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 America/Sao_Paulo
+Persistent=true
+Unit=pncp-incremental-scheduler.service
+
+[Install]
+WantedBy=timers.target

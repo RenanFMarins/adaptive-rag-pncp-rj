@@ -20,10 +20,15 @@ from src.ingestion.incremental_runner import (
     ENDPOINT_STRATEGY,
     IncrementalConfigurationError,
     IncrementalRunConfig,
+    IncrementalRunReport,
 )
 from src.ingestion.online_pilot import (
     CONTRATACAO_UPDATE_ENDPOINT,
     run_online_operational,
+)
+from src.ingestion.window_planner import (
+    IncrementalWindowPolicy,
+    plan_closed_windows,
 )
 
 
@@ -57,6 +62,27 @@ class ContractingCoveragePlan:
             member.action in {"RUN", "RESUME", "REPROCESS"}
             for member in self.members
         )
+
+
+@dataclass(frozen=True)
+class ContractingCoverageSchedule:
+    database: str
+    coverage_name: str
+    initial_start: str
+    through: str
+    confirmed_watermark: str | None
+    ready: bool
+    windows: tuple[ContractingCoveragePlan, ...]
+
+    @property
+    def pending_count(self) -> int:
+        return sum(window.pending_count for window in self.windows)
+
+
+@dataclass(frozen=True)
+class ContractingCoverageExecution:
+    date: str
+    reports: tuple[IncrementalRunReport, ...]
 
 
 def coverage_members(
@@ -114,6 +140,7 @@ def _readonly_connection(database: Path) -> sqlite3.Connection:
         "sync_coverage_plan",
         "sync_coverage_window",
         "sync_coverage_member",
+        "sync_coverage_watermark",
     }
     tables = {
         row[0]
@@ -273,6 +300,74 @@ def plan_contracting_coverage(
     )
 
 
+def plan_contracting_schedule(
+    database: Path,
+    initial_start: str,
+    through: str,
+    *,
+    coverage_name: str = DEFAULT_COVERAGE_NAME,
+    modalities: Iterable[int] = CONTRACTING_MODALITIES,
+    policy: IncrementalWindowPolicy | None = None,
+) -> ContractingCoverageSchedule:
+    """Planeja janelas diárias a partir do watermark composto confirmado."""
+
+    floor = normalized_date(initial_start)
+    limit = normalized_date(through)
+    selected = tuple(sorted(set(int(value) for value in modalities)))
+    members = coverage_members(selected)
+    coverage_spec = CoveragePlanSpec(
+        coverage_name,
+        "pncp",
+        "contratacao",
+        "RJ",
+        members,
+    )
+    connection = _readonly_connection(database)
+    try:
+        watermark = connection.execute(
+            "SELECT watermark_value FROM sync_coverage_watermark "
+            "WHERE plan_id=?",
+            (coverage_spec.plan_id,),
+        ).fetchone()
+        confirmed = (
+            str(watermark["watermark_value"])
+            if watermark is not None
+            else None
+        )
+    finally:
+        connection.close()
+
+    planned = plan_closed_windows(
+        floor,
+        limit,
+        confirmed_watermark=confirmed,
+        policy=policy or IncrementalWindowPolicy(),
+    )
+    if any(window.start != window.end for window in planned):
+        raise IncrementalConfigurationError(
+            "Scheduler de cobertura exige janelas de exatamente um dia"
+        )
+    windows = tuple(
+        plan_contracting_coverage(
+            database,
+            window.start,
+            coverage_name=coverage_name,
+            modalities=selected,
+            reprocess_completed=window.overlaps_confirmed_range,
+        )
+        for window in planned
+    )
+    return ContractingCoverageSchedule(
+        str(database.expanduser().resolve()),
+        coverage_name,
+        floor,
+        limit,
+        confirmed,
+        all(window.ready for window in windows),
+        windows,
+    )
+
+
 def execute_contracting_coverage(
     plan: ContractingCoveragePlan,
     *,
@@ -339,14 +434,68 @@ def execute_contracting_coverage(
     return tuple(reports)
 
 
+def execute_contracting_schedule(
+    schedule: ContractingCoverageSchedule,
+    *,
+    confirmed_database: Path,
+    log_path: Path,
+    inter_shard_seconds: int = MINIMUM_SHARD_DELAY_SECONDS,
+    executor: Callable = execute_contracting_coverage,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> tuple[ContractingCoverageExecution, ...]:
+    """Executa janelas em ordem e permite retomada por replanejamento."""
+
+    database = Path(schedule.database).resolve()
+    if confirmed_database.expanduser().resolve() != database:
+        raise IncrementalConfigurationError(
+            "Confirmação operacional diverge do banco agendado"
+        )
+    if database.is_relative_to(Path(tempfile.gettempdir()).resolve()):
+        raise IncrementalConfigurationError(
+            "Scheduler operacional não deve usar banco em /tmp"
+        )
+    if not log_path.is_absolute() or log_path.suffix.lower() != ".jsonl":
+        raise IncrementalConfigurationError(
+            "Log do scheduler deve ser absoluto e terminar em .jsonl"
+        )
+    if inter_shard_seconds < MINIMUM_SHARD_DELAY_SECONDS:
+        raise IncrementalConfigurationError(
+            "Intervalo entre shards deve ser de pelo menos 30 segundos"
+        )
+    if not schedule.ready:
+        raise IncrementalConfigurationError(
+            "Scheduler possui janela bloqueada e não pode ser executado"
+        )
+
+    executions = []
+    for index, window in enumerate(schedule.windows):
+        if index:
+            sleeper(float(inter_shard_seconds))
+        reports = executor(
+            window,
+            confirmed_database=database,
+            log_path=log_path,
+            inter_shard_seconds=inter_shard_seconds,
+            sleeper=sleeper,
+        )
+        executions.append(
+            ContractingCoverageExecution(window.date, tuple(reports))
+        )
+    return tuple(executions)
+
+
 __all__ = [
     "CONTRACTING_MODALITIES",
     "DEFAULT_COVERAGE_NAME",
     "MINIMUM_SHARD_DELAY_SECONDS",
     "ContractingCoveragePlan",
+    "ContractingCoverageSchedule",
+    "ContractingCoverageExecution",
     "CoverageMemberAction",
     "contracting_job_spec",
     "coverage_members",
     "execute_contracting_coverage",
+    "execute_contracting_schedule",
     "plan_contracting_coverage",
+    "plan_contracting_schedule",
 ]
