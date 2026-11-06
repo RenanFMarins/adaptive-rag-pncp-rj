@@ -151,6 +151,59 @@ class DependencyDiscoveryTests(unittest.TestCase):
                 expected_uf="SP",
             )
 
+        item_run = self.ingest(
+            "contratacao_item",
+            f"{self.PURCHASE}|3",
+            {
+                "numeroControlePNCPCompra": self.PURCHASE,
+                "numeroItem": 3,
+            },
+        )
+        self.assertEqual(
+            discover_dependency_targets(
+                self.repository.connection,
+                item_run,
+                "resultado_item",
+                expected_uf="RJ",
+            ),
+            (
+                {
+                    "numero_controle": self.PURCHASE,
+                    "numero_item": 3,
+                },
+            ),
+        )
+        with self.assertRaisesRegex(
+            DependencyDiscoveryError, "fora da UF esperada"
+        ):
+            discover_dependency_targets(
+                self.repository.connection,
+                item_run,
+                "resultado_item",
+                expected_uf="SP",
+            )
+
+    def test_rejects_item_parent_without_purchase_ancestry(self):
+        orphan_control = "99999999000199-1-000001/2023"
+        item_run = self.ingest(
+            "contratacao_item",
+            f"{orphan_control}|1",
+            {
+                "numeroControlePNCPCompra": orphan_control,
+                "numeroItem": 1,
+            },
+        )
+
+        with self.assertRaisesRegex(
+            DependencyDiscoveryError, "não possui contratação ancestral"
+        ):
+            discover_dependency_targets(
+                self.repository.connection,
+                item_run,
+                "resultado_item",
+                expected_uf="RJ",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

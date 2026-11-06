@@ -76,8 +76,8 @@ class OnlinePilotTests(unittest.TestCase):
             (self.config(modality=15), "entre 1 e 14"),
             (
                 self.config(resource="empenho"),
-                "contratacao, contrato, pca, ata_registro_preco e "
-                "contratacao_item",
+                "contratacao, contrato, pca, ata_registro_preco, "
+                "contratacao_item e resultado_item",
             ),
         )
         for config, message in invalid:
@@ -373,6 +373,50 @@ class OnlinePilotTests(unittest.TestCase):
                 IncrementalConfigurationError, message
             ):
                 run_online_pilot(config)
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    @patch(
+        "src.ingestion.online_pilot."
+        "PNCPRelationshipIncrementalAdapter.collect_target"
+    )
+    @patch("src.ingestion.online_pilot._dependency_discoveries")
+    def test_builds_item_result_plan_from_parent_run(
+        self, discover, collect, run_adapter
+    ):
+        sentinel = object()
+        target = {
+            "numero_controle": "12345678000199-1-000007/2023",
+            "numero_item": 3,
+        }
+        discover.return_value = (target,)
+        collect.return_value = iter(())
+        run_adapter.return_value = sentinel
+        config = self.config(
+            resource="resultado_item",
+            modality=None,
+            parent_run_id="item-parent-run",
+        )
+
+        result = run_online_pilot(config)
+
+        self.assertIs(result, sentinel)
+        prepared, plan = run_adapter.call_args.args
+        self.assertEqual(
+            prepared.job_name, "pncp_incremental_resultado_item_rj"
+        )
+        self.assertEqual(
+            plan.endpoint,
+            "/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}"
+            "/itens/{numero_item}/resultados",
+        )
+        self.assertEqual(plan.discoveries, (target,))
+        discover.assert_called_once_with(prepared, self.database.resolve())
+
+        list(plan.event_provider((target,)))
+        self.assertEqual(
+            collect.call_args.args[:3],
+            ("resultado_item", prepared.job_name, target),
+        )
 
     def test_rejects_parent_run_for_endpoint_resource(self):
         with self.assertRaisesRegex(
