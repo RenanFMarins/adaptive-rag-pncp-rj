@@ -13,12 +13,15 @@ from src.ingestion.checkpoint import (
 from src.ingestion.coverage_orchestrator import (
     CONTRACTING_MODALITIES,
     DEFAULT_COVERAGE_NAME,
+    ContractingCoverageSchedule,
     ContractingCoveragePlan,
     CoverageMemberAction,
     contracting_job_spec,
     coverage_members,
     execute_contracting_coverage,
+    execute_contracting_schedule,
     plan_contracting_coverage,
+    plan_contracting_schedule,
 )
 from src.ingestion.incremental_runner import (
     IncrementalConfigurationError,
@@ -270,6 +273,146 @@ class CoverageOrchestratorTests(unittest.TestCase):
                 confirmed_database=self.database,
                 log_path=self.database.with_suffix(".jsonl"),
                 inter_shard_seconds=29,
+            )
+
+    def test_schedule_plans_closed_days_without_writing(self):
+        schedule = plan_contracting_schedule(
+            self.database,
+            "2026-10-16",
+            "2026-10-18",
+        )
+
+        self.assertTrue(schedule.ready)
+        self.assertIsNone(schedule.confirmed_watermark)
+        self.assertEqual(
+            tuple(window.date for window in schedule.windows),
+            ("2026-10-16", "2026-10-17", "2026-10-18"),
+        )
+        self.assertEqual(schedule.pending_count, 42)
+        connection = initialize_database(f"sqlite:///{self.database}")
+        self.assertEqual(
+            connection.execute(
+                "SELECT COUNT(*) FROM sync_coverage_plan"
+            ).fetchone()[0],
+            0,
+        )
+        connection.close()
+
+    def test_schedule_reprocesses_overlap_and_runs_new_days(self):
+        connection, sync, coverage_window = self.create_coverage()
+        for modality in CONTRACTING_MODALITIES:
+            self.attach_member(
+                sync, coverage_window, modality, "COMPLETED"
+            )
+        watermark = f"{self.DAY}T23:59:59.999999"
+        connection.execute(
+            "UPDATE sync_coverage_window SET status='COMPLETED' WHERE id=?",
+            (coverage_window.window_id,),
+        )
+        connection.execute(
+            "INSERT INTO sync_coverage_watermark "
+            "(plan_id,watermark_value,last_window_id,updated_at) "
+            "VALUES (?,?,?,?)",
+            (
+                coverage_window.plan_id,
+                watermark,
+                coverage_window.window_id,
+                watermark,
+            ),
+        )
+        connection.commit()
+        connection.close()
+
+        schedule = plan_contracting_schedule(
+            self.database,
+            self.DAY,
+            "2026-10-18",
+        )
+
+        self.assertEqual(schedule.confirmed_watermark, watermark)
+        actions = [
+            {member.action for member in window.members}
+            for window in schedule.windows
+        ]
+        self.assertEqual(actions[0], {"REPROCESS"})
+        self.assertEqual(actions[1:], [{"RUN"}, {"RUN"}])
+
+    def test_schedule_executor_preserves_order_and_inter_window_delay(self):
+        database = self.database.resolve()
+        windows = tuple(
+            ContractingCoveragePlan(
+                str(database),
+                DEFAULT_COVERAGE_NAME,
+                day,
+                f"coverage-{day}",
+                True,
+                (),
+            )
+            for day in ("2026-10-16", "2026-10-17")
+        )
+        schedule = ContractingCoverageSchedule(
+            str(database),
+            DEFAULT_COVERAGE_NAME,
+            "2026-10-16",
+            "2026-10-17",
+            None,
+            True,
+            windows,
+        )
+        executor = Mock(side_effect=((), ()))
+        sleeper = Mock()
+
+        executions = execute_contracting_schedule(
+            schedule,
+            confirmed_database=database,
+            log_path=database.with_suffix(".jsonl"),
+            executor=executor,
+            sleeper=sleeper,
+        )
+
+        self.assertEqual(
+            tuple(execution.date for execution in executions),
+            ("2026-10-16", "2026-10-17"),
+        )
+        self.assertEqual(executor.call_count, 2)
+        sleeper.assert_called_once_with(30.0)
+
+    def test_schedule_executor_rejects_blocked_window(self):
+        database = self.database.resolve()
+        blocked = ContractingCoveragePlan(
+            str(database),
+            DEFAULT_COVERAGE_NAME,
+            self.DAY,
+            "coverage-blocked",
+            False,
+            (
+                CoverageMemberAction(
+                    1,
+                    "modalidade:1",
+                    "BLOCK",
+                    "execução ativa",
+                    "job-1",
+                    "window-1",
+                ),
+            ),
+        )
+        schedule = ContractingCoverageSchedule(
+            str(database),
+            DEFAULT_COVERAGE_NAME,
+            self.DAY,
+            self.DAY,
+            None,
+            False,
+            (blocked,),
+        )
+
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError, "janela bloqueada"
+        ):
+            execute_contracting_schedule(
+                schedule,
+                confirmed_database=database,
+                log_path=database.with_suffix(".jsonl"),
             )
 
 
