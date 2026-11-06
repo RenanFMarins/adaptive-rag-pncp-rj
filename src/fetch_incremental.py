@@ -140,7 +140,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Habilita explicitamente um piloto real: RJ, um dia e banco "
-            "em /tmp; contratos e PCA exigem CNPJ/unidade do inventário"
+            "em /tmp; contratos, PCA e atas exigem CNPJ/unidade do "
+            "inventário"
         ),
     )
     parser.add_argument(

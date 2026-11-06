@@ -31,6 +31,7 @@ from src.obs import JsonlLogger
 PNCP_BASE_URL = "https://pncp.gov.br"
 CONTRATACAO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contratacao"].endpoint
 CONTRATO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contrato"].endpoint
+ATA_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["ata_registro_preco"].endpoint
 PCA_UPDATE_ENDPOINT = PNCPPCAIncrementalAdapter.DISCOVERY_ENDPOINT
 DEFAULT_SCOPE_INVENTORY = (
     Path(__file__).resolve().parents[2]
@@ -40,10 +41,15 @@ DEFAULT_SCOPE_INVENTORY = (
 
 
 def _validate_online_scope(config: IncrementalRunConfig) -> None:
-    if config.resource not in {"contratacao", "contrato", "pca"}:
+    if config.resource not in {
+        "contratacao",
+        "contrato",
+        "pca",
+        "ata_registro_preco",
+    }:
         raise IncrementalConfigurationError(
             "Execução online habilitada somente para contratacao, "
-            "contrato e pca"
+            "contrato, pca e ata_registro_preco"
         )
     if config.normalized_start != config.normalized_end:
         raise IncrementalConfigurationError(
@@ -141,11 +147,23 @@ def _pca_scope(
     }
 
 
+def _price_registry_scope(
+    config: IncrementalRunConfig,
+) -> tuple[IncrementalRunConfig, dict[str, str]]:
+    prepared, member, _ = _inventory_scope(config)
+    return prepared, {
+        "cnpj": member.cnpj,
+        "codigoUnidadeAdministrativa": member.unit_code,
+    }
+
+
 def _run_online_endpoint(
     config: IncrementalRunConfig,
     *,
     confirmed_operational_database: Path | None = None,
 ):
+    if config.resource == "ata":
+        config = replace(config, resource="ata_registro_preco")
     _validate_online_scope(config)
     if config.resource == "contratacao":
         source_id = config.job_name or (
@@ -160,8 +178,12 @@ def _run_online_endpoint(
     elif config.resource == "contrato":
         config, filters, validation_scope = _contract_scope(config)
         source_id = str(config.job_name)
-    else:
+    elif config.resource == "pca":
         config, filters = _pca_scope(config)
+        validation_scope = filters
+        source_id = str(config.job_name)
+    else:
+        config, filters = _price_registry_scope(config)
         validation_scope = filters
         source_id = str(config.job_name)
     sqlite_path = Path(database_path(config.database_url)).resolve()

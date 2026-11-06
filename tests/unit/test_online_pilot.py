@@ -42,6 +42,11 @@ class OnlinePilotTests(unittest.TestCase):
                             "name": "pncp-rj-pca-inventario",
                             "inventory_id": inventory.inventory_id,
                             "member_count": 1,
+                        },
+                        "ata_registro_preco": {
+                            "name": "pncp-rj-ata-inventario",
+                            "inventory_id": inventory.inventory_id,
+                            "member_count": 1,
                         }
                     },
                 }
@@ -69,7 +74,10 @@ class OnlinePilotTests(unittest.TestCase):
             (self.config(end_date="2023-04-02"), "um dia"),
             (self.config(uf="SP"), "UF RJ"),
             (self.config(modality=15), "entre 1 e 14"),
-            (self.config(resource="ata"), "contratacao, contrato e pca"),
+            (
+                self.config(resource="empenho"),
+                "contratacao, contrato, pca e ata_registro_preco",
+            ),
         )
         for config, message in invalid:
             with self.subTest(message=message), self.assertRaisesRegex(
@@ -224,6 +232,71 @@ class OnlinePilotTests(unittest.TestCase):
             run_online_pilot(
                 self.config(
                     resource="pca",
+                    modality=6,
+                    organization_cnpj=self.member.cnpj,
+                    unit_code=self.member.unit_code,
+                    scope_inventory_path=self.inventory_path,
+                )
+            )
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    @patch(
+        "src.ingestion.online_pilot."
+        "PNCPEndpointIncrementalAdapter.collect"
+    )
+    def test_builds_price_registry_plan_from_frozen_inventory(
+        self, collect, run_adapter
+    ):
+        sentinel = object()
+        run_adapter.return_value = sentinel
+        collect.return_value = iter(())
+        config = self.config(
+            resource="ata",
+            modality=None,
+            organization_cnpj=self.member.cnpj,
+            unit_code=self.member.unit_code,
+            scope_inventory_path=self.inventory_path,
+        )
+
+        result = run_online_pilot(config)
+
+        self.assertIs(result, sentinel)
+        prepared, plan = run_adapter.call_args.args
+        self.assertEqual(prepared.resource, "ata_registro_preco")
+        self.assertEqual(
+            prepared.job_name,
+            "pncp_incremental_pilot_ata_registro_preco_rj_"
+            "12345678000199_000001",
+        )
+        self.assertEqual(prepared.coverage_name, "pncp-rj-ata-inventario")
+        self.assertEqual(
+            plan.endpoint, "/api/consulta/v1/atas/atualizacao"
+        )
+        self.assertEqual(
+            plan.filters,
+            {
+                "cnpj": "12345678000199",
+                "codigoUnidadeAdministrativa": "000001",
+            },
+        )
+        self.assertNotIn("uf", plan.filters)
+
+        list(plan.event_provider(()))
+        self.assertEqual(
+            collect.call_args.args[:2],
+            ("ata_registro_preco", prepared.job_name),
+        )
+        self.assertEqual(collect.call_args.kwargs["filters"], plan.filters)
+        self.assertEqual(collect.call_args.kwargs["scope"], plan.filters)
+
+    def test_rejects_price_registry_with_modality(self):
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError,
+            "ata_registro_preco não aceita modalidade",
+        ):
+            run_online_pilot(
+                self.config(
+                    resource="ata_registro_preco",
                     modality=6,
                     organization_cnpj=self.member.cnpj,
                     unit_code=self.member.unit_code,

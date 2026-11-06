@@ -11,22 +11,24 @@ substituído.
 - exige a escolha explícita entre `--offline`, `--online-pilot` e
   `--online-operational`;
 - no modo offline, exige uma fixture JSON local;
-- no modo online, aceita `contratacao`, `contrato` ou `pca`, sempre com UF RJ
-  e uma janela de exatamente um dia;
+- no modo online, aceita `contratacao`, `contrato`, `pca` ou
+  `ata_registro_preco`, sempre com UF RJ e uma janela de exatamente um dia;
 - `contratacao` exige uma modalidade entre 1 e 14;
-- `contrato` e `pca` exigem um par CNPJ/unidade presente no inventário
-  congelado e não aceitam modalidade;
+- `contrato`, `pca` e `ata_registro_preco` exigem um par CNPJ/unidade presente
+  no inventário congelado e não aceitam modalidade;
 - aceita somente banco SQLite em `/tmp`;
 - utiliza exclusivamente os checkpoints v2;
 - reutiliza a persistência RAW, a identidade canônica e o versionamento já
   existentes;
 - nunca usa um banco padrão implícito.
 
-A coleta real possui entrada controlada para contratações, contratos e PCA.
+A coleta real possui entrada controlada para contratações, contratos, PCA e
+atas.
 Os pilotos de contratações e contratos já foram validados contra a API real
 em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
 ainda falta observar uma janela HTTP 200 para validar descoberta e plano
-integral com payload real. Atas e recursos dependentes continuam bloqueados no
+integral com payload real. Atas estão habilitadas, mas o primeiro piloto real
+ainda está pendente. Somente os recursos dependentes continuam bloqueados no
 CLI online.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
@@ -119,6 +121,25 @@ O feed fragmentado serve apenas para descobrir PCAs alterados. Antes de emitir
 qualquer registro, o adaptador busca o endpoint direto de cada plano, valida
 seu CNPJ, unidade e integridade e persiste uma representação RAW integral.
 
+As atas também usam o inventário congelado:
+
+```bash
+python3 -m src.fetch_incremental \
+  --resource ata_registro_preco \
+  --uf RJ \
+  --start-date 2026-01-01 \
+  --end-date 2026-01-01 \
+  --organization-cnpj 00038166000105 \
+  --unit-code 925136 \
+  --scope-inventory config/pncp_rj_scope_inventory.json \
+  --online-pilot \
+  --db-path /tmp/pncp_incremental_ata_pilot.db
+```
+
+O JSON de ata não possui UF. O recorte territorial é comprovado pelo membro
+CNPJ/unidade do inventário do RJ; o adaptador valida que esses dois campos do
+payload correspondem exatamente ao membro solicitado.
+
 ## Retomada e reprocessamento
 
 Uma janela que falhou ou perdeu o lease exige retomada explícita:
@@ -187,7 +208,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 | `pca` | Sim | `endpoint` | HTTP 204 real homologado; fluxo HTTP 200 + plano integral pendente |
 | `contratacao` | Sim | `endpoint` | piloto online explícito habilitado somente em `/tmp` |
 | `contrato` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
-| `ata` / `ata_registro_preco` | Sim | `endpoint` | adaptador HTTP testado com transporte simulado; não ativado |
+| `ata` / `ata_registro_preco` | Sim | `endpoint` | CLI online protegido por CNPJ/unidade; piloto real pendente |
 | `contratacao_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `resultado_item` | Sim | `relationship` | adaptador por alvo testado; não ativado |
 | `empenho` | Sim | `relationship` | adaptador por alvo testado; não ativado |
