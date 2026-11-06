@@ -650,8 +650,10 @@ no mesmo banco descartável:
    inventário de órgãos/unidades do RJ.
 2. Acompanhar longitudinalmente um empenho alterado para verificar se o
    contrato-pai também muda; os retornos HTTP 200 e 404 já foram comprovados.
-3. Estender o scheduler, hoje completo para as 14 modalidades de contratação,
-   ao encadeamento contratação → item → resultado e contrato → empenho.
+3. Implementar despacho persistente, agregação dos 14 pais e bootstrap da
+   fila histórica antes de estender o scheduler ao encadeamento contratação
+   → item → resultado e contrato → empenho. A auditoria e os critérios
+   estão em `docs/AUDITORIA_ENCADEAMENTO_INCREMENTAL_DEPENDENCIAS.md`.
 4. Validar o scheduler em uma cópia recente do banco operacional antes de
    considerar a instalação do timer. As migrações `001`–`005` já foram
    aplicadas ao banco oficial na Fase 4.
