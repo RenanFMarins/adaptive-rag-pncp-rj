@@ -248,6 +248,49 @@ class IncrementalRunnerTests(unittest.TestCase):
         self.assertEqual(config.unit_code, "000001")
         self.assertEqual(config.scope_inventory_path, inventory.resolve())
 
+    def test_cli_forwards_parent_run_for_dependent_resource(self):
+        report = IncrementalRunReport(
+            job_id="job-1",
+            window_id="window-1",
+            run_id="run-1",
+            resource="contratacao_item",
+            strategy="relationship",
+            status="SUCCEEDED",
+            records_seen=0,
+            new=0,
+            updated=0,
+            unchanged=0,
+            lease_renewals=0,
+            watermark_value="2023-04-01T23:59:59.999999",
+            resumed=False,
+            reprocessed=False,
+        )
+        with patch(
+            "src.fetch_incremental.run_online_pilot", return_value=report
+        ) as online:
+            status = main(
+                [
+                    "--resource",
+                    "contratacao_item",
+                    "--start-date",
+                    "2023-04-01",
+                    "--end-date",
+                    "2023-04-01",
+                    "--uf",
+                    "RJ",
+                    "--parent-run-id",
+                    "parent-run",
+                    "--db-path",
+                    str(self.database),
+                    "--online-pilot",
+                ]
+            )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            online.call_args.args[0].parent_run_id, "parent-run"
+        )
+
     def test_cli_rejects_operational_database_path(self):
         fixture = self.endpoint_fixture([])
         operational = Path(__file__).parents[2] / "data" / "operational.db"

@@ -76,7 +76,8 @@ class OnlinePilotTests(unittest.TestCase):
             (self.config(modality=15), "entre 1 e 14"),
             (
                 self.config(resource="empenho"),
-                "contratacao, contrato, pca e ata_registro_preco",
+                "contratacao, contrato, pca, ata_registro_preco e "
+                "contratacao_item",
             ),
         )
         for config, message in invalid:
@@ -301,6 +302,92 @@ class OnlinePilotTests(unittest.TestCase):
                     organization_cnpj=self.member.cnpj,
                     unit_code=self.member.unit_code,
                     scope_inventory_path=self.inventory_path,
+                )
+            )
+
+    @patch("src.ingestion.online_pilot.run_adapter_incremental")
+    @patch(
+        "src.ingestion.online_pilot."
+        "PNCPRelationshipIncrementalAdapter.collect_target"
+    )
+    @patch("src.ingestion.online_pilot._dependency_discoveries")
+    def test_builds_purchase_item_plan_from_parent_run(
+        self, discover, collect, run_adapter
+    ):
+        sentinel = object()
+        target = {"numero_controle": "12345678000199-1-000007/2023"}
+        discover.return_value = (target,)
+        collect.return_value = iter(())
+        run_adapter.return_value = sentinel
+        config = self.config(
+            resource="contratacao_item",
+            modality=None,
+            parent_run_id="parent-run",
+        )
+
+        result = run_online_pilot(config)
+
+        self.assertIs(result, sentinel)
+        prepared, plan = run_adapter.call_args.args
+        self.assertEqual(
+            prepared.job_name, "pncp_incremental_contratacao_item_rj"
+        )
+        self.assertEqual(
+            plan.endpoint,
+            "/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens",
+        )
+        self.assertEqual(plan.discoveries, (target,))
+        discover.assert_called_once_with(prepared, self.database.resolve())
+
+        list(plan.event_provider((target,)))
+        self.assertEqual(
+            collect.call_args.args[:3],
+            ("contratacao_item", prepared.job_name, target),
+        )
+
+    def test_rejects_purchase_item_without_parent_run_or_with_modality(self):
+        invalid = (
+            (
+                self.config(resource="contratacao_item", modality=None),
+                "--parent-run-id",
+            ),
+            (
+                self.config(
+                    resource="contratacao_item",
+                    parent_run_id="parent-run",
+                ),
+                "não aceita modalidade",
+            ),
+            (
+                self.config(
+                    resource="contratacao_item",
+                    modality=None,
+                    parent_run_id="parent-run",
+                    organization_cnpj=self.member.cnpj,
+                ),
+                "não aceita CNPJ/unidade avulsos",
+            ),
+        )
+        for config, message in invalid:
+            with self.subTest(message=message), self.assertRaisesRegex(
+                IncrementalConfigurationError, message
+            ):
+                run_online_pilot(config)
+
+    def test_rejects_parent_run_for_endpoint_resource(self):
+        with self.assertRaisesRegex(
+            IncrementalConfigurationError,
+            "aceito somente por recursos dependentes",
+        ):
+            run_online_pilot(self.config(parent_run_id="parent-run"))
+
+    def test_missing_parent_database_is_a_configuration_error(self):
+        with self.assertRaises(IncrementalConfigurationError):
+            run_online_pilot(
+                self.config(
+                    resource="contratacao_item",
+                    modality=None,
+                    parent_run_id="parent-run",
                 )
             )
 

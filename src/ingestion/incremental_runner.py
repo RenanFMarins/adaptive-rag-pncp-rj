@@ -131,6 +131,7 @@ class IncrementalRunConfig:
     modality: int | None = None
     organization_cnpj: str | None = None
     unit_code: str | None = None
+    parent_run_id: str | None = None
     scope_inventory_path: Path | None = None
     job_name: str | None = None
     worker_id: str = "offline-worker"
@@ -162,6 +163,13 @@ class IncrementalRunConfig:
             )
         if self.unit_code is not None:
             object.__setattr__(self, "unit_code", self.unit_code.strip())
+        if self.parent_run_id is not None:
+            parent_run_id = self.parent_run_id.strip()
+            if not parent_run_id:
+                raise IncrementalConfigurationError(
+                    "Identificador da execução pai não pode ser vazio"
+                )
+            object.__setattr__(self, "parent_run_id", parent_run_id)
         if self.scope_inventory_path is not None:
             object.__setattr__(
                 self,

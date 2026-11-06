@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+import sqlite3
 from typing import Mapping
 
 from app.core.database.connection import database_path
@@ -10,6 +11,10 @@ from src.ingestion.adapter_runner import (
     run_adapter_incremental,
 )
 from src.ingestion.incremental_http import PNCPIncrementalHTTPAdapter
+from src.ingestion.dependency_discovery import (
+    DependencyDiscoveryError,
+    discover_dependency_targets,
+)
 from src.ingestion.incremental_runner import (
     IncrementalConfigurationError,
     IncrementalRunConfig,
@@ -18,6 +23,8 @@ from src.ingestion.pncp_client import PNCPClient
 from src.ingestion.pncp_incremental_adapters import (
     PNCPEndpointIncrementalAdapter,
     PNCPPCAIncrementalAdapter,
+    PNCPRelationshipIncrementalAdapter,
+    RELATIONSHIP_ENDPOINTS,
     UPDATE_ENDPOINTS,
 )
 from src.ingestion.scope_inventory import (
@@ -32,6 +39,9 @@ PNCP_BASE_URL = "https://pncp.gov.br"
 CONTRATACAO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contratacao"].endpoint
 CONTRATO_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["contrato"].endpoint
 ATA_UPDATE_ENDPOINT = UPDATE_ENDPOINTS["ata_registro_preco"].endpoint
+CONTRATACAO_ITEM_ENDPOINT = RELATIONSHIP_ENDPOINTS[
+    "contratacao_item"
+].endpoint
 PCA_UPDATE_ENDPOINT = PNCPPCAIncrementalAdapter.DISCOVERY_ENDPOINT
 DEFAULT_SCOPE_INVENTORY = (
     Path(__file__).resolve().parents[2]
@@ -46,10 +56,11 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
         "contrato",
         "pca",
         "ata_registro_preco",
+        "contratacao_item",
     }:
         raise IncrementalConfigurationError(
             "Execução online habilitada somente para contratacao, "
-            "contrato, pca e ata_registro_preco"
+            "contrato, pca, ata_registro_preco e contratacao_item"
         )
     if config.normalized_start != config.normalized_end:
         raise IncrementalConfigurationError(
@@ -59,11 +70,31 @@ def _validate_online_scope(config: IncrementalRunConfig) -> None:
         raise IncrementalConfigurationError(
             "Execução online permanece restrita à UF RJ"
         )
+    if config.resource != "contratacao_item" and config.parent_run_id:
+        raise IncrementalConfigurationError(
+            "--parent-run-id é aceito somente por recursos dependentes"
+        )
     if config.resource == "contratacao":
         if config.modality not in range(1, 15):
             raise IncrementalConfigurationError(
                 "Execução online de contratacao requer modalidade "
                 "entre 1 e 14"
+            )
+        return
+    if config.resource == "contratacao_item":
+        if not config.parent_run_id:
+            raise IncrementalConfigurationError(
+                "Execução online de contratacao_item requer "
+                "--parent-run-id"
+            )
+        if config.modality is not None:
+            raise IncrementalConfigurationError(
+                "Execução online de contratacao_item não aceita modalidade"
+            )
+        if config.organization_cnpj or config.unit_code:
+            raise IncrementalConfigurationError(
+                "contratacao_item deriva o escopo da execução pai e não "
+                "aceita CNPJ/unidade avulsos"
             )
         return
     if config.modality is not None:
@@ -157,6 +188,48 @@ def _price_registry_scope(
     }
 
 
+def _dependency_discoveries(
+    config: IncrementalRunConfig,
+    sqlite_path: Path,
+) -> tuple[dict[str, object], ...]:
+    connection = None
+    try:
+        connection = sqlite3.connect(
+            f"{sqlite_path.as_uri()}?mode=ro",
+            uri=True,
+        )
+        connection.row_factory = sqlite3.Row
+        return discover_dependency_targets(
+            connection,
+            str(config.parent_run_id),
+            config.resource,
+            expected_uf=config.uf,
+        )
+    except (DependencyDiscoveryError, sqlite3.Error) as error:
+        raise IncrementalConfigurationError(str(error)) from error
+    finally:
+        if connection is not None:
+            connection.close()
+
+
+def _relationship_events(
+    adapter: PNCPRelationshipIncrementalAdapter,
+    resource: str,
+    source_id: str,
+    targets,
+):
+    for target in targets:
+        yield from adapter.collect_target(
+            resource,
+            source_id,
+            target,
+            base_url=PNCP_BASE_URL,
+            timeout_seconds=30.0,
+            max_retries=2,
+            retry_backoff_seconds=0.5,
+        )
+
+
 def _run_online_endpoint(
     config: IncrementalRunConfig,
     *,
@@ -165,6 +238,7 @@ def _run_online_endpoint(
     if config.resource == "ata":
         config = replace(config, resource="ata_registro_preco")
     _validate_online_scope(config)
+    sqlite_path = Path(database_path(config.database_url)).resolve()
     if config.resource == "contratacao":
         source_id = config.job_name or (
             f"pncp_incremental_pilot_contratacao_rj_m{config.modality:02d}"
@@ -182,11 +256,15 @@ def _run_online_endpoint(
         config, filters = _pca_scope(config)
         validation_scope = filters
         source_id = str(config.job_name)
+    elif config.resource == "contratacao_item":
+        source_id = config.job_name or "pncp_incremental_contratacao_item_rj"
+        config = replace(config, job_name=source_id)
+        filters = {"scope": "parentes_incrementais_rj"}
+        validation_scope = filters
     else:
         config, filters = _price_registry_scope(config)
         validation_scope = filters
         source_id = str(config.job_name)
-    sqlite_path = Path(database_path(config.database_url)).resolve()
     http_log = (
         config.log_path.with_name(
             f"{config.log_path.stem}.http{config.log_path.suffix}"
@@ -202,6 +280,7 @@ def _run_online_endpoint(
         logger=JsonlLogger(http_log),
     )
     transport = PNCPIncrementalHTTPAdapter(client)
+    discoveries = ()
     if config.resource == "pca":
         pca_adapter = PNCPPCAIncrementalAdapter(transport)
         endpoint = PCA_UPDATE_ENDPOINT
@@ -214,6 +293,16 @@ def _run_online_endpoint(
             timeout_seconds=30.0,
             max_retries=2,
             retry_backoff_seconds=0.5,
+        )
+    elif config.resource == "contratacao_item":
+        relationship_adapter = PNCPRelationshipIncrementalAdapter(transport)
+        endpoint = CONTRATACAO_ITEM_ENDPOINT
+        discoveries = _dependency_discoveries(config, sqlite_path)
+        event_provider = lambda targets: _relationship_events(
+            relationship_adapter,
+            config.resource,
+            source_id,
+            targets,
         )
     else:
         endpoint_adapter = PNCPEndpointIncrementalAdapter(transport)
@@ -233,6 +322,7 @@ def _run_online_endpoint(
     plan = IncrementalAdapterPlan(
         endpoint=endpoint,
         filters=filters,
+        discoveries=discoveries,
         event_provider=event_provider,
     )
     return run_adapter_incremental(

@@ -125,6 +125,32 @@ class DependencyDiscoveryTests(unittest.TestCase):
                 self.repository.connection, run_id, "desconhecido"
             )
 
+    def test_validates_parent_territorial_scope_when_requested(self):
+        run_id = self.ingest(
+            "contratacao",
+            self.PURCHASE,
+            {"unidadeOrgao": {"ufSigla": "RJ"}},
+        )
+
+        self.assertEqual(
+            discover_dependency_targets(
+                self.repository.connection,
+                run_id,
+                "contratacao_item",
+                expected_uf="RJ",
+            ),
+            ({"numero_controle": self.PURCHASE},),
+        )
+        with self.assertRaisesRegex(
+            DependencyDiscoveryError, "fora da UF esperada"
+        ):
+            discover_dependency_targets(
+                self.repository.connection,
+                run_id,
+                "contratacao_item",
+                expected_uf="SP",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
