@@ -12,12 +12,12 @@ substituído.
   `--online-operational`;
 - no modo offline, exige uma fixture JSON local;
 - no modo online, aceita `contratacao`, `contrato`, `pca`,
-  `ata_registro_preco`, `contratacao_item` ou `resultado_item`, sempre com UF
-  RJ e uma janela de exatamente um dia;
+  `ata_registro_preco`, `contratacao_item`, `resultado_item` ou `empenho`,
+  sempre com UF RJ e uma janela de exatamente um dia;
 - `contratacao` exige uma modalidade entre 1 e 14;
 - `contrato`, `pca` e `ata_registro_preco` exigem um par CNPJ/unidade presente
   no inventário congelado e não aceitam modalidade;
-- `contratacao_item` e `resultado_item` exigem o identificador de uma
+- `contratacao_item`, `resultado_item` e `empenho` exigem o identificador de uma
   execução-pai compatível, concluída e validada no RJ;
 - aceita somente banco SQLite em `/tmp`;
 - utiliza exclusivamente os checkpoints v2;
@@ -31,10 +31,11 @@ Os pilotos de contratações e contratos já foram validados contra a API real
 em bancos isolados em `/tmp`. No PCA, o caso real HTTP 204 está homologado;
 ainda falta observar uma janela HTTP 200 para validar descoberta e plano
 integral com payload real. O piloto de atas foi homologado com respostas HTTP
-200 e 204, validação de escopo e reprocessamento idempotente. Empenhos
-continuam bloqueados no CLI online. Itens de contratação e resultados
-homologados estão habilitados de forma controlada e tiveram a cadeia real
-contratação → item → resultado homologada em banco isolado.
+200 e 204, validação de escopo e reprocessamento idempotente. Itens de
+contratação, resultados homologados e empenhos estão habilitados de forma
+controlada. A cadeia contratação → item → resultado foi homologada com
+payloads reais; para empenho, o caso real HTTP 404 contextual foi homologado,
+mas ainda falta observar um retorno HTTP 200 com payload.
 
 O transporte comum e os adaptadores de endpoint já possuem respostas tipadas
 e preservam a diferença entre 200, 204 e 404 contextual. Contratações,
@@ -183,6 +184,23 @@ Cada alvo contém o controle PNCP e o número do item. Antes da consulta, o
 coletor resolve a contratação ancestral na RAW e confirma sua UF; itens sem pai
 ou fora do RJ são rejeitados.
 
+Empenhos são descobertos a partir de uma execução de contratos concluída:
+
+```bash
+python3 -m src.fetch_incremental \
+  --resource empenho \
+  --uf RJ \
+  --start-date 2026-10-16 \
+  --end-date 2026-10-16 \
+  --parent-run-id ID_DA_EXECUCAO_DE_CONTRATOS \
+  --online-pilot \
+  --db-path /tmp/pncp_incremental_empenhos_pilot.db
+```
+
+O contrato pai precisa estar concluído e ter UF RJ. Nesse endpoint, HTTP 404
+significa que o contrato consultado não possui empenhos disponíveis; o alvo é
+registrado como `NOT_FOUND`, sem criar um ativo RAW artificial.
+
 ## Retomada e reprocessamento
 
 Uma janela que falhou ou perdeu o lease exige retomada explícita:
@@ -254,7 +272,7 @@ nunca usa o horário local de conclusão como posição da fonte.
 | `ata` / `ata_registro_preco` | Sim | `endpoint` | piloto real homologado por CNPJ/unidade, restrito a um dia |
 | `contratacao_item` | Sim | `relationship` | piloto real homologado a partir de execução-pai validada no RJ |
 | `resultado_item` | Sim | `relationship` | piloto real homologado a partir de execução de itens validada no RJ |
-| `empenho` | Sim | `relationship` | adaptador por alvo testado; não ativado |
+| `empenho` | Sim | `relationship` | HTTP 404 contextual real homologado; payload HTTP 200 pendente |
 
 Nenhum endpoint dependente aceita alvos arbitrários no CLI.
 
@@ -477,6 +495,24 @@ descartável em `/tmp`, usando um único membro do inventário e a janela de
 - `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
   violações.
 
+Também em 05/11/2026, o piloto de empenhos partiu de um membro válido do
+inventário e da janela de contratos de 16/10/2026:
+
+- o feed de contratos retornou HTTP 200 com um contrato `NEW`, no escopo exato
+  de CNPJ, unidade e UF RJ;
+- a execução-pai originou um alvo de empenho sem entrada manual de controle
+  PNCP;
+- o endpoint do alvo retornou HTTP 404 nas duas execuções, ambas concluídas
+  com sucesso e com resultado de reconciliação `NOT_FOUND`;
+- nenhum ativo RAW de empenho vazio foi criado;
+- a cobertura do contrato permaneceu `PENDING`, com somente 1 de 2.116 membros
+  concluído;
+- `PRAGMA integrity_check` retornou `ok` e `foreign_key_check` não apontou
+  violações.
+
+Essa evidência homologa o encadeamento, o transporte e o significado contextual
+do 404, mas não substitui um piloto HTTP 200 com um empenho real.
+
 Na mesma data, o piloto de PCA foi executado em outro banco descartável em
 `/tmp`. Três janelas de um dia, para dois membros válidos do inventário,
 retornaram HTTP 204 e foram concluídas corretamente:
@@ -556,7 +592,7 @@ no mesmo banco descartável:
 3. Criar a orquestração/scheduler que consome janelas planejadas e descobertas
    de dependência com retomada automática.
 4. Obter autorização específica antes de aplicar `001`–`005` no banco oficial.
-5. Habilitar online os recursos dependentes um por vez, repetindo o piloto
-   isolado.
+5. Encontrar um contrato com retorno HTTP 200 de empenho e validar o payload,
+   a identidade e o reprocessamento em `/tmp`.
 6. Encontrar uma janela PCA com retorno HTTP 200 e confirmar, em `/tmp`, a
    descoberta fragmentada, a recuperação integral e a idempotência do plano.
